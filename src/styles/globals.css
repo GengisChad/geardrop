@@ -1,0 +1,203 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   GEAR//DROP design tokens
+   Values come from assets-source/mockup-design-system.png ("DESIGN SYSTEM v1.0").
+   Hex values in sections 04/05 are declared as text in the sheet; status colours
+   were sampled from the rendered pills. See docs/reference-audit.md.
+   ========================================================================== */
+
+@theme {
+  /* -- Primari (sezione 04) ------------------------------------------------ */
+  --color-lime: #c6ff00;
+  --color-violet: #7a3cff;
+  --color-graphite: #121417;
+  --color-grey-700: #2a2d34;
+
+  /* -- Neutri (sezione 04) ------------------------------------------------- */
+  --color-grey-100: #f5f6f8;
+  --color-grey-200: #e9ebee;
+  --color-grey-300: #d7dce3;
+  --color-grey-400: #b9bec7;
+  --color-grey-600: #7a808c;
+
+  /* Derived: only for hairlines and scrims, never as a flat surface. */
+  --color-violet-ink: #5b21d6;
+  --color-violet-tint: #ede4ff;
+  /*
+   * Lime for text on light surfaces. Acid Lime is 1.10:1 on grey-100 — invisible — and
+   * even the mockups' own hero green (#A8D304) only reaches 1.62:1, under the 3:1 that
+   * large text needs. This is the closest hue-preserving darkening that clears 3:1, so
+   * the headline stays lime rather than turning olive. On graphite, use --color-lime
+   * itself: it scores 15.6:1 there.
+   */
+  --color-lime-ink: #7b9a03;
+  --color-graphite-800: #1b1e24;
+
+  /* -- Stato (sezione 03) — sampled from the rendered pills ---------------- */
+  --color-available: #2e7d0a;
+  --color-available-bg: #e8f7dc;
+  --color-available-solid: #78da04;
+  --color-incoming: #121417;
+  --color-incoming-bg: #f7de1a;
+  --color-incoming-solid: #f5d800;
+  --color-soldout: #c21419;
+  --color-soldout-bg: #fbe3e3;
+  --color-soldout-solid: #d91419;
+  --color-preorder: #6b2be0;
+  --color-preorder-bg: #ede4ff;
+  --color-preorder-solid: #7a3cff;
+
+  /* -- Tipografia (sezione 05) -------------------------------------------- */
+  /* Titoli dichiarati "DIN Next / Eurostile Extended" (commerciali):
+     Archivo variabile con asse wdth esteso e' l'equivalente libero piu' vicino. */
+  --font-display: var(--font-archivo), "Archivo", system-ui, sans-serif;
+  --font-sans: var(--font-inter), "Inter", system-ui, sans-serif;
+
+  --text-h1: 3rem; /* 48/56 Bold */
+  --text-h1--line-height: 3.5rem;
+  --text-h2: 2rem; /* 32/40 Bold */
+  --text-h2--line-height: 2.5rem;
+  --text-h3: 1.25rem; /* 20/28 SemiBold */
+  --text-h3--line-height: 1.75rem;
+  --text-body: 1rem; /* 16/24 Regular */
+  --text-body--line-height: 1.5rem;
+  --text-small: 0.75rem; /* 12/16 Regular */
+  --text-small--line-height: 1rem;
+
+  /* -- Gradienti (sezione 04) --------------------------------------------- */
+  --gradient-lime-glow: linear-gradient(90deg, #c6ff00 0%, #e8ffa3 100%);
+  --gradient-violet-energy: linear-gradient(90deg, #7a3cff 0%, #c9adff 100%);
+
+  /* -- Motion -------------------------------------------------------------- */
+  --ease-out-gear: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --radius-card: 0.875rem;
+  --radius-pill: 999px;
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  body {
+    background-color: var(--color-grey-100);
+    color: var(--color-graphite);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Titles are always uppercase display; body copy never is. (audit §7) */
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-variation-settings: "wdth" 112;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  /* Prices and counters must not jitter while they animate. */
+  :where(.tabular) {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background: var(--color-lime);
+    color: var(--color-graphite);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-violet);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* The announcement bar and footer sit on graphite; keep focus visible there. */
+  .on-dark :focus-visible {
+    outline-color: var(--color-lime);
+  }
+}
+
+/* ==========================================================================
+   Brand primitives
+   ========================================================================== */
+
+@utility gd-display {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 112;
+  text-transform: uppercase;
+}
+
+/* Wide display cut used for hero + section headings. */
+@utility gd-display-wide {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 125;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+/* The angled corner on dark bands (trust band, bundle banner). */
+@utility gd-notch {
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%);
+}
+
+@utility gd-notch-lg {
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 28px), calc(100% - 28px) 100%, 0 100%);
+}
+
+/* Fine diagonal streaks behind the hero — the mockups' "speed" texture.
+   Pure CSS: the reference images are never used as site imagery. (audit §7.9) */
+@utility gd-streaks {
+  background-image:
+    linear-gradient(104deg, transparent 38%, color-mix(in srgb, var(--color-violet) 26%, transparent) 39%, transparent 40%),
+    linear-gradient(104deg, transparent 52%, color-mix(in srgb, var(--color-violet) 16%, transparent) 53%, transparent 54.5%),
+    linear-gradient(104deg, transparent 61%, color-mix(in srgb, var(--color-lime) 22%, transparent) 62%, transparent 63%),
+    linear-gradient(104deg, transparent 70%, color-mix(in srgb, var(--color-violet) 30%, transparent) 71.5%, transparent 73%),
+    linear-gradient(104deg, transparent 79%, color-mix(in srgb, var(--color-violet) 12%, transparent) 80%, transparent 81%);
+}
+
+@keyframes gd-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes gd-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@utility gd-scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

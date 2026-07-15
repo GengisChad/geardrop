@@ -1,0 +1,46 @@
+{
+  "name": "geardrop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GEAR//DROP - store Beyblade X per la community italiana",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "shots": "playwright test tests/e2e/screenshots.spec.ts",
+    "assets": "python scripts/build-assets.py",
+    "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "typegen": "next typegen"
+  },
+  "dependencies": {
+    "embla-carousel-react": "8.6.0",
+    "framer-motion": "12.42.2",
+    "lucide-react": "1.24.0",
+    "next": "16.2.10",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "react-hook-form": "7.81.0",
+    "zod": "4.4.3",
+    "zustand": "5.0.14"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "@tailwindcss/postcss": "4.3.2",
+    "@types/node": "24.10.1",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.3",
+    "eslint": "9.39.0",
+    "eslint-config-next": "16.2.10",
+    "tailwindcss": "4.3.2",
+    "typescript": "5.9.3",
+    "vitest": "4.1.10"
+  },
+  "packageManager": "pnpm@11.13.0"
+}

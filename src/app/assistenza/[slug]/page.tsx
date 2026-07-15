@@ -1,0 +1,32 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { ContentPage } from "@/components/layout/content-page";
+import { SUPPORT_PAGES, type SupportSlug } from "@/data/pages";
+
+type Params = { slug: string };
+
+const isSupportSlug = (slug: string): slug is SupportSlug => slug in SUPPORT_PAGES;
+
+export function generateStaticParams(): Params[] {
+  return Object.keys(SUPPORT_PAGES).map((slug) => ({ slug }));
+}
+
+export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
+  const { slug } = await params;
+  if (!isSupportSlug(slug)) return { title: "Pagina non trovata" };
+  const page = SUPPORT_PAGES[slug];
+  return { title: page.title, description: page.lead };
+}
+
+export default async function AssistenzaPage({ params }: { params: Promise<Params> }) {
+  const { slug } = await params;
+  if (!isSupportSlug(slug)) notFound();
+  const page = SUPPORT_PAGES[slug];
+
+  return (
+    <ContentPage
+      page={page}
+      crumbs={[{ label: "Home", href: "/" }, { label: "Assistenza" }, { label: page.title }]}
+    />
+  );
+}
