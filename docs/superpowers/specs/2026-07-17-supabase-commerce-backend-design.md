@@ -1,7 +1,7 @@
 # Supabase Commerce Backend Design
 
 **Date:** 2026-07-17
-**Status:** approved architecture, written specification pending final review
+**Status:** approved
 **Project:** GEAR//DROP
 
 ## 1. Goal
@@ -30,7 +30,7 @@ Payment processing is explicitly out of scope for this phase. New orders are cre
 - Stripe, PayPal, Klarna, or any other payment gateway.
 - Payment webhooks and asynchronous fulfillment jobs.
 - Transactional order email delivery. The UI must not claim an order email was sent until an email provider is added.
-- A visual staff administration dashboard. This phase creates its authorization model and database capabilities, but not the dashboard UI.
+- A full visual catalog-management dashboard. This phase includes only the protected admin safety shell, launch checklist, disabled-orders banner, and owner/admin order inspection/cancellation needed for safe rollout.
 - Synchronizing the browser cart or wishlist across devices.
 - Deleting Supabase-managed schemas or existing `auth.users` records.
 
@@ -254,7 +254,7 @@ Financial checks enforce `total = subtotal - discount + shipping`, non-negative 
 - actor UUID when available;
 - timestamp and optional note.
 
-Creating a pending order immediately decrements `products.stock_quantity` and writes an inventory movement. This is an atomic stock update rather than an expiring reservation, so no background reservation-release worker is required in this phase. A later owner/admin cancellation flow must restore stock in its own transaction before marking the order cancelled.
+Creating a pending order immediately decrements `products.stock_quantity` and writes an inventory movement. This is an atomic stock update rather than an expiring reservation, so no background reservation-release worker is required in this phase. The owner/admin cancellation flow restores stock and records inventory movements in the same transaction that marks the order cancelled; editors cannot call it.
 
 ### 5.5 Audit
 
@@ -420,7 +420,7 @@ Before `accept_orders` can be changed to true, an owner must complete and record
 - public RLS probes, cross-customer isolation tests, editor-denial tests, and guest-order enumeration tests pass;
 - concurrent last-unit and final-coupon tests pass;
 - Supabase security and performance advisors have no unaddressed high-severity findings introduced by the migration;
-- a real guest smoke order and a real authenticated smoke order succeed in the target environment, remain `pending`/`unpaid`, and decrement stock exactly once;
+- a real guest smoke order and a real authenticated smoke order succeed in the local or pre-production environment, remain `pending`/`unpaid`, and decrement stock exactly once;
 - cancellation/restock recovery is verified;
 - database backup or point-in-time recovery readiness is confirmed.
 
