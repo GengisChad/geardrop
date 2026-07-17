@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { WishlistClient } from "@/app/preferiti/wishlist-client";
+import { WishlistClient } from "./wishlist-client";
 import { PRODUCTS } from "@/data/catalog";
 
 export const metadata: Metadata = {

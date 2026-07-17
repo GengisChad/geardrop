@@ -1,8 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, Inter } from "next/font/google";
-import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/layout/footer";
-import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { ToastProvider } from "@/components/ui/toast";
 import { brand } from "@/data/assets";
 import "@/styles/globals.css";
@@ -66,13 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           >
             Salta al contenuto
           </a>
-          <Header />
-          {/* Bottom tab bar overlays mobile content; reserve its height. */}
-          <main id="contenuto" className="pb-20 lg:pb-0">
-            {children}
-          </main>
-          <Footer />
-          <BottomTabBar />
+          {children}
         </ToastProvider>
       </body>
     </html>

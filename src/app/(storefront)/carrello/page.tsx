@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CartClient } from "@/app/carrello/cart-client";
+import { CartClient } from "./cart-client";
 
 export const metadata: Metadata = {
   title: "Carrello",

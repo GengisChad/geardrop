@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CheckoutClient } from "@/app/checkout/checkout-client";
+import { CheckoutClient } from "./checkout-client";
 
 export const metadata: Metadata = {
   title: "Checkout",
