@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the legacy remote `public` schema with a secure relational GEAR//DROP backend, email/password authentication, request-scoped Supabase access, protected customer and staff data, and atomic guest/authenticated checkout while keeping order intake disabled by default.
+**Goal:** Install a secure relational GEAR//DROP backend on a new dedicated Supabase project, with email/password authentication, request-scoped Supabase access, protected customer and staff data, and atomic guest/authenticated checkout while keeping order intake disabled by default.
 
 **Architecture:** Next.js 16 owns UI, Server Actions, Route Handlers, session refresh, and staff/customer guards. Supabase owns Auth, relational data, RLS, and one transactional order RPC. `CommerceProvider` remains the catalog boundary; the Supabase adapter is request-scoped and the mock provider stays available offline.
 
@@ -32,6 +32,7 @@
 20. Coupon redemption, order insertion, and stock decrement use stable lock ordering and one transaction to prevent race conditions and overselling.
 21. No remote reset, migration push, or Supabase mutation occurs before the explicit remote rollout gate.
 22. No Edge Function is introduced in this phase; a future Stripe webhook is the only currently anticipated Edge Function use.
+23. Committed migrations are additive and forward-only. The first migration aborts on a non-dedicated `public` schema and never deletes or resets existing application data.
 
 ## Approved Checkpoint 1 execution slice
 
@@ -60,6 +61,8 @@ The first execution checkpoint contains only pinned Supabase dependencies, `.env
 - Pin every new package version and commit `pnpm-lock.yaml`.
 - Follow strict red-green-refactor TDD for every application behavior and pgTAP/database behavior.
 - Do not mutate the remote Supabase project before Checkpoint 4 receives explicit user approval.
+- Never link, inspect, mutate, or reuse IBNApp for GearDrop. A new dedicated Supabase project must be supplied and explicitly approved at the rollout gate.
+- No committed migration may contain a database/schema/table reset, generalized destructive DDL, or Auth/Storage data deletion.
 - Do not set remote `site_settings.accept_orders = true` during implementation or deployment. Local and pre-production tests may toggle it only inside isolated fixtures that reset afterward.
 
 ## Migration filename rule
@@ -201,99 +204,51 @@ git commit -m "chore: add pinned Supabase tooling"
 
 Expected: environment tests and lint PASS.
 
-### Task 2: Create the explicit legacy reset migration
+### Task 2: Guard the dedicated-project boundary without destructive SQL
 
 **Files:**
 
-- Create via CLI: migration named `reset_legacy_public_schema`
-- Create: `supabase/tests/001_legacy_reset.test.sql`
+- Create via CLI: migration named `assert_dedicated_project`
+- Create: `supabase/tests/001_dedicated_project_guard.test.sql`
+- Create: `tests/unit/supabase-migration-safety.test.ts`
 
 **Interfaces:**
 
-- Consumes: the verified remote inventory.
-- Produces: a local migration that deletes only 13 legacy tables, 6 legacy functions, and 2 legacy triggers while preserving Auth users and managed schemas.
+- Consumes: the approved requirement that GearDrop uses a new dedicated project.
+- Produces: a forward-only guard that aborts when non-extension application tables already occupy `public`, without modifying any existing data.
 
-- [ ] **Step 1: Re-run read-only inventory before writing SQL**
+- [ ] **Step 1: Write a failing migration-safety test**
 
-The expected tables are exactly:
+Scan every committed migration and fail on `DROP SCHEMA`, `DROP TABLE`, `DROP DATABASE`, `DROP OWNED`, `TRUNCATE`, or direct deletion from `auth`/`storage`.
 
-```text
-audit_logs
-club_join_requests
-clubs
-match_results
-news
-player_profiles
-points_ledger
-standings
-tournament_matches
-tournament_players
-tournament_rounds
-tournament_snapshots
-tournaments
-```
+- [ ] **Step 2: Create the guard migration with the CLI**
 
-The expected functions are exactly:
+Run: `pnpm exec supabase migration new assert_dedicated_project`
 
-```text
-guard_clubs_status_change()
-handle_new_user()
-is_admin()
-is_club_leader()
-is_judge_or_above()
-owns_tournament(uuid)
-```
-
-The expected triggers are `auth.users.on_auth_user_created` and `public.clubs.trg_guard_clubs_status`.
-
-If the inventory differs, stop at Checkpoint 1 and revise the explicit drop list; never replace it with `drop schema public cascade`.
-
-- [ ] **Step 2: Create the migration with the CLI**
-
-Run: `pnpm exec supabase migration new reset_legacy_public_schema`
-
-Populate the printed migration path with explicit statements in dependency-safe order:
+The migration must inspect non-extension base/partitioned tables in `public` and abort without side effects when any are present:
 
 ```sql
-drop trigger if exists on_auth_user_created on auth.users;
-drop trigger if exists trg_guard_clubs_status on public.clubs;
-
-drop table if exists public.audit_logs cascade;
-drop table if exists public.club_join_requests cascade;
-drop table if exists public.match_results cascade;
-drop table if exists public.points_ledger cascade;
-drop table if exists public.standings cascade;
-drop table if exists public.tournament_snapshots cascade;
-drop table if exists public.tournament_matches cascade;
-drop table if exists public.tournament_rounds cascade;
-drop table if exists public.tournament_players cascade;
-drop table if exists public.tournaments cascade;
-drop table if exists public.player_profiles cascade;
-drop table if exists public.clubs cascade;
-drop table if exists public.news cascade;
-
-drop function if exists public.guard_clubs_status_change();
-drop function if exists public.handle_new_user();
-drop function if exists public.is_admin();
-drop function if exists public.is_club_leader();
-drop function if exists public.is_judge_or_above();
-drop function if exists public.owns_tournament(uuid);
+do $$
+declare
+  existing_application_tables text;
+begin
+  -- Collect non-extension application tables from pg_catalog.
+  -- If any exist, raise GD_DEDICATED_PROJECT_REQUIRED with no mutation.
+end;
+$$;
 ```
 
-- [ ] **Step 3: Write the pgTAP reset test**
+- [ ] **Step 3: Write the pgTAP boundary test**
 
 ```sql
 begin;
 select plan(3);
-select has_schema('auth', 'auth schema is preserved');
-select has_table('auth', 'users', 'auth users table is preserved');
-select is_empty(
-  $$select tablename from pg_tables where schemaname = 'public' and tablename in (
-    'audit_logs','club_join_requests','clubs','match_results','news','player_profiles',
-    'points_ledger','standings','tournament_matches','tournament_players',
-    'tournament_rounds','tournament_snapshots','tournaments'
-  )$$,
-  'legacy public tables are absent'
+select has_schema('auth', 'managed auth schema is present');
+select has_table('auth', 'users', 'auth users table is present');
+select results_eq(
+  $$select count(*)::bigint from public.staff_profiles$$,
+  array[0::bigint],
+  'no staff privilege is created automatically'
 );
 select * from finish();
 rollback;
@@ -308,10 +263,10 @@ pnpm exec supabase start
 pnpm db:reset
 pnpm db:test
 git add supabase
-git commit -m "chore: define explicit legacy schema reset"
+git commit -m "fix: make Supabase foundation migrations non-destructive"
 ```
 
-Expected: local reset succeeds and all 3 pgTAP assertions PASS.
+Expected: the safety test passes, local initialization succeeds on a clean project, and all 3 pgTAP assertions PASS.
 
 ### Task 3: Create the normalized commerce schema and safe availability model
 
@@ -843,7 +798,7 @@ Required evidence:
 - `git status --short` is empty.
 - `pnpm db:reset` succeeds.
 - `pnpm db:test` passes.
-- The legacy drop list still matches the read-only remote inventory.
+- Every committed migration passes the non-destructive safety scan.
 - `site_settings.accept_orders` is false.
 - Zero stock resolves to sold out without override.
 - Editors cannot read all orders or customer PII.
@@ -1593,7 +1548,7 @@ git commit -m "feat: add atomic order cancellation"
 
 ## Checkpoint 4 — Full local release candidate and remote mutation gate
 
-Stop. Do not touch the remote project until the user reviews this evidence and explicitly authorizes the destructive rollout.
+Stop. Do not link or touch any remote project until the user reviews this evidence, creates or identifies a new dedicated GearDrop project, and explicitly authorizes the non-destructive rollout. IBNApp is permanently out of scope.
 
 Required evidence:
 
@@ -1612,7 +1567,7 @@ pnpm test:e2e
 Also provide:
 
 - the exact CLI-generated migration filenames;
-- a fresh read-only remote inventory diff;
+- confirmation that the approved target is a new dedicated GearDrop project with no pre-existing application tables;
 - `supabase db push --linked --dry-run` output;
 - generated TypeScript diff;
 - RLS matrix results;
@@ -1625,7 +1580,7 @@ Also provide:
 
 ## Phase 5 — Controlled remote rollout, still disabled
 
-### Task 15: Apply reviewed migrations to the connected project
+### Task 15: Apply reviewed migrations to the new dedicated GearDrop project
 
 **Files:**
 
@@ -1638,14 +1593,14 @@ Also provide:
 
 - [ ] **Step 1: Confirm target and recovery readiness**
 
-Confirm project ref `cvwigsymjlpulwgjkzix`, verify backup/PITR readiness, list migrations, re-run object inventory, and confirm the 13-table/6-function/2-trigger drop set has not drifted.
+Obtain the newly created GearDrop project ref from the user, verify that it is not IBNApp, confirm backup/PITR readiness, and prove `public` has no pre-existing non-extension application tables. Stop on any mismatch.
 
 - [ ] **Step 2: Dry-run the linked push**
 
 Run:
 
 ```powershell
-pnpm exec supabase link --project-ref cvwigsymjlpulwgjkzix
+pnpm exec supabase link --project-ref <NEW_GEARDROP_PROJECT_REF>
 pnpm exec supabase migration list --linked
 pnpm exec supabase db push --linked --dry-run
 ```
@@ -1660,7 +1615,7 @@ Do not retry blindly. On failure, inspect the exact SQL error and migration stat
 
 - [ ] **Step 4: Run remote verification**
 
-Run linked pgTAP tests, generate remote types for comparison, query `site_settings`, verify every product stock is zero, and verify legacy tables are absent while Auth user count is unchanged.
+Run linked pgTAP tests, generate remote types for comparison, query `site_settings`, verify every product stock is zero, and verify no staff user was created automatically.
 
 Use Supabase advisors for both `security` and `performance`; resolve every high-severity issue introduced by these migrations before continuing.
 

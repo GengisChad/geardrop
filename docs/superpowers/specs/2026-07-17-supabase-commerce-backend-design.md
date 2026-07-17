@@ -28,6 +28,7 @@
 20. Coupon redemption, order insertion, and stock decrement use stable lock ordering and one transaction to prevent race conditions and overselling.
 21. No remote reset, migration push, or Supabase mutation occurs before the explicit remote rollout gate.
 22. No Edge Function is introduced in this phase; a future Stripe webhook is the only currently anticipated Edge Function use.
+23. Committed migrations are additive and forward-only. The first migration aborts on a non-dedicated `public` schema and never deletes or resets existing application data.
 
 ## 1. Goal
 
@@ -59,19 +60,13 @@ Payment processing is explicitly out of scope for this phase. New orders are cre
 - Synchronizing the browser cart or wishlist across devices.
 - Deleting Supabase-managed schemas or existing `auth.users` records.
 
-## 3. Destructive reset boundary
+## 3. Dedicated-project and non-destructive migration boundary
 
-The user authorized deleting all obsolete application tables and rebuilding the project from scratch in the connected Supabase project `cvwigsymjlpulwgjkzix`.
+GearDrop is installed only on a new dedicated Supabase project. IBNApp must never be linked, inspected, modified, reset, or reused for GearDrop.
 
-The reset will:
+All committed migrations are additive and forward-only. The first migration inspects `public` and aborts with `GD_DEDICATED_PROJECT_REQUIRED` when non-extension application tables already exist. It never drops schemas, tables, Auth users, Storage objects, or existing application data.
 
-- inventory every current user-defined table, view, function, trigger, policy, and sequence in `public`;
-- generate an explicit reviewed drop list;
-- remove obsolete `public` application objects with their dependent policies and triggers;
-- leave Supabase-managed schemas and data untouched, including `auth`, `storage`, `realtime`, `vault`, `extensions`, and `supabase_migrations`;
-- preserve existing Auth users.
-
-Preserved Auth users receive no staff privilege automatically. An existing user can authenticate as a normal customer, but access to staff capabilities requires an active row in `staff_profiles`. The first `owner` row is assigned manually after the intended owner registers and confirms their email.
+No Auth user receives staff privilege automatically. A user can authenticate as a normal customer, but staff capability requires an active row in `staff_profiles`. Exactly two initial owners are assigned later through the guarded one-shot procedure after both accounts are confirmed.
 
 ## 4. Application architecture
 

@@ -15,13 +15,15 @@ function migration(name: string): string {
 }
 
 describe("Supabase commerce migrations", () => {
-  it("removes only the inventoried legacy application objects", () => {
-    const sql = migration("reset_legacy_public_schema");
+  it("refuses a non-dedicated target without deleting existing data", () => {
+    const sql = migration("assert_dedicated_project");
 
-    expect(sql).toContain("drop trigger if exists on_auth_user_created on auth.users");
-    expect(sql).toContain("drop table if exists public.tournaments");
-    expect(sql).not.toContain("drop schema public");
-    expect(sql).not.toContain("drop table auth.users");
+    expect(sql).toContain("gd_dedicated_project_required");
+    expect(sql).toContain("existing_application_tables");
+    expect(sql).toContain("pg_catalog.pg_extension");
+    expect(sql).not.toMatch(/\bdrop\b/);
+    expect(sql).not.toMatch(/\btruncate\b/);
+    expect(sql).not.toMatch(/\bdelete\s+from\b/);
   });
 
   it("separates customer and staff identities and defaults commerce to disabled", () => {
