@@ -8,6 +8,35 @@
 
 **Tech Stack:** Next.js 16.2.10, React 19.2.7, TypeScript 5.9.3, Zod 4.4.3, Supabase Postgres 17, `@supabase/supabase-js` 2.110.7, `@supabase/ssr` 0.12.3, Supabase CLI 2.109.1, Vitest 4.1.10, pgTAP, Playwright 1.61.1, pnpm 11.
 
+## Approved invariants
+
+1. `customer_profiles` and `staff_profiles` are separate tables.
+2. Existing Supabase Auth users are preserved and receive no automatic staff privilege.
+3. The first two owners are assigned by an explicit, documented, transactional one-shot procedure.
+4. Every seeded product starts with real `stock_quantity = 0`.
+5. `site_settings.accept_orders` starts as `false`.
+6. A zero-stock product cannot become automatically available or purchasable.
+7. `preorder` and `incoming` require an explicit `availability_override`.
+8. Guest checkout remains supported but is blocked without side effects while `accept_orders = false`.
+9. Order creation is server-side only and recalculates product prices, coupon, shipping, subtotal, discount, and total from database data.
+10. An authenticated customer can read only their own orders.
+11. Active owners and admins can read all orders.
+12. Editors cannot read or manage sensitive order/customer data; an editor who is also a customer keeps only normal own-order access.
+13. Every server Supabase client is created per request/operation and never stored in module scope.
+14. Server authorization uses `getClaims()` or `getUser()` and never trusts `getSession()`.
+15. Secret/service credentials exist only in `server-only` modules and are not a general RLS bypass.
+16. RLS is enabled on every exposed table.
+17. Anonymous catalog reads require an active category, a `published` and active product, and a published associated image.
+18. The catalog seed is idempotent: reruns update content but never overwrite real stock, availability overrides, or order settings. First insertion uses zero stock.
+19. After initial zero-stock insertion, every stock change goes through a transactional database function and writes `inventory_movements`; direct stock updates are revoked from application roles.
+20. Coupon redemption, order insertion, and stock decrement use stable lock ordering and one transaction to prevent race conditions and overselling.
+21. No remote reset, migration push, or Supabase mutation occurs before the explicit remote rollout gate.
+22. No Edge Function is introduced in this phase; a future Stripe webhook is the only currently anticipated Edge Function use.
+
+## Approved Checkpoint 1 execution slice
+
+The first execution checkpoint contains only pinned Supabase dependencies, `.env.example`, browser/request-scoped/server-only clients, proxy session refresh, initial local migrations and enums, constraints, initial RLS and role helpers, the idempotent zero-stock seed, transactional inventory adjustment, the Supabase provider scaffold, foundational tests, and local setup documentation. It excludes account UI, checkout UI, product editor, media library, homepage manager, coupon UI, order UI, advanced settings, remote reset, remote migration push, real credentials, and every remote Supabase mutation.
+
 ## Global Constraints
 
 - Execute only in `C:\Users\feder\Downloads\GearDrop-admin-supabase` on branch `codex/admin-supabase`.
@@ -26,7 +55,7 @@
 - `incoming` is never purchasable. `preorder` is purchasable only with positive reviewed allocation.
 - The browser submits only SKU and quantity for cart lines; database prices and totals are always authoritative.
 - Guest checkout may use the privileged server-only client only to call the hardened order RPC. Authenticated checkout uses the request-scoped client.
-- Do not introduce Edge Functions in this phase.
+- Do not introduce Edge Functions in this phase. A future Stripe webhook is the only currently anticipated Edge Function use.
 - Do not store products, images, categories, stock, or order lines as JSONB. JSONB is limited to immutable address and audit snapshots.
 - Pin every new package version and commit `pnpm-lock.yaml`.
 - Follow strict red-green-refactor TDD for every application behavior and pgTAP/database behavior.

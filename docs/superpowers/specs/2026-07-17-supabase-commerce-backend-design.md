@@ -4,6 +4,31 @@
 **Status:** approved
 **Project:** GEAR//DROP
 
+## Approved invariants
+
+1. `customer_profiles` and `staff_profiles` are separate tables.
+2. Existing Supabase Auth users are preserved and receive no automatic staff privilege.
+3. The first two owners are assigned by an explicit, documented, transactional one-shot procedure.
+4. Every seeded product starts with real `stock_quantity = 0`.
+5. `site_settings.accept_orders` starts as `false`.
+6. A zero-stock product cannot become automatically available or purchasable.
+7. `preorder` and `incoming` require an explicit `availability_override`.
+8. Guest checkout remains supported but is blocked without side effects while `accept_orders = false`.
+9. Order creation is server-side only and recalculates product prices, coupon, shipping, subtotal, discount, and total from database data.
+10. An authenticated customer can read only their own orders.
+11. Active owners and admins can read all orders.
+12. Editors cannot read or manage sensitive order/customer data; an editor who is also a customer keeps only normal own-order access.
+13. Every server Supabase client is created per request/operation and never stored in module scope.
+14. Server authorization uses `getClaims()` or `getUser()` and never trusts `getSession()`.
+15. Secret/service credentials exist only in `server-only` modules and are not a general RLS bypass.
+16. RLS is enabled on every exposed table.
+17. Anonymous catalog reads require an active category, a `published` and active product, and a published associated image.
+18. The catalog seed is idempotent: reruns update content but never overwrite real stock, availability overrides, or order settings. First insertion uses zero stock.
+19. After initial zero-stock insertion, every stock change goes through a transactional database function and writes `inventory_movements`; direct stock updates are revoked from application roles.
+20. Coupon redemption, order insertion, and stock decrement use stable lock ordering and one transaction to prevent race conditions and overselling.
+21. No remote reset, migration push, or Supabase mutation occurs before the explicit remote rollout gate.
+22. No Edge Function is introduced in this phase; a future Stripe webhook is the only currently anticipated Edge Function use.
+
 ## 1. Goal
 
 Replace the current local-only commerce backend with a relational Supabase backend while preserving the existing `CommerceProvider` boundary and mock provider. Add email/password authentication, customer accounts, protected order history, guest checkout, atomic order creation, catalog and inventory management foundations, and role-separated staff authorization.
@@ -74,7 +99,7 @@ Three factories are required. None may place a server client in module-global sh
 
 The secret/service role is not a general replacement for RLS. Authenticated catalog, account, staff, and checkout operations use the request-scoped client.
 
-Catalog access, checkout, and future staff CRUD remain in Next.js Server Components, Server Actions, or Route Handlers plus PostgreSQL. No Edge Function is introduced in this phase. Edge Functions remain reserved for later payment webhooks, external integrations, or asynchronous work that concretely requires them.
+Catalog access, checkout, and future staff CRUD remain in Next.js Server Components, Server Actions, or Route Handlers plus PostgreSQL. No Edge Function is introduced in this phase. A future Stripe webhook is the only currently anticipated Edge Function use; any other external or asynchronous integration requires a new approved design.
 
 ### 4.2 Session validation
 
@@ -407,6 +432,8 @@ Every such function:
 The current `src/data/catalog.ts` and `src/data/assets.ts` remain the reviewed seed source for the initial import. A deterministic seed script maps the existing domain data to relational rows. Product image paths continue to point at committed files under `public/`; Supabase Storage is not required in this phase.
 
 The current source catalog contains availability labels but no real numeric inventory. To avoid inventing stock, the initial production seed sets every `stock_quantity` to `0` and keeps checkout disabled through `site_settings.accept_orders = false`. The owner must load real quantities through a reviewed operational SQL update before enabling checkout. Automated checkout tests use isolated fixture quantities and roll them back after verification.
+
+The seed is repeatable and idempotent. On conflict it may update reviewed catalog copy and relationships, but it never overwrites `stock_quantity`, `availability_override`, `site_settings.accept_orders`, coupons, orders, or inventory history. After initial insertion, inventory is changed only by transactional functions that also append `inventory_movements`; application roles receive no direct product-stock update privilege.
 
 Before `accept_orders` can be changed to true, an owner must complete and record this checklist:
 
