@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Crown, Heart, Package, ShoppingCart } from "lucide-react";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
-import { ClubBand } from "@/components/home/club-band";
 import type { AppHref } from "@/lib/routes";
 
 export const metadata: Metadata = {
@@ -25,7 +24,7 @@ export default function AccountPage() {
         <h1 className="gd-display-wide text-[2rem] font-extrabold text-graphite sm:text-[2.5rem]">Account</h1>
 
         {/* No auth backend exists yet: say so rather than render a login that cannot work. */}
-        <div className="mt-6 flex items-start gap-3 rounded-[--radius-card] border border-violet/30 bg-violet-tint p-5">
+        <div className="gd-glass-panel mt-6 flex items-start gap-3 rounded-[--radius-glass] border-violet/30 p-5">
           <Crown className="mt-0.5 size-5 shrink-0 text-violet" aria-hidden="true" />
           <div>
             <h2 className="gd-display text-small font-bold tracking-wider text-graphite">Accesso in arrivo</h2>
@@ -41,7 +40,7 @@ export default function AccountPage() {
             <li key={label}>
               <Link
                 href={href}
-                className="group flex h-full items-start gap-3 rounded-[--radius-card] border border-grey-200 bg-white p-5 transition-[border-color,box-shadow] hover:border-violet hover:shadow-[0_18px_40px_-22px_rgba(122,60,255,0.5)]"
+                className="gd-glass-card gd-glass-interactive group flex h-full items-start gap-3 rounded-[--radius-glass] p-5"
               >
                 <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-violet-tint">
                   <Icon className="size-4.5 text-violet" strokeWidth={2} aria-hidden="true" />
@@ -55,8 +54,6 @@ export default function AccountPage() {
           ))}
         </ul>
       </div>
-
-      <ClubBand />
     </>
   );
 }

@@ -28,9 +28,9 @@ export function Gallery({ images, slug, name, promo }: GalleryProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="relative overflow-hidden rounded-[--radius-card] border border-grey-200 bg-white">
+      <div data-testid="product-gallery" className="gd-glass-panel relative overflow-hidden rounded-[--radius-glass]">
         {/* Product art on a light plate, as in every mockup. (audit §7.6) */}
-        <div className="relative aspect-square">
+        <div className="gd-product-plate relative m-2 aspect-square overflow-hidden rounded-[calc(var(--radius-glass)-0.45rem)] sm:m-3">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={active.src}
@@ -80,7 +80,7 @@ export function Gallery({ images, slug, name, promo }: GalleryProps) {
                 aria-label={`Immagine ${i + 1} di ${images.length}`}
                 aria-current={i === index}
                 className={cn(
-                  "relative size-16 overflow-hidden rounded-lg border-2 bg-white transition-colors sm:size-20",
+                  "gd-glass-compact relative size-16 overflow-hidden rounded-lg border-2 transition-colors sm:size-20",
                   i === index ? "border-violet" : "border-grey-200 hover:border-grey-400",
                 )}
               >
@@ -102,8 +102,8 @@ function GalleryArrow({ direction, onClick }: { direction: "prev" | "next"; onCl
       onClick={onClick}
       aria-label={direction === "prev" ? "Immagine precedente" : "Immagine successiva"}
       className={cn(
-        "absolute top-1/2 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded-full",
-        "border border-grey-200 bg-white/90 text-graphite backdrop-blur transition-colors hover:border-violet hover:text-violet",
+        "absolute top-1/2 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full",
+        "gd-glass-compact text-graphite transition-colors hover:border-violet hover:text-violet",
         direction === "prev" ? "left-3" : "right-3",
       )}
     >

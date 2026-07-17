@@ -14,7 +14,7 @@ export function WishlistClient({ catalogue }: { catalogue: readonly Product[] })
     return (
       <ul className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
         {Array.from({ length: 4 }, (_, i) => (
-          <li key={i} className="h-80 animate-pulse rounded-[--radius-card] bg-grey-200" />
+          <li key={i} className="gd-glass-card h-80 animate-pulse rounded-[--radius-glass]" />
         ))}
       </ul>
     );

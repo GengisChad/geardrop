@@ -39,15 +39,14 @@ export function ProductCard({
       data-testid="product-card"
       data-slug={product.slug}
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-[--radius-card] border border-grey-200 bg-white",
-        "transition-[border-color,box-shadow,transform] duration-300",
-        "hover:-translate-y-0.5 hover:border-violet hover:shadow-[0_18px_40px_-18px_rgba(122,60,255,0.45)]",
+        "gd-glass-card gd-glass-interactive group relative flex flex-col overflow-hidden rounded-[--radius-glass]",
         className,
       )}
     >
       <div className="relative">
-        {/* Product art always sits on a light plate — every mockup does this. (audit §7.6) */}
-        <div className="relative aspect-[4/3] overflow-hidden bg-white">
+        {/* The glass surface is 85% white, so it reads as the light plate every mockup
+            puts the product on (audit §7.6) while the ambient field glows faintly through. */}
+        <div className="gd-product-plate relative aspect-[4/3] overflow-hidden rounded-b-[--radius-glass]">
           {image ? (
             <Image
               src={image.src}

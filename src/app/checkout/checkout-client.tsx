@@ -69,7 +69,7 @@ export function CheckoutClient() {
     );
   }
 
-  if (!hydrated) return <div className="mt-8 h-96 animate-pulse rounded-[--radius-card] bg-grey-200" />;
+  if (!hydrated) return <div className="gd-glass-panel mt-8 h-96 animate-pulse rounded-[--radius-glass]" />;
 
   if (lines.length === 0) {
     return (
@@ -118,7 +118,7 @@ export function CheckoutClient() {
           ))}
         </ol>
 
-        <fieldset className="rounded-[--radius-card] border border-grey-200 bg-white p-5">
+        <fieldset className="gd-glass-panel rounded-[--radius-glass] p-5">
           <legend className="gd-display px-1 text-small font-bold tracking-wider text-graphite">Contatti</legend>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <Field label="Email" htmlFor="email" error={errors.email?.message} className="sm:col-span-2">
@@ -148,7 +148,7 @@ export function CheckoutClient() {
           </div>
         </fieldset>
 
-        <fieldset className="rounded-[--radius-card] border border-grey-200 bg-white p-5">
+        <fieldset className="gd-glass-panel rounded-[--radius-glass] p-5">
           <legend className="gd-display px-1 text-small font-bold tracking-wider text-graphite">Spedizione</legend>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <Field label="Nome" htmlFor="firstName" error={errors.firstName?.message}>
@@ -234,7 +234,7 @@ export function CheckoutClient() {
           </div>
         </fieldset>
 
-        <fieldset className="rounded-[--radius-card] border border-grey-200 bg-white p-5">
+        <fieldset className="gd-glass-panel rounded-[--radius-glass] p-5">
           <legend className="gd-display px-1 text-small font-bold tracking-wider text-graphite">Pagamento</legend>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {PAYMENT_METHODS.map((method) => (
@@ -263,7 +263,7 @@ export function CheckoutClient() {
         </fieldset>
       </div>
 
-      <aside className="sticky top-28 flex flex-col gap-4 rounded-[--radius-card] border border-grey-200 bg-white p-5">
+      <aside data-testid="checkout-summary" className="gd-glass-panel sticky top-28 flex flex-col gap-4 rounded-[--radius-glass] p-5">
         <h2 className="gd-display text-small font-bold tracking-wider text-graphite">Il tuo ordine</h2>
 
         <ul className="flex flex-col gap-3">

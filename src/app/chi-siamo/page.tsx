@@ -33,7 +33,7 @@ const PILLARS = [
 export default function ChiSiamoPage() {
   return (
     <>
-      <section className="relative overflow-hidden border-b border-grey-200 bg-grey-100">
+      <section className="gd-glass gd-section-ambient relative mx-4 mt-4 overflow-hidden rounded-[--radius-glass-lg] sm:mx-6">
         <div className="gd-streaks absolute inset-0" aria-hidden="true" />
         <div className="relative mx-auto max-w-3xl px-4 py-14 sm:px-6">
           <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Chi siamo" }]} className="mb-6" />
@@ -56,7 +56,7 @@ export default function ChiSiamoPage() {
 
         <ul className="mt-6 grid gap-4 sm:grid-cols-2">
           {PILLARS.map((pillar) => (
-            <li key={pillar.title} className="rounded-[--radius-card] border border-grey-200 bg-white p-5">
+            <li key={pillar.title} className="gd-glass-card gd-glass-interactive rounded-[--radius-glass] p-5">
               <h3 className="text-h3 font-bold text-graphite">{pillar.title}</h3>
               <p className="mt-2 text-small leading-relaxed text-grey-600">{pillar.body}</p>
             </li>

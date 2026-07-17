@@ -14,14 +14,17 @@ type CatalogHeroProps = {
 /** Category banner from mockup-catalog-desktop / mockup-catalog-mobile. */
 export function CatalogHero({ title, tagline, description, crumbs, art }: CatalogHeroProps) {
   return (
-    <section className="relative overflow-hidden border-b border-grey-200 bg-grey-100">
+    <section
+      data-testid="catalog-hero"
+      className="gd-glass gd-section-ambient relative mx-4 mt-4 overflow-hidden rounded-[--radius-glass-lg] sm:mx-6"
+    >
       <div className="gd-streaks absolute inset-0" aria-hidden="true" />
       <div
         aria-hidden="true"
         className="absolute -right-16 top-1/2 size-[30rem] -translate-y-1/2 rounded-full bg-violet/12 blur-3xl"
       />
 
-      <div className="relative mx-auto grid max-w-[1400px] items-center gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[1.3fr_1fr] lg:py-12">
+      <div className="relative mx-auto grid max-w-[1400px] items-center gap-6 px-5 py-8 sm:px-8 lg:grid-cols-[1.3fr_1fr] lg:py-12">
         <div>
           <Breadcrumbs items={crumbs} className="mb-4" />
           <h1 className="gd-display-wide text-[2rem] font-extrabold leading-[0.98] text-graphite sm:text-[2.75rem]">

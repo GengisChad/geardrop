@@ -15,9 +15,12 @@ export function StatusLegend() {
   return (
     <section className="mx-auto max-w-[1400px] px-4 pb-10 sm:px-6">
       <h2 className="sr-only">Legenda della disponibilità</h2>
-      <ul className="grid grid-cols-2 gap-px overflow-hidden rounded-[--radius-card] border border-grey-200 bg-grey-200 lg:grid-cols-4">
+      <ul
+        data-testid="status-legend"
+        className="gd-glass-compact grid grid-cols-2 gap-px overflow-hidden rounded-[--radius-glass] lg:grid-cols-4"
+      >
         {ORDER.map(({ status, Icon, ring, tone }) => (
-          <li key={status} className="flex items-center gap-3 bg-white p-4">
+          <li key={status} className="flex items-center gap-3 border-white/50 bg-white/24 p-4">
             <span className={cn("inline-flex size-9 shrink-0 items-center justify-center rounded-full", ring)}>
               <Icon className={cn("size-4.5", tone)} strokeWidth={2.5} aria-hidden="true" />
             </span>

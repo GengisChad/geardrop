@@ -1,0 +1,207 @@
+# Public Storefront Liquid Glass Extension
+
+## Goal
+
+Extend the existing liquid-glass language from the hero and selected commerce surfaces to every public storefront route, without flattening the hierarchy into one repeated translucent card treatment. The result must remain bright, legible, performant and recognizably GEAR//DROP.
+
+## Scope
+
+The second commit covers only the public frontend on the existing `codex/liquid-glass-coherence` branch and PR #1:
+
+- `/`
+- `/negozio` and `/negozio/*`
+- `/prodotto/*`
+- `/carrello`
+- `/checkout`
+- `/preferiti`
+- `/ricerca`
+- `/account`
+- `/chi-siamo`
+- `/assistenza/*`
+- `/legale/*`
+- `/404`
+
+Admin UI, Supabase, commerce behavior, information architecture, copy and product data are out of scope.
+
+The implementation must be produced from the isolated worktree based on commit `aededc8`. Pre-existing changes and deletions in the original working tree must not be copied into the commit. In particular, Bundle, Club and Status Legend remain present and functional in PR #1.
+
+## Architecture
+
+`src/styles/globals.css` is the single material source of truth. Components consume short reusable utility classes and semantic variants; they must not reproduce long Tailwind strings for blur, border, highlight and multi-layer shadows.
+
+Five public material utilities remain the stable component API:
+
+1. `gd-glass` — display material for the hero and large promotional surfaces.
+2. `gd-glass-card` — readable promotional and commerce cards.
+3. `gd-glass-panel` — more opaque functional panels and forms.
+4. `gd-glass-compact` — controls, tabs, pagination, small floating actions and status groups.
+5. `gd-glass-dark` — graphite bands, footer surfaces and dark promotional modules.
+
+`gd-glass-interactive` remains a behavior modifier rather than a sixth material. Dedicated composition utilities may derive from the five materials for image plates, editorial panels and section transitions, but they must consume the same variables.
+
+## Material tokens
+
+Each of the five tiers owns CSS custom properties for:
+
+- fallback background;
+- translucent background and optional material gradient;
+- border/rim;
+- inner highlight;
+- ambient shadow;
+- backdrop blur;
+- backdrop saturation;
+- hover background, border and shadow;
+- active background, border, shadow and transform;
+- focus ring color and shadow;
+- reduced-motion behavior.
+
+The reusable utilities read those properties through a shared internal material declaration. Both `backdrop-filter` and `-webkit-backdrop-filter` are emitted. An opaque-enough fallback is declared before translucent enhancement and reinforced inside `@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)))`.
+
+### Display
+
+- Highest translucency and most visible depth.
+- Used only where the background field has enough variation to make refraction visible.
+- May use a restrained diagonal pearl/violet reflection.
+- Text remains on a sufficiently opaque inner region when necessary.
+
+### Card
+
+- More opaque than display glass.
+- Product imagery sits on a dedicated plate that is more opaque than the card body and never receives blur.
+- Interactive hover lifts by 2–4 px, adjusts rim and shadow, and never runs continuously.
+
+### Panel
+
+- Most opaque light material.
+- Used for cart, checkout, filters, account and text-heavy content.
+- Error, availability and form validation colors remain semantic and are never replaced by neutral glass.
+
+### Compact
+
+- Lower blur cost and tighter shadow.
+- Minimum interactive target is 44 px where the element is actionable.
+- Used for inputs, selects, pagination, tabs, thumbnail selectors, search, floating buttons and Status Legend cells.
+
+### Dark
+
+- Graphite fallback with a restrained translucent light rim.
+- High-contrast white/lime copy and visible lime focus treatment.
+- Used by Bundle, trust surfaces, footer treatments and other graphite compositions.
+
+## Global ambient background
+
+The page background uses a pearl-grey base plus three very low-alpha radial fields: violet near the upper-right, lime near the upper-left and violet near the lower page. A nearly invisible technical micro-grid is added with one-pixel linear gradients at low opacity. The field remains fixed behind content so glass blur has something to refract while section backgrounds stay visually continuous.
+
+No black page background, continuous neon, strong glow, obvious noise texture or animated ambient field is allowed.
+
+## Component mapping
+
+### Navigation and compact controls
+
+- Header: compact glass with a thin luminous rim, soft scroll separation and restrained active navigation state.
+- Mobile menu: panel glass because it carries navigation copy over an overlay.
+- Bottom tab bar and sticky buy bar: compact glass with opaque fallback and clear separation from content.
+- Search, cart, account, selects, pagination, tabs, carousel arrows and small buttons: compact glass states generated by shared utilities.
+- No announcement/top bar is introduced.
+
+### Home
+
+- Hero keeps display glass and the enlarged right-side artwork.
+- Category tiles and product cards use card glass with distinct image plates.
+- Home sections use subtle section-transition utilities and technical dividers instead of identical route-level wrappers.
+- Competitive picks remain card glass with stronger image plates and semantic CTAs.
+- Trust surfaces use dark glass inside an authoritative graphite composition.
+- Bundle uses an energetic dark-display composition: graphite fallback, controlled violet/lime ambience, strong price contrast and an unambiguous CTA.
+- Club uses an editorial display-derived panel with wider typographic composition and less commerce-card framing.
+- Status Legend uses compact glass cells while availability, incoming, sold-out and preorder indicators retain their exact semantic colors and labels.
+
+### Catalogue
+
+- Catalogue hero uses display-derived depth rather than a flat grey strip.
+- Desktop filters are a sticky panel surface.
+- Mobile filters remain a panel bottom sheet with real blur and a high-opacity fallback.
+- Sort, pagination and filter controls use compact glass.
+- Empty state and loading skeletons use panel/card material plates instead of generic flat grey rectangles.
+
+### Product detail
+
+- Gallery is panel glass with an opaque product-image plate.
+- Thumbnails are compact controls with semantic selected state.
+- Buy panel is panel glass with clear price, stock and CTA hierarchy.
+- Quantity, tabs, accordions and specification rows use compact or panel treatments according to information density.
+- Related products inherit card glass.
+- Mobile sticky buy bar remains compact, readable and layered above any page background.
+
+### Cart and checkout
+
+- Line items, summaries, shipping progress, fieldsets and order review use panel glass.
+- Inputs, radios, selects and coupon controls use compact glass.
+- Prices, totals, errors and payment CTA retain the strongest hierarchy.
+- Sticky sidebars use opaque panel fallback so readability never depends on backdrop support.
+
+### Secondary routes
+
+- Account action cards use interactive card glass while notices remain semantic.
+- Wishlist and search reuse product-card and empty-state materials; loading states use material skeleton plates.
+- About, assistance and legal pages use deliberate text-panel composition with section dividers rather than one oversized wrapper.
+- The 404 becomes a focused display-glass composition while preserving its copy, actions and decorative emblem.
+- Footer stays graphite and authoritative; only nested newsletter/payment/status surfaces use dark-glass cues.
+
+## Interaction, accessibility and performance
+
+- Contrast must meet WCAG AA for body copy and controls.
+- Focus remains explicit and uses material-specific tokens; hover never replaces focus.
+- Disabled and error states remain distinct without relying only on color.
+- `prefers-reduced-motion: reduce` removes hover lift and non-essential motion.
+- Product images never receive backdrop blur or filter effects.
+- No continuous shine, looping card animation, distortion or strong glow is introduced.
+- Blur values are lower on compact controls and mobile where possible.
+- Layering avoids accidental backdrop-filter stacking contexts that trap fixed menus or sheets.
+
+## Responsive requirements
+
+Verify at minimum:
+
+- 390×844 mobile;
+- 430×932 large mobile;
+- 768×1024 tablet;
+- 1440×900 desktop.
+
+At every size there must be no horizontal overflow, clipped text, illegible glass, footer/bottom-bar collision or sticky-buy overlap. Desktop and mobile use the same material family with opacity and layout adjusted to context rather than visually unrelated implementations.
+
+## Testing
+
+Extend Playwright coverage before production changes. Tests must initially fail for missing public-route material contracts and then pass after implementation.
+
+Required E2E contracts:
+
+- representative material exists on every principal public route;
+- all five material tiers have non-`none` computed backdrop filtering in Chromium and real fallback backgrounds;
+- header remains sticky and compact;
+- filter sheet uses panel glass;
+- product card, buy panel, cart summary and checkout summary use their assigned tier;
+- mobile sticky buy bar uses compact glass;
+- reduced-motion disables material lift/animation;
+- no horizontal overflow at the required mobile/tablet viewports.
+
+Final verification commands:
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm exec playwright test --workers=1
+pnpm build
+```
+
+Manual review covers Chromium blur, Safari/iOS fallback, all required viewport sizes, semantic state contrast, keyboard focus and product-image clarity.
+
+## Delivery
+
+The completed implementation is amended into one second commit on top of `aededc8`:
+
+```text
+style: extend liquid glass system across public storefront
+```
+
+That commit is pushed to `codex/liquid-glass-coherence`, updating PR #1. The PR description is updated with additional components, audited routes, verification results and remaining manual checks. The PR remains open and is not merged.

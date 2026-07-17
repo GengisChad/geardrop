@@ -57,7 +57,7 @@ export function NewsletterForm({ className }: { className?: string }) {
             validate: (value) => schema.shape.email.safeParse(value).success || "Inserisci un indirizzo email valido.",
           })}
           className={cn(
-            "h-11 min-w-0 flex-1 rounded-full border bg-white/5 px-4 text-small text-white placeholder:text-grey-600",
+            "h-11 min-w-0 flex-1 rounded-full border bg-white/5 px-4 text-small text-white placeholder:text-grey-400",
             "focus:outline-none focus:ring-2 focus:ring-lime",
             errors.email ? "border-soldout-solid" : "border-white/20",
           )}

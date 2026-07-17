@@ -26,9 +26,9 @@ export function WishlistButton({ slug, name, size = "sm", className }: WishlistB
       aria-label={isSaved ? `Rimuovi ${name} dai preferiti` : `Aggiungi ${name} ai preferiti`}
       data-testid="wishlist-toggle"
       className={cn(
-        "inline-flex items-center justify-center rounded-full bg-white/80 backdrop-blur transition-colors duration-200",
-        "hover:bg-white",
-        size === "sm" ? "size-8" : "size-11 border border-grey-300",
+        "gd-glass-compact gd-glass-interactive inline-flex items-center justify-center rounded-full",
+        "size-11",
+        size === "md" && "border border-grey-300",
         className,
       )}
     >

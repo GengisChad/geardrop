@@ -35,7 +35,7 @@ export function StickyBuyBar({ product }: { product: Product }) {
           transition={{ type: "spring", stiffness: 380, damping: 38 }}
           data-testid="sticky-buy-bar"
           // Sits above the mobile tab bar.
-          className="fixed inset-x-0 bottom-[4.25rem] z-40 border-t border-grey-200 bg-white/95 backdrop-blur lg:bottom-0"
+          className="gd-glass-compact fixed inset-x-0 bottom-[4.25rem] z-40 border-x-0 border-b-0 lg:bottom-0"
         >
           <div className="mx-auto flex max-w-[1400px] items-center gap-3 px-4 py-3 sm:px-6">
             {image ? (

@@ -41,10 +41,10 @@ function CatalogSkeleton() {
   return (
     <div className="mx-auto max-w-[1400px] px-4 pb-16 sm:px-6">
       <div className="grid gap-8 lg:grid-cols-[16rem_1fr]">
-        <div className="hidden h-96 animate-pulse rounded-[--radius-card] bg-grey-200 lg:block" />
+        <div className="gd-glass-panel hidden h-96 animate-pulse rounded-[--radius-glass] lg:block" />
         <ul className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 8 }, (_, i) => (
-            <li key={i} className="h-80 animate-pulse rounded-[--radius-card] bg-grey-200" />
+            <li key={i} className="gd-glass-card h-80 animate-pulse rounded-[--radius-glass]" />
           ))}
         </ul>
       </div>

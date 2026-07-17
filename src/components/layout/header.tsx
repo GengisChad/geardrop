@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { User } from "lucide-react";
-import { AnnouncementBar } from "@/components/layout/announcement-bar";
 import { CartIndicator } from "@/components/layout/cart-indicator";
 import { Logo } from "@/components/layout/logo";
 import { MobileMenu } from "@/components/layout/mobile-menu";
@@ -15,52 +14,57 @@ export function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-grey-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
-      <AnnouncementBar />
+    <header className="sticky top-0 z-50">
+      {/* Fades content scrolling under the floating bar so nothing peeks above the pill. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-grey-100 via-grey-100/70 to-transparent"
+      />
 
-      <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-3 px-4 sm:px-6 lg:h-20 lg:gap-6">
-        <MobileMenu />
-        <Logo priority className="shrink-0" />
+      <div className="relative mx-auto max-w-[1400px] px-3 pt-3 sm:px-6 sm:pt-4">
+        {/* One floating glass pill — no top bar above it. */}
+        <div className="gd-glass-compact flex items-center gap-3 rounded-full px-3 py-2 sm:px-5 sm:py-2.5">
+          <MobileMenu />
+          <Logo priority className="shrink-0" />
 
-        <span aria-hidden="true" className="mx-2 hidden h-7 w-px -skew-x-12 bg-grey-300 lg:block" />
+          <nav aria-label="Navigazione principale" className="hidden flex-1 justify-center lg:flex">
+            <ul className="flex items-center gap-5 xl:gap-7">
+              {MAIN_NAV.map((item) => {
+                const active = pathname === item.href.split("?")[0];
+                return (
+                  <li key={item.label}>
+                    <Link
+                      href={item.href}
+                      aria-current={active ? "page" : undefined}
+                      className={cn(
+                        "gd-display relative py-2 text-small font-bold tracking-wider transition-colors",
+                        "after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5 after:origin-left after:scale-x-0",
+                        "after:bg-lime after:transition-transform after:duration-300 hover:after:scale-x-100",
+                        item.tone === "lime" && "text-lime-ink hover:text-graphite",
+                        item.tone === "violet" && "text-violet hover:text-violet-ink",
+                        !item.tone && "text-graphite hover:text-violet",
+                        active && "after:scale-x-100",
+                      )}
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
 
-        <nav aria-label="Navigazione principale" className="hidden flex-1 lg:block">
-          <ul className="flex items-center gap-5 xl:gap-7">
-            {MAIN_NAV.map((item) => {
-              const active = pathname === item.href.split("?")[0];
-              return (
-                <li key={item.label}>
-                  <Link
-                    href={item.href}
-                    aria-current={active ? "page" : undefined}
-                    className={cn(
-                      "gd-display relative py-2 text-small font-bold tracking-wider transition-colors",
-                      "after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5 after:origin-left after:scale-x-0",
-                      "after:bg-lime after:transition-transform after:duration-300 hover:after:scale-x-100",
-                      item.tone === "lime" && "text-lime-ink hover:text-graphite",
-                      item.tone === "violet" && "text-violet hover:text-violet-ink",
-                      !item.tone && "text-graphite hover:text-violet",
-                      active && "after:scale-x-100",
-                    )}
-                  >
-                    {item.label}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-
-        <div className="ml-auto flex items-center gap-0.5 sm:gap-1">
-          <SearchBox />
-          <Link
-            href="/account"
-            aria-label="Account"
-            className="hidden size-10 items-center justify-center rounded-full transition-colors hover:bg-grey-100 sm:inline-flex"
-          >
-            <User className="size-5 text-graphite" strokeWidth={2} aria-hidden="true" />
-          </Link>
-          <CartIndicator />
+          <div className="ml-auto flex items-center gap-0.5 lg:ml-0">
+            <SearchBox />
+            <Link
+              href="/account"
+              aria-label="Account"
+              className="hidden size-10 items-center justify-center rounded-full transition-colors hover:bg-white/60 sm:inline-flex"
+            >
+              <User className="size-5 text-graphite" strokeWidth={2} aria-hidden="true" />
+            </Link>
+            <CartIndicator />
+          </div>
         </div>
       </div>
     </header>
