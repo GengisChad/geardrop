@@ -38,6 +38,89 @@
 
 The first execution checkpoint contains only pinned Supabase dependencies, `.env.example`, browser/request-scoped/server-only clients, proxy session refresh, initial local migrations and enums, constraints, initial RLS and role helpers, the idempotent zero-stock seed, transactional inventory adjustment, the Supabase provider scaffold, foundational tests, and local setup documentation. It excludes account UI, checkout UI, product editor, media library, homepage manager, coupon UI, order UI, advanced settings, remote reset, remote migration push, real credentials, and every remote Supabase mutation.
 
+## Checkpoint 1B — GitHub Actions database runtime gate
+
+Local Docker is not part of the approved workflow. Runtime validation runs only inside GitHub Actions on `ubuntu-latest`, using the local Supabase stack inside the ephemeral runner and no remote credentials, access token, project ref, linked database, or IBNApp resource.
+
+### Task 1B.1: Add the isolated database workflow
+
+**Files:**
+
+- Create: `.github/workflows/supabase-database-ci.yml`
+- Create: `tests/unit/supabase-ci-workflow.test.ts`
+- Modify: `package.json`
+
+**Interfaces:**
+
+- Consumes: the pinned Node, pnpm, and Supabase CLI versions already declared by the repository.
+- Produces: a workflow triggered by pushes to `codex/admin-supabase`, pull requests to `main`, and manual dispatch.
+
+- [ ] Write a failing source-contract test that requires all three triggers, `ubuntu-latest`, the sixteen validation steps, unconditional `supabase stop --no-backup`, and the absence of remote Supabase secrets or linked commands.
+- [ ] Run `pnpm test -- tests/unit/supabase-ci-workflow.test.ts` and observe failure because the workflow is absent.
+- [ ] Implement the workflow with `actions/checkout@v4`, `pnpm/action-setup@v4` at pnpm `11.13.0`, `actions/setup-node@v4` at Node `24.16.0`, and `supabase/setup-cli@v1` at CLI `2.109.1`.
+- [ ] Run the seed a second time with `supabase db query --local --file supabase/seed.sql`.
+- [ ] Generate `/tmp/database.types.ts`, upload it as a diagnostic artifact, compare it byte-for-byte with `src/lib/supabase/database.types.ts`, then run application verification.
+- [ ] Verify the source-contract test passes.
+
+### Task 1B.2: Expand runtime database coverage
+
+**Files:**
+
+- Modify: `supabase/tests/002_commerce_schema.test.sql`
+- Modify: `supabase/tests/003_security_and_inventory.test.sql`
+- Create: `supabase/tests/004_rls_roles.test.sql`
+- Create: `supabase/tests/005_inventory_and_bootstrap.test.sql`
+
+**Interfaces:**
+
+- Consumes: five ordered local migrations plus the seed executed twice.
+- Produces: pgTAP evidence for exact schema counts, seed idempotency, role isolation, inventory locking/ledger behavior, and the two-owner bootstrap contract.
+
+- [ ] Assert the five migration versions are present in order, exactly 22 commerce tables, 12 enums, 52 policies, and RLS on all 22 exposed tables.
+- [ ] Assert exactly four categories, eight products, nine images, one settings row, zero nonzero-stock products, and no duplicated natural keys after the second seed.
+- [ ] Add anon fixtures proving inactive categories, draft/inactive products, and products without published images are invisible.
+- [ ] Add two customers and owner/admin/editor fixtures; prove customers see only their own orders, editors see none, and owner/admin see all.
+- [ ] Prove direct stock updates are denied, `adjust_inventory()` locks and updates stock, inserts one movement, and rolls back attempts to make stock negative.
+- [ ] Prove the bootstrap rejects any input other than two distinct confirmed Auth users, inserts exactly two owners once, and rejects reuse.
+
+### Task 1B.3: Generate and enforce Supabase database types
+
+**Files:**
+
+- Create from CI artifact: `src/lib/supabase/database.types.ts`
+- Modify: `src/lib/supabase/client.ts`
+- Modify: `src/lib/supabase/server.ts`
+- Modify: `src/lib/supabase/admin.ts`
+- Modify: `src/lib/supabase/proxy.ts`
+- Modify: `src/lib/auth/guards.ts`
+- Modify: `src/lib/commerce/supabase-provider.ts`
+
+**Interfaces:**
+
+- Consumes: types generated from the fully migrated CI database with `supabase gen types typescript --local --schema public`.
+- Produces: `SupabaseClient<Database>` throughout the application boundary and a CI diff gate for schema drift.
+
+- [ ] Let the first CI run upload the generated type artifact and fail if the committed file is absent or stale.
+- [ ] Download the artifact, commit the exact generated file, and parameterize every Supabase client/factory with `Database`.
+- [ ] Run lint, typecheck, unit tests, and build through the same workflow.
+
+### Task 1B.4: Publish and iterate to green
+
+**Files:**
+
+- Modify only files proven necessary by GitHub Actions logs.
+
+**Interfaces:**
+
+- Consumes: authenticated GitHub CLI and branch `codex/admin-supabase`.
+- Produces: a draft pull request into `main` and a green Checkpoint 1B workflow.
+
+- [ ] Commit the initial CI work as `ci: validate Supabase migrations and RLS in GitHub Actions`.
+- [ ] Push `codex/admin-supabase` and open the draft PR titled `feat: add Supabase commerce backend and admin dashboard`.
+- [ ] State in the PR body that implementation is incomplete, the PR exists to execute database CI, and no remote Supabase project or migration was used.
+- [ ] Inspect every failed run, make the smallest tested correction, push again, and wait until all required steps pass.
+- [ ] Stop at Checkpoint 1B and do not begin Phase 2.
+
 ## Global Constraints
 
 - Execute only in `C:\Users\feder\Downloads\GearDrop-admin-supabase` on branch `codex/admin-supabase`.

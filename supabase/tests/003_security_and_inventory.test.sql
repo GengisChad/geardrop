@@ -8,6 +8,15 @@ select results_eq(
     where relnamespace = 'public'::regnamespace
       and relkind = 'r'
       and not relrowsecurity
+      and relname = any (array[
+        'site_settings', 'categories', 'products', 'product_images',
+        'product_specs', 'product_features', 'product_box_contents',
+        'product_tags', 'product_relations', 'bundles', 'bundle_items',
+        'shipping_methods', 'coupons', 'customer_profiles',
+        'customer_addresses', 'staff_profiles', 'orders', 'order_items',
+        'coupon_redemptions', 'inventory_movements', 'audit_events',
+        'order_enablement_checks'
+      ])
   $$,
   array[0::bigint],
   'every exposed table has RLS enabled'

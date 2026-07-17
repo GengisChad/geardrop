@@ -1,26 +1,21 @@
-# Supabase local setup
+# Supabase development and CI setup
 
-This phase is local-only. Do not link the project, run `db push`, reset a linked database, or paste production credentials before the explicit remote rollout gate.
+Database runtime validation is CI-only. Do not install or require Docker Desktop on contributor computers. Do not link the project, run `db push`, reset a linked database, or paste production credentials before the explicit remote rollout gate.
 
-## Prerequisites
+## Contributor prerequisites
 
 - Node.js and the pinned pnpm version from `package.json`.
-- Docker Desktop running with Linux containers.
-- A copy of `.env.example` named `.env.local`; populate it only with values printed by the local Supabase CLI.
+- A copy of `.env.example` named `.env.local` only when developing browser/Auth integration; never use values from an unrelated remote project.
 
 The local Auth configuration enables email/password signup. Email confirmation is disabled only in the generated local development configuration. Production confirmation and redirect settings must be reviewed at the remote rollout gate.
 
-## Start and verify the local stack
+## Authoritative database verification
 
-```powershell
-pnpm install --frozen-lockfile
-pnpm db:start
-pnpm db:reset
-pnpm db:test
-pnpm db:types
-```
+`.github/workflows/supabase-database-ci.yml` starts a fully local Supabase stack inside an ephemeral `ubuntu-latest` GitHub runner. It applies migrations, runs the seed twice, executes pgTAP and database lint, generates database types, compares them with the committed file, and then runs all application checks.
 
-`pnpm db:reset` is explicitly local. It applies the CLI-generated migrations and then `supabase/seed.sql`. The seed is generated from the checked-in catalogue with:
+The workflow contains no access token, project ref, remote password, service-role credential, linked command, or IBNApp reference. A CI run cannot push or repair remote migrations.
+
+The seed is generated from the checked-in catalogue with:
 
 ```powershell
 pnpm seed:supabase
@@ -46,11 +41,5 @@ Never cache a server or privileged client in module scope. Server authorization 
 - No direct table grant can insert orders or update `products.stock_quantity`.
 
 The Supabase provider is an injected, request-scoped adapter scaffold. Activating it in application routes is a later checkpoint.
-
-## Stop the local stack
-
-```powershell
-pnpm db:stop
-```
 
 See `bootstrap-first-owners.md` for the post-gate owner procedure and `enable-orders-checklist.md` for the mandatory activation gate.
