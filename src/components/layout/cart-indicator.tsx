@@ -17,7 +17,7 @@ export function CartIndicator({ className }: { className?: string }) {
     <Link
       href="/carrello"
       data-testid="cart-link"
-      className={cn("relative inline-flex size-10 items-center justify-center rounded-full transition-colors hover:bg-grey-100", className)}
+      className={cn("gd-glass-compact relative inline-flex size-11 items-center justify-center rounded-full", className)}
       aria-label={visible ? `Carrello, ${count} ${count === 1 ? "articolo" : "articoli"}` : "Carrello, vuoto"}
     >
       <ShoppingCart className="size-5 text-graphite" strokeWidth={2} aria-hidden="true" />

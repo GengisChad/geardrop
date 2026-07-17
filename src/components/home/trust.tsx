@@ -24,7 +24,7 @@ export function TrustBandDark({ className }: { className?: string }) {
     <section className={cn("mx-auto max-w-[1400px] px-4 sm:px-6", className)}>
       <h2 className="sr-only">Perché comprare da GEAR//DROP</h2>
       {/* Dark frosted glass floating on the light page. */}
-      <div className="relative overflow-hidden rounded-[--radius-glass-lg] bg-graphite/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_30px_60px_-30px_rgba(18,20,23,0.65)] backdrop-blur-2xl">
+      <div className="gd-glass-dark relative overflow-hidden rounded-[--radius-glass-lg]">
         <div
           aria-hidden="true"
           className="absolute -left-16 top-1/2 size-72 -translate-y-1/2 rounded-full bg-violet/25 blur-3xl"

@@ -19,7 +19,8 @@
   --color-grey-200: #e9ebee;
   --color-grey-300: #d7dce3;
   --color-grey-400: #b9bec7;
-  --color-grey-600: #7a808c;
+  /* Secondary copy on pearl/glass: dark enough to preserve WCAG AA at body sizes. */
+  --color-grey-600: #5f646e;
 
   /* Derived: only for hairlines and scrims, never as a flat surface. */
   --color-violet-ink: #5b21d6;
@@ -95,9 +96,9 @@
     *,
     *::before,
     *::after {
-      animation-duration: 0.01ms !important;
+      animation-duration: 0s !important;
       animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
+      transition-duration: 0s !important;
     }
   }
 
@@ -121,7 +122,10 @@
     background:
       radial-gradient(58rem 58rem at 88% -12%, color-mix(in srgb, var(--color-violet) 12%, transparent), transparent 60%),
       radial-gradient(48rem 48rem at -8% 18%, color-mix(in srgb, var(--color-lime) 10%, transparent), transparent 55%),
-      radial-gradient(42rem 42rem at 50% 116%, color-mix(in srgb, var(--color-violet) 8%, transparent), transparent 60%);
+      radial-gradient(42rem 42rem at 50% 116%, color-mix(in srgb, var(--color-violet) 8%, transparent), transparent 60%),
+      linear-gradient(color-mix(in srgb, var(--color-graphite) 2.4%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--color-graphite) 2.4%, transparent) 1px, transparent 1px);
+    background-size: auto, auto, auto, 52px 52px, 52px 52px;
   }
 
   /* Titles are always uppercase display; body copy never is. (audit §7) */
@@ -203,107 +207,183 @@
    ========================================================================== */
 
 @utility gd-glass {
-  background-color: color-mix(in srgb, white 62%, transparent);
-  background-image: linear-gradient(
-    135deg,
-    color-mix(in srgb, white 48%, transparent) 0%,
-    color-mix(in srgb, white 8%, transparent) 46%,
-    color-mix(in srgb, var(--color-violet) 5%, transparent) 100%
-  );
-  -webkit-backdrop-filter: blur(24px) saturate(1.55);
-  backdrop-filter: blur(24px) saturate(1.55);
-  border: 1px solid color-mix(in srgb, white 72%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 88%, transparent),
-    inset 0 -1px 0 color-mix(in srgb, var(--color-violet) 5%, transparent),
-    0 24px 60px -34px color-mix(in srgb, var(--color-graphite) 42%, transparent);
+  --gd-material-fallback: #f8f9fb;
+  --gd-material-background-color: color-mix(in srgb, white 66%, transparent);
+  --gd-material-background: linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.18) 50%, rgba(122, 60, 255, 0.07));
+  --gd-material-border: rgba(255, 255, 255, 0.78);
+  --gd-material-highlight: rgba(255, 255, 255, 0.92);
+  --gd-material-shadow: 0 28px 70px -38px rgba(18, 20, 23, 0.46);
+  --gd-material-blur: 24px;
+  --gd-material-saturation: 1.5;
+  --gd-material-hover-background: linear-gradient(135deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.24) 50%, rgba(122, 60, 255, 0.09));
+  --gd-material-hover-border: rgba(255, 255, 255, 0.92);
+  --gd-material-hover-shadow: 0 30px 74px -38px rgba(91, 33, 214, 0.34);
+  --gd-material-active-background: linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(237, 228, 255, 0.48));
+  --gd-material-active-border: rgba(122, 60, 255, 0.3);
+  --gd-material-active-shadow: 0 18px 42px -30px rgba(18, 20, 23, 0.4);
+  --gd-material-focus-ring: rgba(122, 60, 255, 0.62);
 }
 
 @utility gd-glass-card {
-  background-color: color-mix(in srgb, white 74%, transparent);
-  background-image: linear-gradient(
-    145deg,
-    color-mix(in srgb, white 42%, transparent) 0%,
-    transparent 52%,
-    color-mix(in srgb, var(--color-violet) 4%, transparent) 100%
-  );
-  -webkit-backdrop-filter: blur(28px) saturate(1.5);
-  backdrop-filter: blur(28px) saturate(1.5);
-  border: 1px solid color-mix(in srgb, white 78%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 94%, transparent),
-    inset 0 -1px 0 color-mix(in srgb, var(--color-violet) 6%, transparent),
-    0 26px 60px -34px color-mix(in srgb, var(--color-graphite) 38%, transparent);
+  --gd-material-fallback: #f8f9fb;
+  --gd-material-background-color: color-mix(in srgb, white 78%, transparent);
+  --gd-material-background: linear-gradient(145deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.12) 54%, rgba(122, 60, 255, 0.055));
+  --gd-material-border: rgba(255, 255, 255, 0.82);
+  --gd-material-highlight: rgba(255, 255, 255, 0.96);
+  --gd-material-shadow: 0 24px 58px -36px rgba(18, 20, 23, 0.4);
+  --gd-material-blur: 22px;
+  --gd-material-saturation: 1.42;
+  --gd-material-hover-background: linear-gradient(145deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.16) 54%, rgba(122, 60, 255, 0.075));
+  --gd-material-hover-border: rgba(165, 129, 255, 0.48);
+  --gd-material-hover-shadow: 0 28px 64px -36px rgba(91, 33, 214, 0.32);
+  --gd-material-active-background: linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(237, 228, 255, 0.42));
+  --gd-material-active-border: rgba(122, 60, 255, 0.38);
+  --gd-material-active-shadow: 0 16px 38px -28px rgba(18, 20, 23, 0.38);
+  --gd-material-focus-ring: rgba(122, 60, 255, 0.68);
 }
 
 @utility gd-glass-panel {
-  background-color: color-mix(in srgb, white 86%, transparent);
-  background-image: linear-gradient(
-    145deg,
-    color-mix(in srgb, white 34%, transparent) 0%,
-    transparent 58%,
-    color-mix(in srgb, var(--color-violet) 3%, transparent) 100%
-  );
-  -webkit-backdrop-filter: blur(30px) saturate(1.35);
-  backdrop-filter: blur(30px) saturate(1.35);
-  border: 1px solid color-mix(in srgb, white 84%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 96%, transparent),
-    inset 0 -1px 0 color-mix(in srgb, var(--color-graphite) 4%, transparent),
-    0 24px 54px -34px color-mix(in srgb, var(--color-graphite) 34%, transparent);
+  --gd-material-fallback: #fbfbfd;
+  --gd-material-background-color: color-mix(in srgb, white 90%, transparent);
+  --gd-material-background: linear-gradient(145deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.16) 60%, rgba(122, 60, 255, 0.035));
+  --gd-material-border: rgba(255, 255, 255, 0.88);
+  --gd-material-highlight: rgba(255, 255, 255, 0.98);
+  --gd-material-shadow: 0 22px 52px -36px rgba(18, 20, 23, 0.34);
+  --gd-material-blur: 24px;
+  --gd-material-saturation: 1.3;
+  --gd-material-hover-background: linear-gradient(145deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.2) 60%, rgba(122, 60, 255, 0.05));
+  --gd-material-hover-border: rgba(255, 255, 255, 0.96);
+  --gd-material-hover-shadow: 0 26px 56px -36px rgba(91, 33, 214, 0.24);
+  --gd-material-active-background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(237, 228, 255, 0.36));
+  --gd-material-active-border: rgba(122, 60, 255, 0.3);
+  --gd-material-active-shadow: 0 14px 34px -26px rgba(18, 20, 23, 0.34);
+  --gd-material-focus-ring: rgba(122, 60, 255, 0.62);
 }
 
 @utility gd-glass-compact {
-  background-color: color-mix(in srgb, white 76%, transparent);
-  background-image: linear-gradient(145deg, color-mix(in srgb, white 38%, transparent), transparent 62%);
-  -webkit-backdrop-filter: blur(20px) saturate(1.45);
-  backdrop-filter: blur(20px) saturate(1.45);
-  border: 1px solid color-mix(in srgb, white 72%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 90%, transparent),
-    0 12px 30px -22px color-mix(in srgb, var(--color-graphite) 42%, transparent);
-}
-
-/* For surfaces that carry a lot of text — more opaque, so legibility never depends on
-   what happens to be behind the glass. */
-@utility gd-glass-strong {
-  background-color: color-mix(in srgb, white 86%, transparent);
-  background-image: linear-gradient(145deg, color-mix(in srgb, white 34%, transparent), transparent 58%);
-  -webkit-backdrop-filter: blur(30px) saturate(1.35);
-  backdrop-filter: blur(30px) saturate(1.35);
-  border: 1px solid color-mix(in srgb, white 84%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 96%, transparent),
-    inset 0 -1px 0 color-mix(in srgb, var(--color-graphite) 4%, transparent),
-    0 24px 54px -34px color-mix(in srgb, var(--color-graphite) 34%, transparent);
+  --gd-material-fallback: #f9fafc;
+  --gd-material-background-color: color-mix(in srgb, white 84%, transparent);
+  --gd-material-background: linear-gradient(145deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.12) 66%);
+  --gd-material-border: rgba(255, 255, 255, 0.8);
+  --gd-material-highlight: rgba(255, 255, 255, 0.94);
+  --gd-material-shadow: 0 12px 30px -24px rgba(18, 20, 23, 0.42);
+  --gd-material-blur: 18px;
+  --gd-material-saturation: 1.36;
+  --gd-material-hover-background: linear-gradient(145deg, rgba(255, 255, 255, 0.76), rgba(237, 228, 255, 0.18));
+  --gd-material-hover-border: rgba(165, 129, 255, 0.48);
+  --gd-material-hover-shadow: 0 16px 34px -24px rgba(91, 33, 214, 0.3);
+  --gd-material-active-background: linear-gradient(145deg, rgba(255, 255, 255, 0.84), rgba(237, 228, 255, 0.32));
+  --gd-material-active-border: rgba(122, 60, 255, 0.42);
+  --gd-material-active-shadow: 0 8px 22px -18px rgba(18, 20, 23, 0.38);
+  --gd-material-focus-ring: rgba(122, 60, 255, 0.7);
 }
 
 @utility gd-glass-interactive {
-  transition-property: border-color, box-shadow, transform;
-  transition-duration: 300ms;
+  transition-property: background-color, background-image, border-color, box-shadow, transform;
+  transition-duration: 240ms;
   transition-timing-function: var(--ease-out-gear);
-
-  @media (hover: hover) {
-    &:hover {
-      transform: translateY(-4px);
-      border-color: color-mix(in srgb, var(--color-violet) 32%, white);
-      box-shadow:
-        inset 0 1px 0 color-mix(in srgb, white 96%, transparent),
-        inset 0 -1px 0 color-mix(in srgb, var(--color-violet) 10%, transparent),
-        0 28px 64px -34px color-mix(in srgb, var(--color-violet) 42%, transparent);
-    }
-  }
 }
 
 /* Glass over the graphite bands. */
 @utility gd-glass-dark {
-  background: color-mix(in srgb, white 7%, transparent);
-  -webkit-backdrop-filter: blur(22px) saturate(1.4);
-  backdrop-filter: blur(22px) saturate(1.4);
-  border: 1px solid color-mix(in srgb, white 12%, transparent);
+  --gd-material-fallback: #1b1e24;
+  --gd-material-background-color: rgba(18, 20, 23, 0.9);
+  --gd-material-background: linear-gradient(135deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.025) 54%, rgba(122, 60, 255, 0.12));
+  --gd-material-border: rgba(255, 255, 255, 0.14);
+  --gd-material-highlight: rgba(255, 255, 255, 0.18);
+  --gd-material-shadow: 0 24px 58px -28px rgba(0, 0, 0, 0.64);
+  --gd-material-blur: 20px;
+  --gd-material-saturation: 1.35;
+  --gd-material-hover-background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(122, 60, 255, 0.13));
+  --gd-material-hover-border: rgba(198, 255, 0, 0.28);
+  --gd-material-hover-shadow: 0 28px 62px -28px rgba(0, 0, 0, 0.72);
+  --gd-material-active-background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(122, 60, 255, 0.16));
+  --gd-material-active-border: rgba(198, 255, 0, 0.38);
+  --gd-material-active-shadow: 0 16px 38px -24px rgba(0, 0, 0, 0.72);
+  --gd-material-focus-ring: rgba(198, 255, 0, 0.72);
+}
+
+@layer utilities {
+  :where(.gd-glass, .gd-glass-card, .gd-glass-panel, .gd-glass-compact, .gd-glass-dark) {
+    isolation: isolate;
+    background-color: var(--gd-material-fallback);
+    border: 1px solid var(--gd-material-border);
+    box-shadow: inset 0 1px 0 var(--gd-material-highlight), var(--gd-material-shadow);
+    transition-property: background-color, background-image, border-color, box-shadow, transform;
+    transition-duration: 240ms;
+    transition-timing-function: var(--ease-out-gear);
+  }
+
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    :where(.gd-glass, .gd-glass-card, .gd-glass-panel, .gd-glass-compact, .gd-glass-dark) {
+      background-color: var(--gd-material-background-color);
+      background-image: var(--gd-material-background);
+      -webkit-backdrop-filter: blur(var(--gd-material-blur)) saturate(var(--gd-material-saturation));
+      backdrop-filter: blur(var(--gd-material-blur)) saturate(var(--gd-material-saturation));
+    }
+  }
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    :where(.gd-glass, .gd-glass-card, .gd-glass-panel, .gd-glass-compact, .gd-glass-dark) {
+      background-color: var(--gd-material-fallback);
+      background-image: none;
+    }
+  }
+
+  @media (hover: hover) {
+    .gd-glass-interactive:hover {
+      background-image: var(--gd-material-hover-background);
+      border-color: var(--gd-material-hover-border);
+      box-shadow: inset 0 1px 0 var(--gd-material-highlight), var(--gd-material-hover-shadow);
+      transform: translateY(-3px);
+    }
+  }
+
+  .gd-glass-interactive:active {
+    background-image: var(--gd-material-active-background);
+    border-color: var(--gd-material-active-border);
+    box-shadow: inset 0 1px 0 var(--gd-material-highlight), var(--gd-material-active-shadow);
+    transform: translateY(-1px);
+  }
+
+  :where(.gd-glass, .gd-glass-card, .gd-glass-panel, .gd-glass-compact, .gd-glass-dark):focus-visible {
+    box-shadow:
+      0 0 0 3px var(--gd-material-focus-ring),
+      inset 0 1px 0 var(--gd-material-highlight),
+      var(--gd-material-shadow);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :where(.gd-glass, .gd-glass-card, .gd-glass-panel, .gd-glass-compact, .gd-glass-dark, .gd-glass-interactive) {
+      animation-duration: 0s !important;
+      transition-duration: 0s !important;
+    }
+
+    .gd-glass-interactive:hover,
+    .gd-glass-interactive:active {
+      transform: none;
+    }
+  }
+}
+
+@utility gd-product-plate {
+  background: color-mix(in srgb, white 88%, var(--color-grey-100));
+  border: 1px solid color-mix(in srgb, white 82%, var(--color-grey-200));
   box-shadow:
-    inset 0 1px 0 0 color-mix(in srgb, white 16%, transparent),
-    0 22px 50px -22px rgba(0, 0, 0, 0.55);
+    inset 0 1px 0 white,
+    inset 0 -1px 0 rgba(122, 60, 255, 0.05);
+}
+
+@utility gd-section-ambient {
+  background-image:
+    radial-gradient(36rem 18rem at 12% 0%, rgba(198, 255, 0, 0.045), transparent 70%),
+    radial-gradient(34rem 20rem at 88% 100%, rgba(122, 60, 255, 0.055), transparent 72%);
+}
+
+@utility gd-editorial-panel {
+  background-image:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.18), transparent 42%),
+    radial-gradient(28rem 18rem at 82% 20%, rgba(122, 60, 255, 0.12), transparent 72%);
 }
 
 /* Pearl field behind the floating hero card. */

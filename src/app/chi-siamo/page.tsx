@@ -33,7 +33,7 @@ const PILLARS = [
 export default function ChiSiamoPage() {
   return (
     <>
-      <section className="relative overflow-hidden border-b border-grey-200 bg-grey-100">
+      <section className="gd-glass gd-section-ambient relative mx-4 mt-4 overflow-hidden rounded-[--radius-glass-lg] sm:mx-6">
         <div className="gd-streaks absolute inset-0" aria-hidden="true" />
         <div className="relative mx-auto max-w-3xl px-4 py-14 sm:px-6">
           <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Chi siamo" }]} className="mb-6" />

@@ -63,8 +63,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.15 } }}
                 transition={{ type: "spring", stiffness: 420, damping: 32 }}
                 className={cn(
-                  "pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-xl border bg-white px-4 py-3",
-                  "shadow-[0_12px_32px_-8px_rgba(18,20,23,0.28)]",
+                  "gd-glass-compact pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-xl px-4 py-3",
                   ring,
                 )}
               >
@@ -74,7 +73,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                   type="button"
                   onClick={() => dismiss(toast.id)}
                   aria-label="Chiudi notifica"
-                  className="shrink-0 rounded-full p-1 text-grey-600 transition-colors hover:bg-grey-100 hover:text-graphite"
+                  className="-m-2 inline-flex size-12 shrink-0 items-center justify-center rounded-full text-grey-600 transition-colors hover:bg-grey-100 hover:text-graphite"
                 >
                   <X className="size-4" aria-hidden="true" />
                 </button>

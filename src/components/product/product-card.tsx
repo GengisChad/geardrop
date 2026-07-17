@@ -46,7 +46,7 @@ export function ProductCard({
       <div className="relative">
         {/* The glass surface is 85% white, so it reads as the light plate every mockup
             puts the product on (audit §7.6) while the ambient field glows faintly through. */}
-        <div className="relative aspect-[4/3] overflow-hidden">
+        <div className="gd-product-plate relative aspect-[4/3] overflow-hidden rounded-b-[--radius-glass]">
           {image ? (
             <Image
               src={image.src}

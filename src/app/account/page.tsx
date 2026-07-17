@@ -24,7 +24,7 @@ export default function AccountPage() {
         <h1 className="gd-display-wide text-[2rem] font-extrabold text-graphite sm:text-[2.5rem]">Account</h1>
 
         {/* No auth backend exists yet: say so rather than render a login that cannot work. */}
-        <div className="mt-6 flex items-start gap-3 rounded-[--radius-card] border border-violet/30 bg-violet-tint p-5">
+        <div className="gd-glass-panel mt-6 flex items-start gap-3 rounded-[--radius-glass] border-violet/30 p-5">
           <Crown className="mt-0.5 size-5 shrink-0 text-violet" aria-hidden="true" />
           <div>
             <h2 className="gd-display text-small font-bold tracking-wider text-graphite">Accesso in arrivo</h2>

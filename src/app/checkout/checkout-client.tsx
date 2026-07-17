@@ -69,7 +69,7 @@ export function CheckoutClient() {
     );
   }
 
-  if (!hydrated) return <div className="mt-8 h-96 animate-pulse rounded-[--radius-card] bg-grey-200" />;
+  if (!hydrated) return <div className="gd-glass-panel mt-8 h-96 animate-pulse rounded-[--radius-glass]" />;
 
   if (lines.length === 0) {
     return (
@@ -263,7 +263,7 @@ export function CheckoutClient() {
         </fieldset>
       </div>
 
-      <aside className="gd-glass-panel sticky top-28 flex flex-col gap-4 rounded-[--radius-glass] p-5">
+      <aside data-testid="checkout-summary" className="gd-glass-panel sticky top-28 flex flex-col gap-4 rounded-[--radius-glass] p-5">
         <h2 className="gd-display text-small font-bold tracking-wider text-graphite">Il tuo ordine</h2>
 
         <ul className="flex flex-col gap-3">

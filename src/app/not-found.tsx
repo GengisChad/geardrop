@@ -6,7 +6,7 @@ export default function NotFound() {
   return (
     <div className="relative overflow-hidden">
       <div className="gd-streaks absolute inset-0" aria-hidden="true" />
-      <div className="relative mx-auto flex max-w-xl flex-col items-center px-4 py-24 text-center sm:px-6">
+      <div data-testid="not-found-glass" className="gd-glass relative mx-4 my-12 flex max-w-xl flex-col items-center rounded-[--radius-glass-lg] px-6 py-16 text-center sm:mx-auto sm:px-10 sm:py-20">
         {/* The emblem is the decorative mark. (audit §7.2) */}
         <Emblem size={96} className="size-24 animate-[gd-spin_9s_linear_infinite] opacity-90" />
 

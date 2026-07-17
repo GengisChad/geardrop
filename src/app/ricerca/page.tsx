@@ -19,16 +19,18 @@ export default async function RicercaPage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-10 sm:px-6">
-      <h1 className="gd-display-wide text-[2rem] font-extrabold text-graphite sm:text-[2.5rem]">Ricerca</h1>
+      <div data-testid="search-surface" className="gd-glass-panel rounded-[--radius-glass] px-5 py-6 sm:px-7">
+        <h1 className="gd-display-wide text-[2rem] font-extrabold text-graphite sm:text-[2.5rem]">Ricerca</h1>
 
-      {term ? (
-        <p className="mt-2 text-small text-grey-600">
+        {term ? (
+          <p className="mt-2 text-small text-grey-600">
           <span className="tabular font-bold text-graphite">{page.total}</span>{" "}
           {page.total === 1 ? "risultato" : "risultati"} per <span className="font-semibold text-violet">“{term}”</span>
-        </p>
-      ) : (
-        <p className="mt-2 text-small text-grey-600">Cerca una trottola, un lanciatore o uno stadio.</p>
-      )}
+          </p>
+        ) : (
+          <p className="mt-2 text-small text-grey-600">Cerca una trottola, un lanciatore o uno stadio.</p>
+        )}
+      </div>
 
       {page.items.length > 0 ? (
         <>

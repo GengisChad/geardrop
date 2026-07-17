@@ -3,6 +3,7 @@ import { ProductCard } from "@/components/product/product-card";
 import { SectionHeading } from "@/components/ui/section-heading";
 import type { AppHref } from "@/lib/routes";
 import type { Product } from "@/lib/commerce/types";
+import { cn } from "@/lib/cn";
 
 type ProductCarouselProps = {
   title: string;
@@ -29,7 +30,7 @@ export function ProductCarousel({
   if (products.length === 0) return null;
 
   return (
-    <section className={className}>
+    <section className={cn("gd-section-ambient", className)}>
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
         <SectionHeading title={title} {...(href ? { href } : {})} {...(linkLabel ? { linkLabel } : {})} />
         <Carousel label={title} dots={dots} className="mt-6">

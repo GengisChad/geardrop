@@ -40,7 +40,7 @@ export function Hero({ product }: { product: Product }) {
           <div className="relative grid items-center gap-8 lg:grid-cols-[0.92fr_1.08fr] lg:gap-0">
             {/* Left — the pitch */}
             <div>
-              <p className="gd-display-wide inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3.5 py-1.5 text-small font-bold tracking-[0.2em] text-graphite shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] ring-1 ring-white/60 backdrop-blur">
+              <p className="gd-display-wide gd-glass-compact inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-small font-bold tracking-[0.2em] text-graphite">
                 Beyblade <span className="text-lime-ink">X</span>
               </p>
 

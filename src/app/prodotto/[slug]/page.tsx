@@ -93,7 +93,7 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
           {...(product.tags[0] ? { promo: product.tags[0] } : {})}
         />
 
-        <div>
+        <div data-testid="buy-panel" className="gd-glass-panel self-start rounded-[--radius-glass] p-5 sm:p-7">
           <p className="gd-display-wide flex items-center gap-1.5 text-small font-bold tracking-[0.2em] text-grey-600">
             Beyblade <span className="text-lime-ink">X</span>
           </p>

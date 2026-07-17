@@ -24,10 +24,10 @@ export function CartClient() {
       <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_22rem]">
         <div className="flex flex-col gap-3">
           {Array.from({ length: 2 }, (_, i) => (
-            <div key={i} className="h-32 animate-pulse rounded-[--radius-card] bg-grey-200" />
+            <div key={i} className="gd-glass-card h-32 animate-pulse rounded-[--radius-glass]" />
           ))}
         </div>
-        <div className="h-64 animate-pulse rounded-[--radius-card] bg-grey-200" />
+        <div className="gd-glass-panel h-64 animate-pulse rounded-[--radius-glass]" />
       </div>
     );
   }
@@ -114,7 +114,7 @@ export function CartClient() {
         </AnimatePresence>
       </ul>
 
-      <aside className="gd-glass-panel sticky top-28 flex flex-col gap-4 rounded-[--radius-glass] p-5">
+      <aside data-testid="cart-summary" className="gd-glass-panel sticky top-28 flex flex-col gap-4 rounded-[--radius-glass] p-5">
         <h2 className="gd-display text-small font-bold tracking-wider text-graphite">Riepilogo</h2>
         <FreeShippingMeter totals={totals} />
         <CartTotalsPanel totals={totals} />

@@ -16,15 +16,18 @@ export function BundleBanner({ bundle, hero }: { bundle: Bundle; hero: Product }
 
   return (
     <section className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6">
-      <div className="gd-notch-lg relative overflow-hidden rounded-[--radius-card] bg-graphite">
+      <div
+        data-testid="bundle-glass"
+        className="gd-glass-dark gd-editorial-panel relative overflow-hidden rounded-[--radius-glass-lg]"
+      >
         <div className="gd-streaks absolute inset-0 opacity-70" aria-hidden="true" />
         <div
           aria-hidden="true"
-          className="absolute -left-20 top-1/2 size-96 -translate-y-1/2 rounded-full bg-violet/30 blur-3xl"
+          className="absolute -left-20 top-1/2 size-96 -translate-y-1/2 rounded-full bg-violet/20 blur-3xl"
         />
         <div
           aria-hidden="true"
-          className="absolute right-1/4 top-1/2 size-[26rem] -translate-y-1/2 rounded-full bg-violet/25 blur-3xl"
+          className="absolute right-1/4 top-1/2 size-[26rem] -translate-y-1/2 rounded-full bg-lime/8 blur-3xl"
         />
 
         <div className="relative grid items-center gap-8 p-6 sm:p-10 lg:grid-cols-[1.05fr_1fr] lg:p-12">
@@ -40,7 +43,7 @@ export function BundleBanner({ bundle, hero }: { bundle: Bundle; hero: Product }
 
             <div className="mt-6 flex flex-wrap items-baseline gap-3">
               <p className="tabular gd-display text-[2rem] font-extrabold text-white">{formatPrice(bundle.price)}</p>
-              <p className="tabular text-body text-grey-600 line-through">{formatPrice(bundle.compareAtPrice)}</p>
+              <p className="tabular text-body text-grey-400 line-through">{formatPrice(bundle.compareAtPrice)}</p>
               <p className="gd-display rounded-full bg-violet px-2.5 py-1 text-[0.6875rem] font-bold tracking-wider text-white">
                 −{percent}%
               </p>
@@ -52,7 +55,7 @@ export function BundleBanner({ bundle, hero }: { bundle: Bundle; hero: Product }
             </Button>
           </div>
 
-          <div className="relative">
+          <div className="gd-product-plate relative rounded-[--radius-glass] bg-graphite/35 p-4">
             {image ? (
               <Image
                 src={image.src}
@@ -64,7 +67,7 @@ export function BundleBanner({ bundle, hero }: { bundle: Bundle; hero: Product }
               />
             ) : null}
 
-            <p className="gd-display absolute -bottom-2 right-0 flex size-24 flex-col items-center justify-center rounded-full border border-violet bg-graphite text-center text-[0.625rem] font-bold tracking-wider text-grey-400 sm:size-28">
+            <p className="gd-glass-dark gd-display absolute -bottom-2 right-0 flex size-24 flex-col items-center justify-center rounded-full text-center text-[0.625rem] font-bold tracking-wider text-grey-400 sm:size-28">
               Risparmi
               <span className="tabular mt-0.5 block text-body font-extrabold text-white sm:text-h3">
                 {formatPrice({ amount: saving, currency: "EUR" })}

@@ -51,7 +51,7 @@ export function CompetitivePicks({ products }: { products: readonly Product[] })
                   return (
                     <li key={product.slug}>
                       <Link href={`/prodotto/${product.slug}`} className="group block text-center">
-                        <span className="block overflow-hidden rounded-xl bg-white/55 p-2 ring-1 ring-white/50">
+                        <span className="gd-product-plate block overflow-hidden rounded-xl p-2">
                           {image ? (
                             <Image
                               src={image.src}

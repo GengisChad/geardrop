@@ -27,7 +27,7 @@ export function Field({ label, error, children, className, htmlFor }: FieldProps
 
 export const inputClass = (hasError: boolean) =>
   cn(
-    "h-11 w-full rounded-xl border bg-white px-3.5 text-small text-graphite placeholder:text-grey-400",
+    "gd-glass-compact h-11 w-full rounded-xl px-3.5 text-small text-graphite placeholder:text-grey-400",
     "transition-colors focus:outline-none",
     hasError ? "border-soldout focus:border-soldout" : "border-grey-300 focus:border-violet",
   );

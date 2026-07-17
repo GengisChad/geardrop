@@ -34,7 +34,7 @@ export function CategoryTiles() {
                   <p className="mt-1 max-w-[9rem] text-[0.6875rem] leading-tight text-grey-600 sm:text-small">
                     {category.tagline}
                   </p>
-                  <span className="mt-auto inline-flex size-7 items-center justify-center rounded-full bg-white/70 text-violet ring-1 ring-white/60 transition-transform duration-300 group-hover:translate-x-1">
+                  <span className="gd-glass-compact mt-auto inline-flex size-9 items-center justify-center rounded-full text-violet transition-transform duration-300 group-hover:translate-x-1">
                     <ChevronRight className="size-4" strokeWidth={2.5} aria-hidden="true" />
                   </span>
                 </div>

@@ -55,7 +55,7 @@ export function SearchBox() {
               onChange={(event) => setValue(event.target.value)}
               placeholder="Cerca prodotti..."
               data-testid="search-input"
-              className="h-10 w-44 rounded-full border border-grey-300 bg-white px-4 text-small text-graphite placeholder:text-grey-400 focus:border-violet focus:outline-none lg:w-60"
+              className="gd-glass-compact h-11 w-44 rounded-full px-4 text-small text-graphite placeholder:text-grey-600 focus:border-violet focus:outline-none lg:w-60"
             />
           </motion.form>
         ) : null}
@@ -67,7 +67,7 @@ export function SearchBox() {
         aria-expanded={open}
         aria-label={open ? "Chiudi ricerca" : "Apri ricerca"}
         data-testid="search-toggle"
-        className="inline-flex size-10 items-center justify-center rounded-full transition-colors hover:bg-grey-100"
+        className="gd-glass-compact inline-flex size-11 items-center justify-center rounded-full"
       >
         {open ? (
           <X className="size-5 text-graphite" aria-hidden="true" />

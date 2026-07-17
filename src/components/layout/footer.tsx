@@ -105,7 +105,7 @@ export function Footer() {
       </div>
 
       <div className="border-t border-white/10 py-5 text-center">
-        <p className="text-small text-grey-600">
+        <p className="text-small text-grey-400">
           © {new Date().getFullYear()} GEAR//DROP. Tutti i diritti riservati.
         </p>
       </div>
