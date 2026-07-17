@@ -20,6 +20,7 @@ Payment processing is explicitly out of scope for this phase. New orders are cre
 - Integrate Supabase with Next.js using `@supabase/ssr`.
 - Add email/password registration, email confirmation, login, logout, password recovery, and protected account pages.
 - Allow both authenticated and guest checkout.
+- Add a protected `/admin` shell with a persistent warning banner whenever order acceptance is disabled.
 - Create orders only through a server-side action backed by one transactional PostgreSQL RPC.
 - Keep all UI independent of Supabase queries through `CommerceProvider` and server-side application services.
 - Retain the mock provider for unit tests and offline development.
@@ -69,7 +70,7 @@ Three factories are required. None may place a server client in module-global sh
    - creates a new privileged client from `SUPABASE_SECRET_KEY` for a single server-side operation;
    - disables session persistence and token refresh;
    - is never imported by Client Components and is never stored globally;
-   - is used only for flows with no authenticated database context, specifically guest order creation.
+   - is used only for flows with no authenticated database context, specifically guest order creation and the documented one-shot initial-owner bootstrap.
 
 The secret/service role is not a general replacement for RLS. Authenticated catalog, account, staff, and checkout operations use the request-scoped client.
 
@@ -119,13 +120,16 @@ All identifiers use lowercase snake_case. Internal high-write entities use `bigi
 - `currency text` constrained to `EUR`
 - `publication_status text` constrained to `draft`, `published`, or `archived`
 - `active boolean`
-- `stock_status text` constrained to `disponibile`, `in-arrivo`, `pre-ordine`, or `esaurito`
 - `stock_quantity integer`
+- `availability_override text null` constrained to `preorder` or `incoming`
+- `stock_status text` generated from stock and override as `disponibile`, `in-arrivo`, `pre-ordine`, or `esaurito`
 - `blade_type text null` constrained to `attacco`, `difesa`, `stamina`, or `bilanciato`
 - `rating numeric(2,1)` and `review_count integer`
 - `created_at`, `updated_at timestamptz`
 
 Checks enforce non-negative prices, stock, and review counts; ratings remain between 0 and 5; compare-at prices, when present, exceed the current price.
+
+Availability is deterministic: without an override, positive stock produces `disponibile` and zero stock produces `esaurito`. `pre-ordine` and `in-arrivo` can appear only when `availability_override` is explicitly set. An `incoming` product is never orderable. A `preorder` product is orderable only against a positive numeric allocation, so zero stock never becomes purchasable through an override.
 
 #### Product child tables
 
@@ -145,9 +149,13 @@ A public bundle is visible only when the bundle is published and active and ever
 
 ### 5.2 Shipping and coupons
 
-#### `store_settings`
+#### `site_settings`
 
-A single-row relational configuration stores `checkout_enabled`, the maximum quantity per line, the default currency, and timestamps. These values have stable meaning and therefore use typed columns rather than JSONB.
+A single-row relational configuration stores `accept_orders boolean not null default false`, the maximum quantity per line, the default currency, and timestamps. These values have stable meaning and therefore use typed columns rather than JSONB. The initial row always has `accept_orders = false`; order creation refuses every attempt until an owner explicitly completes the enablement checklist and changes it.
+
+#### `order_enablement_checks`
+
+One row per required launch check stores a constrained check key, pass/fail state, short textual evidence, verifier UUID, and verification timestamp. Only owners may update these rows. The owner-only order-enablement action requires every defined check to be passed and re-runs machine-verifiable checks, including stock consistency and the latest advisor/test evidence, before setting `site_settings.accept_orders = true`.
 
 #### `shipping_methods`
 
@@ -354,6 +362,10 @@ This design prevents overselling, partial orders, coupon overuse, negative quant
 
 Open signup creates customers, never staff. No signup field or user metadata can select a staff role.
 
+The first two owners are assigned through a documented one-shot operational procedure. Both accounts must already exist and have confirmed email addresses. A service-role-only bootstrap RPC accepts exactly two distinct normalized emails, refuses to run if any `staff_profiles` row already exists, resolves both identities from `auth.users`, inserts both owner rows in one transaction, and becomes permanently ineffective after success. The companion server-only script verifies the result without printing secrets.
+
+The protected `/admin` layout reads `site_settings.accept_orders`. While false, it renders a persistent high-visibility banner stating that checkout and order intake are disabled. The banner cannot be dismissed and appears to owners, admins, and editors on every admin route.
+
 ## 10. Error handling and privacy
 
 Known database errors use stable domain codes such as `GD_EMPTY_CART`, `GD_INVALID_QUANTITY`, `GD_PRODUCT_UNAVAILABLE`, `GD_INSUFFICIENT_STOCK`, `GD_INVALID_COUPON`, and `GD_CHECKOUT_DISABLED`. The Server Action maps them to user-safe messages without exposing SQL, table names, coupon limits, or other customers' data.
@@ -394,7 +406,25 @@ Every such function:
 
 The current `src/data/catalog.ts` and `src/data/assets.ts` remain the reviewed seed source for the initial import. A deterministic seed script maps the existing domain data to relational rows. Product image paths continue to point at committed files under `public/`; Supabase Storage is not required in this phase.
 
-The current source catalog contains availability labels but no real numeric inventory. To avoid inventing stock, the initial production seed sets every `stock_quantity` to `0` and keeps checkout disabled through a relational store setting. The owner must load real quantities through a reviewed operational SQL update before enabling checkout. Automated checkout tests use isolated fixture quantities and roll them back after verification.
+The current source catalog contains availability labels but no real numeric inventory. To avoid inventing stock, the initial production seed sets every `stock_quantity` to `0` and keeps checkout disabled through `site_settings.accept_orders = false`. The owner must load real quantities through a reviewed operational SQL update before enabling checkout. Automated checkout tests use isolated fixture quantities and roll them back after verification.
+
+Before `accept_orders` can be changed to true, an owner must complete and record this checklist:
+
+- both initial owner accounts are confirmed and present in `staff_profiles`;
+- production URL and publishable/secret environment variables are configured in the hosting platform;
+- all intended products have reviewed numeric stock values;
+- every product with zero stock resolves to `esaurito` unless an explicit `preorder` or `incoming` override is set;
+- every preorder has a positive reviewed allocation and every incoming product remains non-orderable;
+- shipping methods and free-shipping thresholds are reviewed;
+- coupon rows are reviewed or disabled;
+- public RLS probes, cross-customer isolation tests, editor-denial tests, and guest-order enumeration tests pass;
+- concurrent last-unit and final-coupon tests pass;
+- Supabase security and performance advisors have no unaddressed high-severity findings introduced by the migration;
+- a real guest smoke order and a real authenticated smoke order succeed in the target environment, remain `pending`/`unpaid`, and decrement stock exactly once;
+- cancellation/restock recovery is verified;
+- database backup or point-in-time recovery readiness is confirmed.
+
+Order intake is enabled only through an owner-protected Server Action that rechecks this database-backed checklist. Direct client updates to `site_settings.accept_orders` are never allowed.
 
 Database TypeScript types are generated from the resulting schema and committed under `src/lib/supabase/database.types.ts`. Supabase package versions are pinned and `pnpm-lock.yaml` remains committed.
 
@@ -409,6 +439,7 @@ Database TypeScript types are generated from the resulting schema and committed 
 - Customer A cannot read or mutate Customer B's profile, addresses, or orders.
 - Editors cannot read other customers' PII or manage orders.
 - Admins and owners can read all orders; only owners can manage staff roles.
+- `site_settings.accept_orders` starts false and the admin banner remains visible while it is false.
 - Supabase security and performance advisors contain no unaddressed high-severity finding caused by this migration.
 
 ### Checkout
@@ -420,6 +451,7 @@ Database TypeScript types are generated from the resulting schema and committed 
 - A forced failure after order insertion leaves no order, item, coupon increment, or stock change.
 - Retrying the same idempotency key returns the original order without consuming stock twice.
 - Guest and authenticated checkouts both work; only authenticated orders appear in account history.
+- With `accept_orders = false`, guest and authenticated order attempts fail before stock, coupons, orders, or audit data changes.
 
 ### Application
 
