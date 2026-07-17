@@ -1,0 +1,442 @@
+# Supabase Commerce Backend Design
+
+**Date:** 2026-07-17
+**Status:** approved architecture, written specification pending final review
+**Project:** GEAR//DROP
+
+## 1. Goal
+
+Replace the current local-only commerce backend with a relational Supabase backend while preserving the existing `CommerceProvider` boundary and mock provider. Add email/password authentication, customer accounts, protected order history, guest checkout, atomic order creation, catalog and inventory management foundations, and role-separated staff authorization.
+
+Payment processing is explicitly out of scope for this phase. New orders are created with `status = 'pending'` and `payment_status = 'unpaid'`. No card data is collected or stored.
+
+## 2. Scope
+
+### Included
+
+- Reset the obsolete application objects currently in the remote `public` schema.
+- Create a normalized commerce schema for catalog, inventory, coupons, customers, staff, orders, order lines, shipping methods, and audit events.
+- Seed the database from the current local catalog, including categories, bundle, images, specifications, features, box contents, relationships, shipping rules, and current stock states.
+- Integrate Supabase with Next.js using `@supabase/ssr`.
+- Add email/password registration, email confirmation, login, logout, password recovery, and protected account pages.
+- Allow both authenticated and guest checkout.
+- Create orders only through a server-side action backed by one transactional PostgreSQL RPC.
+- Keep all UI independent of Supabase queries through `CommerceProvider` and server-side application services.
+- Retain the mock provider for unit tests and offline development.
+
+### Excluded
+
+- Stripe, PayPal, Klarna, or any other payment gateway.
+- Payment webhooks and asynchronous fulfillment jobs.
+- Transactional order email delivery. The UI must not claim an order email was sent until an email provider is added.
+- A visual staff administration dashboard. This phase creates its authorization model and database capabilities, but not the dashboard UI.
+- Synchronizing the browser cart or wishlist across devices.
+- Deleting Supabase-managed schemas or existing `auth.users` records.
+
+## 3. Destructive reset boundary
+
+The user authorized deleting all obsolete application tables and rebuilding the project from scratch in the connected Supabase project `cvwigsymjlpulwgjkzix`.
+
+The reset will:
+
+- inventory every current user-defined table, view, function, trigger, policy, and sequence in `public`;
+- generate an explicit reviewed drop list;
+- remove obsolete `public` application objects with their dependent policies and triggers;
+- leave Supabase-managed schemas and data untouched, including `auth`, `storage`, `realtime`, `vault`, `extensions`, and `supabase_migrations`;
+- preserve existing Auth users.
+
+Preserved Auth users receive no staff privilege automatically. An existing user can authenticate as a normal customer, but access to staff capabilities requires an active row in `staff_profiles`. The first `owner` row is assigned manually after the intended owner registers and confirms their email.
+
+## 4. Application architecture
+
+### 4.1 Supabase clients
+
+Three factories are required. None may place a server client in module-global shared state.
+
+1. `src/lib/supabase/client.ts`
+   - creates the browser client with `createBrowserClient`;
+   - uses `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`;
+   - is used only for browser-side Auth operations that genuinely need it.
+
+2. `src/lib/supabase/server.ts`
+   - creates a new request-scoped `createServerClient` for Server Components, Server Actions, Route Handlers, and the Next.js proxy;
+   - reads and writes the current request cookies;
+   - uses the publishable key and therefore remains subject to RLS;
+   - is never cached across requests.
+
+3. `src/lib/supabase/admin.ts`
+   - imports `server-only`;
+   - creates a new privileged client from `SUPABASE_SECRET_KEY` for a single server-side operation;
+   - disables session persistence and token refresh;
+   - is never imported by Client Components and is never stored globally;
+   - is used only for flows with no authenticated database context, specifically guest order creation.
+
+The secret/service role is not a general replacement for RLS. Authenticated catalog, account, staff, and checkout operations use the request-scoped client.
+
+Catalog access, checkout, and future staff CRUD remain in Next.js Server Components, Server Actions, or Route Handlers plus PostgreSQL. No Edge Function is introduced in this phase. Edge Functions remain reserved for later payment webhooks, external integrations, or asynchronous work that concretely requires them.
+
+### 4.2 Session validation
+
+The Next.js proxy refreshes Auth cookies using `auth.getClaims()`. Protected Server Components, Server Actions, and Route Handlers use `auth.getClaims()` or `auth.getUser()` before accessing protected data. Server authorization never relies on `auth.getSession()`.
+
+### 4.3 Commerce adapter
+
+`CommerceProvider` remains the only catalog interface consumed by pages and application services.
+
+- Add `src/lib/commerce/supabase-provider.ts`.
+- Convert provider selection into a request-scoped factory so a Supabase-backed provider never captures a cross-request client.
+- Support `COMMERCE_PROVIDER=mock|supabase`; the selection variable is server-only.
+- `createSupabaseProvider(client)` maps relational rows into the existing `Product`, `Category`, `Bundle`, `Facets`, and `CartTotals` domain types.
+- No React component imports a Supabase client or performs a Supabase query.
+- The existing mock provider remains the reference implementation for tests and offline work.
+
+The browser cart continues to store only product identifiers and quantities. A server action returns a display quote by resolving those identifiers through `CommerceProvider`. That quote is informative only; the checkout RPC independently recalculates the authoritative totals.
+
+## 5. Relational data model
+
+All identifiers use lowercase snake_case. Internal high-write entities use `bigint generated always as identity` primary keys. `auth.users.id` references remain UUIDs. All timestamps use `timestamptz`; all monetary values use non-negative integer cents and currency `EUR`.
+
+### 5.1 Catalog
+
+#### `categories`
+
+- `id bigint` primary key
+- `slug text` unique, immutable application identifier
+- `name`, `tagline`, `description text`
+- `active boolean`
+- `sort_order integer`
+- `created_at`, `updated_at timestamptz`
+
+#### `products`
+
+- `id bigint` primary key
+- `category_id bigint` foreign key to `categories`
+- `slug text` unique
+- `sku text` unique
+- `name`, `tagline`, `description text`
+- `price_cents integer`
+- `compare_at_price_cents integer null`
+- `currency text` constrained to `EUR`
+- `publication_status text` constrained to `draft`, `published`, or `archived`
+- `active boolean`
+- `stock_status text` constrained to `disponibile`, `in-arrivo`, `pre-ordine`, or `esaurito`
+- `stock_quantity integer`
+- `blade_type text null` constrained to `attacco`, `difesa`, `stamina`, or `bilanciato`
+- `rating numeric(2,1)` and `review_count integer`
+- `created_at`, `updated_at timestamptz`
+
+Checks enforce non-negative prices, stock, and review counts; ratings remain between 0 and 5; compare-at prices, when present, exceed the current price.
+
+#### Product child tables
+
+- `product_images`: product FK, path/URL, intrinsic width and height, alt text, sort order, `published boolean`.
+- `product_specs`: product FK, label, value, sort order.
+- `product_features`: product FK, title, description, sort order.
+- `product_box_contents`: product FK, content text, sort order.
+- `product_tags`: product FK and a constrained promo tag; composite primary key.
+- `product_relations`: product FK, related product FK, sort order; composite primary key and self-relation check.
+
+#### Bundles
+
+- `bundles`: slug, eyebrow, two title lines, description, price cents, compare-at price cents, hero product FK, publication status, active flag, timestamps.
+- `bundle_items`: bundle FK, product FK, quantity, sort order; composite primary key.
+
+A public bundle is visible only when the bundle is published and active and every referenced public product satisfies the catalog visibility rules.
+
+### 5.2 Shipping and coupons
+
+#### `store_settings`
+
+A single-row relational configuration stores `checkout_enabled`, the maximum quantity per line, the default currency, and timestamps. These values have stable meaning and therefore use typed columns rather than JSONB.
+
+#### `shipping_methods`
+
+- stable code primary key;
+- display label and delivery hint;
+- price cents;
+- nullable free-shipping threshold cents;
+- active flag and sort order.
+
+#### `coupons`
+
+- `id bigint` primary key and normalized unique code;
+- discount kind `fixed` or `percentage`;
+- discount value with constraints appropriate to its kind;
+- optional minimum subtotal;
+- optional global maximum redemptions;
+- atomic `redemption_count`;
+- start/end timestamps and active flag;
+- timestamps.
+
+#### `coupon_redemptions`
+
+- coupon FK and order FK;
+- nullable customer UUID;
+- normalized customer email snapshot;
+- redeemed timestamp;
+- one redemption row per order.
+
+Coupon eligibility, date window, minimum subtotal, and redemption limit are checked inside the order transaction. The coupon row is locked before its count is changed.
+
+### 5.3 Customer and staff identities
+
+#### `customer_profiles`
+
+- `user_id uuid` primary key referencing `auth.users(id)` with cascade delete;
+- first name, last name, and nullable phone;
+- timestamps.
+
+Email remains authoritative in Supabase Auth and is not used as an authorization field in `customer_profiles`.
+
+#### `customer_addresses`
+
+- `id bigint` primary key;
+- `user_id uuid` FK to `auth.users`;
+- normalized relational address fields, label, default flag, and timestamps.
+
+Orders do not reference a mutable address row as their historical record. They store immutable JSONB address snapshots.
+
+#### `staff_profiles`
+
+- `user_id uuid` primary key referencing `auth.users(id)` with cascade delete;
+- `role text` constrained to `owner`, `admin`, or `editor`;
+- `active boolean`;
+- `created_by uuid null` and timestamps.
+
+Customer and staff profiles are deliberately separate. No authorization decision reads user-editable `user_metadata`. Staff authorization checks the database table on each protected operation through a narrowly scoped helper in a non-exposed schema.
+
+### 5.4 Orders and inventory
+
+#### `orders`
+
+- `id bigint` primary key;
+- non-sensitive public-facing `order_number text` unique;
+- `idempotency_key uuid` unique;
+- nullable `customer_id uuid` referencing `auth.users`;
+- customer email and phone snapshots;
+- `status text` initially `pending` and constrained to the supported lifecycle;
+- `payment_status text` initially `unpaid`;
+- `payment_method text` initially `unconfigured` for this phase;
+- shipping method snapshot;
+- subtotal, discount, shipping, and total cents;
+- currency constrained to `EUR`;
+- nullable coupon FK and coupon code snapshot;
+- shipping and billing address snapshots as JSONB;
+- nullable customer notes;
+- created and updated timestamps.
+
+Financial checks enforce `total = subtotal - discount + shipping`, non-negative values, and `discount <= subtotal`.
+
+#### `order_items`
+
+- `id bigint` primary key;
+- order FK;
+- nullable product FK using `on delete set null`;
+- immutable SKU, product name, primary image, and unit price snapshots;
+- positive quantity;
+- line subtotal and discount cents;
+- line total cents with consistency checks.
+
+#### `inventory_movements`
+
+- product FK;
+- signed quantity delta;
+- reason constrained to supported inventory events;
+- nullable order FK;
+- actor UUID when available;
+- timestamp and optional note.
+
+Creating a pending order immediately decrements `products.stock_quantity` and writes an inventory movement. This is an atomic stock update rather than an expiring reservation, so no background reservation-release worker is required in this phase. A later owner/admin cancellation flow must restore stock in its own transaction before marking the order cancelled.
+
+### 5.5 Audit
+
+`audit_events` records actor UUID, action, entity type and ID, and JSONB `before_data`/`after_data`, plus timestamp. JSONB is acceptable here because audit payloads vary naturally. Public roles cannot insert arbitrary audit events. Database triggers or protected server operations create them, and only active owners/admins may read them.
+
+## 6. Public catalog visibility
+
+RLS is enabled on every table in the exposed `public` schema. Explicit grants are used because new Supabase projects may not expose SQL-created tables to the Data API automatically.
+
+Anonymous and authenticated users can read a category only when `categories.active = true`.
+
+They can read a product only when all of the following hold:
+
+- `products.publication_status = 'published'`;
+- `products.active = true`;
+- the associated category is active.
+- at least one associated product image has `published = true`.
+
+They can read a product image only when:
+
+- `product_images.published = true`;
+- its product passes the public product rule;
+- its product category is active.
+
+Product specs, features, box contents, tags, relationships, bundles, and bundle items are public only through an associated publicly visible product or bundle. Draft, inactive, archived, orphaned, or unpublished catalog records never appear through the publishable key.
+
+To express this multi-table rule consistently without circular RLS policies, one narrowly scoped stable helper in a non-exposed schema evaluates only catalog publication flags. Product, image, and child-table policies call that helper. It returns only a public-visibility boolean, cannot mutate data, uses a fixed empty search path, and exposes no customer, staff, order, coupon, or inventory values.
+
+## 7. Authorization matrix
+
+| Capability | Guest | Customer | Editor | Admin | Owner |
+| --- | --- | --- | --- | --- | --- |
+| Read public catalog | Yes | Yes | Yes | Yes | Yes |
+| Read drafts/inactive catalog | No | No | Yes | Yes | Yes |
+| Edit catalog content | No | No | Yes | Yes | Yes |
+| Change inventory/coupons/shipping | No | No | No | Yes | Yes |
+| Read own customer profile | No | Yes | Own customer row only | Own customer row only | Own customer row only |
+| Update own customer profile/address | No | Yes | Yes as customer | Yes as customer | Yes as customer |
+| Read own orders | No | Yes | Own customer orders only | All orders | All orders |
+| Read other customers/order PII | No | No | No | Yes | Yes |
+| Change order lifecycle | No | No | No | Yes | Yes |
+| Manage staff roles | No | No | No | No | Yes |
+| Read audit events | No | No | No | Yes | Yes |
+
+An editor receives no policy on customer PII, all-orders views, order items belonging to other customers, coupon redemptions, or audit events. If an editor is also a customer, the normal owner predicate still permits only their own customer data and orders.
+
+## 8. Transactional order creation
+
+### 8.1 Server boundary
+
+The checkout Client Component submits a Zod-validated payload to a Next.js Server Action. The payload contains:
+
+- product SKU or stable product ID and positive integer quantity;
+- contact and shipping fields;
+- shipping method code;
+- optional coupon code;
+- optional notes;
+- an opaque idempotency key.
+
+It never contains an authoritative product name, price, discount, shipping price, subtotal, or total.
+
+The Server Action:
+
+1. validates shape and bounded lengths;
+2. calls `getClaims()` to determine whether the request has an authenticated user;
+3. uses the request-scoped client for an authenticated checkout;
+4. uses the privileged server-only client only when no authenticated context exists and forces the order to be a guest order;
+5. invokes the same PostgreSQL RPC;
+6. maps known domain failures to safe Italian UI messages;
+7. returns only the order number and authoritative totals needed for confirmation.
+
+### 8.2 PostgreSQL RPC
+
+`public.create_order` is a short `SECURITY DEFINER` function with `search_path = ''`. Execute is revoked from `PUBLIC` and `anon`; it is granted only to `authenticated` and `service_role`. The function is not callable by a browser publishable-key guest. Guest calls reach it only through the Next.js server-only privileged client.
+
+Within one database transaction, the function:
+
+1. rejects empty carts, duplicate SKUs, non-integer quantities, zero/negative quantities, and quantities above the configured per-line limit;
+2. derives the authenticated customer from `auth.uid()`; service-role guest calls always create `customer_id = null`;
+3. locks requested product rows in ascending product ID order with `FOR UPDATE` to prevent deadlocks;
+4. reloads names, SKUs, images, prices, publication state, active state, category state, stock state, and stock quantities from the database;
+5. rejects unpublished, inactive, inactive-category, unavailable, or insufficient-stock products;
+6. reads the active shipping method and computes its price and free-shipping threshold;
+7. normalizes and locks the coupon row, validates its window, subtotal threshold, and remaining global uses, and increments its redemption count atomically;
+8. computes subtotal, discount, shipping, and total in integer cents;
+9. creates the order using immutable contact, address, shipping, coupon, and financial snapshots;
+10. inserts all order item snapshots in one set-based statement;
+11. decrements stock with guarded updates and records inventory movements;
+12. records the coupon redemption when applicable;
+13. returns the existing order for a safe retry using the same idempotency key and the same authenticated customer or normalized guest email, rather than creating a duplicate.
+
+Any failure rolls back products, coupon counts, order, items, and inventory movements together. There are no external network calls inside the transaction.
+
+This design prevents overselling, partial orders, coupon overuse, negative quantities, inconsistent totals, duplicate double-click orders, and lock-order race conditions.
+
+## 9. Authentication flows
+
+- Registration: email and password through a Server Action; Supabase sends confirmation email.
+- Confirmation: `/auth/confirm` verifies the token hash and redirects safely.
+- Login: email and password through a Server Action.
+- Logout: Server Action followed by redirect.
+- Password recovery: request reset email, then update password from a protected recovery route.
+- Account: protected with `getClaims()`/`getUser()`, shows editable customer profile and only the authenticated customer's orders.
+- Proxy: refreshes cookies but does not globally redirect every anonymous route; only account/order/staff routes are protected.
+
+Open signup creates customers, never staff. No signup field or user metadata can select a staff role.
+
+## 10. Error handling and privacy
+
+Known database errors use stable domain codes such as `GD_EMPTY_CART`, `GD_INVALID_QUANTITY`, `GD_PRODUCT_UNAVAILABLE`, `GD_INSUFFICIENT_STOCK`, `GD_INVALID_COUPON`, and `GD_CHECKOUT_DISABLED`. The Server Action maps them to user-safe messages without exposing SQL, table names, coupon limits, or other customers' data.
+
+Unknown errors return a generic checkout failure and remain in server logs. Authentication errors avoid revealing whether an email is registered. Account and order routes return not-found or unauthorized responses without exposing resource existence across users.
+
+Guests receive an order number only in the immediate successful Server Action response. No anonymous `SELECT` policy exists on orders or order items, so order numbers cannot be used to enumerate or retrieve guest orders.
+
+## 11. Indexes and database performance
+
+- Index every foreign key used in joins or cascades.
+- Add indexes for all ownership and RLS predicates, especially `orders.customer_id`, `customer_addresses.user_id`, and staff lookup columns.
+- Use `(select auth.uid())` in RLS predicates so the function is evaluated once per statement.
+- Add partial indexes for public products, public images, active coupons, and pending orders where the query predicates match.
+- Add a composite order-history index on `(customer_id, created_at desc)`.
+- Acquire checkout locks in stable product-ID order.
+- Keep checkout transactions short and free of HTTP calls.
+- Use set-based inserts for order items and inventory movements.
+
+## 12. Security-definer controls
+
+Security-definer code is limited to cases that genuinely require it:
+
+- the transactional `create_order` RPC;
+- a non-exposed staff-role lookup helper used by RLS;
+- tightly scoped audit trigger helpers if required.
+
+Every such function:
+
+- sets `search_path = ''`;
+- schema-qualifies every object;
+- validates caller identity or the expected guest service context;
+- has default `PUBLIC` execute revoked;
+- grants execute only to the roles that require it;
+- is covered by explicit tests and Supabase security advisors.
+
+## 13. Source data and generated types
+
+The current `src/data/catalog.ts` and `src/data/assets.ts` remain the reviewed seed source for the initial import. A deterministic seed script maps the existing domain data to relational rows. Product image paths continue to point at committed files under `public/`; Supabase Storage is not required in this phase.
+
+The current source catalog contains availability labels but no real numeric inventory. To avoid inventing stock, the initial production seed sets every `stock_quantity` to `0` and keeps checkout disabled through a relational store setting. The owner must load real quantities through a reviewed operational SQL update before enabling checkout. Automated checkout tests use isolated fixture quantities and roll them back after verification.
+
+Database TypeScript types are generated from the resulting schema and committed under `src/lib/supabase/database.types.ts`. Supabase package versions are pinned and `pnpm-lock.yaml` remains committed.
+
+## 14. Verification and acceptance criteria
+
+### Database
+
+- Old `public` application tables are absent; system schemas and Auth users remain.
+- Every exposed table has RLS enabled and only intentional grants.
+- Anonymous catalog queries return only active categories, published active products, and published images.
+- Anonymous queries cannot read orders, order items, profiles, staff, coupons, redemptions, inventory movements, or audit events.
+- Customer A cannot read or mutate Customer B's profile, addresses, or orders.
+- Editors cannot read other customers' PII or manage orders.
+- Admins and owners can read all orders; only owners can manage staff roles.
+- Supabase security and performance advisors contain no unaddressed high-severity finding caused by this migration.
+
+### Checkout
+
+- Client-supplied prices and totals are ignored.
+- Negative, zero, non-integer, excessive, duplicate, missing, inactive, unpublished, out-of-stock, and insufficient-stock lines fail safely.
+- Concurrent attempts for the final unit result in exactly one successful order.
+- Concurrent final coupon use results in exactly one redemption.
+- A forced failure after order insertion leaves no order, item, coupon increment, or stock change.
+- Retrying the same idempotency key returns the original order without consuming stock twice.
+- Guest and authenticated checkouts both work; only authenticated orders appear in account history.
+
+### Application
+
+- No Supabase query exists in a React UI component.
+- Supabase catalog pages use `supabase-provider.ts` through `CommerceProvider`.
+- Mock-provider unit tests continue to pass without environment variables or network access.
+- Auth route tests cover registration validation, login failure, confirmation, logout, and protected redirects.
+- `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, and relevant Playwright flows pass.
+
+## 15. Documentation basis
+
+This design follows the current Supabase guidance for:
+
+- request-scoped Next.js SSR clients and `getClaims()` protection: <https://supabase.com/docs/guides/auth/server-side/creating-a-client>
+- choosing `@supabase/ssr` for cookie-based sessions: <https://supabase.com/docs/guides/auth/choosing-a-server-package>
+- Row Level Security: <https://supabase.com/docs/guides/database/postgres/row-level-security>
+- securing the Data API and explicit grants: <https://supabase.com/docs/guides/api/securing-your-api>
+- database functions and function privileges: <https://supabase.com/docs/guides/database/functions>
+
+Relevant 2026 platform changes are accounted for: new tables may not be automatically exposed to the Data API, modern publishable/secret keys are preferred, Node.js 20 is no longer supported by current Supabase JavaScript packages, and TypeScript 5.x remains supported by this project.
