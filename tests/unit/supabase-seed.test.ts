@@ -16,4 +16,8 @@ describe("Supabase catalogue seed", () => {
     expect(sql).not.toContain("availability_override = excluded.availability_override");
     expect(sql).not.toContain("preorder_allocation = excluded.preorder_allocation");
   });
+
+  it("casts nullable numeric seed columns for PostgreSQL CTE inference", () => {
+    expect(sql).toContain("seed.compare_at_price_cents::integer");
+  });
 });

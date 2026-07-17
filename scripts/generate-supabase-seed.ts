@@ -98,7 +98,7 @@ select
   seed.tagline,
   seed.description,
   seed.price_cents,
-  seed.compare_at_price_cents,
+  seed.compare_at_price_cents::integer,
   'published'::public.publication_status,
   true,
   0 as stock_quantity,
