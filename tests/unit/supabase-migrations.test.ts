@@ -33,6 +33,7 @@ describe("Supabase commerce migrations", () => {
     expect(sql).toContain("create table public.staff_profiles");
     expect(sql).toMatch(/accept_orders\s+boolean\s+not null\s+default false/);
     expect(sql).toMatch(/stock_quantity\s+integer\s+not null\s+default 0/);
+    expect(sql).toMatch(/stock_status\s+public\.stock_status\s+generated always as \([\s\S]+?\) stored\s+not null/);
     expect(sql).toContain("create type public.staff_role");
     expect(sql).toContain("create type public.availability_override");
   });

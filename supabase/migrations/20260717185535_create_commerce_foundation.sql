@@ -68,7 +68,7 @@ create table public.products (
       when stock_quantity > 0 then 'disponibile'::public.stock_status
       else 'esaurito'::public.stock_status
     end
-  ) stored,
+  ) stored not null,
   is_purchasable boolean generated always as (
     active
     and publication_status = 'published'::public.publication_status
