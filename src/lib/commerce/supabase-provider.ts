@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "../supabase/database.types";
 import type {
   BladeType,
   Bundle,
@@ -140,7 +141,7 @@ function count<T extends string>(values: readonly T[]): Map<T, number> {
   return result;
 }
 
-export function createSupabaseCommerceProvider(client: SupabaseClient): CommerceProvider {
+export function createSupabaseCommerceProvider(client: SupabaseClient<Database>): CommerceProvider {
   async function allProducts(): Promise<readonly Product[]> {
     const { data, error } = await client.from("products").select(PRODUCT_SELECT);
     if (error) throw error;

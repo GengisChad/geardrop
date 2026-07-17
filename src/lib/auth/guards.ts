@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient, User } from "@supabase/supabase-js";
+import type { Database } from "../supabase/database.types";
 import {
   assertAllowedStaffRole,
   type StaffPrincipal,
@@ -11,7 +12,7 @@ export { assertAllowedStaffRole } from "./roles";
 
 export class AuthenticationRequiredError extends Error {}
 
-export async function requireUser(client: SupabaseClient): Promise<User> {
+export async function requireUser(client: SupabaseClient<Database>): Promise<User> {
   const { data, error } = await client.auth.getUser();
 
   if (error || !data.user) {
@@ -22,7 +23,7 @@ export async function requireUser(client: SupabaseClient): Promise<User> {
 }
 
 export async function requireStaffRole(
-  client: SupabaseClient,
+  client: SupabaseClient<Database>,
   allowedRoles: readonly StaffRole[],
 ): Promise<StaffPrincipal> {
   const { data: claimsData, error: claimsError } = await client.auth.getClaims();
