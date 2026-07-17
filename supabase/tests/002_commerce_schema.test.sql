@@ -34,7 +34,9 @@ select results_eq(
       '20260717185535',
       '20260717185536',
       '20260717185537',
-      '20260717190612'
+      '20260717190612',
+      '20260717214105',
+      '20260717214107'
     )
     order by version
   $$,
@@ -43,9 +45,11 @@ select results_eq(
     '20260717185535',
     '20260717185536',
     '20260717185537',
-    '20260717190612'
+    '20260717190612',
+    '20260717214105',
+    '20260717214107'
   ]::text[],
-  'all five additive migrations are applied in order'
+  'all seven additive migrations are applied in order'
 );
 select results_eq(
   $$
@@ -59,11 +63,11 @@ select results_eq(
         'shipping_methods', 'coupons', 'customer_profiles',
         'customer_addresses', 'staff_profiles', 'orders', 'order_items',
         'coupon_redemptions', 'inventory_movements', 'audit_events',
-        'order_enablement_checks'
+        'order_enablement_checks', 'media_assets'
       ])
   $$,
-  array[22::bigint],
-  'exactly 22 commerce tables exist'
+  array[23::bigint],
+  'exactly 23 commerce tables exist'
 );
 select results_eq(
   $$
@@ -84,8 +88,8 @@ select results_eq(
 );
 select results_eq(
   $$select count(*)::bigint from pg_catalog.pg_policies where schemaname = 'public'$$,
-  array[52::bigint],
-  'exactly 52 RLS policies exist'
+  array[56::bigint],
+  'exactly 56 public RLS policies exist'
 );
 select results_eq(
   $$select count(*)::bigint from public.categories$$,

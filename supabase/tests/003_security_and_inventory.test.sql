@@ -15,7 +15,7 @@ select results_eq(
         'shipping_methods', 'coupons', 'customer_profiles',
         'customer_addresses', 'staff_profiles', 'orders', 'order_items',
         'coupon_redemptions', 'inventory_movements', 'audit_events',
-        'order_enablement_checks'
+        'order_enablement_checks', 'media_assets'
       ])
   $$,
   array[0::bigint],
