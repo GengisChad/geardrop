@@ -27,7 +27,7 @@ export function EmptyState({
     <div
       data-testid="empty-state"
       className={cn(
-        "flex flex-col items-center justify-center rounded-[--radius-card] border border-dashed border-grey-300 bg-white px-6 py-16 text-center",
+        "gd-glass-panel flex flex-col items-center justify-center rounded-[--radius-card] border-dashed border-grey-300 px-6 py-16 text-center",
         className,
       )}
     >

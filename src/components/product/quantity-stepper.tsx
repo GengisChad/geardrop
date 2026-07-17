@@ -25,7 +25,7 @@ export function QuantityStepper({
   const button = size === "sm" ? "size-9" : "size-12";
 
   return (
-    <div className={cn("inline-flex items-center rounded-full border border-grey-300 bg-white", height)}>
+    <div className={cn("gd-glass-compact inline-flex items-center rounded-full", height)}>
       <button
         type="button"
         onClick={() => onChange(Math.max(min, value - 1))}

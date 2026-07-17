@@ -28,7 +28,7 @@ export function Gallery({ images, slug, name, promo }: GalleryProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="relative overflow-hidden rounded-[--radius-card] border border-grey-200 bg-white">
+      <div className="gd-glass-panel relative overflow-hidden rounded-[--radius-glass]">
         {/* Product art on a light plate, as in every mockup. (audit §7.6) */}
         <div className="relative aspect-square">
           <AnimatePresence mode="wait" initial={false}>
@@ -103,7 +103,7 @@ function GalleryArrow({ direction, onClick }: { direction: "prev" | "next"; onCl
       aria-label={direction === "prev" ? "Immagine precedente" : "Immagine successiva"}
       className={cn(
         "absolute top-1/2 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded-full",
-        "border border-grey-200 bg-white/90 text-graphite backdrop-blur transition-colors hover:border-violet hover:text-violet",
+        "gd-glass-compact text-graphite transition-colors hover:border-violet hover:text-violet",
         direction === "prev" ? "left-3" : "right-3",
       )}
     >

@@ -3,7 +3,15 @@ import type { AppHref } from "@/lib/routes";
 import { cn } from "@/lib/cn";
 
 /** Variants transcribed from design system §06 (Primario / Secondario / Terziario / Testo). */
-export type ButtonVariant = "primary" | "secondary" | "tertiary" | "text" | "card" | "card-preorder" | "card-notify";
+export type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "glass"
+  | "tertiary"
+  | "text"
+  | "card"
+  | "card-preorder"
+  | "card-notify";
 export type ButtonSize = "sm" | "md" | "lg";
 
 const BASE =
@@ -19,6 +27,8 @@ const VARIANTS: Record<ButtonVariant, string> = {
   secondary:
     "rounded-full border border-violet bg-graphite text-white hover:bg-grey-700 " +
     "hover:border-violet/70 disabled:border-grey-300 disabled:bg-grey-200 disabled:text-grey-400",
+  // Light liquid-glass pill — the reference's second CTA.
+  glass: "gd-glass-compact rounded-full text-graphite hover:bg-white/85 disabled:text-grey-400",
   tertiary:
     "rounded-full border border-violet bg-white text-graphite hover:bg-violet-tint " +
     "disabled:border-grey-300 disabled:bg-grey-100 disabled:text-grey-400",

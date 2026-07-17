@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Crown, Heart, Package, ShoppingCart } from "lucide-react";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
-import { ClubBand } from "@/components/home/club-band";
 import type { AppHref } from "@/lib/routes";
 
 export const metadata: Metadata = {
@@ -41,7 +40,7 @@ export default function AccountPage() {
             <li key={label}>
               <Link
                 href={href}
-                className="group flex h-full items-start gap-3 rounded-[--radius-card] border border-grey-200 bg-white p-5 transition-[border-color,box-shadow] hover:border-violet hover:shadow-[0_18px_40px_-22px_rgba(122,60,255,0.5)]"
+                className="gd-glass-card gd-glass-interactive group flex h-full items-start gap-3 rounded-[--radius-glass] p-5"
               >
                 <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-violet-tint">
                   <Icon className="size-4.5 text-violet" strokeWidth={2} aria-hidden="true" />
@@ -55,8 +54,6 @@ export default function AccountPage() {
           ))}
         </ul>
       </div>
-
-      <ClubBand />
     </>
   );
 }

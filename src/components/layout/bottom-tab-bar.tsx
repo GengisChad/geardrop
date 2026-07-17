@@ -34,7 +34,7 @@ export function BottomTabBar() {
     <nav
       aria-label="Navigazione rapida"
       data-testid="bottom-tab-bar"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-grey-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden"
+      className="gd-glass-compact fixed inset-x-0 bottom-0 z-40 border-x-0 border-b-0 pb-[env(safe-area-inset-bottom)] lg:hidden"
     >
       <ul className="grid grid-cols-5">
         {TABS.map(({ label, href, Icon }) => {

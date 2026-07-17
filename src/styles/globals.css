@@ -74,6 +74,8 @@
 
   --radius-card: 0.875rem;
   --radius-pill: 999px;
+  --radius-glass: 1.25rem;
+  --radius-glass-lg: 1.75rem;
 }
 
 /* ==========================================================================
@@ -106,6 +108,20 @@
     font-size: var(--text-body);
     line-height: var(--text-body--line-height);
     -webkit-font-smoothing: antialiased;
+  }
+
+  /* Ambient field the glass surfaces refract. Kept faint (<10% alpha) so text on glass
+     never drops below its contrast target. Fixed, so it stays put while content scrolls. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(58rem 58rem at 88% -12%, color-mix(in srgb, var(--color-violet) 12%, transparent), transparent 60%),
+      radial-gradient(48rem 48rem at -8% 18%, color-mix(in srgb, var(--color-lime) 10%, transparent), transparent 55%),
+      radial-gradient(42rem 42rem at 50% 116%, color-mix(in srgb, var(--color-violet) 8%, transparent), transparent 60%);
   }
 
   /* Titles are always uppercase display; body copy never is. (audit §7) */
@@ -178,6 +194,212 @@
     linear-gradient(104deg, transparent 61%, color-mix(in srgb, var(--color-lime) 22%, transparent) 62%, transparent 63%),
     linear-gradient(104deg, transparent 70%, color-mix(in srgb, var(--color-violet) 30%, transparent) 71.5%, transparent 73%),
     linear-gradient(104deg, transparent 79%, color-mix(in srgb, var(--color-violet) 12%, transparent) 80%, transparent 81%);
+}
+
+/* ==========================================================================
+   Liquid glass
+   Translucent, blurred surfaces with a specular top rim and a soft float shadow.
+   Text-bearing glass uses a high white ratio so contrast holds on the ambient field.
+   ========================================================================== */
+
+@utility gd-glass {
+  background-color: color-mix(in srgb, white 62%, transparent);
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, white 48%, transparent) 0%,
+    color-mix(in srgb, white 8%, transparent) 46%,
+    color-mix(in srgb, var(--color-violet) 5%, transparent) 100%
+  );
+  -webkit-backdrop-filter: blur(24px) saturate(1.55);
+  backdrop-filter: blur(24px) saturate(1.55);
+  border: 1px solid color-mix(in srgb, white 72%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 88%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--color-violet) 5%, transparent),
+    0 24px 60px -34px color-mix(in srgb, var(--color-graphite) 42%, transparent);
+}
+
+@utility gd-glass-card {
+  background-color: color-mix(in srgb, white 74%, transparent);
+  background-image: linear-gradient(
+    145deg,
+    color-mix(in srgb, white 42%, transparent) 0%,
+    transparent 52%,
+    color-mix(in srgb, var(--color-violet) 4%, transparent) 100%
+  );
+  -webkit-backdrop-filter: blur(28px) saturate(1.5);
+  backdrop-filter: blur(28px) saturate(1.5);
+  border: 1px solid color-mix(in srgb, white 78%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 94%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--color-violet) 6%, transparent),
+    0 26px 60px -34px color-mix(in srgb, var(--color-graphite) 38%, transparent);
+}
+
+@utility gd-glass-panel {
+  background-color: color-mix(in srgb, white 86%, transparent);
+  background-image: linear-gradient(
+    145deg,
+    color-mix(in srgb, white 34%, transparent) 0%,
+    transparent 58%,
+    color-mix(in srgb, var(--color-violet) 3%, transparent) 100%
+  );
+  -webkit-backdrop-filter: blur(30px) saturate(1.35);
+  backdrop-filter: blur(30px) saturate(1.35);
+  border: 1px solid color-mix(in srgb, white 84%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 96%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--color-graphite) 4%, transparent),
+    0 24px 54px -34px color-mix(in srgb, var(--color-graphite) 34%, transparent);
+}
+
+@utility gd-glass-compact {
+  background-color: color-mix(in srgb, white 76%, transparent);
+  background-image: linear-gradient(145deg, color-mix(in srgb, white 38%, transparent), transparent 62%);
+  -webkit-backdrop-filter: blur(20px) saturate(1.45);
+  backdrop-filter: blur(20px) saturate(1.45);
+  border: 1px solid color-mix(in srgb, white 72%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 90%, transparent),
+    0 12px 30px -22px color-mix(in srgb, var(--color-graphite) 42%, transparent);
+}
+
+/* For surfaces that carry a lot of text — more opaque, so legibility never depends on
+   what happens to be behind the glass. */
+@utility gd-glass-strong {
+  background-color: color-mix(in srgb, white 86%, transparent);
+  background-image: linear-gradient(145deg, color-mix(in srgb, white 34%, transparent), transparent 58%);
+  -webkit-backdrop-filter: blur(30px) saturate(1.35);
+  backdrop-filter: blur(30px) saturate(1.35);
+  border: 1px solid color-mix(in srgb, white 84%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 96%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--color-graphite) 4%, transparent),
+    0 24px 54px -34px color-mix(in srgb, var(--color-graphite) 34%, transparent);
+}
+
+@utility gd-glass-interactive {
+  transition-property: border-color, box-shadow, transform;
+  transition-duration: 300ms;
+  transition-timing-function: var(--ease-out-gear);
+
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-4px);
+      border-color: color-mix(in srgb, var(--color-violet) 32%, white);
+      box-shadow:
+        inset 0 1px 0 color-mix(in srgb, white 96%, transparent),
+        inset 0 -1px 0 color-mix(in srgb, var(--color-violet) 10%, transparent),
+        0 28px 64px -34px color-mix(in srgb, var(--color-violet) 42%, transparent);
+    }
+  }
+}
+
+/* Glass over the graphite bands. */
+@utility gd-glass-dark {
+  background: color-mix(in srgb, white 7%, transparent);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  backdrop-filter: blur(22px) saturate(1.4);
+  border: 1px solid color-mix(in srgb, white 12%, transparent);
+  box-shadow:
+    inset 0 1px 0 0 color-mix(in srgb, white 16%, transparent),
+    0 22px 50px -22px rgba(0, 0, 0, 0.55);
+}
+
+/* Pearl field behind the floating hero card. */
+@utility gd-hero-field {
+  background:
+    radial-gradient(120% 95% at 72% 8%, #ffffff 0%, #eef0f4 44%, #e5e8ee 100%);
+}
+
+/* Micro grid texture inside glass surfaces — faint, for depth not decoration. */
+@utility gd-grid {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-graphite) 4%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-graphite) 4%, transparent) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* Ambient bob for the floating hero emblem — a spinning top that never settles. */
+@utility gd-float {
+  animation: gd-float 6.5s var(--ease-out-gear) infinite;
+}
+
+/* Impact bloom breathing under the hero VFX. Centring lives in the keyframe because the
+   animation owns `transform` — a Tailwind translate on the same element would be lost. */
+@keyframes gd-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+}
+
+@keyframes gd-twinkle {
+  0%,
+  100% {
+    opacity: 0.12;
+    transform: scale(0.6);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes gd-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1.4deg);
+  }
+  50% {
+    transform: translateY(-16px) rotate(1.4deg);
+  }
+}
+
+/* Scroll reveal — pure CSS, scroll-driven. No JS, so it can't race hydration and can't
+   leave content hidden. It only applies where the effect is safe (motion allowed AND the
+   browser supports scroll-driven animations); everywhere else the content is simply
+   visible. See components/ui/reveal.tsx. */
+@keyframes gd-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    [data-reveal] {
+      animation: gd-reveal both;
+      animation-timeline: view();
+      animation-range: entry 5% cover 24%;
+    }
+  }
+}
+
+/* One-shot specular sweep across a glass surface on load. */
+@keyframes gd-sheen {
+  0% {
+    transform: translateX(-140%) skewX(-16deg);
+    opacity: 0;
+  }
+  16% {
+    opacity: 0.6;
+  }
+  55%,
+  100% {
+    transform: translateX(260%) skewX(-16deg);
+    opacity: 0;
+  }
 }
 
 @keyframes gd-spin {

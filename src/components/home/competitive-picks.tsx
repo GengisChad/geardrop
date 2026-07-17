@@ -33,7 +33,7 @@ export function CompetitivePicks({ products }: { products: readonly Product[] })
           return (
             <li
               key={type}
-              className="rounded-[--radius-card] border border-grey-200 bg-white p-5 transition-[border-color,box-shadow] duration-300 hover:border-violet hover:shadow-[0_18px_40px_-22px_rgba(122,60,255,0.5)]"
+              className="gd-glass-card gd-glass-interactive rounded-[--radius-glass] p-5"
             >
               <div className="flex items-center gap-3">
                 <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-violet-tint">
@@ -51,7 +51,7 @@ export function CompetitivePicks({ products }: { products: readonly Product[] })
                   return (
                     <li key={product.slug}>
                       <Link href={`/prodotto/${product.slug}`} className="group block text-center">
-                        <span className="block overflow-hidden rounded-lg bg-grey-100 p-2">
+                        <span className="block overflow-hidden rounded-xl bg-white/55 p-2 ring-1 ring-white/50">
                           {image ? (
                             <Image
                               src={image.src}

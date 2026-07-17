@@ -58,7 +58,7 @@ export function ProductDetails({ product }: { product: Product }) {
   return (
     <section className="mx-auto max-w-[1400px] px-4 py-10 sm:px-6">
       {/* Desktop: tabs */}
-      <div className="hidden rounded-[--radius-card] border border-grey-200 bg-white lg:block">
+      <div className="gd-glass-panel hidden rounded-[--radius-glass] lg:block">
         <div role="tablist" aria-label="Dettagli prodotto" className="flex border-b border-grey-200">
           {panels.map((panel) => (
             <button
@@ -109,7 +109,7 @@ export function ProductDetails({ product }: { product: Product }) {
 function AccordionItem({ label, content }: { label: string; content: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="overflow-hidden rounded-[--radius-card] border border-grey-200 bg-white">
+    <div className="gd-glass-panel overflow-hidden rounded-[--radius-glass]">
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}

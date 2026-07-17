@@ -58,7 +58,7 @@ export function CartClient() {
                 transition={{ duration: 0.22 }}
                 data-testid="cart-line"
                 data-slug={product.slug}
-                className="flex gap-4 overflow-hidden rounded-[--radius-card] border border-grey-200 bg-white p-4"
+                className="gd-glass-panel flex gap-4 overflow-hidden rounded-[--radius-glass] p-4"
               >
                 <Link href={`/prodotto/${product.slug}`} className="shrink-0">
                   {image ? (
@@ -114,7 +114,7 @@ export function CartClient() {
         </AnimatePresence>
       </ul>
 
-      <aside className="sticky top-28 flex flex-col gap-4 rounded-[--radius-card] border border-grey-200 bg-white p-5">
+      <aside className="gd-glass-panel sticky top-28 flex flex-col gap-4 rounded-[--radius-glass] p-5">
         <h2 className="gd-display text-small font-bold tracking-wider text-graphite">Riepilogo</h2>
         <FreeShippingMeter totals={totals} />
         <CartTotalsPanel totals={totals} />

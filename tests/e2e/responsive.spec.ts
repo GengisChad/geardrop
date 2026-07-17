@@ -65,6 +65,81 @@ test.describe("mobile", () => {
 test.describe("desktop", () => {
   test.skip(({ isMobile }) => isMobile, "desktop-only behaviour");
 
+  test("liquid glass tiers preserve hierarchy", async ({ page }) => {
+    await page.goto("/");
+
+    const styles = await page.evaluate(() => {
+      const read = (selector: string) => {
+        const element = document.querySelector<HTMLElement>(selector);
+        if (!element) throw new Error(`Missing glass surface: ${selector}`);
+        const style = getComputedStyle(element);
+        const alphaMatch = style.backgroundColor.match(/\/\s*([\d.]+)\s*\)|,\s*([\d.]+)\s*\)$/);
+        const alpha = Number(alphaMatch?.[1] ?? alphaMatch?.[2] ?? 1);
+        const backdrop = [
+          style.getPropertyValue("backdrop-filter"),
+          style.getPropertyValue("-webkit-backdrop-filter"),
+        ].find(
+          (value) => value && value !== "none",
+        );
+        return {
+          alpha,
+          backdrop: backdrop ?? "none",
+          border: style.borderTopWidth,
+        };
+      };
+
+      return {
+        display: read(".gd-glass"),
+        card: read(".gd-glass-card"),
+        panel: read(".gd-glass-panel"),
+      };
+    });
+
+    expect(styles.display.backdrop).not.toBe("none");
+    expect(styles.card.backdrop).not.toBe("none");
+    expect(styles.panel.backdrop).not.toBe("none");
+    expect(styles.display.border).not.toBe("0px");
+    expect(styles.display.alpha).toBeLessThan(styles.card.alpha);
+    expect(styles.card.alpha).toBeLessThan(styles.panel.alpha);
+  });
+
+  test("hero artwork is dominant without horizontal overflow", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto("/");
+
+    const heroBox = await page.getByTestId("hero-glass").boundingBox();
+    const impactBox = await page.getByTestId("hero-impact").boundingBox();
+    expect(heroBox).not.toBeNull();
+    expect(impactBox).not.toBeNull();
+    expect(impactBox!.width / heroBox!.width).toBeGreaterThanOrEqual(0.42);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.reload();
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(1);
+  });
+
+  test("storefront routes share the liquid glass vocabulary", async ({ page }) => {
+    const routes = ["/", "/negozio", "/prodotto/wizard-arrow-4-80b", "/carrello", "/checkout", "/account"];
+
+    for (const route of routes) {
+      await page.goto(route);
+      const surfaces = page.locator(".gd-glass-card, .gd-glass-panel, .gd-glass-compact");
+      const count = await surfaces.count();
+      expect(count, `${route} has a shared glass surface`).toBeGreaterThan(0);
+      const backdrop = await surfaces.first().evaluate((element) => {
+        const style = getComputedStyle(element);
+        return [
+          style.getPropertyValue("backdrop-filter"),
+          style.getPropertyValue("-webkit-backdrop-filter"),
+        ].find((value) => value && value !== "none") ?? "none";
+      });
+      expect(backdrop, `${route} has active backdrop filtering`).not.toBe("none");
+    }
+  });
+
   test("shows the nav and hides the mobile tab bar", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("navigation", { name: "Navigazione principale" })).toBeVisible();

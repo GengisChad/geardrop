@@ -19,7 +19,7 @@ export function CatalogView({ page, facets, lockedCategory, emptyMessage }: Cata
     <div className="mx-auto max-w-[1400px] px-4 pb-16 sm:px-6">
       <div className="grid gap-8 lg:grid-cols-[16rem_1fr] lg:gap-10">
         <aside className="hidden lg:block">
-          <div className="sticky top-28 rounded-[--radius-card] border border-grey-200 bg-white p-5">
+          <div className="gd-glass-panel sticky top-28 rounded-[--radius-glass] p-5">
             <Filters facets={facets} {...(lockedCategory ? { lockedCategory } : {})} />
           </div>
         </aside>

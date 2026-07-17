@@ -27,14 +27,14 @@ export function CategoryTiles() {
             <li key={category.slug}>
               <Link
                 href={`/negozio/${category.slug}`}
-                className="group relative flex h-40 overflow-hidden rounded-[--radius-card] border border-grey-200 bg-white transition-[border-color,box-shadow] duration-300 hover:border-violet hover:shadow-[0_18px_40px_-20px_rgba(122,60,255,0.5)] sm:h-44"
+                className="gd-glass-card gd-glass-interactive group relative flex h-40 overflow-hidden rounded-[--radius-glass] sm:h-44"
               >
                 <div className="relative z-10 flex flex-col p-4">
                   <h3 className="text-small font-bold text-graphite sm:text-body">{category.name}</h3>
                   <p className="mt-1 max-w-[9rem] text-[0.6875rem] leading-tight text-grey-600 sm:text-small">
                     {category.tagline}
                   </p>
-                  <span className="mt-auto inline-flex size-7 items-center justify-center rounded-full border border-grey-200 bg-white text-violet transition-transform duration-300 group-hover:translate-x-1">
+                  <span className="mt-auto inline-flex size-7 items-center justify-center rounded-full bg-white/70 text-violet ring-1 ring-white/60 transition-transform duration-300 group-hover:translate-x-1">
                     <ChevronRight className="size-4" strokeWidth={2.5} aria-hidden="true" />
                   </span>
                 </div>

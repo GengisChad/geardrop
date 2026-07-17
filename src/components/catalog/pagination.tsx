@@ -90,7 +90,7 @@ function PageButton({
         "gd-display inline-flex size-9 items-center justify-center rounded-full text-small font-bold transition-colors",
         active
           ? "bg-violet text-white"
-          : "border border-grey-300 bg-white text-graphite hover:border-violet hover:text-violet",
+          : "gd-glass-compact text-graphite hover:border-violet hover:text-violet",
         disabled && "pointer-events-none opacity-40",
       )}
     >

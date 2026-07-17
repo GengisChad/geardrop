@@ -56,7 +56,7 @@ export default function ChiSiamoPage() {
 
         <ul className="mt-6 grid gap-4 sm:grid-cols-2">
           {PILLARS.map((pillar) => (
-            <li key={pillar.title} className="rounded-[--radius-card] border border-grey-200 bg-white p-5">
+            <li key={pillar.title} className="gd-glass-card gd-glass-interactive rounded-[--radius-glass] p-5">
               <h3 className="text-h3 font-bold text-graphite">{pillar.title}</h3>
               <p className="mt-2 text-small leading-relaxed text-grey-600">{pillar.body}</p>
             </li>
