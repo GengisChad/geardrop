@@ -26,7 +26,7 @@ describe("Supabase database CI workflow", () => {
       "pnpm install --frozen-lockfile",
       "supabase start",
       "supabase db reset --local",
-      "supabase db query --local --file supabase/seed.sql",
+      'psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres"',
       "supabase test db --local supabase/tests",
       "supabase db lint --local --level error --fail-on error",
       "supabase gen types typescript --local --schema public",

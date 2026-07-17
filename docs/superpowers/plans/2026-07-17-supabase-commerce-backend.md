@@ -58,7 +58,7 @@ Local Docker is not part of the approved workflow. Runtime validation runs only 
 - [ ] Write a failing source-contract test that requires all three triggers, `ubuntu-latest`, the sixteen validation steps, unconditional `supabase stop --no-backup`, and the absence of remote Supabase secrets or linked commands.
 - [ ] Run `pnpm test -- tests/unit/supabase-ci-workflow.test.ts` and observe failure because the workflow is absent.
 - [ ] Implement the workflow with `actions/checkout@v4`, `pnpm/action-setup@v4` at pnpm `11.13.0`, `actions/setup-node@v4` at Node `24.16.0`, and `supabase/setup-cli@v1` at CLI `2.109.1`.
-- [ ] Run the seed a second time with `supabase db query --local --file supabase/seed.sql`.
+- [ ] Run the seed a second time with `psql` against `postgresql://postgres:postgres@127.0.0.1:54322/postgres`, the ephemeral local Postgres port exposed by the CI stack.
 - [ ] Generate `/tmp/database.types.ts`, upload it as a diagnostic artifact, compare it byte-for-byte with `src/lib/supabase/database.types.ts`, then run application verification.
 - [ ] Verify the source-contract test passes.
 
