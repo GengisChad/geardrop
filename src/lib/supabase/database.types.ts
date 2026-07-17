@@ -391,6 +391,51 @@ export type Database = {
           },
         ]
       }
+      media_assets: {
+        Row: {
+          alt_text: string
+          bucket_id: string
+          byte_size: number
+          created_at: string
+          height: number
+          id: number
+          mime_type: string
+          object_path: string
+          original_filename: string
+          updated_at: string
+          uploaded_by: string
+          width: number
+        }
+        Insert: {
+          alt_text: string
+          bucket_id?: string
+          byte_size: number
+          created_at?: string
+          height: number
+          id?: never
+          mime_type: string
+          object_path: string
+          original_filename: string
+          updated_at?: string
+          uploaded_by: string
+          width: number
+        }
+        Update: {
+          alt_text?: string
+          bucket_id?: string
+          byte_size?: number
+          created_at?: string
+          height?: number
+          id?: never
+          mime_type?: string
+          object_path?: string
+          original_filename?: string
+          updated_at?: string
+          uploaded_by?: string
+          width?: number
+        }
+        Relationships: []
+      }
       order_enablement_checks: {
         Row: {
           evidence: string | null
@@ -607,6 +652,8 @@ export type Database = {
           alt: string
           height: number
           id: number
+          is_primary: boolean
+          media_asset_id: number | null
           product_id: number
           published: boolean
           sort_order: number
@@ -617,6 +664,8 @@ export type Database = {
           alt: string
           height: number
           id?: never
+          is_primary?: boolean
+          media_asset_id?: number | null
           product_id: number
           published?: boolean
           sort_order?: number
@@ -627,6 +676,8 @@ export type Database = {
           alt?: string
           height?: number
           id?: never
+          is_primary?: boolean
+          media_asset_id?: number | null
           product_id?: number
           published?: boolean
           sort_order?: number
@@ -634,6 +685,13 @@ export type Database = {
           width?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "product_images_media_asset_id_fkey"
+            columns: ["media_asset_id"]
+            isOneToOne: false
+            referencedRelation: "media_assets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "product_images_product_id_fkey"
             columns: ["product_id"]
@@ -737,6 +795,7 @@ export type Database = {
       products: {
         Row: {
           active: boolean
+          allow_backorder: boolean
           availability_override:
             | Database["public"]["Enums"]["availability_override"]
             | null
@@ -748,12 +807,18 @@ export type Database = {
           description: string
           id: number
           is_purchasable: boolean | null
+          low_stock_threshold: number
+          manage_stock: boolean
           name: string
           preorder_allocation: number
+          preorder_release_date: string | null
           price_cents: number
           publication_status: Database["public"]["Enums"]["publication_status"]
           rating: number
           review_count: number
+          seo_description: string | null
+          seo_title: string | null
+          short_name: string | null
           sku: string
           slug: string
           sort_order: number
@@ -764,6 +829,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          allow_backorder?: boolean
           availability_override?:
             | Database["public"]["Enums"]["availability_override"]
             | null
@@ -775,12 +841,18 @@ export type Database = {
           description: string
           id?: never
           is_purchasable?: boolean | null
+          low_stock_threshold?: number
+          manage_stock?: boolean
           name: string
           preorder_allocation?: number
+          preorder_release_date?: string | null
           price_cents: number
           publication_status?: Database["public"]["Enums"]["publication_status"]
           rating?: number
           review_count?: number
+          seo_description?: string | null
+          seo_title?: string | null
+          short_name?: string | null
           sku: string
           slug: string
           sort_order?: number
@@ -791,6 +863,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          allow_backorder?: boolean
           availability_override?:
             | Database["public"]["Enums"]["availability_override"]
             | null
@@ -802,12 +875,18 @@ export type Database = {
           description?: string
           id?: never
           is_purchasable?: boolean | null
+          low_stock_threshold?: number
+          manage_stock?: boolean
           name?: string
           preorder_allocation?: number
+          preorder_release_date?: string | null
           price_cents?: number
           publication_status?: Database["public"]["Enums"]["publication_status"]
           rating?: number
           review_count?: number
+          seo_description?: string | null
+          seo_title?: string | null
+          short_name?: string | null
           sku?: string
           slug?: string
           sort_order?: number
@@ -930,6 +1009,10 @@ export type Database = {
         }
         Returns: number
       }
+      record_completed_media_storage_mutation: {
+        Args: { p_object_path: string; p_operation: string }
+        Returns: number
+      }
     }
     Enums: {
       availability_override: "preorder" | "incoming"
@@ -951,7 +1034,7 @@ export type Database = {
         | "completed"
         | "cancelled"
       payment_status: "pending" | "authorized" | "paid" | "failed" | "refunded"
-      product_relation_type: "related" | "upsell"
+      product_relation_type: "related" | "upsell" | "cross_sell" | "compatible"
       promo_tag: "novita" | "offerta" | "limited" | "esclusiva"
       publication_status: "draft" | "published" | "archived"
       staff_role: "owner" | "admin" | "editor"
@@ -1104,7 +1187,7 @@ export const Constants = {
         "cancelled",
       ],
       payment_status: ["pending", "authorized", "paid", "failed", "refunded"],
-      product_relation_type: ["related", "upsell"],
+      product_relation_type: ["related", "upsell", "cross_sell", "compatible"],
       promo_tag: ["novita", "offerta", "limited", "esclusiva"],
       publication_status: ["draft", "published", "archived"],
       staff_role: ["owner", "admin", "editor"],
