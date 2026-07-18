@@ -42,6 +42,7 @@ describe("order intake hardening", () => {
     expect(replacementSql).toContain("balance_kind='preorder',balance_after=null");
     expect(replacementSql).toContain("exact allocation history cannot be reconstructed");
     expect(replacementSql).toContain("products_record_preorder_allocation_change");
+    expect(replacementSql).toContain("geardrop.preorder_movement_managed");
   });
 
   it("keeps machine checks authoritative while allowing seeded manual checks", () => {

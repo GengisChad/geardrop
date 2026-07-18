@@ -45,6 +45,7 @@ set search_path = ''
 as $$
 begin
   if old.preorder_allocation is distinct from new.preorder_allocation
+    and current_setting('geardrop.preorder_movement_managed',true) is distinct from 'on'
     and private.has_staff_role(array['owner'::public.staff_role,'admin'::public.staff_role]) then
     insert into public.inventory_movements(
       product_id,delta,stock_after,balance_kind,balance_after,reason,actor_user_id,note
@@ -60,6 +61,29 @@ revoke all on function private.record_staff_preorder_allocation_change() from pu
 create trigger products_record_preorder_allocation_change
 after update of preorder_allocation on public.products
 for each row execute function private.record_staff_preorder_allocation_change();
+
+create or replace function public.cancel_order_and_restore_stock(p_order_id bigint,p_note text default null)
+returns void language plpgsql security definer set search_path = '' as $$
+declare actor_id uuid:=(select auth.uid()); current_status public.order_status; item record; next_stock integer;
+begin
+  if not private.has_staff_role(array['owner'::public.staff_role,'admin'::public.staff_role]) then raise exception using errcode='42501',message='GD_ORDER_MANAGER_REQUIRED'; end if;
+  select status into current_status from public.orders where id=p_order_id for update;
+  if not found then raise exception using errcode='P0002',message='GD_ORDER_NOT_FOUND'; end if;
+  if current_status not in ('pending','confirmed','processing') then raise exception using errcode='22023',message='GD_ORDER_INVALID_TRANSITION'; end if;
+  perform 1 from public.products where id in (select product_id from public.order_items where order_id=p_order_id) order by id for update;
+  perform set_config('geardrop.preorder_movement_managed','on',true);
+  for item in select * from public.order_items where order_id=p_order_id order by id loop
+    if item.reservation_kind='preorder' then update public.products set preorder_allocation=preorder_allocation+item.quantity where id=item.product_id returning stock_quantity into next_stock;
+    else update public.products set stock_quantity=stock_quantity+item.quantity where id=item.product_id returning stock_quantity into next_stock; end if;
+    insert into public.inventory_movements(product_id,delta,stock_after,reason,order_id,actor_user_id,note)
+    values(item.product_id,item.quantity,next_stock,'order_cancelled',p_order_id,actor_id,'Ripristino annullamento');
+  end loop;
+  perform set_config('geardrop.preorder_movement_managed','off',true);
+  update public.orders set status='cancelled' where id=p_order_id;
+  insert into public.order_status_events(order_id,from_status,to_status,actor_user_id,note) values(p_order_id,current_status,'cancelled',actor_id,nullif(trim(p_note),''));
+  insert into public.audit_events(actor_user_id,action,entity_type,entity_id,after_state) values(actor_id,'order.cancelled','orders',p_order_id::text,jsonb_build_object('stock_restored',true));
+end;
+$$;
 
 drop policy order_notes_staff_read on public.order_notes;
 drop policy order_status_events_staff_read on public.order_status_events;

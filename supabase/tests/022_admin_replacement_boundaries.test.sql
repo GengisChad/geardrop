@@ -1,5 +1,5 @@
 begin;
-select plan(19);
+select plan(20);
 
 select has_column('public','inventory_movements','balance_kind','inventory ledger identifies its balance');
 select has_column('public','inventory_movements','balance_after','inventory ledger stores the affected balance');
@@ -51,6 +51,10 @@ select results_eq(
 select ok(
   pg_get_functiondef('public.create_order(text,text,jsonb,jsonb,jsonb,text,text,uuid)'::regprocedure) ilike '%for share%',
   'order intake locks the acceptance singleton against concurrent disable');
+select ok(
+  pg_get_functiondef('public.cancel_order_and_restore_stock(bigint,text)'::regprocedure) like '%geardrop.preorder_movement_managed%'
+  and pg_get_functiondef('private.record_staff_preorder_allocation_change()'::regprocedure) like '%geardrop.preorder_movement_managed%',
+  'preorder cancellation suppresses only the duplicate automatic movement');
 
 insert into public.categories(slug,name,tagline,description,active,publication_status,published_at)
 values('ledger-cat','Ledger','Ledger','Ledger',true,'published',now());
