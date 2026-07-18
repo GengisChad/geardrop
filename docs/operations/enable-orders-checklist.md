@@ -1,6 +1,6 @@
 # Mandatory order-enablement checklist
 
-`site_settings.accept_orders` must remain false until an owner has recorded and reviewed every item below. Phase 1 does not provide an enable action.
+`site_settings.accept_orders` must remain false until an owner has recorded and reviewed every item below. Full Admin espone l'azione owner-only `set_order_acceptance()`, ma il database la rifiuta finché la checklist live non è completa e la conferma testuale non è esatta.
 
 - [ ] Exactly two initial owners were bootstrapped and non-staff Auth users have no staff row.
 - [ ] Production URL, email/password confirmation, redirects, SMTP, secrets, and key separation were reviewed.
@@ -16,4 +16,4 @@
 - [ ] Backup and recovery readiness was confirmed.
 - [ ] The admin UI displays the persistent “Ordini disabilitati” banner before activation.
 
-Enabling orders is a separate owner-authorized operation in a later phase. Completing documentation alone must never change `accept_orders`.
+Abilitare gli ordini resta un'operazione owner separata dal rollout applicativo. Completare la documentazione da sola non deve mai cambiare `accept_orders`.
