@@ -13,8 +13,8 @@ test("multi-upload isolates an invalid SVG and preserves the ready preview", asy
   await page.getByLabel("Alt text valid.png").fill("Pixel valido");
   await page.getByLabel("Alt text invalid.svg").fill("SVG non valido");
   await page.getByRole("button", { name: "Carica batch" }).click();
-  await expect(page.getByText("ready", { exact: true })).toBeVisible();
-  await expect(page.getByText("failed", { exact: true })).toBeVisible();
+  await expect(page.locator('b[data-status="ready"]')).toBeVisible();
+  await expect(page.locator('b[data-status="failed"]')).toBeVisible();
   await page.reload();
   await expect(page.getByRole("heading", { name: "valid.png" }).first()).toBeVisible();
   await expect(page.getByText("Pixel valido").first()).toBeVisible();
