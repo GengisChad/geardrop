@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { ProductCard } from "@/components/product/product-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SortSelect } from "@/components/catalog/sort-select";
-import { commerce } from "@/lib/commerce/provider";
+import { getCommerceProvider } from "@/lib/commerce/provider";
 import { parseProductQuery, type RawSearchParams } from "@/lib/search-params";
 
 export const metadata: Metadata = {
@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RicercaPage({ searchParams }: { searchParams: Promise<RawSearchParams> }) {
+  const commerce=await getCommerceProvider();
   const params = await searchParams;
   const query = parseProductQuery(params);
   const term = typeof params["q"] === "string" ? params["q"] : "";

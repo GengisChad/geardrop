@@ -121,26 +121,26 @@ describe("admin shell state", () => {
     expect(nav).toContain('aria-current={active ? "page" : undefined}');
     expect(nav).not.toMatch(/<a\s/);
     expect(page).not.toMatch(/<a href="\/admin/);
-    expect(page.match(/<Link/g)).toHaveLength(5);
-    for (const href of ["/admin/prodotti/nuovo", "/admin/inventario", "/admin/media"]) {
+    expect(page.match(/<Link/g)?.length ?? 0).toBeGreaterThanOrEqual(5);
+    for (const href of ["/admin/prodotti/nuovo", "/admin/inventario", "/admin/media", "/admin/ordini", "/admin/attivita"]) {
       expect(page).toContain(href);
     }
   });
 });
 
 describe("admin dashboard data", () => {
-  it("queries real catalogue and inventory movement tables without duplicating global settings", () => {
+  it("uses the role-safe real aggregate without duplicating global settings", () => {
     const dashboard = source("src/lib/admin/dashboard.ts");
     const page = source("src/app/admin/(protected)/page.tsx");
 
-    expect(dashboard).toContain('.from("products")');
-    expect(dashboard).toContain('.from("inventory_movements")');
+    expect(dashboard).toContain('rpc("get_admin_dashboard_metrics")');
     expect(dashboard).not.toContain('.from("site_settings")');
     expect(page).not.toContain("acceptOrders");
     expect(dashboard).toContain("publication_status");
     expect(dashboard).toContain("low_stock_threshold");
     expect(dashboard).toContain("availability_override");
     expect(dashboard).toContain("stock_status");
-    expect(dashboard).not.toMatch(/revenue|fatturato|vendite/i);
+    expect(dashboard).toContain("commerceValue===null?null");
+    expect(page).not.toMatch(/percentuale|rispetto a|vs\. /i);
   });
 });

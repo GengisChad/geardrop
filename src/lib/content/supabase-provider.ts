@@ -1,7 +1,6 @@
 import "server-only";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getContentPage, getFooter, getNavigation, listHomepageSections } from "./repository";
+import { getStorefrontChrome,getStorefrontHomepage,getStorefrontPage } from "@/lib/storefront/content-repository";
 import type { StorefrontContentProvider, StorefrontNavItem } from "./types";
 
 function flatten(items: readonly { label: string; href: string; active: boolean; children: readonly unknown[] }[]): StorefrontNavItem[] {
@@ -12,12 +11,7 @@ export function createSupabaseContentProvider(): StorefrontContentProvider {
   return {
     name: "supabase",
     async getChrome() {
-      const client = await createSupabaseServerClient();
-      const [desktop, mobile, footer] = await Promise.all([
-        getNavigation(client, "desktop"),
-        getNavigation(client, "mobile"),
-        getFooter(client),
-      ]);
+      const {desktop,mobile,footer}=await getStorefrontChrome();
       return {
         desktopNavigation: flatten(desktop?.items ?? []),
         mobileNavigation: flatten(mobile?.items ?? []),
@@ -29,8 +23,7 @@ export function createSupabaseContentProvider(): StorefrontContentProvider {
       };
     },
     async getPage(slug) {
-      const client = await createSupabaseServerClient();
-      const page = await getContentPage(client, slug);
+      const page = await getStorefrontPage(slug);
       return page ? {
         title: page.title,
         lead: page.excerpt ?? "",
@@ -40,8 +33,7 @@ export function createSupabaseContentProvider(): StorefrontContentProvider {
       } : null;
     },
     async getHomepage() {
-      const client = await createSupabaseServerClient();
-      return listHomepageSections(client);
+      return getStorefrontHomepage();
     },
   };
 }

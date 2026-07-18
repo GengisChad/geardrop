@@ -6,7 +6,7 @@ import { CatalogView } from "@/components/catalog/catalog-view";
 import { TrustBandDark } from "@/components/home/trust";
 import { categoryArt, productImages } from "@/data/assets";
 import { CATEGORIES } from "@/data/catalog";
-import { commerce } from "@/lib/commerce/provider";
+import { getCommerceProvider } from "@/lib/commerce/provider";
 import { parseProductQuery, type RawSearchParams } from "@/lib/search-params";
 import type { CategorySlug } from "@/lib/commerce/types";
 
@@ -24,6 +24,7 @@ export function generateStaticParams(): Params[] {
 }
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
+  const commerce=await getCommerceProvider();
   const category = await commerce.getCategory((await params).categoria);
   if (!category) return { title: "Categoria non trovata" };
   return { title: category.name, description: category.description };
@@ -36,6 +37,7 @@ export default async function CategoriaPage({
   params: Promise<Params>;
   searchParams: Promise<RawSearchParams>;
 }) {
+  const commerce=await getCommerceProvider();
   const { categoria } = await params;
   const category = await commerce.getCategory(categoria);
   if (!category) notFound();

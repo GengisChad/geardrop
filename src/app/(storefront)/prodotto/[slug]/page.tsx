@@ -10,7 +10,7 @@ import { ProductCarousel } from "@/components/product/product-carousel";
 import { Rating } from "@/components/ui/rating";
 import { TrustBarLight } from "@/components/home/trust";
 import { PRODUCTS } from "@/data/catalog";
-import { commerce } from "@/lib/commerce/provider";
+import { getCommerceProvider } from "@/lib/commerce/provider";
 import { formatPrice } from "@/lib/format";
 import { BLADE_TYPE_LABEL, CATEGORY_LABEL } from "@/lib/labels";
 
@@ -23,6 +23,7 @@ export function generateStaticParams(): Params[] {
 }
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
+  const commerce=await getCommerceProvider();
   const product = await commerce.getProduct((await params).slug);
   if (!product) return { title: "Prodotto non trovato" };
   return {
@@ -37,6 +38,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 }
 
 export default async function ProdottoPage({ params }: { params: Promise<Params> }) {
+  const commerce=await getCommerceProvider();
   const { slug } = await params;
   const product = await commerce.getProduct(slug);
   if (!product) notFound();

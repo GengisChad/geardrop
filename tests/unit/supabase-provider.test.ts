@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { mapSupabaseProduct } from "@/lib/commerce/supabase-provider";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 describe("Supabase commerce provider mapping", () => {
   it("maps integer cents and ordered relational content into the UI contract", () => {
@@ -28,4 +30,10 @@ describe("Supabase commerce provider mapping", () => {
     expect(product.images).toEqual([{ src: "/product.png", width: 200, height: 180, alt: "Product" }]);
     expect(product.relatedSlugs).toEqual(["dran-buster-1-60a"]);
   });
+});
+
+describe("Supabase storefront boundaries",()=>{
+  it("explicitly filters public products and ready published media",()=>{const source=readFileSync(join(process.cwd(),"src/lib/commerce/supabase-provider.ts"),"utf8");expect(source).toContain('.eq("publication_status", "published")');expect(source).toContain('.eq("active", true)');expect(source).toContain('media_assets!inner(status)');expect(source).toContain('images.media_asset.status');});
+  it("uses authoritative pricing totals",()=>{const source=readFileSync(join(process.cwd(),"src/lib/commerce/supabase-provider.ts"),"utf8");expect(source).toContain('rpc("calculate_cart_pricing"');expect(source).not.toContain("subtotal + shipping");});
+  it("keeps mock default and creates Supabase clients per request",()=>{const source=readFileSync(join(process.cwd(),"src/lib/commerce/provider.ts"),"utf8");expect(source).toContain('process.env["COMMERCE_PROVIDER"] ?? "mock"');expect(source).toContain("getCommerceProvider");expect(source).not.toContain("NEXT_PUBLIC_COMMERCE_PROVIDER");});
 });

@@ -58,7 +58,7 @@ const PRODUCT_SELECT = `
   rating,
   review_count,
   category:categories!inner(slug),
-  images:product_images(src,width,height,alt,sort_order),
+  images:product_images!inner(src,width,height,alt,sort_order,published,media_asset:media_assets!inner(status)),
   specs:product_specs(label,value,sort_order),
   features:product_features(title,description,sort_order),
   box_contents:product_box_contents(content,sort_order),
@@ -143,7 +143,7 @@ function count<T extends string>(values: readonly T[]): Map<T, number> {
 
 export function createSupabaseCommerceProvider(client: SupabaseClient<Database>): CommerceProvider {
   async function allProducts(): Promise<readonly Product[]> {
-    const { data, error } = await client.from("products").select(PRODUCT_SELECT);
+    const { data, error } = await client.from("products").select(PRODUCT_SELECT).eq("publication_status", "published").eq("active", true).eq("images.published", true).eq("images.media_asset.status", "ready");
     if (error) throw error;
     return (data as unknown as readonly RawProduct[]).map(mapSupabaseProduct);
   }
@@ -152,14 +152,14 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>)
     name: "supabase",
 
     async getProduct(slug) {
-      const { data, error } = await client.from("products").select(PRODUCT_SELECT).eq("slug", slug).maybeSingle();
+      const { data, error } = await client.from("products").select(PRODUCT_SELECT).eq("publication_status", "published").eq("active", true).eq("images.published", true).eq("images.media_asset.status", "ready").eq("slug", slug).maybeSingle();
       if (error) throw error;
       return data ? mapSupabaseProduct(data as unknown as RawProduct) : null;
     },
 
     async getProductsBySlugs(slugs) {
       if (slugs.length === 0) return [];
-      const { data, error } = await client.from("products").select(PRODUCT_SELECT).in("slug", [...slugs]);
+      const { data, error } = await client.from("products").select(PRODUCT_SELECT).eq("publication_status", "published").eq("active", true).eq("images.published", true).eq("images.media_asset.status", "ready").in("slug", [...slugs]);
       if (error) throw error;
       const bySlug = new Map(
         (data as unknown as readonly RawProduct[]).map((row) => [row.slug, mapSupabaseProduct(row)]),
@@ -212,6 +212,8 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>)
       const { data, error } = await client
         .from("categories")
         .select("slug,name,tagline,description")
+        .eq("publication_status", "published")
+        .eq("active", true)
         .order("sort_order");
       if (error) throw error;
       return (data as readonly Category[] | null) ?? [];
@@ -221,6 +223,8 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>)
       const { data, error } = await client
         .from("categories")
         .select("slug,name,tagline,description")
+        .eq("publication_status", "published")
+        .eq("active", true)
         .eq("slug", slug)
         .maybeSingle();
       if (error) throw error;
@@ -235,6 +239,7 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>)
           hero:products!bundles_hero_product_id_fkey(slug),
           items:bundle_items(sort_order,product:products(slug))
         `)
+        .eq("active", true)
         .order("id")
         .limit(1)
         .maybeSingle();
@@ -265,26 +270,16 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>)
     },
 
     async computeTotals(lines): Promise<CartTotals> {
-      const products = await this.getProductsBySlugs(lines.map(({ slug }) => slug));
-      const bySlug = new Map(products.map((product) => [product.slug as string, product]));
-      const subtotal = lines.reduce(
-        (sum, line) => sum + (bySlug.get(line.slug)?.price.amount ?? 0) * line.quantity,
-        0,
-      );
-      const { data, error } = await client
-        .from("shipping_methods")
-        .select("price_cents,free_from_cents")
-        .eq("code", "standard")
-        .eq("active", true)
-        .maybeSingle();
-      if (error) throw error;
-      const freeFrom = (data?.free_from_cents as number | null | undefined) ?? 0;
-      const flatRate = (data?.price_cents as number | undefined) ?? 0;
-      const shipping = subtotal === 0 || (freeFrom > 0 && subtotal >= freeFrom) ? 0 : flatRate;
+      if(lines.length===0)return{subtotal:{amount:0,currency:"EUR"},shipping:{amount:0,currency:"EUR"},total:{amount:0,currency:"EUR"},freeShippingRemaining:0};
+      const productRows=await client.from("products").select("id,slug").eq("publication_status","published").eq("active",true).in("slug",lines.map(line=>line.slug));
+      if(productRows.error)throw productRows.error;const bySlug=new Map((productRows.data??[]).map(product=>[product.slug,product.id]));
+      const pricingLines=lines.map(line=>({product_id:bySlug.get(line.slug),quantity:line.quantity}));if(pricingLines.some(line=>line.product_id===undefined))throw new Error("Prodotto non disponibile");
+      const [pricing,shippingMethod]=await Promise.all([client.rpc("calculate_cart_pricing",{p_lines:pricingLines,p_shipping_code:"standard"}),client.from("shipping_methods").select("free_from_cents").eq("code","standard").eq("active",true).single()]);
+      if(pricing.error)throw pricing.error;if(shippingMethod.error)throw shippingMethod.error;const payload=pricing.data as Record<string,unknown>;const subtotal=Number(payload.subtotal_cents);const shipping=Number(payload.shipping_cents);const total=Number(payload.total_cents);if(![subtotal,shipping,total].every(Number.isSafeInteger))throw new Error("Totali autorevoli non validi");const freeFrom=shippingMethod.data.free_from_cents??0;
       return {
         subtotal: { amount: subtotal, currency: "EUR" },
         shipping: { amount: shipping, currency: "EUR" },
-        total: { amount: subtotal + shipping, currency: "EUR" },
+        total: { amount: total, currency: "EUR" },
         freeShippingRemaining: freeFrom > subtotal ? freeFrom - subtotal : 0,
       };
     },

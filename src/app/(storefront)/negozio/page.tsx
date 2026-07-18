@@ -4,7 +4,7 @@ import { CatalogHero } from "@/components/catalog/catalog-hero";
 import { CatalogView } from "@/components/catalog/catalog-view";
 import { TrustBandDark } from "@/components/home/trust";
 import { productImages } from "@/data/assets";
-import { commerce } from "@/lib/commerce/provider";
+import { getCommerceProvider } from "@/lib/commerce/provider";
 import { parseProductQuery, type RawSearchParams } from "@/lib/search-params";
 
 export const metadata: Metadata = {
@@ -13,6 +13,7 @@ export const metadata: Metadata = {
 };
 
 export default async function NegozioPage({ searchParams }: { searchParams: Promise<RawSearchParams> }) {
+  const commerce=await getCommerceProvider();
   const query = parseProductQuery(await searchParams);
   const [page, facets] = await Promise.all([commerce.listProducts(query), commerce.getFacets(query)]);
 
