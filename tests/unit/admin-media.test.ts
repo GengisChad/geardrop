@@ -47,7 +47,7 @@ describe("admin media contracts", () => {
 
   it("validates finalization, replacement, and association identities", () => {
     expect(finalizeMediaUploadSchema.safeParse({ mediaAssetId: 1, ...validFile }).success).toBe(true);
-    expect(replaceMediaSchema.safeParse({ oldMediaAssetId: 1, newMediaAssetId: 1 }).success).toBe(false);
+    expect(replaceMediaSchema.safeParse({ oldMediaAssetId: 1, file: validFile }).success).toBe(true);
     expect(associateMediaSchema.safeParse({ productId: 1, mediaAssetId: 2 }).success).toBe(true);
   });
 });

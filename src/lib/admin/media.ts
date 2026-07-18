@@ -37,10 +37,7 @@ export const finalizeMediaUploadSchema = z.object({
 
 export const replaceMediaSchema = z.object({
   oldMediaAssetId: mediaAssetIdSchema,
-  newMediaAssetId: mediaAssetIdSchema,
-}).refine((value) => value.oldMediaAssetId !== value.newMediaAssetId, {
-  message: "La nuova risorsa deve essere diversa",
-  path: ["newMediaAssetId"],
+  file: beginMediaUploadSchema,
 });
 
 export const associateMediaSchema = z.object({
@@ -49,6 +46,7 @@ export const associateMediaSchema = z.object({
 });
 
 export const mediaBatchSchema = z.array(beginMediaUploadSchema).min(1).max(MEDIA_BATCH_HARD_MAX);
+export const deleteMediaSchema = z.object({ mediaAssetId: mediaAssetIdSchema });
 
 export type BeginMediaUploadInput = z.infer<typeof beginMediaUploadSchema>;
 export type FinalizeMediaUploadInput = z.infer<typeof finalizeMediaUploadSchema>;
