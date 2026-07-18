@@ -53,6 +53,8 @@ insert into public.products(category_id,slug,sku,name,tagline,description,price_
 values
   ((select id from public.categories where slug='pricing-cat'),'pricing-a','pricing-a','Pricing A','A','A',1001,'published',true,20),
   ((select id from public.categories where slug='pricing-cat'),'pricing-b','pricing-b','Pricing B','B','B',2500,'published',true,20);
+insert into public.product_images(product_id,src,width,height,alt,sort_order,published,is_primary)
+select id,'/pricing/'||sku||'.webp',800,800,name,0,true,true from public.products where sku in ('pricing-a','pricing-b');
 insert into public.shipping_methods(code,name,price_cents,free_from_cents,active) values ('pricing-standard','Standard',499,10000,true);
 
 select results_eq(
@@ -186,6 +188,7 @@ select throws_ok(
   'P0001','GD_PRICING_COUPON_INVALID','first-purchase coupon rejects existing customer order'
 );
 reset role;
+select set_config('request.jwt.claim.sub','',true);
 select throws_ok(
   $$select public.calculate_cart_pricing(jsonb_build_array(jsonb_build_object('product_id',(select id from public.products where sku='pricing-a'),'quantity',1)),null,'00000000-0000-0000-0000-000000001403','pricing-standard')$$,
   '42501','GD_PRICING_CUSTOMER_MISMATCH','anonymous caller cannot impersonate a customer'

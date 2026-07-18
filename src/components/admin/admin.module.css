@@ -409,8 +409,9 @@
   bottom: 12px;
   left: 12px;
   z-index: 40;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: flex;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
   min-height: 64px;
   border: 1px solid rgba(18, 20, 23, 0.1);
   border-radius: 19px;
@@ -422,6 +423,7 @@
 
 .mobileDock a {
   display: flex;
+  flex: 0 0 108px;
   min-height: 50px;
   align-items: center;
   justify-content: center;
