@@ -2035,6 +2035,10 @@ export type Database = {
         Args: { p_expected_name: string; p_product_id: number }
         Returns: undefined
       }
+      duplicate_coupon_with_targets: {
+        Args: { p_coupon_id: number }
+        Returns: number
+      }
       duplicate_product_draft: {
         Args: {
           p_name: string
@@ -2042,10 +2046,6 @@ export type Database = {
           p_slug: string
           p_source_product_id: number
         }
-        Returns: number
-      }
-      duplicate_coupon_with_targets: {
-        Args: { p_coupon_id: number }
         Returns: number
       }
       fail_media_upload: {
@@ -2112,10 +2112,6 @@ export type Database = {
         Args: { p_bundle: Json; p_items: Json }
         Returns: number
       }
-      save_footer_configuration: {
-        Args: { p_configuration: Json }
-        Returns: undefined
-      }
       save_coupon_with_targets: {
         Args: {
           p_bundle_ids: number[]
@@ -2124,6 +2120,10 @@ export type Database = {
           p_product_ids: number[]
         }
         Returns: number
+      }
+      save_footer_configuration: {
+        Args: { p_configuration: Json }
+        Returns: undefined
       }
       save_homepage_section: {
         Args: { p_section: Json; p_target_ids: number[] }
@@ -2139,16 +2139,16 @@ export type Database = {
         }
         Returns: number
       }
-      set_order_acceptance: {
-        Args: { p_confirmation: string; p_enabled: boolean }
-        Returns: undefined
-      }
       set_manual_order_enablement_check: {
         Args: {
           p_evidence: string
           p_key: string
           p_status: Database["public"]["Enums"]["enablement_check_status"]
         }
+        Returns: undefined
+      }
+      set_order_acceptance: {
+        Args: { p_confirmation: string; p_enabled: boolean }
         Returns: undefined
       }
       set_order_tracking: {

@@ -4,6 +4,7 @@ alter table public.inventory_movements
   add column balance_after integer check (balance_after >= 0);
 update public.inventory_movements set balance_after=stock_after where balance_after is null;
 alter table public.inventory_movements alter column balance_after set not null;
+alter table public.inventory_movements alter column balance_after set default 0;
 
 create function private.annotate_inventory_balance()
 returns trigger

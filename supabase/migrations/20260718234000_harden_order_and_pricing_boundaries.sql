@@ -2,8 +2,10 @@
 -- operational kill switch in front of every order creation.
 alter function public.create_order(text,text,jsonb,jsonb,jsonb,text,text,uuid)
   rename to create_order_unchecked;
+alter function public.create_order_unchecked(text,text,jsonb,jsonb,jsonb,text,text,uuid)
+  set schema private;
 
-revoke all on function public.create_order_unchecked(text,text,jsonb,jsonb,jsonb,text,text,uuid)
+revoke all on function private.create_order_unchecked(text,text,jsonb,jsonb,jsonb,text,text,uuid)
   from public,anon,authenticated,service_role;
 
 create function public.create_order(
@@ -39,7 +41,7 @@ begin
   ) then
     raise exception using errcode='22023',message='GD_ORDER_QUANTITY_LIMIT';
   end if;
-  order_id := public.create_order_unchecked(
+  order_id := private.create_order_unchecked(
     p_email,p_phone,p_shipping_address,p_billing_address,p_lines,
     p_coupon_code,p_shipping_code,p_idempotency_key
   );
