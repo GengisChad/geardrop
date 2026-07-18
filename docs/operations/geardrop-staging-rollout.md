@@ -23,14 +23,18 @@ autorizzazioni restano quelle già stabilite in `full-admin-setup.md` e
 
 ```powershell
 $env:EXPECTED_SUPABASE_PROJECT_REF = "<ref del progetto GearDrop Development>"
-$env:EXPECTED_SUPABASE_PROJECT_NAME = "GearDrop Development"
-pnpm tsx scripts/verify-geardrop-project.ts --project-ref <ref-dichiarato> --project-name "<nome-dichiarato>"
+pnpm tsx scripts/verify-geardrop-project.ts --project-ref <ref-dichiarato>
 ```
 
-Fallisce (exit code diverso da 0) se nome o ref non coincidono esattamente con l'atteso, se il ref
-è nella lista `FORBIDDEN_SUPABASE_PROJECT_REFS` (usarla per registrare esplicitamente il ref di
-IBNApp una volta noto), o se una delle due variabili attese manca. Non prosegue mai in modo
-permissivo: un mismatch blocca, non avvisa soltanto. Vedi `scripts/verify-geardrop-project.ts`.
+Allowlist di un solo elemento: il ref dichiarato deve coincidere esattamente col ref atteso, o il
+comando si rifiuta (exit code diverso da 0). Nessuna lista di ref vietati da mantenere — un ref
+qualunque che non sia esattamente quello atteso è già rifiutato, senza bisogno di conoscere o
+registrare altri ref. Il nome del progetto sulla dashboard Supabase **non** è parte del controllo:
+è un'etichetta cosmetica che l'account owner può lasciare al valore di default
+("Nome Account's Project") senza che questo abbia alcun rilievo — solo il ref è l'identificatore
+autorevole. Se è impostato `SUPABASE_ACCESS_TOKEN`, lo script conferma anche via Management API che
+il progetto esiste e che il token vi ha accesso, fallendo se la risposta è 404/401/403 o se l'API
+restituisce un ref diverso da quello dichiarato. Vedi `scripts/verify-geardrop-project.ts`.
 
 Il controllo "schema applicativo estraneo" è a livello database, non qui: lo esegue la prima
 migration (`20260717185534_assert_dedicated_project.sql`) che aborta con

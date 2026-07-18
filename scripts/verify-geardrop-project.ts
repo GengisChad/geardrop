@@ -4,48 +4,33 @@ import { pathToFileURL } from "node:url";
  * Preflight identity guard for GearDrop remote Supabase operations.
  *
  * This is the FIRST check before `supabase link`, `supabase db push`, or any other command that
- * targets a real remote project. It is deliberately offline-capable: it compares a *declared*
- * project ref/name (what the operator is about to type into the CLI) against an *expected*
- * ref/name (what GearDrop Development actually is), and refuses on any mismatch, missing value,
- * or explicitly forbidden ref.
+ * targets a real remote project. It is deliberately offline-capable and allowlist-only: the
+ * *declared* project ref (what the operator is about to type into the CLI) must equal the
+ * *expected* ref exactly, or the operation refuses. There is no denylist of known-bad refs to
+ * maintain and no project name comparison — the ref is the only authoritative Supabase project
+ * identifier (globally unique, never renamed); a dashboard display name is a cosmetic label an
+ * account owner may or may not have set, and was previously found to actively mislead this check
+ * (a freshly created project reads "GengisChad's Project" — Supabase's own unrenamed default —
+ * until someone changes it), so it plays no role in the security decision.
  *
  * This does NOT replace the database-level guard in
  * `supabase/migrations/20260717185534_assert_dedicated_project.sql`, which aborts with
  * `GD_DEDICATED_PROJECT_REQUIRED` if the target database already contains non-extension
  * application tables. That check needs a real connection and runs at `db push` time; this script
- * runs earlier, before any connection is attempted, to catch a wrong ref/name from a typo or a
+ * runs earlier, before any connection is attempted, to catch a wrong ref from a typo or a
  * copy-paste mistake before it ever reaches the network.
  *
  * See docs/operations/geardrop-staging-rollout.md §1 for how this fits into the rollout sequence.
  */
 
-export type ProjectIdentity = {
-  readonly ref: string;
-  readonly name: string;
-};
-
 export type VerifyInput = {
-  /** The project the operator is about to target — what they typed or configured. */
-  readonly declared: ProjectIdentity;
-  /** What GearDrop Development actually is — read from EXPECTED_SUPABASE_PROJECT_REF/_NAME. */
-  readonly expected: ProjectIdentity;
-  /**
-   * Refs that must never be targeted even if they happened to match `expected` by mistake (for
-   * example, if IBNApp's ref were ever pasted into EXPECTED_SUPABASE_PROJECT_REF by accident).
-   * Populate via FORBIDDEN_SUPABASE_PROJECT_REFS once the operator knows IBNApp's ref; this script
-   * does not hardcode it and was never told it.
-   */
-  readonly forbiddenRefs?: readonly string[];
+  /** The project ref the operator is about to target — what they typed or configured. */
+  readonly declaredRef: string;
+  /** The one ref GearDrop's dedicated project is allowed to be — read from EXPECTED_SUPABASE_PROJECT_REF. */
+  readonly expectedRef: string;
 };
 
-export type VerifyFailureCode =
-  | "GD_MISSING_DECLARED_REF"
-  | "GD_MISSING_DECLARED_NAME"
-  | "GD_MISSING_EXPECTED_REF"
-  | "GD_MISSING_EXPECTED_NAME"
-  | "GD_FORBIDDEN_PROJECT_REF"
-  | "GD_PROJECT_NAME_MISMATCH"
-  | "GD_PROJECT_REF_MISMATCH";
+export type VerifyFailureCode = "GD_MISSING_DECLARED_REF" | "GD_MISSING_EXPECTED_REF" | "GD_PROJECT_REF_MISMATCH";
 
 export class ProjectVerificationError extends Error {
   readonly code: VerifyFailureCode;
@@ -70,26 +55,17 @@ export function maskRef(ref: string): string {
 }
 
 /**
- * Throws on any identity mismatch. Never returns a partial or "probably fine" result — a
- * verification step that can silently pass on bad input is not a guard.
+ * Throws unless the declared ref is exactly the expected ref. Allowlist-only: anything that is
+ * not a byte-for-byte match is refused, with no separate denylist to keep in sync.
  */
 export function verifyGeardropProject(input: VerifyInput): void {
-  const declaredRef = trimmed(input.declared.ref);
-  const declaredName = trimmed(input.declared.name);
-  const expectedRef = trimmed(input.expected.ref);
-  const expectedName = trimmed(input.expected.name);
-  const forbidden = (input.forbiddenRefs ?? []).map(trimmed).filter(Boolean);
+  const declaredRef = trimmed(input.declaredRef);
+  const expectedRef = trimmed(input.expectedRef);
 
   if (!declaredRef) {
     throw new ProjectVerificationError(
       "GD_MISSING_DECLARED_REF",
       "No project ref was declared for this operation. Pass --project-ref or set SUPABASE_PROJECT_REF.",
-    );
-  }
-  if (!declaredName) {
-    throw new ProjectVerificationError(
-      "GD_MISSING_DECLARED_NAME",
-      "No project name was declared for this operation. Pass --project-name or set SUPABASE_PROJECT_NAME.",
     );
   }
   if (!expectedRef) {
@@ -98,27 +74,6 @@ export function verifyGeardropProject(input: VerifyInput): void {
       "EXPECTED_SUPABASE_PROJECT_REF is not set. Refusing to verify against an undefined target.",
     );
   }
-  if (!expectedName) {
-    throw new ProjectVerificationError(
-      "GD_MISSING_EXPECTED_NAME",
-      'EXPECTED_SUPABASE_PROJECT_NAME is not set. It must equal "GearDrop Development".',
-    );
-  }
-
-  if (forbidden.includes(declaredRef)) {
-    throw new ProjectVerificationError(
-      "GD_FORBIDDEN_PROJECT_REF",
-      `Project ref ${maskRef(declaredRef)} is on the forbidden list (e.g. IBNApp) and must never be targeted by GearDrop tooling.`,
-    );
-  }
-
-  if (declaredName !== expectedName) {
-    throw new ProjectVerificationError(
-      "GD_PROJECT_NAME_MISMATCH",
-      `Declared project name "${declaredName}" does not match the expected "${expectedName}". Refusing.`,
-    );
-  }
-
   if (declaredRef !== expectedRef) {
     throw new ProjectVerificationError(
       "GD_PROJECT_REF_MISMATCH",
@@ -127,54 +82,66 @@ export function verifyGeardropProject(input: VerifyInput): void {
   }
 }
 
+export type RemoteConfirmation = "confirmed" | "skipped";
+
 /**
- * Optional defense-in-depth: if a Supabase access token is available, confirm via the Management
- * API that the ref really does resolve to the expected name remotely, catching the case where an
- * operator's local EXPECTED_* values are themselves stale or wrong. This is opt-in — a preflight
- * that hard-requires a fresh credential just to run would get bypassed under time pressure, and
- * the offline identity check above is already sufficient to catch typos/copy-paste mistakes.
- * Never throws on network failure; only throws on a confirmed identity mismatch.
+ * Confirms via the Supabase Management API that the ref exists, the token can access it, and the
+ * API's own `id`/`ref` for the project matches what was declared. Unlike the previous revision,
+ * this now genuinely fails when a token is present and the API says the project is not
+ * found/accessible — that IS the thing being checked, not an ambient nice-to-have.
+ *
+ * Still skips (never fails) when there is no token at all, or when the check could not run for a
+ * reason unrelated to project identity (DNS/offline/timeout, malformed response body) — a failed
+ * *lookup* is not the same as a confirmed *wrong project*.
  */
 export async function confirmProjectRemotely(
-  input: { readonly ref: string; readonly expectedName: string },
+  ref: string,
   accessToken: string | undefined,
   fetchImpl: typeof fetch = fetch,
-): Promise<"confirmed" | "skipped"> {
+): Promise<RemoteConfirmation> {
   const token = trimmed(accessToken);
   if (!token) return "skipped";
 
-  const ref = trimmed(input.ref);
+  const declaredRef = trimmed(ref);
   let response: Response;
   try {
-    response = await fetchImpl(`https://api.supabase.com/v1/projects/${encodeURIComponent(ref)}`, {
+    response = await fetchImpl(`https://api.supabase.com/v1/projects/${encodeURIComponent(declaredRef)}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
   } catch {
-    // DNS failure, offline, timeout — an unreachable API is not proof of a wrong project.
+    // DNS failure, offline, timeout — an unreachable API is not proof of anything either way.
     return "skipped";
   }
 
-  if (!response.ok) {
-    // A failed lookup (network blip, expired token, wrong scope) is not proof of a wrong
-    // project — it is proof the API call failed. Do not turn that into a hard block.
-    return "skipped";
-  }
-
-  let body: { name?: string };
-  try {
-    body = (await response.json()) as { name?: string };
-  } catch {
-    // Malformed/empty response body: same reasoning as an unreachable API.
-    return "skipped";
-  }
-
-  const remoteName = trimmed(body.name);
-  const expectedName = trimmed(input.expectedName);
-
-  if (remoteName && remoteName !== expectedName) {
+  if (response.status === 404) {
     throw new ProjectVerificationError(
-      "GD_PROJECT_NAME_MISMATCH",
-      `Remote project ${maskRef(ref)} is named "${remoteName}" on Supabase, not "${expectedName}". Refusing.`,
+      "GD_PROJECT_REF_MISMATCH",
+      `Project ref ${maskRef(declaredRef)} was not found via the Supabase Management API for this token.`,
+    );
+  }
+  if (response.status === 401 || response.status === 403) {
+    throw new ProjectVerificationError(
+      "GD_PROJECT_REF_MISMATCH",
+      `The provided token does not have access to project ref ${maskRef(declaredRef)} (HTTP ${response.status}).`,
+    );
+  }
+  if (!response.ok) {
+    // Some other API-side failure (5xx, rate limit, etc.) — not proof of a wrong project.
+    return "skipped";
+  }
+
+  let body: { id?: string; ref?: string };
+  try {
+    body = (await response.json()) as { id?: string; ref?: string };
+  } catch {
+    return "skipped";
+  }
+
+  const remoteRef = trimmed(body.ref || body.id);
+  if (remoteRef && remoteRef !== declaredRef) {
+    throw new ProjectVerificationError(
+      "GD_PROJECT_REF_MISMATCH",
+      `Management API returned ref ${maskRef(remoteRef)} for the request against ${maskRef(declaredRef)}. Refusing.`,
     );
   }
 
@@ -188,32 +155,19 @@ function readArg(argv: readonly string[], flag: string): string | undefined {
 
 async function runCli(): Promise<void> {
   const argv = process.argv.slice(2);
-  const declared: ProjectIdentity = {
-    ref: readArg(argv, "--project-ref") ?? process.env["SUPABASE_PROJECT_REF"] ?? "",
-    name: readArg(argv, "--project-name") ?? process.env["SUPABASE_PROJECT_NAME"] ?? "",
-  };
-  const expected: ProjectIdentity = {
-    ref: process.env["EXPECTED_SUPABASE_PROJECT_REF"] ?? "",
-    name: process.env["EXPECTED_SUPABASE_PROJECT_NAME"] ?? "",
-  };
-  const forbiddenRefs = (process.env["FORBIDDEN_SUPABASE_PROJECT_REFS"] ?? "")
-    .split(",")
-    .map((value) => value.trim())
-    .filter(Boolean);
+  const declaredRef = readArg(argv, "--project-ref") ?? process.env["SUPABASE_PROJECT_REF"] ?? "";
+  const expectedRef = process.env["EXPECTED_SUPABASE_PROJECT_REF"] ?? "";
 
   try {
-    verifyGeardropProject({ declared, expected, forbiddenRefs });
+    verifyGeardropProject({ declaredRef, expectedRef });
 
-    const remoteCheck = await confirmProjectRemotely(
-      { ref: declared.ref, expectedName: expected.name },
-      process.env["SUPABASE_ACCESS_TOKEN"],
-    );
+    const remoteCheck = await confirmProjectRemotely(declaredRef, process.env["SUPABASE_ACCESS_TOKEN"]);
 
-    console.log(`GearDrop project verified: ${maskRef(declared.ref)} — "${declared.name}"`);
+    console.log(`GearDrop project ref verified: ${maskRef(declaredRef)}`);
     console.log(
       remoteCheck === "confirmed"
-        ? "Remote Management API confirmed the project name matches."
-        : "Remote confirmation skipped (no SUPABASE_ACCESS_TOKEN or lookup unavailable) — offline identity check passed.",
+        ? "Remote Management API confirmed the project exists and the token can access it."
+        : "Remote confirmation skipped (no SUPABASE_ACCESS_TOKEN or lookup unavailable) — offline ref check passed.",
     );
   } catch (error) {
     if (error instanceof ProjectVerificationError) {
