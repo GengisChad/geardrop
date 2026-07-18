@@ -1,5 +1,5 @@
 begin;
-select plan(20);
+select plan(21);
 
 select has_table('public','products','products table exists');
 select has_table('public','media_assets','media library exists');
@@ -31,6 +31,7 @@ select ok(not has_function_privilege('anon','public.save_homepage_section(jsonb,
 select ok(not has_function_privilege('anon','public.save_navigation_tree(jsonb)','EXECUTE'), 'anon cannot mutate navigation');
 select ok(not has_function_privilege('anon','public.save_bundle_with_items(jsonb,jsonb)','EXECUTE'), 'anon cannot mutate bundles');
 select ok(not has_function_privilege('anon','public.transition_order_status(bigint,public.order_status,text)','EXECUTE'), 'anon cannot transition orders');
+select ok(not has_function_privilege('anon','public.create_order(text,text,jsonb,jsonb,jsonb,text,text,uuid)','EXECUTE'), 'anon cannot create orders directly');
 select ok(not has_function_privilege('anon','public.set_order_acceptance(boolean,text)','EXECUTE'), 'anon cannot enable orders');
 select ok(not has_function_privilege('anon','public.change_staff_role(uuid,public.staff_role)','EXECUTE'), 'anon cannot change staff roles');
 

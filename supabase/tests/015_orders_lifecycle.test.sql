@@ -19,6 +19,7 @@ insert into public.products(category_id,slug,sku,name,tagline,description,price_
 values((select id from public.categories where slug='orders-cat'),'orders-product','orders-product','Original snapshot','Orders','Orders',1000,'published',true,5);
 insert into public.shipping_methods(code,name,price_cents,active) values('orders-standard','Standard',500,true);
 insert into public.coupons(code,discount_kind,discount_value,active) values('ORDER100','fixed',100,true);
+update public.site_settings set accept_orders=true where singleton;
 
 select lives_ok($$select public.create_order('guest@example.com',null,'{"recipient":"Guest"}','{"recipient":"Guest"}',jsonb_build_array(jsonb_build_object('product_id',(select id from public.products where sku='orders-product'),'quantity',2,'total_cents',1)),'order100','orders-standard','00000000-0000-0000-0000-000000001599')$$,'order is created from authoritative rows');
 select results_eq($$select subtotal_cents,discount_cents,shipping_cents,total_cents from public.orders where email='guest@example.com'$$,$$select 2000::integer,100::integer,500::integer,2400::integer$$,'server recalculates all integer-cent totals');

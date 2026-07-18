@@ -2038,6 +2038,10 @@ export type Database = {
         }
         Returns: number
       }
+      duplicate_coupon_with_targets: {
+        Args: { p_coupon_id: number }
+        Returns: number
+      }
       fail_media_upload: {
         Args: { p_failure_code: string; p_media_asset_id: number }
         Returns: undefined
@@ -2092,11 +2096,29 @@ export type Database = {
         Args: { p_bundle: Json; p_items: Json }
         Returns: number
       }
+      save_coupon_with_targets: {
+        Args: {
+          p_bundle_ids: number[]
+          p_category_ids: number[]
+          p_coupon: Json
+          p_product_ids: number[]
+        }
+        Returns: number
+      }
       save_homepage_section: {
         Args: { p_section: Json; p_target_ids: number[] }
         Returns: number
       }
       save_navigation_tree: { Args: { p_tree: Json }; Returns: number }
+      save_promotion_with_targets: {
+        Args: {
+          p_bundle_ids: number[]
+          p_category_ids: number[]
+          p_product_ids: number[]
+          p_promotion: Json
+        }
+        Returns: number
+      }
       set_order_acceptance: {
         Args: { p_confirmation: string; p_enabled: boolean }
         Returns: undefined
