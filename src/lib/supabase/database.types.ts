@@ -2052,6 +2052,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_admin_dashboard_metrics: { Args: never; Returns: Json }
       prepare_order_refund: {
         Args: { p_amount_cents: number; p_order_id: number; p_reason: string }
         Returns: undefined

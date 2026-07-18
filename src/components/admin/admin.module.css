@@ -403,6 +403,19 @@
 .stockDelta strong { color: #267c42; font-variant-numeric: tabular-nums; }
 .stockDelta[data-negative] strong { color: #c63a4d; }
 
+.dashboardColumns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.redactionNotice {
+  margin: 0;
+  color: #686d75;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
 .mobileDock {
   position: fixed;
   right: 12px;
@@ -533,6 +546,10 @@
   .logoutButton { width: 44px; padding: 0; }
   .storeLink span,
   .logoutButton span { display: none; }
+}
+
+@media (max-width: 800px) {
+  .dashboardColumns { grid-template-columns: 1fr; }
 }
 
 @media (min-width: 1024px) {

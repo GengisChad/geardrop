@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { summarizeDashboardProducts } from "@/lib/admin/dashboard";
+import { mapDashboardPayload, summarizeDashboardProducts } from "@/lib/admin/dashboard";
 import * as navigation from "@/lib/admin/navigation";
 
 vi.mock("server-only", () => ({}));
@@ -26,6 +26,16 @@ function product(overrides: Partial<ProductState> = {}): ProductState {
 }
 
 describe("admin dashboard metric behavior", () => {
+  it("maps an empty manager aggregate to exact zeros and empty lists", () => {
+    expect(mapDashboardPayload({ products: { total: 0, published: 0, draft: 0, archived: 0, sold_out: 0, low_stock: 0, preorder: 0 }, active_coupons: 0, active_promotions: 0, commerce: { order_count: 0, revenue_cents: 0, average_order_value_cents: 0, latest_orders: [] }, stock_movements: [], staff_activity: [] })).toMatchObject({
+      commerce: { orderCount: 0, revenueCents: 0, averageOrderValueCents: 0, latestOrders: [] }, activeCoupons: 0, activePromotions: 0, movements: [], staffActivity: [],
+    });
+  });
+
+  it("preserves editor redaction instead of inventing commerce zeros", () => {
+    const mapped=mapDashboardPayload({ products: { total: 0, published: 0, draft: 0, archived: 0, sold_out: 0, low_stock: 0, preorder: 0 }, active_coupons: 0, active_promotions: 0, commerce: null, stock_movements: [], staff_activity: null });
+    expect(mapped.commerce).toBeNull();expect(mapped.staffActivity).toBeNull();
+  });
   it("returns zero metrics for an empty catalogue", () => {
     expect(summarizeDashboardProducts([])).toEqual({
       total: 0,

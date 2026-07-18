@@ -2,6 +2,7 @@ import { ArrowUpRight, Boxes, ImagePlus, PackagePlus, RefreshCcw } from "lucide-
 import Link from "next/link";
 import { requireAdminAccess } from "@/lib/admin/access";
 import { loadAdminDashboard } from "@/lib/admin/dashboard";
+import { formatPrice } from "@/lib/format";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import styles from "@/components/admin/admin.module.css";
 
@@ -17,7 +18,7 @@ const dateFormat = new Intl.DateTimeFormat("it-IT", {
 
 export default async function AdminDashboardPage() {
   const client = await createSupabaseServerClient();
-  await requireAdminAccess(client);
+  const principal=await requireAdminAccess(client);
   const dashboard = await loadAdminDashboard(client);
   const metrics = [
     { label: "Prodotti totali", value: dashboard.metrics.total, tone: "violet" },
@@ -27,6 +28,8 @@ export default async function AdminDashboardPage() {
     { label: "Esauriti", value: dashboard.metrics.soldOut, tone: "danger" },
     { label: "Stock basso", value: dashboard.metrics.lowStock, tone: "warning" },
     { label: "Preordini", value: dashboard.metrics.preorder, tone: "violet" },
+    { label: "Coupon attivi", value: dashboard.activeCoupons, tone: "lime" },
+    { label: "Promozioni attive", value: dashboard.activePromotions, tone: "violet" },
   ] as const;
 
   return (
@@ -34,10 +37,12 @@ export default async function AdminDashboardPage() {
       <section className={styles.pageHeading}>
         <div>
           <p className={styles.eyebrow}>Panoramica operativa</p>
-          <h1>Catalogo e inventario</h1>
-          <p>Stato reale del negozio, senza proiezioni o dati commerciali inventati.</p>
+          <h1>Operazioni GEAR//DROP</h1>
+          <p>Aggregati reali del database, senza proiezioni, confronti o dati commerciali inventati.</p>
         </div>
       </section>
+
+      {dashboard.commerce ? <section aria-labelledby="commerce-title"><div className={styles.sectionTitle}><h2 id="commerce-title">Commerce</h2><span>Visibile a owner e admin</span></div><div className={styles.metricsGrid}><article className={styles.metricCard} data-tone="violet"><span>Ordini</span><strong>{numberFormat.format(dashboard.commerce.orderCount)}</strong></article><article className={styles.metricCard} data-tone="lime"><span>Ricavi pagati</span><strong>{formatPrice({amount:dashboard.commerce.revenueCents,currency:"EUR"})}</strong></article><article className={styles.metricCard}><span>Valore medio pagato</span><strong>{formatPrice({amount:dashboard.commerce.averageOrderValueCents,currency:"EUR"})}</strong></article></div></section>:<section className={styles.movementsPanel}><div className={styles.sectionTitle}><h2>Commerce riservato</h2><span>Ruolo {principal.role}</span></div><p className={styles.redactionNotice}>Ordini, ricavi e attività staff non sono disponibili al ruolo editor.</p></section>}
 
       <section aria-labelledby="metriche-title">
         <div className={styles.sectionTitle}>
@@ -102,6 +107,8 @@ export default async function AdminDashboardPage() {
           </div>
         )}
       </section>
+
+      {dashboard.commerce?<section className={styles.dashboardColumns}><div className={styles.movementsPanel}><div className={styles.sectionTitle}><h2>Ultimi ordini</h2><Link href="/admin/ordini">Apri ordini</Link></div>{dashboard.commerce.latestOrders.length?<div className={styles.movementList}>{dashboard.commerce.latestOrders.map(order=><article className={styles.movementRow} key={order.id}><div><strong>{order.orderNumber}</strong><span>{order.status} · {order.paymentStatus}</span></div><div className={styles.stockDelta}><strong>{formatPrice({amount:order.totalCents,currency:"EUR"})}</strong><time>{dateFormat.format(new Date(order.createdAt))}</time></div></article>)}</div>:<div className={styles.emptyMovements}><strong>Nessun ordine</strong><p>Il database ordini è vuoto.</p></div>}</div>{dashboard.staffActivity?<div className={styles.movementsPanel}><div className={styles.sectionTitle}><h2>Attività staff</h2><Link href="/admin/attivita">Apri attività</Link></div>{dashboard.staffActivity.length?<div className={styles.movementList}>{dashboard.staffActivity.map(event=><article className={styles.movementRow} key={event.id}><div><strong>{event.action}</strong><span>{event.entityType} · {event.actorName}</span></div><time>{dateFormat.format(new Date(event.createdAt))}</time></article>)}</div>:<div className={styles.emptyMovements}><strong>Nessuna attività</strong><p>Non risultano eventi staff.</p></div>}</div>:null}</section>:null}
     </div>
   );
 }
