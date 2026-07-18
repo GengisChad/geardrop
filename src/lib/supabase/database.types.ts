@@ -275,6 +275,96 @@ export type Database = {
         }
         Relationships: []
       }
+      coupon_bundles: {
+        Row: {
+          bundle_id: number
+          coupon_id: number
+        }
+        Insert: {
+          bundle_id: number
+          coupon_id: number
+        }
+        Update: {
+          bundle_id?: number
+          coupon_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_bundles_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "bundles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupon_bundles_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupon_categories: {
+        Row: {
+          category_id: number
+          coupon_id: number
+        }
+        Insert: {
+          category_id: number
+          coupon_id: number
+        }
+        Update: {
+          category_id?: number
+          coupon_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupon_categories_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupon_products: {
+        Row: {
+          coupon_id: number
+          product_id: number
+        }
+        Insert: {
+          coupon_id: number
+          product_id: number
+        }
+        Update: {
+          coupon_id?: number
+          product_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_products_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupon_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coupon_redemptions: {
         Row: {
           coupon_id: number
@@ -325,12 +415,16 @@ export type Database = {
           active: boolean
           code: string
           created_at: string
+          disabled_at: string | null
           discount_kind: Database["public"]["Enums"]["discount_kind"]
           discount_value: number
           expires_at: string | null
+          first_purchase_only: boolean
+          free_shipping: boolean
           id: number
           maximum_discount_cents: number | null
           minimum_subtotal_cents: number
+          per_customer_limit: number | null
           starts_at: string | null
           updated_at: string
           usage_limit: number | null
@@ -340,12 +434,16 @@ export type Database = {
           active?: boolean
           code: string
           created_at?: string
+          disabled_at?: string | null
           discount_kind: Database["public"]["Enums"]["discount_kind"]
           discount_value: number
           expires_at?: string | null
+          first_purchase_only?: boolean
+          free_shipping?: boolean
           id?: never
           maximum_discount_cents?: number | null
           minimum_subtotal_cents?: number
+          per_customer_limit?: number | null
           starts_at?: string | null
           updated_at?: string
           usage_limit?: number | null
@@ -355,12 +453,16 @@ export type Database = {
           active?: boolean
           code?: string
           created_at?: string
+          disabled_at?: string | null
           discount_kind?: Database["public"]["Enums"]["discount_kind"]
           discount_value?: number
           expires_at?: string | null
+          first_purchase_only?: boolean
+          free_shipping?: boolean
           id?: never
           maximum_discount_cents?: number | null
           minimum_subtotal_cents?: number
+          per_customer_limit?: number | null
           starts_at?: string | null
           updated_at?: string
           usage_limit?: number | null
@@ -1378,6 +1480,147 @@ export type Database = {
           },
         ]
       }
+      promotion_bundles: {
+        Row: {
+          bundle_id: number
+          promotion_id: number
+        }
+        Insert: {
+          bundle_id: number
+          promotion_id: number
+        }
+        Update: {
+          bundle_id?: number
+          promotion_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_bundles_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "bundles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_bundles_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promotion_categories: {
+        Row: {
+          category_id: number
+          promotion_id: number
+        }
+        Insert: {
+          category_id: number
+          promotion_id: number
+        }
+        Update: {
+          category_id?: number
+          promotion_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_categories_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promotion_products: {
+        Row: {
+          product_id: number
+          promotion_id: number
+        }
+        Insert: {
+          product_id: number
+          promotion_id: number
+        }
+        Update: {
+          product_id?: number
+          promotion_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_products_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promotions: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          discount_kind: Database["public"]["Enums"]["promotion_discount_kind"]
+          discount_value: number
+          ends_at: string | null
+          id: number
+          minimum_quantity: number
+          minimum_subtotal_cents: number
+          name: string
+          priority: number
+          stackable: boolean
+          starts_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          discount_kind: Database["public"]["Enums"]["promotion_discount_kind"]
+          discount_value: number
+          ends_at?: string | null
+          id?: never
+          minimum_quantity?: number
+          minimum_subtotal_cents?: number
+          name: string
+          priority?: number
+          stackable?: boolean
+          starts_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          discount_kind?: Database["public"]["Enums"]["promotion_discount_kind"]
+          discount_value?: number
+          ends_at?: string | null
+          id?: never
+          minimum_quantity?: number
+          minimum_subtotal_cents?: number
+          name?: string
+          priority?: number
+          stackable?: boolean
+          starts_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       shipping_methods: {
         Row: {
           active: boolean
@@ -1527,6 +1770,15 @@ export type Database = {
         }
         Returns: number
       }
+      calculate_cart_pricing: {
+        Args: {
+          p_coupon_code?: string
+          p_customer_id?: string
+          p_lines: Json
+          p_shipping_code?: string
+        }
+        Returns: Json
+      }
       begin_media_delete: {
         Args: { p_media_asset_id: number }
         Returns: string
@@ -1659,6 +1911,7 @@ export type Database = {
         | "cancelled"
       payment_status: "pending" | "authorized" | "paid" | "failed" | "refunded"
       product_relation_type: "related" | "upsell" | "cross_sell" | "compatible"
+      promotion_discount_kind: "percentage" | "fixed" | "promotional_price"
       promo_tag: "novita" | "offerta" | "limited" | "esclusiva"
       publication_status: "draft" | "published" | "archived"
       staff_role: "owner" | "admin" | "editor"
@@ -1833,6 +2086,7 @@ export const Constants = {
       ],
       payment_status: ["pending", "authorized", "paid", "failed", "refunded"],
       product_relation_type: ["related", "upsell", "cross_sell", "compatible"],
+      promotion_discount_kind: ["percentage", "fixed", "promotional_price"],
       promo_tag: ["novita", "offerta", "limited", "esclusiva"],
       publication_status: ["draft", "published", "archived"],
       staff_role: ["owner", "admin", "editor"],

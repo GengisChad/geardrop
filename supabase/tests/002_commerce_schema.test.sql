@@ -63,11 +63,13 @@ select results_eq(
         'shipping_methods', 'coupons', 'customer_profiles',
         'customer_addresses', 'staff_profiles', 'orders', 'order_items',
         'coupon_redemptions', 'inventory_movements', 'audit_events',
-        'order_enablement_checks', 'media_assets'
+        'order_enablement_checks', 'media_assets', 'promotions',
+        'promotion_products', 'promotion_categories', 'promotion_bundles',
+        'coupon_products', 'coupon_categories', 'coupon_bundles'
       ])
   $$,
-  array[23::bigint],
-  'exactly 23 commerce tables exist'
+  array[30::bigint],
+  'exactly 30 commerce tables exist'
 );
 select results_eq(
   $$
@@ -80,16 +82,16 @@ select results_eq(
         'publication_status', 'availability_override', 'stock_status',
         'blade_type', 'promo_tag', 'staff_role', 'discount_kind',
         'order_status', 'payment_status', 'inventory_reason',
-        'enablement_check_status', 'product_relation_type'
+        'enablement_check_status', 'product_relation_type', 'promotion_discount_kind'
       ])
   $$,
-  array[12::bigint],
-  'exactly 12 commerce enums exist'
+  array[13::bigint],
+  'exactly 13 commerce enums exist'
 );
 select results_eq(
   $$select count(*)::bigint from pg_catalog.pg_policies where schemaname = 'public'$$,
-  array[76::bigint],
-  'exactly 76 public RLS policies exist'
+  array[87::bigint],
+  'exactly 87 public RLS policies exist'
 );
 select results_eq(
   $$select count(*)::bigint from public.categories$$,
