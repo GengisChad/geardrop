@@ -1722,6 +1722,10 @@ export type Database = {
         Row: {
           active: boolean
           code: string
+          description: string | null
+          enabled_country_codes: string[]
+          estimate_max_days: number
+          estimate_min_days: number
           free_from_cents: number | null
           id: number
           name: string
@@ -1731,6 +1735,10 @@ export type Database = {
         Insert: {
           active?: boolean
           code: string
+          description?: string | null
+          enabled_country_codes?: string[]
+          estimate_max_days?: number
+          estimate_min_days?: number
           free_from_cents?: number | null
           id?: never
           name: string
@@ -1740,6 +1748,10 @@ export type Database = {
         Update: {
           active?: boolean
           code?: string
+          description?: string | null
+          enabled_country_codes?: string[]
+          estimate_max_days?: number
+          estimate_min_days?: number
           free_from_cents?: number | null
           id?: never
           name?: string
@@ -1751,27 +1763,90 @@ export type Database = {
       site_settings: {
         Row: {
           accept_orders: boolean
+          city: string | null
+          country_code: string
           currency: string
+          default_og_image_url: string | null
+          default_seo_description: string | null
+          default_seo_title: string
+          facebook_url: string | null
+          instagram_url: string | null
+          legal_name: string
+          legal_notice: string | null
+          maintenance_message: string | null
+          maintenance_mode: boolean
           max_quantity_per_line: number
+          postal_code: string | null
           singleton: boolean
+          store_name: string
+          street_address: string | null
+          support_email: string | null
+          support_phone: string | null
+          tax_code: string | null
+          tiktok_url: string | null
           updated_at: string
           updated_by: string | null
+          upload_max_bytes: number
+          vat_number: string | null
+          youtube_url: string | null
         }
         Insert: {
           accept_orders?: boolean
+          city?: string | null
+          country_code?: string
           currency?: string
+          default_og_image_url?: string | null
+          default_seo_description?: string | null
+          default_seo_title?: string
+          facebook_url?: string | null
+          instagram_url?: string | null
+          legal_name?: string
+          legal_notice?: string | null
+          maintenance_message?: string | null
+          maintenance_mode?: boolean
           max_quantity_per_line?: number
+          postal_code?: string | null
           singleton?: boolean
+          store_name?: string
+          street_address?: string | null
+          support_email?: string | null
+          support_phone?: string | null
+          tax_code?: string | null
+          tiktok_url?: string | null
           updated_at?: string
           updated_by?: string | null
+          upload_max_bytes?: number
+          vat_number?: string | null
+          youtube_url?: string | null
         }
         Update: {
           accept_orders?: boolean
+          city?: string | null
+          country_code?: string
           currency?: string
+          default_og_image_url?: string | null
+          default_seo_description?: string | null
+          default_seo_title?: string
+          facebook_url?: string | null
+          instagram_url?: string | null
+          legal_name?: string
+          legal_notice?: string | null
+          maintenance_message?: string | null
+          maintenance_mode?: boolean
           max_quantity_per_line?: number
+          postal_code?: string | null
           singleton?: boolean
+          store_name?: string
+          street_address?: string | null
+          support_email?: string | null
+          support_phone?: string | null
+          tax_code?: string | null
+          tiktok_url?: string | null
           updated_at?: string
           updated_by?: string | null
+          upload_max_bytes?: number
+          vat_number?: string | null
+          youtube_url?: string | null
         }
         Relationships: []
       }
@@ -1983,6 +2058,10 @@ export type Database = {
         Returns: number
       }
       save_navigation_tree: { Args: { p_tree: Json }; Returns: number }
+      set_order_acceptance: {
+        Args: { p_confirmation: string; p_enabled: boolean }
+        Returns: undefined
+      }
       set_order_tracking: {
         Args: {
           p_carrier: string
