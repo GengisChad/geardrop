@@ -1,0 +1,41 @@
+.page { display: grid; gap: 22px; }
+.heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; }
+.heading p,.adjustmentForm header p { margin: 0 0 7px; color: #7a3cff; font-size: 10px; font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
+.heading h1 { margin: 0; font: 800 clamp(30px,5vw,48px)/.95 var(--font-archivo),sans-serif; letter-spacing: -.045em; }
+.heading span,.panel header span,.adjustmentForm header span { display: block; margin-top: 8px; color: #686d75; font-size: 11px; }
+.filters { display: grid; grid-template-columns: minmax(0,2fr) minmax(180px,1fr) auto auto; align-items: end; gap: 10px; border: 1px solid #e1e3e7; border-radius: 18px; padding: 16px; background: rgba(255,255,255,.9); }
+.filters label,.adjustmentForm label { display: grid; gap: 6px; color: #555a62; font-size: 10px; font-weight: 800; }
+.filters input,.adjustmentForm input,.adjustmentForm select,.adjustmentForm textarea { min-height: 42px; min-width: 0; border: 1px solid #d3d6dc; border-radius: 10px; padding: 0 12px; background: #fff; color: #16191d; font: 13px var(--font-inter),sans-serif; }
+.adjustmentForm textarea { padding-block: 10px; resize: vertical; }
+.filters button,.adjustmentForm button,.empty a { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; border: 0; border-radius: 10px; padding: 0 16px; background: #7a3cff; color: #fff; cursor: pointer; font-size: 11px; font-weight: 850; text-decoration: none; }
+.filters > a { align-self: center; color: #686d75; font-size: 11px; font-weight: 800; }
+.checkbox,.confirm { display: flex!important; min-height: 42px; align-items: center; gap: 8px!important; }
+.checkbox input,.confirm input { min-height: auto; }
+.adjustmentForm { display: grid; grid-template-columns: 1.3fr .7fr 1fr; gap: 12px; border: 1px solid #dfe1e5; border-radius: 20px; padding: clamp(16px,3vw,24px); background: #fff; }
+.adjustmentForm header,.note,.confirm,.adjustmentForm > button,.adjustmentForm > p { grid-column: 1/-1; }
+.adjustmentForm h2,.panel h2,.readOnly h2 { margin: 0; font: 750 19px var(--font-archivo),sans-serif; letter-spacing: -.025em; }
+.adjustmentForm > button { justify-self: start; }
+.adjustmentForm button:disabled { cursor: wait; opacity: .65; }
+.success,.error { margin: 0; border-radius: 10px; padding: 10px 12px; background: #e0f7e4; color: #1d6b33; font-size: 11px; font-weight: 750; }
+.error { background: #ffe4e7; color: #a1283e; }
+.readOnly,.panel { border: 1px solid #e0e2e6; border-radius: 20px; padding: clamp(16px,3vw,24px); background: rgba(255,255,255,.92); }
+.readOnly p { margin: 7px 0 0; color: #686d75; font-size: 11px; }
+.panel { display: grid; gap: 16px; }
+.tableWrap { overflow-x: auto; border: 1px solid #e0e2e6; border-radius: 14px; }
+.tableWrap table { width: 100%; min-width: 900px; border-collapse: collapse; background: #fff; font-size: 11px; }
+.tableWrap th { padding: 11px 10px; background: #f1f2f4; color: #666b73; font-size: 9px; letter-spacing: .05em; text-align: left; text-transform: uppercase; }
+.tableWrap td { border-top: 1px solid #eceef1; padding: 12px 10px; vertical-align: middle; }
+.tableWrap td > small { display: block; margin-top: 3px; color: #81858c; font-size: 9px; }
+.tableWrap a { color: #292d33; font-weight: 800; }
+.mono { font-family: ui-monospace,SFMono-Regular,Consolas,monospace!important; }
+.numeric { font-variant-numeric: tabular-nums; }
+.status { display: inline-flex; border-radius: 999px; padding: 5px 8px; background: #eef0f3; font-size: 9px; font-weight: 850; text-transform: uppercase; white-space: nowrap; }
+.status[data-status="disponibile"] { background: #dcfbd9; color: #17652a; }
+.status[data-status="esaurito"] { background: #ffe5e8; color: #a42d41; }
+.status[data-status="pre-ordine"],.status[data-status="in-arrivo"] { background: #fff0cb; color: #805c0d; }
+.empty { display: grid; justify-items: center; gap: 10px; padding: 36px; color: #72767e; text-align: center; }
+.empty p { margin: 0; }
+.pagination { display: flex; align-items: center; justify-content: space-between; color: #656a72; font-size: 11px; font-weight: 750; }
+.pagination a { color: #30343a; }
+.page :focus-visible { outline: 3px solid #7a3cff; outline-offset: 2px; }
+@media (max-width:760px) { .filters,.adjustmentForm { grid-template-columns: 1fr; } .adjustmentForm header,.note,.confirm,.adjustmentForm > button,.adjustmentForm > p { grid-column: auto; } .filters > a { justify-self: start; } }
