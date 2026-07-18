@@ -58,7 +58,7 @@ const PRODUCT_SELECT = `
   rating,
   review_count,
   category:categories!inner(slug),
-  images:product_images!inner(src,width,height,alt,sort_order,published,media_asset:media_assets!inner(status)),
+  images:product_images!inner(src,width,height,alt,sort_order,published,media_asset:media_assets(status)),
   specs:product_specs(label,value,sort_order),
   features:product_features(title,description,sort_order),
   box_contents:product_box_contents(content,sort_order),
@@ -143,7 +143,9 @@ function count<T extends string>(values: readonly T[]): Map<T, number> {
 
 export function createSupabaseCommerceProvider(client: SupabaseClient<Database>): CommerceProvider {
   async function allProducts(): Promise<readonly Product[]> {
-    const { data, error } = await client.from("products").select(PRODUCT_SELECT).eq("publication_status", "published").eq("active", true).eq("images.published", true).eq("images.media_asset.status", "ready");
+    // Product-image RLS admits linked media only when ready and also preserves the
+    // reviewed static assets whose legacy rows intentionally have no Storage link.
+    const { data, error } = await client.from("products").select(PRODUCT_SELECT).eq("publication_status", "published").eq("active", true).eq("images.published", true);
     if (error) throw error;
     return (data as unknown as readonly RawProduct[]).map(mapSupabaseProduct);
   }
@@ -152,14 +154,14 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>)
     name: "supabase",
 
     async getProduct(slug) {
-      const { data, error } = await client.from("products").select(PRODUCT_SELECT).eq("publication_status", "published").eq("active", true).eq("images.published", true).eq("images.media_asset.status", "ready").eq("slug", slug).maybeSingle();
+      const { data, error } = await client.from("products").select(PRODUCT_SELECT).eq("publication_status", "published").eq("active", true).eq("images.published", true).eq("slug", slug).maybeSingle();
       if (error) throw error;
       return data ? mapSupabaseProduct(data as unknown as RawProduct) : null;
     },
 
     async getProductsBySlugs(slugs) {
       if (slugs.length === 0) return [];
-      const { data, error } = await client.from("products").select(PRODUCT_SELECT).eq("publication_status", "published").eq("active", true).eq("images.published", true).eq("images.media_asset.status", "ready").in("slug", [...slugs]);
+      const { data, error } = await client.from("products").select(PRODUCT_SELECT).eq("publication_status", "published").eq("active", true).eq("images.published", true).in("slug", [...slugs]);
       if (error) throw error;
       const bySlug = new Map(
         (data as unknown as readonly RawProduct[]).map((row) => [row.slug, mapSupabaseProduct(row)]),
