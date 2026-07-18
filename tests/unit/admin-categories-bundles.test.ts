@@ -100,6 +100,8 @@ describe("category and bundle administration", () => {
     expect(bundles).toContain('{ count: "exact" }');
     expect(bundles).toContain("loadAdminCategoryCreateContext");
     expect(bundles).toContain('.from("bundle_items")');
+    expect(bundles).toContain("if (!bundles.data?.length)");
+    expect(bundles).not.toContain("bundle_items(count)");
   });
 
   it("keeps Supabase out of category and bundle client components", () => {

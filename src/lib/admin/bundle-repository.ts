@@ -22,16 +22,26 @@ export type AdminBundleEditorData = {
 
 export async function listAdminBundles(client: SupabaseClient<Database>) {
   const [bundles, media] = await Promise.all([
-    client.from("bundles").select("*, bundle_items(count), hero:products(name)", { count: "exact" }).order("sort_order").order("id"),
+    client.from("bundles").select("*", { count: "exact" }).order("sort_order").order("id"),
     loadAdminCategoryCreateContext(client),
   ]);
   if (bundles.error) throw new Error("Impossibile caricare i bundle");
+  if (!bundles.data?.length) return { items: [], total: 0 } as const;
+  const bundleIds = bundles.data.map((bundle) => bundle.id);
+  const heroIds = [...new Set(bundles.data.map((bundle) => bundle.hero_product_id))];
+  const [bundleItems, heroes] = await Promise.all([
+    client.from("bundle_items").select("bundle_id").in("bundle_id", bundleIds),
+    client.from("products").select("id,name").in("id", heroIds),
+  ]);
+  if (bundleItems.error || heroes.error) throw new Error("Impossibile caricare i dettagli bundle");
   const previewById = new Map(media.map((item) => [item.id, item.previewUrl]));
-  type Row = BundleRow & { bundle_items: readonly { count: number }[]; hero: { name: string } | readonly { name: string }[] | null };
-  const items = ((bundles.data ?? []) as unknown as readonly Row[]).map(({ bundle_items, hero, ...bundle }) => ({
+  const itemCountByBundle = new Map<number, number>();
+  for (const item of bundleItems.data ?? []) itemCountByBundle.set(item.bundle_id, (itemCountByBundle.get(item.bundle_id) ?? 0) + 1);
+  const heroById = new Map((heroes.data ?? []).map((hero) => [hero.id, hero.name]));
+  const items = bundles.data.map((bundle) => ({
     ...bundle,
-    itemCount: bundle_items[0]?.count ?? 0,
-    heroName: (Array.isArray(hero) ? hero[0]?.name : (hero as { readonly name: string } | null)?.name) ?? "Prodotto rimosso",
+    itemCount: itemCountByBundle.get(bundle.id) ?? 0,
+    heroName: heroById.get(bundle.hero_product_id) ?? "Prodotto rimosso",
     previewUrl: bundle.media_asset_id ? previewById.get(bundle.media_asset_id) ?? null : null,
   }));
   return { items, total: bundles.count ?? 0 } as const;
