@@ -27,3 +27,24 @@ describe("typed store configuration migration", () => {
     expect(sql).toContain("store.order_acceptance_changed");
   });
 });
+
+describe("order intake hardening", () => {
+  const orderSql = readFileSync(join(process.cwd(), "supabase/migrations/20260718234000_harden_order_and_pricing_boundaries.sql"), "utf8");
+  const replacementSql = readFileSync(join(process.cwd(), "supabase/migrations/20260718235000_make_admin_replacements_atomic.sql"), "utf8");
+
+  it("serializes order creation with the operational kill switch", () => {
+    expect(orderSql).toContain("for key share");
+    expect(orderSql).toContain("not intake_enabled");
+  });
+
+  it("backfills historical preorder balances in reverse movement order", () => {
+    expect(replacementSql).toContain("reservation_kind='preorder'");
+    expect(replacementSql).toContain("order by movement.created_at desc,movement.id desc");
+    expect(replacementSql).toContain("balance_kind='preorder'");
+  });
+
+  it("keeps machine checks authoritative while allowing seeded manual checks", () => {
+    expect(replacementSql).toContain("p_key in ('store_identity','shipping','catalog_stock')");
+    expect(replacementSql).not.toContain("p_key <> 'payments'");
+  });
+});

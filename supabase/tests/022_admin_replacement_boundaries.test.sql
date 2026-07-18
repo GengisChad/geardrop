@@ -1,5 +1,5 @@
 begin;
-select plan(14);
+select plan(17);
 
 select has_column('public','inventory_movements','balance_kind','inventory ledger identifies its balance');
 select has_column('public','inventory_movements','balance_after','inventory ledger stores the affected balance');
@@ -37,11 +37,20 @@ set local role authenticated;
 select lives_ok(
   $$select public.set_manual_order_enablement_check('payments','passed','Sandbox payment round trip verified')$$,
   'owner records payment readiness');
+select lives_ok(
+  $$select public.set_manual_order_enablement_check('owners','passed','Two confirmed owner profiles verified')$$,
+  'owner can complete a seeded operational check');
+select throws_ok(
+  $$select public.set_manual_order_enablement_check('store_identity','passed','Must be machine checked')$$,
+  '22023','GD_ORDER_CHECK_INVALID','machine checks cannot be manually overridden');
 reset role;
 select results_eq(
   $$select status::text,evidence from public.order_enablement_checks where key='payments'$$,
   $$values('passed'::text,'Sandbox payment round trip verified'::text)$$,
   'manual readiness evidence persists');
+select ok(
+  pg_get_functiondef('public.create_order(text,text,jsonb,jsonb,jsonb,text,text,uuid)'::regprocedure) ilike '%for key share%',
+  'order intake locks the acceptance singleton against concurrent disable');
 
 insert into public.categories(slug,name,tagline,description,active,publication_status,published_at)
 values('ledger-cat','Ledger','Ledger','Ledger',true,'published',now());

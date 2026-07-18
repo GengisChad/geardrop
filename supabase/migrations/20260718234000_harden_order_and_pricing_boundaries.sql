@@ -26,11 +26,13 @@ as $$
 declare
   order_id bigint;
   maximum_quantity integer;
+  intake_enabled boolean;
 begin
-  select max_quantity_per_line into maximum_quantity
+  select accept_orders,max_quantity_per_line into intake_enabled,maximum_quantity
   from public.site_settings
-  where singleton and accept_orders;
-  if not found then
+  where singleton
+  for key share;
+  if not found or not intake_enabled then
     raise exception using errcode='55000',message='GD_ORDER_INTAKE_DISABLED';
   end if;
   if exists (

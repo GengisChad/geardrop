@@ -20,5 +20,5 @@ export const seoSettingsSchema=z.object({title:z.string().trim().max(70),descrip
 export const contactSettingsSchema=z.object({supportEmail:z.email().nullable(),supportPhone:nullable(40),streetAddress:nullable(240),city:nullable(120),postalCode:nullable(20),countryCode:z.string().trim().toUpperCase().regex(/^[A-Z]{2}$/)});
 export const socialSettingsSchema=z.object({instagramUrl:httpsUrl,facebookUrl:httpsUrl,tiktokUrl:httpsUrl,youtubeUrl:httpsUrl});
 export const orderAcceptanceSchema=z.object({enabled:z.boolean(),confirmation:z.string().trim()}).superRefine((value,context)=>{const exact=value.enabled?"ATTIVA ORDINI":"DISATTIVA ORDINI";if(value.confirmation!==exact)context.addIssue({code:"custom",path:["confirmation"],message:`Digita ${exact}`});});
-export const manualOrderCheckSchema=z.object({key:z.literal("payments"),status:z.enum(["passed","failed"]),evidence:z.string().trim().min(3).max(1000)});
+export const manualOrderCheckSchema=z.object({key:z.string().trim().min(2).max(120).regex(/^[a-z0-9_]+$/),status:z.enum(["passed","failed"]),evidence:z.string().trim().min(3).max(1000)});
 export const shippingMethodIdSchema=id;

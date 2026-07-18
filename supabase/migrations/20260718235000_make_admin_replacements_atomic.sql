@@ -3,6 +3,25 @@ alter table public.inventory_movements
     check (balance_kind in ('stock','preorder')),
   add column balance_after integer check (balance_after >= 0);
 update public.inventory_movements set balance_after=stock_after where balance_after is null;
+with preorder_rows as (
+  select movement.id,
+    product.preorder_allocation - coalesce(
+      sum(movement.delta) over (
+        partition by movement.product_id
+        order by movement.created_at desc,movement.id desc
+        rows between unbounded preceding and 1 preceding
+      ),0
+    ) as historical_balance
+  from public.inventory_movements as movement
+  join public.products as product on product.id=movement.product_id
+  where movement.order_id is not null and exists(
+    select 1 from public.order_items
+    where order_id=movement.order_id and product_id=movement.product_id and reservation_kind='preorder'
+  )
+)
+update public.inventory_movements as movement set
+  balance_kind='preorder',balance_after=preorder_rows.historical_balance
+from preorder_rows where preorder_rows.id=movement.id;
 alter table public.inventory_movements alter column balance_after set not null;
 alter table public.inventory_movements alter column balance_after set default 0;
 
@@ -126,7 +145,7 @@ begin
   if not private.has_staff_role(array['owner'::public.staff_role]) then
     raise exception using errcode='42501',message='GD_ORDER_OWNER_REQUIRED';
   end if;
-  if p_key <> 'payments' or p_status='pending' or nullif(trim(p_evidence),'') is null
+  if p_key in ('store_identity','shipping','catalog_stock') or p_status='pending' or nullif(trim(p_evidence),'') is null
     or char_length(trim(p_evidence)) > 1000 then
     raise exception using errcode='22023',message='GD_ORDER_CHECK_INVALID';
   end if;
