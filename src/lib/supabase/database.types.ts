@@ -1047,6 +1047,7 @@ export type Database = {
           product_id: number | null
           product_name_snapshot: string
           quantity: number
+          reservation_kind: string
           sku_snapshot: string
           unit_price_cents: number
         }
@@ -1058,6 +1059,7 @@ export type Database = {
           product_id?: number | null
           product_name_snapshot: string
           quantity: number
+          reservation_kind?: string
           sku_snapshot: string
           unit_price_cents: number
         }
@@ -1069,6 +1071,7 @@ export type Database = {
           product_id?: number | null
           product_name_snapshot?: string
           quantity?: number
+          reservation_kind?: string
           sku_snapshot?: string
           unit_price_cents?: number
         }
@@ -1089,6 +1092,76 @@ export type Database = {
           },
         ]
       }
+      order_notes: {
+        Row: {
+          author_user_id: string | null
+          created_at: string
+          id: number
+          note: string
+          order_id: number
+        }
+        Insert: {
+          author_user_id?: string | null
+          created_at?: string
+          id?: never
+          note: string
+          order_id: number
+        }
+        Update: {
+          author_user_id?: string | null
+          created_at?: string
+          id?: never
+          note?: string
+          order_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_notes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_status_events: {
+        Row: {
+          actor_user_id: string | null
+          created_at: string
+          from_status: Database["public"]["Enums"]["order_status"] | null
+          id: number
+          note: string | null
+          order_id: number
+          to_status: Database["public"]["Enums"]["order_status"]
+        }
+        Insert: {
+          actor_user_id?: string | null
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["order_status"] | null
+          id?: never
+          note?: string | null
+          order_id: number
+          to_status: Database["public"]["Enums"]["order_status"]
+        }
+        Update: {
+          actor_user_id?: string | null
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["order_status"] | null
+          id?: never
+          note?: string | null
+          order_id?: number
+          to_status?: Database["public"]["Enums"]["order_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_status_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           billing_address_snapshot: Json
@@ -1096,6 +1169,7 @@ export type Database = {
           created_at: string
           currency: string
           customer_id: string | null
+          delivered_at: string | null
           discount_cents: number
           email: string
           id: number
@@ -1104,11 +1178,18 @@ export type Database = {
           order_number: string
           payment_status: Database["public"]["Enums"]["payment_status"]
           phone: string | null
+          refund_amount_cents: number | null
+          refund_prepared_at: string | null
+          refund_reason: string | null
+          shipped_at: string | null
           shipping_address_snapshot: Json
           shipping_cents: number
           shipping_method_code: string
           status: Database["public"]["Enums"]["order_status"]
           subtotal_cents: number
+          tracking_carrier: string | null
+          tracking_code: string | null
+          tracking_url: string | null
           total_cents: number
           updated_at: string
         }
@@ -1118,6 +1199,7 @@ export type Database = {
           created_at?: string
           currency?: string
           customer_id?: string | null
+          delivered_at?: string | null
           discount_cents?: number
           email: string
           id?: never
@@ -1126,11 +1208,18 @@ export type Database = {
           order_number: string
           payment_status?: Database["public"]["Enums"]["payment_status"]
           phone?: string | null
+          refund_amount_cents?: number | null
+          refund_prepared_at?: string | null
+          refund_reason?: string | null
+          shipped_at?: string | null
           shipping_address_snapshot: Json
           shipping_cents: number
           shipping_method_code: string
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_cents: number
+          tracking_carrier?: string | null
+          tracking_code?: string | null
+          tracking_url?: string | null
           total_cents: number
           updated_at?: string
         }
@@ -1140,6 +1229,7 @@ export type Database = {
           created_at?: string
           currency?: string
           customer_id?: string | null
+          delivered_at?: string | null
           discount_cents?: number
           email?: string
           id?: never
@@ -1148,11 +1238,18 @@ export type Database = {
           order_number?: string
           payment_status?: Database["public"]["Enums"]["payment_status"]
           phone?: string | null
+          refund_amount_cents?: number | null
+          refund_prepared_at?: string | null
+          refund_reason?: string | null
+          shipped_at?: string | null
           shipping_address_snapshot?: Json
           shipping_cents?: number
           shipping_method_code?: string
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_cents?: number
+          tracking_carrier?: string | null
+          tracking_code?: string | null
+          tracking_url?: string | null
           total_cents?: number
           updated_at?: string
         }
@@ -1761,6 +1858,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_order_note: {
+        Args: { p_note: string; p_order_id: number }
+        Returns: number
+      }
       adjust_inventory: {
         Args: {
           p_delta: number
@@ -1769,15 +1870,6 @@ export type Database = {
           p_sku: string
         }
         Returns: number
-      }
-      calculate_cart_pricing: {
-        Args: {
-          p_coupon_code?: string
-          p_customer_id?: string
-          p_lines: Json
-          p_shipping_code?: string
-        }
-        Returns: Json
       }
       begin_media_delete: {
         Args: { p_media_asset_id: number }
@@ -1791,9 +1883,35 @@ export type Database = {
         }
         Returns: number
       }
+      calculate_cart_pricing: {
+        Args: {
+          p_coupon_code?: string
+          p_customer_id?: string
+          p_lines: Json
+          p_shipping_code?: string
+        }
+        Returns: Json
+      }
+      cancel_order_and_restore_stock: {
+        Args: { p_note?: string; p_order_id: number }
+        Returns: undefined
+      }
       complete_media_delete: {
         Args: { p_media_asset_id: number }
         Returns: undefined
+      }
+      create_order: {
+        Args: {
+          p_billing_address: Json
+          p_coupon_code: string
+          p_email: string
+          p_idempotency_key: string
+          p_lines: Json
+          p_phone: string
+          p_shipping_address: Json
+          p_shipping_code: string
+        }
+        Returns: number
       }
       delete_product_permanently: {
         Args: { p_expected_name: string; p_product_id: number }
@@ -1820,6 +1938,10 @@ export type Database = {
           p_mime_type: string
           p_width: number
         }
+        Returns: undefined
+      }
+      prepare_order_refund: {
+        Args: { p_amount_cents: number; p_order_id: number; p_reason: string }
         Returns: undefined
       }
       product_deletion_impact: { Args: { p_product_id: number }; Returns: Json }
@@ -1861,6 +1983,15 @@ export type Database = {
         Returns: number
       }
       save_navigation_tree: { Args: { p_tree: Json }; Returns: number }
+      set_order_tracking: {
+        Args: {
+          p_carrier: string
+          p_code: string
+          p_order_id: number
+          p_url?: string
+        }
+        Returns: undefined
+      }
       set_primary_product_image: {
         Args: { p_image_id: number; p_product_id: number }
         Returns: undefined
@@ -1868,6 +1999,14 @@ export type Database = {
       swap_media_asset_associations: {
         Args: { p_new_media_asset_id: number; p_old_media_asset_id: number }
         Returns: Json
+      }
+      transition_order_status: {
+        Args: {
+          p_note?: string
+          p_order_id: number
+          p_to_status: Database["public"]["Enums"]["order_status"]
+        }
+        Returns: undefined
       }
     }
     Enums: {
@@ -1911,8 +2050,8 @@ export type Database = {
         | "cancelled"
       payment_status: "pending" | "authorized" | "paid" | "failed" | "refunded"
       product_relation_type: "related" | "upsell" | "cross_sell" | "compatible"
-      promotion_discount_kind: "percentage" | "fixed" | "promotional_price"
       promo_tag: "novita" | "offerta" | "limited" | "esclusiva"
+      promotion_discount_kind: "percentage" | "fixed" | "promotional_price"
       publication_status: "draft" | "published" | "archived"
       staff_role: "owner" | "admin" | "editor"
       stock_status: "disponibile" | "in-arrivo" | "pre-ordine" | "esaurito"
@@ -2086,8 +2225,8 @@ export const Constants = {
       ],
       payment_status: ["pending", "authorized", "paid", "failed", "refunded"],
       product_relation_type: ["related", "upsell", "cross_sell", "compatible"],
-      promotion_discount_kind: ["percentage", "fixed", "promotional_price"],
       promo_tag: ["novita", "offerta", "limited", "esclusiva"],
+      promotion_discount_kind: ["percentage", "fixed", "promotional_price"],
       publication_status: ["draft", "published", "archived"],
       staff_role: ["owner", "admin", "editor"],
       stock_status: ["disponibile", "in-arrivo", "pre-ordine", "esaurito"],

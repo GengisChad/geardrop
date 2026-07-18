@@ -65,11 +65,12 @@ select results_eq(
         'coupon_redemptions', 'inventory_movements', 'audit_events',
         'order_enablement_checks', 'media_assets', 'promotions',
         'promotion_products', 'promotion_categories', 'promotion_bundles',
-        'coupon_products', 'coupon_categories', 'coupon_bundles'
+        'coupon_products', 'coupon_categories', 'coupon_bundles',
+        'order_notes', 'order_status_events'
       ])
   $$,
-  array[30::bigint],
-  'exactly 30 commerce tables exist'
+  array[32::bigint],
+  'exactly 32 commerce tables exist'
 );
 select results_eq(
   $$
@@ -90,8 +91,8 @@ select results_eq(
 );
 select results_eq(
   $$select count(*)::bigint from pg_catalog.pg_policies where schemaname = 'public'$$,
-  array[87::bigint],
-  'exactly 87 public RLS policies exist'
+  array[89::bigint],
+  'exactly 89 public RLS policies exist'
 );
 select results_eq(
   $$select count(*)::bigint from public.categories$$,
