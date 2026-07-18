@@ -1,5 +1,5 @@
 begin;
-select plan(22);
+select plan(13);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
@@ -20,16 +20,23 @@ values
 
 insert into public.media_assets (
   bucket_id, object_path, original_filename, mime_type,
-  byte_size, width, height, alt_text, uploaded_by
+  byte_size, width, height, alt_text, uploaded_by, status, ready_at
 )
 values
   (
     'product-images', 'review/eligible.webp', 'eligible.webp', 'image/webp',
-    1024, 100, 100, 'Eligible review media', '00000000-0000-0000-0000-000000000501'
+    1024, 100, 100, 'Eligible review media', '00000000-0000-0000-0000-000000000501',
+    'ready', now()
   ),
   (
     'product-images', 'review/editor.png', 'editor.png', 'image/png',
-    2048, 200, 200, 'Editor review media', '00000000-0000-0000-0000-000000000503'
+    0, 0, 0, 'Editor review media', '00000000-0000-0000-0000-000000000503',
+    'pending', null
+  ),
+  (
+    'product-images', 'review/editor-ready.png', 'editor-ready.png', 'image/png',
+    2048, 200, 200, 'Ready editor media', '00000000-0000-0000-0000-000000000503',
+    'ready', now()
   );
 
 update public.product_images
@@ -93,28 +100,6 @@ select lives_ok(
   $$,
   'editor can create an audited cross-sell relation'
 );
-select set_config('storage.operation', 'object.upload_update', true);
-select lives_ok(
-  $$
-    update storage.objects
-    set name = name
-    where bucket_id = 'product-images' and name = 'review/eligible.webp'
-  $$,
-  'editor can update media uploaded by another staff member'
-);
-select lives_ok(
-  $$
-    insert into storage.objects (bucket_id, name, owner_id)
-    values (
-      'product-images',
-      'review/eligible.webp',
-      '00000000-0000-0000-0000-000000000503'
-    )
-    on conflict (bucket_id, name) do update
-    set owner_id = excluded.owner_id
-  $$,
-  'official cross-staff Storage upsert is allowed'
-);
 reset role;
 
 select set_config('storage.operation', 'object.list', true);
@@ -160,12 +145,6 @@ select throws_like(
   '%row-level security%',
   'nonstaff Storage insert is denied'
 );
-select throws_ok(
-  $$select public.record_completed_media_storage_mutation('insert', 'review/editor.png')$$,
-  '42501',
-  'GD_STORAGE_STAFF_REQUIRED',
-  'nonstaff cannot record completed Storage mutation'
-);
 reset role;
 
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000503', true);
@@ -179,23 +158,19 @@ select lives_ok(
       '00000000-0000-0000-0000-000000000503'
     )
   $$,
-  'editor Storage insert is allowed by pure RLS'
+  'editor Storage insert is allowed for own pending reservation'
 );
-select lives_ok(
-  $$select public.record_completed_media_storage_mutation('insert', 'review/editor.png')$$,
-  'editor can audit a completed Storage insert'
-);
-select lives_ok(
+select throws_like(
   $$
-    update storage.objects
-    set name = name
-    where bucket_id = 'product-images' and name = 'review/editor.png'
+    insert into storage.objects (bucket_id, name, owner_id)
+    values (
+      'product-images',
+      'review/editor-ready.png',
+      '00000000-0000-0000-0000-000000000503'
+    )
   $$,
-  'editor Storage update is allowed by pure RLS'
-);
-select lives_ok(
-  $$select public.record_completed_media_storage_mutation('update', 'review/editor.png')$$,
-  'editor can audit a completed Storage update'
+  '%row-level security%',
+  'ready reservation cannot be overwritten'
 );
 select set_config('storage.allow_delete_query', 'true', true);
 select results_eq(
@@ -209,12 +184,6 @@ select results_eq(
   $$,
   array[0::bigint],
   'editor Storage delete is denied'
-);
-select throws_ok(
-  $$select public.record_completed_media_storage_mutation('delete', 'review/editor.png')$$,
-  '42501',
-  'GD_STORAGE_MANAGER_REQUIRED',
-  'editor cannot audit a completed Storage delete'
 );
 reset role;
 
@@ -232,10 +201,6 @@ select results_eq(
   array[1::bigint],
   'admin Storage delete is allowed'
 );
-select lives_ok(
-  $$select public.record_completed_media_storage_mutation('delete', 'review/editor.png')$$,
-  'admin can audit a completed Storage delete'
-);
 reset role;
 
 select results_eq(
@@ -249,28 +214,6 @@ select results_eq(
   $$,
   array[1::bigint],
   'product relation audit identity includes relation type'
-);
-select results_eq(
-  $$
-    select count(*)::bigint
-    from public.audit_events
-    where entity_type = 'storage.objects'
-      and actor_user_id = '00000000-0000-0000-0000-000000000503'
-      and action in ('storage.insert.completed', 'storage.update.completed')
-  $$,
-  array[2::bigint],
-  'editor completed Storage mutations are audited'
-);
-select results_eq(
-  $$
-    select count(*)::bigint
-    from public.audit_events
-    where entity_type = 'storage.objects'
-      and actor_user_id = '00000000-0000-0000-0000-000000000502'
-      and action = 'storage.delete.completed'
-  $$,
-  array[1::bigint],
-  'admin completed Storage delete is audited'
 );
 
 select * from finish();

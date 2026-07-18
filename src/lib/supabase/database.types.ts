@@ -397,11 +397,14 @@ export type Database = {
           bucket_id: string
           byte_size: number
           created_at: string
+          failure_code: string | null
           height: number
           id: number
           mime_type: string
           object_path: string
           original_filename: string
+          ready_at: string | null
+          status: Database["public"]["Enums"]["media_asset_status"]
           updated_at: string
           uploaded_by: string
           width: number
@@ -411,11 +414,14 @@ export type Database = {
           bucket_id?: string
           byte_size: number
           created_at?: string
+          failure_code?: string | null
           height: number
           id?: never
           mime_type: string
           object_path: string
           original_filename: string
+          ready_at?: string | null
+          status?: Database["public"]["Enums"]["media_asset_status"]
           updated_at?: string
           uploaded_by: string
           width: number
@@ -425,11 +431,14 @@ export type Database = {
           bucket_id?: string
           byte_size?: number
           created_at?: string
+          failure_code?: string | null
           height?: number
           id?: never
           mime_type?: string
           object_path?: string
           original_filename?: string
+          ready_at?: string | null
+          status?: Database["public"]["Enums"]["media_asset_status"]
           updated_at?: string
           uploaded_by?: string
           width?: number
@@ -1009,6 +1018,28 @@ export type Database = {
         }
         Returns: number
       }
+      begin_media_delete: {
+        Args: { p_media_asset_id: number }
+        Returns: string
+      }
+      complete_media_delete: {
+        Args: { p_media_asset_id: number }
+        Returns: undefined
+      }
+      fail_media_upload: {
+        Args: { p_failure_code: string; p_media_asset_id: number }
+        Returns: undefined
+      }
+      finalize_media_upload: {
+        Args: {
+          p_byte_size: number
+          p_height: number
+          p_media_asset_id: number
+          p_mime_type: string
+          p_width: number
+        }
+        Returns: undefined
+      }
       record_completed_media_storage_mutation: {
         Args: { p_object_path: string; p_operation: string }
         Returns: number
@@ -1026,6 +1057,7 @@ export type Database = {
         | "order_cancelled"
         | "return"
         | "damage"
+      media_asset_status: "pending" | "ready" | "failed"
       order_status:
         | "pending"
         | "confirmed"
@@ -1178,6 +1210,7 @@ export const Constants = {
         "return",
         "damage",
       ],
+      media_asset_status: ["pending", "ready", "failed"],
       order_status: [
         "pending",
         "confirmed",
@@ -1195,4 +1228,3 @@ export const Constants = {
     },
   },
 } as const
-

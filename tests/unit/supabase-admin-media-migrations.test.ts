@@ -84,8 +84,8 @@ describe("Admin Phase 2 database and media foundation", () => {
     expect(sql).not.toMatch(/create trigger[\s\S]+?on storage\.objects/);
   });
 
-  it("allows official cross-staff Storage upsert without weakening first-upload provenance", () => {
-    const sql = migration("secure_admin_media_inventory");
+  it("allows only the uploader to fill a pending Storage reservation", () => {
+    const sql = migration("finalize_media_lifecycle");
     const insertPolicy = sql.match(
       /create policy product_images_content_staff_insert[\s\S]*?\n\);/,
     )?.[0];
@@ -94,10 +94,9 @@ describe("Admin Phase 2 database and media foundation", () => {
     expect(insertPolicy).toContain("bucket_id = 'product-images'");
     expect(insertPolicy).toContain("owner_id = (select auth.uid()::text)");
     expect(insertPolicy).toContain("media_asset.uploaded_by = (select auth.uid())");
-    expect(insertPolicy).toContain("storage.allow_only_operation('object.upload_update')");
-    expect(insertPolicy).toMatch(
-      /media_asset\.uploaded_by = \(select auth\.uid\(\)\)\s+or storage\.allow_only_operation\('object\.upload_update'\)/,
-    );
+    expect(insertPolicy).toContain("media_asset.status = 'pending'::public.media_asset_status");
+    expect(sql).toContain("drop policy product_images_content_staff_update on storage.objects");
+    expect(sql).not.toContain("storage.allow_only_operation('object.upload_update')");
   });
 
   it("audits product and media mutations without exposing the trigger function", () => {
@@ -126,10 +125,28 @@ describe("Admin Phase 2 database and media foundation", () => {
     }
   });
 
+  it("models uploads as an audited pending-to-ready lifecycle", () => {
+    const sql = migration("finalize_media_lifecycle");
+
+    expect(sql).toContain("create type public.media_asset_status as enum ('pending', 'ready', 'failed')");
+    expect(sql).toContain("add column status public.media_asset_status");
+    expect(sql).toContain("create or replace function public.finalize_media_upload");
+    expect(sql).toContain("create or replace function public.fail_media_upload");
+    expect(sql).toContain("create or replace function public.begin_media_delete");
+    expect(sql).toContain("create or replace function public.complete_media_delete");
+    expect(sql).toContain("media_asset.status = 'pending'::public.media_asset_status");
+    expect(sql).toContain("media_asset.status = 'ready'::public.media_asset_status");
+    expect(sql).toContain("set search_path = ''");
+    expect(sql).toContain("revoke all on function public.finalize_media_upload");
+    expect(sql).toContain("grant execute on function public.finalize_media_upload");
+    expect(sql).not.toMatch(/create trigger[\s\S]+?on storage\.objects/);
+  });
+
   it("carries executable pgTAP contracts for schema, policies, denial, and audit behavior", () => {
     const schema = pgTap("006_admin_media_schema.test.sql");
     const security = pgTap("007_admin_media_security.test.sql");
     const reviewFixes = pgTap("008_admin_media_review_fixes.test.sql");
+    const lifecycle = pgTap("010_media_lifecycle.test.sql");
 
     for (const expected of [
       "media_assets",
@@ -161,17 +178,25 @@ describe("Admin Phase 2 database and media foundation", () => {
       "eligible object read succeeds without media-library enumeration",
       "anonymous storage insert is denied",
       "nonstaff storage insert is denied",
-      "editor storage insert is allowed by pure rls",
-      "editor storage update is allowed by pure rls",
-      "editor can update media uploaded by another staff member",
-      "official cross-staff storage upsert is allowed",
+      "editor storage insert is allowed for own pending reservation",
+      "ready reservation cannot be overwritten",
       "editor storage delete is denied",
       "admin storage delete is allowed",
-      "nonstaff cannot record completed storage mutation",
-      "editor completed storage mutations are audited",
-      "admin completed storage delete is audited",
     ]) {
       expect(reviewFixes).toContain(expected);
+    }
+
+    for (const expected of [
+      "new media reservation starts pending",
+      "pending owner can finalize upload",
+      "ready media can be associated to a product",
+      "pending media cannot be associated to a product",
+      "only ready product media is publicly readable",
+      "editor cannot begin media deletion",
+      "manager cannot delete associated media",
+      "completed media deletion removes the reservation",
+    ]) {
+      expect(lifecycle).toContain(expected);
     }
   });
 });
