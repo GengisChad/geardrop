@@ -1,5 +1,5 @@
 begin;
-select plan(36);
+select plan(41);
 
 select results_eq(
   $$select enumlabel::text collate "C" from pg_enum join pg_type on pg_type.oid = pg_enum.enumtypid
@@ -20,6 +20,7 @@ select results_eq(
 );
 select has_function('public', 'reorder_homepage_sections', array['bigint[]'], 'homepage reorder RPC exists');
 select has_function('public', 'publish_homepage_section', array['bigint'], 'homepage publish RPC exists');
+select has_function('public', 'save_homepage_section', array['jsonb', 'bigint[]'], 'atomic homepage save RPC exists');
 select has_function('public', 'save_navigation_tree', array['jsonb'], 'navigation tree RPC exists');
 select has_column('public', 'homepage_sections', 'desktop_media_asset_id', 'homepage supports desktop media');
 select has_column('public', 'homepage_sections', 'mobile_media_asset_id', 'homepage supports mobile media');
@@ -159,6 +160,41 @@ select lives_ok(
 select results_eq(
   $$select count(*)::bigint from public.navigation_items where menu_id=(select id from public.navigation_menus where menu_key='footer')$$,
   array[2::bigint], 'navigation tree writes nested items'
+);
+select lives_ok(
+  $$select public.save_homepage_section(
+    jsonb_build_object(
+      'section_key','rpc-products','section_type','featured_products','eyebrow',null,'title','RPC products',
+      'subtitle',null,'description',null,'desktop_media_asset_id',null,'mobile_media_asset_id',null,
+      'cta_label',null,'cta_href',null,'publication_status','draft','starts_at',null,'ends_at',null,
+      'active',false,'sort_order',104
+    ),
+    array[(select id from public.products order by id limit 1)]
+  )$$,
+  'homepage section and targets save atomically'
+);
+select results_eq(
+  $$select count(*)::bigint from public.homepage_section_products
+    where section_id=(select id from public.homepage_sections where section_key='rpc-products')$$,
+  array[1::bigint], 'atomic homepage save writes exact target set'
+);
+select throws_ok(
+  $$select public.save_homepage_section(
+    jsonb_build_object(
+      'id',(select id from public.homepage_sections where section_key='rpc-products'),
+      'section_key','rpc-products','section_type','featured_products','eyebrow',null,'title','Rollback',
+      'subtitle',null,'description',null,'desktop_media_asset_id',null,'mobile_media_asset_id',null,
+      'cta_label',null,'cta_href',null,'publication_status','draft','starts_at',null,'ends_at',null,
+      'active',false,'sort_order',104
+    ),
+    array[9223372036854770000]
+  )$$,
+  '23503', null, 'invalid homepage target rolls back parent and target replacement'
+);
+select results_eq(
+  $$select count(*)::bigint from public.homepage_section_products
+    where section_id=(select id from public.homepage_sections where section_key='rpc-products')$$,
+  array[1::bigint], 'failed homepage replacement preserves original target'
 );
 reset role;
 

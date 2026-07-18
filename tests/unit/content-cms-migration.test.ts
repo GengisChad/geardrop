@@ -40,7 +40,7 @@ describe("structured content CMS migration", () => {
 
   it("defines least-privilege atomic RPCs and RLS on every exposed table", () => {
     const sql = source();
-    for (const rpc of ["reorder_homepage_sections", "publish_homepage_section", "save_navigation_tree"]) {
+    for (const rpc of ["reorder_homepage_sections", "publish_homepage_section", "save_homepage_section", "save_navigation_tree"]) {
       expect(sql).toContain(`public.${rpc}(`);
       expect(sql).toMatch(new RegExp(`revoke all on function public\\.${rpc}`));
     }
@@ -60,4 +60,3 @@ describe("structured content CMS migration", () => {
     expect(sql).not.toMatch(/insert\s+into\s+storage\.objects/i);
   });
 });
-

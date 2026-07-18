@@ -416,6 +416,95 @@ begin
 end;
 $$;
 
+create or replace function public.save_homepage_section(p_section jsonb, p_target_ids bigint[])
+returns bigint
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  actor_id uuid := (select auth.uid());
+  target_section_id bigint;
+  normalized_type public.homepage_section_type;
+  normalized_status public.publication_status;
+begin
+  if not private.has_staff_role(array['owner'::public.staff_role,'admin'::public.staff_role,'editor'::public.staff_role]) then
+    raise exception using errcode='42501',message='GD_CMS_STAFF_REQUIRED';
+  end if;
+  if jsonb_typeof(p_section)<>'object' or p_section-array[
+    'id','section_key','section_type','eyebrow','title','subtitle','description',
+    'desktop_media_asset_id','mobile_media_asset_id','cta_label','cta_href',
+    'publication_status','starts_at','ends_at','active','sort_order'
+  ]<>'{}'::jsonb or p_target_ids is null or array_position(p_target_ids,null) is not null
+    or (select count(distinct target_id) from unnest(p_target_ids) as target(target_id))<>cardinality(p_target_ids) then
+    raise exception using errcode='22023',message='GD_INVALID_HOMEPAGE_SECTION';
+  end if;
+  normalized_type:=(p_section->>'section_type')::public.homepage_section_type;
+  normalized_status:=coalesce(nullif(p_section->>'publication_status',''),'draft')::public.publication_status;
+  if nullif(trim(p_section->>'section_key'),'') is null
+    or trim(p_section->>'section_key') !~ '^[a-z0-9]+(-[a-z0-9]+)*$'
+    or ((p_section->>'cta_label') is null)<>( (p_section->>'cta_href') is null )
+    or ((p_section->>'cta_href') is not null and not private.is_safe_content_link(p_section->>'cta_href')) then
+    raise exception using errcode='22023',message='GD_INVALID_HOMEPAGE_SECTION';
+  end if;
+  if normalized_type in ('featured_products','latest_drops','competitive_products','bestsellers','new_arrivals','offers','categories')
+    and cardinality(p_target_ids)<1 then
+    raise exception using errcode='22023',message='GD_INVALID_HOMEPAGE_TARGETS';
+  elsif normalized_type='bundle' and cardinality(p_target_ids)<>1 then
+    raise exception using errcode='22023',message='GD_INVALID_HOMEPAGE_TARGETS';
+  elsif normalized_type not in ('featured_products','latest_drops','competitive_products','bestsellers','new_arrivals','offers','categories','bundle')
+    and cardinality(p_target_ids)<>0 then
+    raise exception using errcode='22023',message='GD_INVALID_HOMEPAGE_TARGETS';
+  end if;
+  target_section_id:=nullif(p_section->>'id','')::bigint;
+  if target_section_id is null then
+    insert into public.homepage_sections(
+      section_key,section_type,eyebrow,title,subtitle,description,desktop_media_asset_id,mobile_media_asset_id,
+      cta_label,cta_href,publication_status,published_at,starts_at,ends_at,active,sort_order
+    ) values (
+      trim(p_section->>'section_key'),normalized_type,nullif(trim(p_section->>'eyebrow'),''),nullif(trim(p_section->>'title'),''),
+      nullif(trim(p_section->>'subtitle'),''),nullif(trim(p_section->>'description'),''),
+      nullif(p_section->>'desktop_media_asset_id','')::bigint,nullif(p_section->>'mobile_media_asset_id','')::bigint,
+      nullif(trim(p_section->>'cta_label'),''),nullif(trim(p_section->>'cta_href'),''),normalized_status,
+      case when normalized_status='published' then now() else null end,
+      nullif(p_section->>'starts_at','')::timestamptz,nullif(p_section->>'ends_at','')::timestamptz,
+      coalesce((p_section->>'active')::boolean,false),coalesce((p_section->>'sort_order')::integer,0)
+    ) returning id into target_section_id;
+  else
+    perform 1 from public.homepage_sections where id=target_section_id for update;
+    if not found then raise exception using errcode='P0002',message='GD_HOMEPAGE_SECTION_NOT_FOUND'; end if;
+    update public.homepage_sections set
+      section_key=trim(p_section->>'section_key'),section_type=normalized_type,eyebrow=nullif(trim(p_section->>'eyebrow'),''),
+      title=nullif(trim(p_section->>'title'),''),subtitle=nullif(trim(p_section->>'subtitle'),''),description=nullif(trim(p_section->>'description'),''),
+      desktop_media_asset_id=nullif(p_section->>'desktop_media_asset_id','')::bigint,
+      mobile_media_asset_id=nullif(p_section->>'mobile_media_asset_id','')::bigint,
+      cta_label=nullif(trim(p_section->>'cta_label'),''),cta_href=nullif(trim(p_section->>'cta_href'),''),
+      publication_status=normalized_status,published_at=case when normalized_status='published' then coalesce(published_at,now()) else null end,
+      starts_at=nullif(p_section->>'starts_at','')::timestamptz,ends_at=nullif(p_section->>'ends_at','')::timestamptz,
+      active=coalesce((p_section->>'active')::boolean,false),sort_order=coalesce((p_section->>'sort_order')::integer,0)
+    where id=target_section_id;
+  end if;
+  delete from public.homepage_section_products where section_id=target_section_id;
+  delete from public.homepage_section_categories where section_id=target_section_id;
+  delete from public.homepage_section_bundles where section_id=target_section_id;
+  if normalized_type in ('featured_products','latest_drops','competitive_products','bestsellers','new_arrivals','offers') then
+    insert into public.homepage_section_products(section_id,product_id,sort_order)
+    select target_section_id,target_id,ordinality-1 from unnest(p_target_ids) with ordinality as target(target_id,ordinality);
+  elsif normalized_type='categories' then
+    insert into public.homepage_section_categories(section_id,category_id,sort_order)
+    select target_section_id,target_id,ordinality-1 from unnest(p_target_ids) with ordinality as target(target_id,ordinality);
+  elsif normalized_type='bundle' then
+    insert into public.homepage_section_bundles(section_id,bundle_id,sort_order)
+    select target_section_id,target_id,ordinality-1 from unnest(p_target_ids) with ordinality as target(target_id,ordinality);
+  end if;
+  insert into public.audit_events(actor_user_id,action,entity_type,entity_id,after_state)
+  values(actor_id,'content.homepage.saved','homepage_sections',target_section_id::text,jsonb_build_object('section_type',normalized_type,'target_count',cardinality(p_target_ids)));
+  return target_section_id;
+exception when invalid_text_representation or numeric_value_out_of_range then
+  raise exception using errcode='22023',message='GD_INVALID_HOMEPAGE_SECTION';
+end;
+$$;
+
 create or replace function private.insert_navigation_items(p_menu_id bigint,p_parent_id bigint,p_items jsonb,p_depth integer)
 returns void language plpgsql security definer set search_path = '' as $$
 declare item record; inserted_id bigint; children jsonb;
@@ -475,7 +564,9 @@ $$;
 
 revoke all on function public.reorder_homepage_sections(bigint[]) from public, anon, authenticated, service_role;
 revoke all on function public.publish_homepage_section(bigint) from public, anon, authenticated, service_role;
+revoke all on function public.save_homepage_section(jsonb,bigint[]) from public, anon, authenticated, service_role;
 revoke all on function public.save_navigation_tree(jsonb) from public, anon, authenticated, service_role;
 grant execute on function public.reorder_homepage_sections(bigint[]) to authenticated;
 grant execute on function public.publish_homepage_section(bigint) to authenticated;
+grant execute on function public.save_homepage_section(jsonb,bigint[]) to authenticated;
 grant execute on function public.save_navigation_tree(jsonb) to authenticated;

@@ -1604,6 +1604,10 @@ export type Database = {
         Args: { p_bundle: Json; p_items: Json }
         Returns: number
       }
+      save_homepage_section: {
+        Args: { p_section: Json; p_target_ids: number[] }
+        Returns: number
+      }
       save_navigation_tree: { Args: { p_tree: Json }; Returns: number }
       set_primary_product_image: {
         Args: { p_image_id: number; p_product_id: number }
