@@ -10,11 +10,19 @@ import { ProductCarousel } from "@/components/product/product-carousel";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { storefrontContent } from "@/lib/content/provider";
 import { HomepageSectionRenderer } from "@/components/content/homepage-section-renderer";
+import { IntroGate } from "@/components/intro/intro-gate";
 
 export default async function HomePage() {
   const commerce=await getCommerceProvider();
   const managedHomepage = await storefrontContent.getHomepage();
-  if (managedHomepage !== null) return <>{managedHomepage.map((section) => <HomepageSectionRenderer key={section.id} section={section} />)}</>;
+  if (managedHomepage !== null) {
+    return (
+      <>
+        <IntroGate />
+        {managedHomepage.map((section) => <HomepageSectionRenderer key={section.id} section={section} />)}
+      </>
+    );
+  }
   const [featured, latest, bestSellers, bundle, hero, all] = await Promise.all([
     commerce.listProducts({ sort: "popolari", perPage: 6 }),
     commerce.listProducts({ sort: "novita", perPage: 6 }),
@@ -29,6 +37,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <IntroGate />
       <Hero product={hero} />
       <CategoryTiles />
       <StatusLegend />

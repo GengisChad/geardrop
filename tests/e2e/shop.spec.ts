@@ -3,6 +3,10 @@ import { expect, test, type Page } from "@playwright/test";
 /** A PDP also renders "Si abbina bene con" cards, which carry the same testids. */
 const buyPanel = (page: Page) => page.locator("#buy-panel");
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => window.localStorage.setItem("geardrop_intro_seen_v1", "true"));
+});
+
 test.describe("home", () => {
   test("renders the hero, the brand lockup and the drop rows", async ({ page }) => {
     await page.goto("/");
