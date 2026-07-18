@@ -2,12 +2,12 @@ begin;
 select plan(36);
 
 select results_eq(
-  $$select enumlabel::text from pg_enum join pg_type on pg_type.oid = pg_enum.enumtypid
+  $$select enumlabel::text collate "C" from pg_enum join pg_type on pg_type.oid = pg_enum.enumtypid
     where pg_type.typnamespace = 'public'::regnamespace and pg_type.typname = 'homepage_section_type'
     order by enumsortorder$$,
-  $$values ('hero'), ('announcement'), ('featured_products'), ('latest_drops'), ('categories'),
+  $$select label collate "C" from (values ('hero'::text), ('announcement'), ('featured_products'), ('latest_drops'), ('categories'),
     ('competitive_products'), ('bestsellers'), ('new_arrivals'), ('offers'), ('bundle'), ('club'),
-    ('status_legend'), ('trust'), ('newsletter'), ('promo_banner'), ('rich_text'), ('cta')$$,
+    ('status_legend'), ('trust'), ('newsletter'), ('promo_banner'), ('rich_text'), ('cta')) as expected(label)$$,
   'homepage section type is exact allowlist'
 );
 select results_eq(
