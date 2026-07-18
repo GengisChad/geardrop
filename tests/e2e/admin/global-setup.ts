@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { execFileSync } from "node:child_process";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "../../../src/lib/supabase/database.types";
 
@@ -21,18 +22,13 @@ export default async function globalSetup(): Promise<void> {
     { key: "ADMIN", role: "admin" },
     { key: "EDITOR", role: "editor" },
   ];
+  const staffRows: { readonly userId: string; readonly role: Role; readonly displayName: string }[] = [];
 
   for (const identity of identities) {
     const email = `${identity.role}-${run}@local.geardrop.test`;
     const created = await client.auth.admin.createUser({ email, password, email_confirm: true });
     if (created.error || !created.data.user) throw new Error("Unable to create local staff fixture");
-    const profile = await client.from("staff_profiles").insert({
-      user_id: created.data.user.id,
-      display_name: `Test ${identity.role}`,
-      role: identity.role,
-      active: true,
-    });
-    if (profile.error) throw new Error("Unable to create local staff profile");
+    staffRows.push({ userId: created.data.user.id, role: identity.role, displayName: `Test ${identity.role}` });
     process.env[`ADMIN_E2E_${identity.key}_EMAIL`] = email;
   }
 
@@ -43,13 +39,19 @@ export default async function globalSetup(): Promise<void> {
   process.env.ADMIN_E2E_PASSWORD = password;
   process.env.ADMIN_E2E_RUN = run;
 
-  const category = await client.from("categories").insert({
-    name: "Categoria browser test",
-    slug: `browser-test-${run}`,
-    tagline: "Categoria tecnica per test browser locali",
-    description: "Fixture minima richiesta dal form prodotto.",
-    active: true,
-    sort_order: 0,
-  });
-  if (category.error) throw new Error("Unable to create local category fixture");
+  const literal = (value: string) => `'${value.replaceAll("'", "''")}'`;
+  const profileValues = staffRows.map((staff) =>
+    `(${literal(staff.userId)}::uuid, ${literal(staff.role)}::public.staff_role, ${literal(staff.displayName)}, true)`,
+  ).join(",");
+  const sql = `
+    insert into public.staff_profiles (user_id, role, display_name, active) values ${profileValues};
+    insert into public.categories (name, slug, tagline, description, active, sort_order) values (
+      'Categoria browser test', ${literal(`browser-test-${run}`)},
+      'Categoria tecnica per test browser locali', 'Fixture minima richiesta dal form prodotto.', true, 0
+    );
+  `;
+  execFileSync("psql", [
+    "postgresql://postgres:postgres@127.0.0.1:54322/postgres",
+    "--set", "ON_ERROR_STOP=1", "--command", sql,
+  ], { stdio: "ignore" });
 }

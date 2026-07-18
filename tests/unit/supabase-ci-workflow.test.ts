@@ -91,6 +91,9 @@ describe("admin browser configuration", () => {
     expect(source).toContain("SUPABASE_SECRET_KEY");
     expect(source).toContain("127\\.0\\.0\\.1|localhost");
     expect(source).toContain("auth.admin.createUser");
+    expect(source).toContain('execFileSync("psql"');
+    expect(source).toContain("postgresql://postgres:postgres@127.0.0.1:54322/postgres");
+    expect(source).toContain('stdio: "ignore"');
     expect(source).not.toContain("console.log");
     expect(source).not.toMatch(/\.supabase\.co/i);
   });
