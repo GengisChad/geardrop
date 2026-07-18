@@ -1,5 +1,5 @@
 begin;
-select plan(17);
+select plan(19);
 
 select has_column('public','inventory_movements','balance_kind','inventory ledger identifies its balance');
 select has_column('public','inventory_movements','balance_after','inventory ledger stores the affected balance');
@@ -49,7 +49,7 @@ select results_eq(
   $$values('passed'::text,'Sandbox payment round trip verified'::text)$$,
   'manual readiness evidence persists');
 select ok(
-  pg_get_functiondef('public.create_order(text,text,jsonb,jsonb,jsonb,text,text,uuid)'::regprocedure) ilike '%for key share%',
+  pg_get_functiondef('public.create_order(text,text,jsonb,jsonb,jsonb,text,text,uuid)'::regprocedure) ilike '%for share%',
   'order intake locks the acceptance singleton against concurrent disable');
 
 insert into public.categories(slug,name,tagline,description,active,publication_status,published_at)
@@ -73,6 +73,16 @@ select results_eq(
 select results_eq(
   $$select stock_after from public.inventory_movements where note='Reserve preorder'$$,
   array[0],'preorder movement still records physical stock separately');
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000002201',true);
+set local role authenticated;
+select lives_ok(
+  $$update public.products set preorder_allocation=4 where sku='ledger-preorder'$$,
+  'staff preorder edit is recorded atomically');
+reset role;
+select results_eq(
+  $$select delta,balance_after from public.inventory_movements where note='Allocazione preordine aggiornata'$$,
+  $$values(1::integer,4::integer)$$,
+  'staff preorder movement stores exact delta and resulting allocation');
 
 select * from finish();
 rollback;

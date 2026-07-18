@@ -33,14 +33,15 @@ describe("order intake hardening", () => {
   const replacementSql = readFileSync(join(process.cwd(), "supabase/migrations/20260718235000_make_admin_replacements_atomic.sql"), "utf8");
 
   it("serializes order creation with the operational kill switch", () => {
-    expect(orderSql).toContain("for key share");
+    expect(orderSql).toContain("for share");
     expect(orderSql).toContain("not intake_enabled");
   });
 
-  it("backfills historical preorder balances in reverse movement order", () => {
+  it("marks unknowable legacy preorder balances and records future staff changes", () => {
     expect(replacementSql).toContain("reservation_kind='preorder'");
-    expect(replacementSql).toContain("order by movement.created_at desc,movement.id desc");
-    expect(replacementSql).toContain("balance_kind='preorder'");
+    expect(replacementSql).toContain("balance_kind='preorder',balance_after=null");
+    expect(replacementSql).toContain("exact allocation history cannot be reconstructed");
+    expect(replacementSql).toContain("products_record_preorder_allocation_change");
   });
 
   it("keeps machine checks authoritative while allowing seeded manual checks", () => {

@@ -828,7 +828,7 @@ export type Database = {
       inventory_movements: {
         Row: {
           actor_user_id: string | null
-          balance_after: number
+          balance_after: number | null
           balance_kind: string
           created_at: string
           delta: number
@@ -841,7 +841,7 @@ export type Database = {
         }
         Insert: {
           actor_user_id?: string | null
-          balance_after?: number
+          balance_after?: number | null
           balance_kind?: string
           created_at?: string
           delta: number
@@ -854,7 +854,7 @@ export type Database = {
         }
         Update: {
           actor_user_id?: string | null
-          balance_after?: number
+          balance_after?: number | null
           balance_kind?: string
           created_at?: string
           delta?: number

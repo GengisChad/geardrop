@@ -3,27 +3,14 @@ alter table public.inventory_movements
     check (balance_kind in ('stock','preorder')),
   add column balance_after integer check (balance_after >= 0);
 update public.inventory_movements set balance_after=stock_after where balance_after is null;
-with preorder_rows as (
-  select movement.id,
-    product.preorder_allocation - coalesce(
-      sum(movement.delta) over (
-        partition by movement.product_id
-        order by movement.created_at desc,movement.id desc
-        rows between unbounded preceding and 1 preceding
-      ),0
-    ) as historical_balance
-  from public.inventory_movements as movement
-  join public.products as product on product.id=movement.product_id
-  where movement.order_id is not null and exists(
-    select 1 from public.order_items
-    where order_id=movement.order_id and product_id=movement.product_id and reservation_kind='preorder'
-  )
-)
 update public.inventory_movements as movement set
-  balance_kind='preorder',balance_after=preorder_rows.historical_balance
-from preorder_rows where preorder_rows.id=movement.id;
-alter table public.inventory_movements alter column balance_after set not null;
-alter table public.inventory_movements alter column balance_after set default 0;
+  balance_kind='preorder',balance_after=null
+where movement.order_id is not null and exists(
+  select 1 from public.order_items
+  where order_id=movement.order_id and product_id=movement.product_id and reservation_kind='preorder'
+);
+comment on column public.inventory_movements.balance_after is
+  'NULL only for legacy preorder movements whose exact allocation history cannot be reconstructed.';
 
 create function private.annotate_inventory_balance()
 returns trigger
@@ -32,10 +19,10 @@ security definer
 set search_path = ''
 as $$
 begin
-  if new.order_id is not null and exists(
+  if new.balance_kind='preorder' or (new.order_id is not null and exists(
     select 1 from public.order_items
     where order_id=new.order_id and product_id=new.product_id and reservation_kind='preorder'
-  ) then
+  )) then
     new.balance_kind := 'preorder';
     select preorder_allocation into new.balance_after from public.products where id=new.product_id;
   else
@@ -49,6 +36,30 @@ revoke all on function private.annotate_inventory_balance() from public,anon,aut
 create trigger inventory_movements_annotate_balance
 before insert on public.inventory_movements
 for each row execute function private.annotate_inventory_balance();
+
+create function private.record_staff_preorder_allocation_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if old.preorder_allocation is distinct from new.preorder_allocation
+    and private.has_staff_role(array['owner'::public.staff_role,'admin'::public.staff_role]) then
+    insert into public.inventory_movements(
+      product_id,delta,stock_after,balance_kind,balance_after,reason,actor_user_id,note
+    ) values (
+      new.id,new.preorder_allocation-old.preorder_allocation,new.stock_quantity,'preorder',
+      new.preorder_allocation,'manual_adjustment',(select auth.uid()),'Allocazione preordine aggiornata'
+    );
+  end if;
+  return new;
+end;
+$$;
+revoke all on function private.record_staff_preorder_allocation_change() from public,anon,authenticated,service_role;
+create trigger products_record_preorder_allocation_change
+after update of preorder_allocation on public.products
+for each row execute function private.record_staff_preorder_allocation_change();
 
 drop policy order_notes_staff_read on public.order_notes;
 drop policy order_status_events_staff_read on public.order_status_events;

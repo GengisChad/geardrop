@@ -31,7 +31,7 @@ begin
   select accept_orders,max_quantity_per_line into intake_enabled,maximum_quantity
   from public.site_settings
   where singleton
-  for key share;
+  for share;
   if not found or not intake_enabled then
     raise exception using errcode='55000',message='GD_ORDER_INTAKE_DISABLED';
   end if;
