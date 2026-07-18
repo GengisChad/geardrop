@@ -1022,9 +1022,30 @@ export type Database = {
         Args: { p_media_asset_id: number }
         Returns: string
       }
+      bulk_update_products: {
+        Args: {
+          p_category_id?: number
+          p_operation: string
+          p_product_ids: number[]
+        }
+        Returns: number
+      }
       complete_media_delete: {
         Args: { p_media_asset_id: number }
         Returns: undefined
+      }
+      delete_product_permanently: {
+        Args: { p_expected_name: string; p_product_id: number }
+        Returns: undefined
+      }
+      duplicate_product_draft: {
+        Args: {
+          p_name: string
+          p_sku: string
+          p_slug: string
+          p_source_product_id: number
+        }
+        Returns: number
       }
       fail_media_upload: {
         Args: { p_failure_code: string; p_media_asset_id: number }
@@ -1040,9 +1061,37 @@ export type Database = {
         }
         Returns: undefined
       }
+      product_deletion_impact: {
+        Args: { p_product_id: number }
+        Returns: Json
+      }
       record_completed_media_storage_mutation: {
         Args: { p_object_path: string; p_operation: string }
         Returns: number
+      }
+      reorder_product_images: {
+        Args: { p_image_ids: number[]; p_product_id: number }
+        Returns: undefined
+      }
+      replace_product_details: {
+        Args: {
+          p_box_contents: Json
+          p_features: Json
+          p_product_id: number
+          p_specs: Json
+        }
+        Returns: undefined
+      }
+      set_primary_product_image: {
+        Args: { p_image_id: number; p_product_id: number }
+        Returns: undefined
+      }
+      swap_media_asset_associations: {
+        Args: {
+          p_new_media_asset_id: number
+          p_old_media_asset_id: number
+        }
+        Returns: Json
       }
     }
     Enums: {
