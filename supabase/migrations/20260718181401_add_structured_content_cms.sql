@@ -393,7 +393,7 @@ begin
     or exists (select 1 from unnest(p_section_ids) as requested(id) left join public.homepage_sections as section on section.id=requested.id where section.id is null) then
     raise exception using errcode = '22023', message = 'GD_HOMEPAGE_SECTION_ID_SET_MISMATCH';
   end if;
-  set constraints homepage_sections_sort_order_key deferred;
+  set constraints public.homepage_sections_sort_order_key deferred;
   with requested as (select id, ordinality - 1 as sort_order from unnest(p_section_ids) with ordinality as item(id,ordinality))
   update public.homepage_sections as section set sort_order=requested.sort_order from requested where section.id=requested.id;
   insert into public.audit_events(actor_user_id,action,entity_type,entity_id,after_state)
