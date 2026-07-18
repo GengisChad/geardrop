@@ -136,6 +136,8 @@ describe("Admin Phase 2 database and media foundation", () => {
     expect(sql).toContain("create or replace function public.complete_media_delete");
     expect(sql).toContain("media_asset.status = 'pending'::public.media_asset_status");
     expect(sql).toContain("media_asset.status = 'ready'::public.media_asset_status");
+    expect(sql).toContain("create or replace function private.is_ready_media_asset");
+    expect(sql).toContain("private.is_ready_media_asset(media_asset_id)");
     expect(sql).toContain("set search_path = ''");
     expect(sql).toContain("revoke all on function public.finalize_media_upload");
     expect(sql).toContain("grant execute on function public.finalize_media_upload");

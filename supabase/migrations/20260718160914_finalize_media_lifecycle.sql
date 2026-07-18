@@ -120,6 +120,26 @@ from public, anon, authenticated;
 grant execute on function private.is_public_product_image_object(text, text)
 to anon, authenticated;
 
+create or replace function private.is_ready_media_asset(candidate_media_asset_id bigint)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.media_assets as media_asset
+    where media_asset.id = candidate_media_asset_id
+      and media_asset.status = 'ready'::public.media_asset_status
+  );
+$$;
+
+revoke all on function private.is_ready_media_asset(bigint)
+from public, anon, authenticated;
+grant execute on function private.is_ready_media_asset(bigint)
+to anon, authenticated;
+
 drop policy product_images_public_read on public.product_images;
 create policy product_images_public_read on public.product_images
 for select to anon, authenticated
@@ -128,12 +148,7 @@ using (
   and (select private.is_public_product(product_id))
   and (
     media_asset_id is null
-    or exists (
-      select 1
-      from public.media_assets as media_asset
-      where media_asset.id = product_images.media_asset_id
-        and media_asset.status = 'ready'::public.media_asset_status
-    )
+    or (select private.is_ready_media_asset(media_asset_id))
   )
 );
 

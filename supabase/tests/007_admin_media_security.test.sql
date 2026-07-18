@@ -86,9 +86,9 @@ select lives_ok(
   $$update public.media_assets set alt_text = 'Editor updated media' where object_path = 'contracts/editor.png'$$,
   'editor can update content media'
 );
-select results_eq(
-  $$delete from public.media_assets where object_path = 'contracts/editor.png' returning id$$,
-  array[]::bigint[],
+select throws_like(
+  $$delete from public.media_assets where object_path = 'contracts/editor.png'$$,
+  '%permission denied%',
   'editor cannot permanently delete media'
 );
 select throws_ok(
@@ -128,8 +128,13 @@ select lives_ok(
   'owner can update media'
 );
 select lives_ok(
-  $$delete from public.media_assets where object_path = 'contracts/owner.avif'$$,
-  'owner can permanently delete media'
+  $$select public.begin_media_delete(
+      (select id from public.media_assets where object_path = 'contracts/owner.avif')
+    );
+    select public.complete_media_delete(
+      (select id from public.media_assets where object_path = 'contracts/owner.avif')
+    )$$,
+  'owner can permanently delete unlinked media through lifecycle'
 );
 reset role;
 
