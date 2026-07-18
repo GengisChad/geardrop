@@ -1,16 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import type { Route } from "next";
 import { usePathname } from "next/navigation";
 import { User } from "lucide-react";
 import { CartIndicator } from "@/components/layout/cart-indicator";
 import { Logo } from "@/components/layout/logo";
 import { MobileMenu } from "@/components/layout/mobile-menu";
 import { SearchBox } from "@/components/layout/search-box";
-import { MAIN_NAV } from "@/lib/navigation";
 import { cn } from "@/lib/cn";
+import type { StorefrontNavItem } from "@/lib/content/types";
 
-export function Header() {
+export function Header({ navigation, mobileNavigation }: {
+  readonly navigation: readonly StorefrontNavItem[];
+  readonly mobileNavigation: readonly StorefrontNavItem[];
+}) {
   const pathname = usePathname();
 
   return (
@@ -24,17 +28,17 @@ export function Header() {
       <div className="relative mx-auto max-w-[1400px] px-3 pt-3 sm:px-6 sm:pt-4">
         {/* One floating glass pill — no top bar above it. */}
         <div className="gd-glass-compact flex items-center gap-3 rounded-full px-3 py-2 sm:px-5 sm:py-2.5">
-          <MobileMenu />
+          <MobileMenu navigation={mobileNavigation} />
           <Logo priority className="shrink-0" />
 
           <nav aria-label="Navigazione principale" className="hidden flex-1 justify-center lg:flex">
             <ul className="flex items-center gap-5 xl:gap-7">
-              {MAIN_NAV.map((item) => {
+              {navigation.map((item) => {
                 const active = pathname === item.href.split("?")[0];
                 return (
                   <li key={item.label}>
                     <Link
-                      href={item.href}
+                      href={item.href as Route}
                       aria-current={active ? "page" : undefined}
                       className={cn(
                         "gd-display relative py-2 text-small font-bold tracking-wider transition-colors",

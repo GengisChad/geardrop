@@ -38,6 +38,8 @@ export function HomepageSectionRenderer({ section, preview = false }: {
     case "rich_text":
     case "cta":
       break;
+    default:
+      return null;
   }
   return <section className="border-b border-white/10 bg-graphite px-5 py-12 text-white sm:px-10" data-section-type={section.section_type}>
     <div className="mx-auto max-w-6xl">

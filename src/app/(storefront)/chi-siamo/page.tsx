@@ -4,6 +4,8 @@ import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { SlashMark } from "@/components/ui/section-heading";
 import { Button } from "@/components/ui/button";
 import { TrustBandDark } from "@/components/home/trust";
+import { ManagedContentPage } from "@/components/layout/content-page";
+import { storefrontContent } from "@/lib/content/provider";
 
 export const metadata: Metadata = {
   title: "Chi siamo",
@@ -30,7 +32,9 @@ const PILLARS = [
   },
 ] as const;
 
-export default function ChiSiamoPage() {
+export default async function ChiSiamoPage() {
+  const managed = await storefrontContent.getPage("chi-siamo");
+  if (managed) return <ManagedContentPage crumbs={[{ label: "Home", href: "/" }, { label: "Chi siamo" }]} page={managed} />;
   return (
     <>
       <section className="gd-glass gd-section-ambient relative mx-4 mt-4 overflow-hidden rounded-[--radius-glass-lg] sm:mx-6">

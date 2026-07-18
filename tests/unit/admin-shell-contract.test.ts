@@ -81,14 +81,14 @@ describe("admin shell state", () => {
     expect(banner).not.toMatch(/dismiss|close|chiudi/i);
   });
 
-  it("enables only the four current operational destinations", () => {
+  it("enables every implemented destination and locks future modules", () => {
     const nav = source("src/lib/admin/navigation.ts");
 
-    for (const label of ["Panoramica", "Prodotti", "Inventario", "Media"]) {
+    for (const label of ["Panoramica", "Prodotti", "Categorie", "Bundle", "Inventario", "Media", "Homepage", "Pagine", "Navigazione", "Footer"]) {
       expect(nav).toMatch(new RegExp(`label: "${label}"[\\s\\S]{0,120}disabled: false`));
     }
 
-    for (const label of ["Homepage", "Coupon", "Ordini", "Impostazioni", "Team", "Attività"]) {
+    for (const label of ["Coupon", "Ordini", "Impostazioni", "Team", "Attività"]) {
       expect(nav).toMatch(new RegExp(`label: "${label}"[\\s\\S]{0,120}disabled: true`));
     }
   });

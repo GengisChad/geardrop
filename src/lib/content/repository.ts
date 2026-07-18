@@ -61,6 +61,17 @@ export async function getContentPage(
   return data ? { ...data, renderedHtml: renderSafeMarkdown(data.markdown_source) } : null;
 }
 
+export async function listContentPages(
+  client: SupabaseClient<Database>,
+  { includeDrafts = false }: ContentReadOptions = {},
+): Promise<readonly ContentPage[]> {
+  let query = client.from("content_pages").select("*").order("sort_order").order("id");
+  query = publicScope(query, includeDrafts);
+  const result = await query;
+  if (result.error) throw new Error("Impossibile caricare le pagine");
+  return (result.data ?? []).map((page) => ({ ...page, renderedHtml: renderSafeMarkdown(page.markdown_source) }));
+}
+
 function buildNavigationTree(rows: readonly NavigationItemRow[], parentId: number | null): readonly NavigationItem[] {
   return rows.filter((row) => row.parent_id === parentId).map((row) => ({
     ...row,

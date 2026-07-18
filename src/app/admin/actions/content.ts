@@ -5,10 +5,12 @@ import { requireStaffRole, requireUser } from "@/lib/auth/guards";
 import { STAFF_ROLES } from "@/lib/auth/roles";
 import {
   contentPageSchema,
+  footerConfigurationSchema,
   homepageSectionIdSchema,
   homepageSectionSchema,
   navigationTreeSchema,
   type NavigationItemInput,
+  type FooterConfigurationInput,
 } from "@/lib/admin/content";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Database, Json } from "@/lib/supabase/database.types";
@@ -217,4 +219,72 @@ export async function saveNavigationTreeAction(
   if (result.error) return { ok: false, message: "Navigazione non salvata." };
   refreshContent();
   return { ok: true, message: "Navigazione salvata.", id: result.data };
+}
+
+async function synchronizeFooter(
+  client: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  input: FooterConfigurationInput,
+): Promise<boolean> {
+  const existingColumns = await client.from("footer_columns").select("id");
+  const existingSocial = await client.from("social_links").select("id");
+  if (existingColumns.error || existingSocial.error) return false;
+  const keptColumnIds = new Set(input.columns.flatMap((column) => column.id ? [column.id] : []));
+  const keptSocialIds = new Set(input.socialLinks.flatMap((link) => link.id ? [link.id] : []));
+  for (const row of existingColumns.data ?? []) {
+    if (!keptColumnIds.has(row.id) && (await client.from("footer_columns").delete().eq("id", row.id)).error) return false;
+  }
+  for (const row of existingSocial.data ?? []) {
+    if (!keptSocialIds.has(row.id) && (await client.from("social_links").delete().eq("id", row.id)).error) return false;
+  }
+  for (const [columnIndex, column] of input.columns.entries()) {
+    const columnRecord = {
+      column_key: column.key, title: column.title, sort_order: columnIndex,
+      publication_status: column.publicationStatus, active: column.active,
+      published_at: column.publicationStatus === "published" ? new Date().toISOString() : null,
+    };
+    const savedColumn = column.id
+      ? await client.from("footer_columns").update(columnRecord).eq("id", column.id).select("id").single()
+      : await client.from("footer_columns").insert(columnRecord).select("id").single();
+    if (savedColumn.error) return false;
+    const columnId = savedColumn.data.id;
+    const existingItems = await client.from("footer_items").select("id").eq("column_id", columnId);
+    if (existingItems.error) return false;
+    const keptItemIds = new Set(column.items.flatMap((item) => item.id ? [item.id] : []));
+    for (const row of existingItems.data ?? []) {
+      if (!keptItemIds.has(row.id) && (await client.from("footer_items").delete().eq("id", row.id)).error) return false;
+    }
+    for (const [itemIndex, item] of column.items.entries()) {
+      const record = { column_id: columnId, label: item.label, href: item.href, active: item.active, sort_order: itemIndex };
+      const result = item.id
+        ? await client.from("footer_items").update(record).eq("id", item.id)
+        : await client.from("footer_items").insert(record);
+      if (result.error) return false;
+    }
+  }
+  for (const [index, link] of input.socialLinks.entries()) {
+    const record = {
+      platform_key: link.platformKey, label: link.label, href: link.href, sort_order: index,
+      publication_status: link.publicationStatus, active: link.active,
+      published_at: link.publicationStatus === "published" ? new Date().toISOString() : null,
+    };
+    const result = link.id
+      ? await client.from("social_links").update(record).eq("id", link.id)
+      : await client.from("social_links").insert(record);
+    if (result.error) return false;
+  }
+  return true;
+}
+
+export async function saveFooterConfigurationAction(
+  _previous: ContentActionState,
+  formData: FormData,
+): Promise<ContentActionState> {
+  let raw: unknown;
+  try { raw = JSON.parse(text(formData, "configuration")); } catch { return { ok: false, message: "Configurazione footer non valida." }; }
+  const parsed = footerConfigurationSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, message: "Controlla colonne, link, visibilità e URL." };
+  const client = await verifiedStaff();
+  if (!await synchronizeFooter(client, parsed.data)) return { ok: false, message: "Footer non salvato. Ricarica e riprova." };
+  refreshContent();
+  return { ok: true, message: "Footer salvato." };
 }

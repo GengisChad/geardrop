@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { ContentPage } from "@/components/layout/content-page";
+import { ManagedContentPage } from "@/components/layout/content-page";
 import { LEGAL_PAGES, type LegalSlug } from "@/data/pages";
+import { storefrontContent } from "@/lib/content/provider";
 
 type Params = { slug: string };
 
@@ -14,7 +15,8 @@ export function generateStaticParams(): Params[] {
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { slug } = await params;
   if (!isLegalSlug(slug)) return { title: "Pagina non trovata" };
-  const page = LEGAL_PAGES[slug];
+  const page = await storefrontContent.getPage(slug);
+  if (!page) return { title: "Pagina non trovata" };
   // Placeholder legal copy must not be indexed. (see src/data/pages.ts)
   return { title: page.title, description: page.lead, robots: { index: false, follow: true } };
 }
@@ -22,9 +24,10 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 export default async function LegalePage({ params }: { params: Promise<Params> }) {
   const { slug } = await params;
   if (!isLegalSlug(slug)) notFound();
-  const page = LEGAL_PAGES[slug];
+  const page = await storefrontContent.getPage(slug);
+  if (!page) notFound();
 
   return (
-    <ContentPage page={page} crumbs={[{ label: "Home", href: "/" }, { label: "Legale" }, { label: page.title }]} />
+    <ManagedContentPage page={page} crumbs={[{ label: "Home", href: "/" }, { label: "Legale" }, { label: page.title }]} />
   );
 }

@@ -8,8 +8,12 @@ import { CompetitivePicks } from "@/components/home/competitive-picks";
 import { ClubBand } from "@/components/home/club-band";
 import { ProductCarousel } from "@/components/product/product-carousel";
 import { commerce } from "@/lib/commerce/provider";
+import { storefrontContent } from "@/lib/content/provider";
+import { HomepageSectionRenderer } from "@/components/content/homepage-section-renderer";
 
 export default async function HomePage() {
+  const managedHomepage = await storefrontContent.getHomepage();
+  if (managedHomepage !== null) return <>{managedHomepage.map((section) => <HomepageSectionRenderer key={section.id} section={section} />)}</>;
   const [featured, latest, bestSellers, bundle, hero, all] = await Promise.all([
     commerce.listProducts({ sort: "popolari", perPage: 6 }),
     commerce.listProducts({ sort: "novita", perPage: 6 }),

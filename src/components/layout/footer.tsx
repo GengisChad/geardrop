@@ -1,13 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { Route } from "next";
 import { Lock, Package } from "lucide-react";
 import { NewsletterForm } from "@/components/layout/newsletter-form";
 import { brand, brandSize } from "@/data/assets";
-import { FOOTER_NAV } from "@/lib/navigation";
+import type { StorefrontChrome } from "@/lib/content/types";
 
 const PAYMENTS = ["Visa", "Mastercard", "PayPal", "Klarna"] as const;
 
-export function Footer() {
+export function Footer({ content }: { readonly content: StorefrontChrome }) {
   return (
     <footer className="on-dark bg-graphite text-white">
       {/* Newsletter + community band */}
@@ -62,13 +63,13 @@ export function Footer() {
           </p>
         </div>
 
-        {FOOTER_NAV.map((column) => (
+        {content.footerColumns.map((column) => (
           <div key={column.title}>
             <h3 className="gd-display text-small font-bold tracking-wider text-white">{column.title}</h3>
             <ul className="mt-4 flex flex-col gap-2.5">
               {column.links.map((link) => (
                 <li key={link.label}>
-                  <Link href={link.href} className="text-small text-grey-400 transition-colors hover:text-lime">
+                  <Link href={link.href as Route} className="text-small text-grey-400 transition-colors hover:text-lime">
                     {link.label}
                   </Link>
                 </li>
@@ -77,6 +78,8 @@ export function Footer() {
           </div>
         ))}
       </div>
+
+      {content.socialLinks.length ? <div className="border-t border-white/10 py-5"><ul className="mx-auto flex max-w-[1400px] flex-wrap justify-center gap-5 px-4">{content.socialLinks.map((link) => <li key={link.label}><a className="text-small text-grey-400 hover:text-lime" href={link.href} rel="noopener noreferrer">{link.label}</a></li>)}</ul></div> : null}
 
       {/* Reassurance + payments */}
       <div className="border-t border-white/10">

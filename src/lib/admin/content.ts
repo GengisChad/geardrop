@@ -108,6 +108,40 @@ export const navigationTreeSchema = z.object({
   items: z.array(navigationItemSchema).max(100),
 });
 
+const optionalEntityId = homepageSectionIdSchema.optional();
+const footerItemSchema = z.object({
+  id: optionalEntityId,
+  label: z.string().trim().min(1).max(120),
+  href: safeContentHrefSchema,
+  active: z.boolean(),
+});
+const footerColumnSchema = z.object({
+  id: optionalEntityId,
+  key: z.string().trim().min(2).max(120).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  title: z.string().trim().min(1).max(120),
+  publicationStatus: z.enum(["draft", "published", "archived"]),
+  active: z.boolean(),
+  items: z.array(footerItemSchema).max(50),
+});
+const socialLinkSchema = z.object({
+  id: optionalEntityId,
+  platformKey: z.string().trim().min(2).max(80).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  label: z.string().trim().min(1).max(120),
+  href: safeContentHrefSchema,
+  publicationStatus: z.enum(["draft", "published", "archived"]),
+  active: z.boolean(),
+});
+export const footerConfigurationSchema = z.object({
+  columns: z.array(footerColumnSchema).max(20),
+  socialLinks: z.array(socialLinkSchema).max(30),
+}).superRefine((value, context) => {
+  const keys = value.columns.map((column) => column.key);
+  const platforms = value.socialLinks.map((link) => link.platformKey);
+  if (new Set(keys).size !== keys.length) context.addIssue({ code: "custom", path: ["columns"], message: "Chiavi colonna duplicate" });
+  if (new Set(platforms).size !== platforms.length) context.addIssue({ code: "custom", path: ["socialLinks"], message: "Piattaforme duplicate" });
+});
+
 export type HomepageSectionInput = z.infer<typeof homepageSectionSchema>;
 export type ContentPageInput = z.infer<typeof contentPageSchema>;
 export type NavigationTreeInput = z.infer<typeof navigationTreeSchema>;
+export type FooterConfigurationInput = z.infer<typeof footerConfigurationSchema>;
