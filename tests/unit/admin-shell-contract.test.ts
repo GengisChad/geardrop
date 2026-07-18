@@ -84,11 +84,11 @@ describe("admin shell state", () => {
   it("enables every implemented destination and locks future modules", () => {
     const nav = source("src/lib/admin/navigation.ts");
 
-    for (const label of ["Panoramica", "Prodotti", "Categorie", "Bundle", "Inventario", "Media", "Homepage", "Pagine", "Navigazione", "Footer", "Promozioni", "Coupon", "Ordini"]) {
+    for (const label of ["Panoramica", "Prodotti", "Categorie", "Bundle", "Inventario", "Media", "Homepage", "Pagine", "Navigazione", "Footer", "Promozioni", "Coupon", "Ordini", "Spedizioni", "Impostazioni"]) {
       expect(nav).toMatch(new RegExp(`label: "${label}"[\\s\\S]{0,120}disabled: false`));
     }
 
-    for (const label of ["Impostazioni", "Team", "Attività"]) {
+    for (const label of ["Team", "Attività"]) {
       expect(nav).toMatch(new RegExp(`label: "${label}"[\\s\\S]{0,120}disabled: true`));
     }
   });

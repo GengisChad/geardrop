@@ -18,7 +18,8 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { label: "Promozioni", href: "/admin/promozioni", disabled: false },
   { label: "Coupon", href: "/admin/coupon", disabled: false },
   { label: "Ordini", href: "/admin/ordini", disabled: false },
-  { label: "Impostazioni", href: "/admin/impostazioni", disabled: true },
+  { label: "Spedizioni", href: "/admin/spedizioni", disabled: false },
+  { label: "Impostazioni", href: "/admin/impostazioni", disabled: false },
   { label: "Team", href: "/admin/team", disabled: true },
   { label: "Attività", href: "/admin/attivita", disabled: true },
 ];
