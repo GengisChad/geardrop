@@ -145,8 +145,13 @@ select lives_ok(
   'admin can mutate product content'
 );
 select lives_ok(
-  $$delete from public.media_assets where object_path = 'contracts/editor.png'$$,
-  'admin can permanently delete media'
+  $$select public.begin_media_delete(
+      (select id from public.media_assets where object_path = 'contracts/editor.png')
+    );
+    select public.complete_media_delete(
+      (select id from public.media_assets where object_path = 'contracts/editor.png')
+    )$$,
+  'admin can permanently delete unlinked media through lifecycle'
 );
 reset role;
 
@@ -191,8 +196,8 @@ select results_eq(
       and with_check ilike '%bucket_id = ''product-images''%'
       and qual ilike '%editor%'
   $$,
-  array[1::bigint],
-  'storage update predicate checks old and new bucket-scoped rows'
+  array[0::bigint],
+  'storage overwrite has no update policy'
 );
 select results_eq(
   $$
