@@ -29,5 +29,7 @@ describe("Supabase environment", () => {
     expect(secretSource).toContain('import "server-only"');
     expect(secretSource).toContain("SUPABASE_SECRET_KEY");
     expect(publicSource).not.toContain("SUPABASE_SECRET_KEY");
+    expect(publicSource).toContain("process.env.NEXT_PUBLIC_SUPABASE_URL");
+    expect(publicSource).toContain("process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
   });
 });
