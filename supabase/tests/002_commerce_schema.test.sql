@@ -83,7 +83,8 @@ select results_eq(
         'publication_status', 'availability_override', 'stock_status',
         'blade_type', 'promo_tag', 'staff_role', 'discount_kind',
         'order_status', 'payment_status', 'inventory_reason',
-        'enablement_check_status', 'product_relation_type', 'promotion_discount_kind'
+        'enablement_check_status', 'product_relation_type', 'promotion_discount_kind',
+        'staff_invite_status'
       ])
   $$,
   array[14::bigint],

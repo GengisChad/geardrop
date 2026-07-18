@@ -49,11 +49,11 @@ insert into public.categories(slug,name,tagline,description,active,publication_s
 insert into public.products(category_id,slug,sku,name,tagline,description,price_cents,publication_status,active,stock_quantity)
 values((select id from public.categories where slug='settings-cat'),'settings-product','settings-product','Settings Product','Settings','Settings',1000,'published',true,2);
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000001601',true); set local role authenticated;
-update public.order_enablement_checks set status='passed',evidence='Provider verificato',verified_at=now(),verified_by='00000000-0000-0000-0000-000000001601' where key='payments';
+update public.order_enablement_checks set status='passed',evidence='Prerequisito verificato nel fixture',verified_at=now(),verified_by='00000000-0000-0000-0000-000000001601';
 select lives_ok($$select public.set_order_acceptance(true,'ATTIVA ORDINI')$$,'owner activates only after live checklist passes');
 reset role;
 select results_eq($$select accept_orders from public.site_settings where singleton$$,array[true],'order acceptance is enabled');
-select results_eq($$select count(*)::bigint from public.order_enablement_checks where status='passed'$$,array[4::bigint],'all checklist items are passed');
+select results_eq($$select count(*)::bigint from public.order_enablement_checks where status='passed'$$,array[14::bigint],'all checklist items are passed');
 select results_eq($$select count(*)::bigint from public.audit_events where action='store.order_acceptance_changed'$$,array[1::bigint],'activation is audited');
 
 select set_config('request.jwt.claim.sub','',true); set local role anon;
