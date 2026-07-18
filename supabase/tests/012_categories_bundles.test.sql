@@ -235,7 +235,7 @@ select results_eq(
     where event_object_schema = 'public'
       and event_object_table in ('categories', 'bundles', 'bundle_items')
       and trigger_name like '%audit_admin_mutation'$$,
-  array[3::bigint],
+  array[9::bigint],
   'category and bundle row families are audited'
 );
 

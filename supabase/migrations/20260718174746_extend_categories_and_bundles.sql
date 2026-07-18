@@ -14,8 +14,7 @@ alter table public.categories
   add constraint categories_publication_consistent check (
     publication_status = 'published'::public.publication_status
     or published_at is null
-  ),
-  add constraint categories_sort_order_key unique (sort_order);
+  );
 
 alter table public.bundles
   add column media_asset_id bigint references public.media_assets(id) on delete set null,
