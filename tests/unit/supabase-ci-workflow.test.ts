@@ -40,6 +40,7 @@ describe("Supabase database CI workflow", () => {
       "supabase db reset --local --no-seed",
       "playwright install --with-deps chromium",
       "playwright test --config playwright.admin.config.ts",
+      "playwright test --config playwright.config.ts",
       "supabase stop --no-backup",
       "if: always()",
     ];
@@ -69,6 +70,10 @@ describe("Supabase database CI workflow", () => {
     expect(yaml.indexOf("supabase db reset --local --no-seed")).toBeLessThan(
       yaml.indexOf("playwright test --config playwright.admin.config.ts"),
     );
+    expect(yaml.indexOf("playwright test --config playwright.admin.config.ts")).toBeLessThan(
+      yaml.indexOf("playwright test --config playwright.config.ts"),
+    );
+    expect(yaml.indexOf("playwright test --config playwright.config.ts")).toBeLessThan(yaml.indexOf("pnpm lint"));
   });
 });
 
@@ -80,12 +85,18 @@ describe("admin browser configuration", () => {
     expect(source).toContain('command: "pnpm exec next dev --hostname 127.0.0.1 --port 3100"');
     expect(source).toContain("NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL");
     expect(source).toContain("SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY");
+    expect(source).toContain('CONTENT_PROVIDER: "mock"');
     expect(source).toContain('name: "admin-390"');
     expect(source).toContain('viewport: { width: 390, height: 844 }');
     expect(source).toContain('name: "admin-768"');
     expect(source).toContain('viewport: { width: 768, height: 1024 }');
     expect(source).toContain('name: "admin-1440"');
     expect(source).toContain('viewport: { width: 1440, height: 900 }');
+  });
+
+  it("keeps public and admin browser suites isolated", () => {
+    const source = readFileSync(join(process.cwd(), "playwright.config.ts"), "utf8");
+    expect(source).toContain('testIgnore: ["**/admin/**", "**/screenshots.spec.ts"]');
   });
 
   it("bootstraps identities only against a loopback Supabase URL", () => {

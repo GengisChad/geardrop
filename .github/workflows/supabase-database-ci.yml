@@ -75,17 +75,8 @@ jobs:
       - name: Verify committed database types
         run: diff --unified src/lib/supabase/database.types.ts artifacts/database.types.ts
 
-      - name: Lint application
-        run: pnpm lint
-
-      - name: Typecheck application
-        run: pnpm typecheck
-
       - name: Run unit tests
         run: pnpm test
-
-      - name: Build application
-        run: pnpm build
 
       - name: Reset empty database for admin browser tests
         run: supabase db reset --local --no-seed
@@ -107,6 +98,21 @@ jobs:
 
       - name: Run admin browser gate
         run: pnpm exec playwright test --config playwright.admin.config.ts
+
+      - name: Run public browser gate
+        env:
+          COMMERCE_PROVIDER: mock
+          CONTENT_PROVIDER: mock
+        run: pnpm exec playwright test --config playwright.config.ts
+
+      - name: Lint application
+        run: pnpm lint
+
+      - name: Typecheck application
+        run: pnpm typecheck
+
+      - name: Build application
+        run: pnpm build
 
       - name: Stop local Supabase stack
         if: always()

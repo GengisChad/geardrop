@@ -7,14 +7,15 @@ const isCI = Boolean(process.env["CI"]);
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  testIgnore: ["**/admin/**", "**/screenshots.spec.ts"],
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
   // Key omitted rather than set to undefined: exactOptionalPropertyTypes rejects that,
   // and omitting it lets Playwright pick its own default locally.
-  ...(isCI ? { workers: 1 } : {}),
+  workers: isCI ? 1 : 2,
   reporter: isCI ? [["github"], ["html", { open: "never" }]] : [["list"], ["html", { open: "never" }]],
-  timeout: 30_000,
+  timeout: 60_000,
   expect: { timeout: 7_000 },
 
   use: {

@@ -69,6 +69,7 @@ test.describe("mobile", () => {
 
   test("the sticky buy bar appears once the main CTA scrolls away", async ({ page }) => {
     await page.goto("/prodotto/wizard-arrow-4-80b");
+    await page.locator("#buy-panel").scrollIntoViewIfNeeded();
     await expect(page.getByTestId("sticky-buy-bar")).toBeHidden();
 
     await page.getByRole("heading", { name: "Si abbina bene con" }).scrollIntoViewIfNeeded();

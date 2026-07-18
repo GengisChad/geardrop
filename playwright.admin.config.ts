@@ -20,6 +20,7 @@ export default defineConfig({
     timeout: 120_000,
     env: {
       COMMERCE_PROVIDER: "mock",
+      CONTENT_PROVIDER: "mock",
       NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "",
       SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY ?? "",

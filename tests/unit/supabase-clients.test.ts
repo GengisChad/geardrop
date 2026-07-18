@@ -29,6 +29,12 @@ describe("Supabase client boundaries", () => {
     expect(combined).not.toContain("getSession(");
   });
 
+  it("does not require Supabase environment for the mock storefront", () => {
+    const proxy = source("src/proxy.ts");
+    expect(proxy).toContain('matcher: ["/admin/:path*", "/api/preview"]');
+    expect(proxy).not.toContain("_next/static");
+  });
+
   it("binds every Supabase client boundary to the generated Database type", () => {
     const browser = source("src/lib/supabase/client.ts");
     const server = source("src/lib/supabase/server.ts");
