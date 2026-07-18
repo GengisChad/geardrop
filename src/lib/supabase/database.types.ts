@@ -1199,10 +1199,10 @@ export type Database = {
           shipping_method_code: string
           status: Database["public"]["Enums"]["order_status"]
           subtotal_cents: number
+          total_cents: number
           tracking_carrier: string | null
           tracking_code: string | null
           tracking_url: string | null
-          total_cents: number
           updated_at: string
         }
         Insert: {
@@ -1229,10 +1229,10 @@ export type Database = {
           shipping_method_code: string
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_cents: number
+          total_cents: number
           tracking_carrier?: string | null
           tracking_code?: string | null
           tracking_url?: string | null
-          total_cents: number
           updated_at?: string
         }
         Update: {
@@ -1259,10 +1259,10 @@ export type Database = {
           shipping_method_code?: string
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_cents?: number
+          total_cents?: number
           tracking_carrier?: string | null
           tracking_code?: string | null
           tracking_url?: string | null
-          total_cents?: number
           updated_at?: string
         }
         Relationships: []
