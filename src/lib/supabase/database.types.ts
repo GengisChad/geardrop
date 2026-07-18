@@ -1064,10 +1064,7 @@ export type Database = {
         }
         Returns: undefined
       }
-      product_deletion_impact: {
-        Args: { p_product_id: number }
-        Returns: Json
-      }
+      product_deletion_impact: { Args: { p_product_id: number }; Returns: Json }
       record_completed_media_storage_mutation: {
         Args: { p_object_path: string; p_operation: string }
         Returns: number
@@ -1090,10 +1087,7 @@ export type Database = {
         Returns: undefined
       }
       swap_media_asset_associations: {
-        Args: {
-          p_new_media_asset_id: number
-          p_old_media_asset_id: number
-        }
+        Args: { p_new_media_asset_id: number; p_old_media_asset_id: number }
         Returns: Json
       }
     }
