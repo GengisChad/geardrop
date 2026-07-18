@@ -6,12 +6,14 @@ insert into public.site_settings (singleton, accept_orders)
 values (true, false)
 on conflict (singleton) do nothing;
 
-insert into public.categories (slug, name, tagline, description, active, sort_order)
+insert into public.categories (
+  slug, name, tagline, description, active, sort_order, publication_status, published_at
+)
 values
-  ('beyblade-x', 'Beyblade X', 'Scatena la tua energia. Domina lo stadio.', 'Tutta la collezione di trottole Beyblade X: attacco, difesa, stamina e bilanciate, pronte per ogni scontro.', true, 0),
-  ('lanciatori', 'Lanciatori', 'Potenza e controllo nelle tue mani.', 'Lanciatori a corda e accessori di lancio per colpi precisi e ripetibili.', true, 1),
-  ('stadi', 'Stadi', 'Arene per battaglie epiche.', 'Stadi e set arena ufficiali Beyblade X, studiati per urti estremi e KO spettacolari.', true, 2),
-  ('accessori', 'Accessori', 'Personalizza. Migliora. Vinci.', 'Attrezzi, custodie e ricambi per tenere il tuo arsenale sempre pronto.', true, 3)
+  ('beyblade-x', 'Beyblade X', 'Scatena la tua energia. Domina lo stadio.', 'Tutta la collezione di trottole Beyblade X: attacco, difesa, stamina e bilanciate, pronte per ogni scontro.', true, 0, 'published'::public.publication_status, now()),
+  ('lanciatori', 'Lanciatori', 'Potenza e controllo nelle tue mani.', 'Lanciatori a corda e accessori di lancio per colpi precisi e ripetibili.', true, 1, 'published'::public.publication_status, now()),
+  ('stadi', 'Stadi', 'Arene per battaglie epiche.', 'Stadi e set arena ufficiali Beyblade X, studiati per urti estremi e KO spettacolari.', true, 2, 'published'::public.publication_status, now()),
+  ('accessori', 'Accessori', 'Personalizza. Migliora. Vinci.', 'Attrezzi, custodie e ricambi per tenere il tuo arsenale sempre pronto.', true, 3, 'published'::public.publication_status, now())
 on conflict (slug) do update set
   name = excluded.name,
   tagline = excluded.tagline,

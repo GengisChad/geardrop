@@ -81,42 +81,63 @@ export type Database = {
       bundles: {
         Row: {
           active: boolean
+          availability_override:
+            | Database["public"]["Enums"]["availability_override"]
+            | null
           compare_at_price_cents: number
           created_at: string
           description: string
+          ends_at: string | null
           eyebrow: string
           hero_product_id: number
           id: number
+          media_asset_id: number | null
           price_cents: number
           slug: string
+          sort_order: number
+          starts_at: string | null
           title_line_one: string
           title_line_two: string
           updated_at: string
         }
         Insert: {
           active?: boolean
+          availability_override?:
+            | Database["public"]["Enums"]["availability_override"]
+            | null
           compare_at_price_cents: number
           created_at?: string
           description: string
+          ends_at?: string | null
           eyebrow: string
           hero_product_id: number
           id?: never
+          media_asset_id?: number | null
           price_cents: number
           slug: string
+          sort_order?: number
+          starts_at?: string | null
           title_line_one: string
           title_line_two: string
           updated_at?: string
         }
         Update: {
           active?: boolean
+          availability_override?:
+            | Database["public"]["Enums"]["availability_override"]
+            | null
           compare_at_price_cents?: number
           created_at?: string
           description?: string
+          ends_at?: string | null
           eyebrow?: string
           hero_product_id?: number
           id?: never
+          media_asset_id?: number | null
           price_cents?: number
           slug?: string
+          sort_order?: number
+          starts_at?: string | null
           title_line_one?: string
           title_line_two?: string
           updated_at?: string
@@ -129,6 +150,13 @@ export type Database = {
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bundles_media_asset_id_fkey"
+            columns: ["media_asset_id"]
+            isOneToOne: false
+            referencedRelation: "media_assets"
+            referencedColumns: ["id"]
+          },
         ]
       }
       categories: {
@@ -137,7 +165,12 @@ export type Database = {
           created_at: string
           description: string
           id: number
+          media_asset_id: number | null
           name: string
+          publication_status: Database["public"]["Enums"]["publication_status"]
+          published_at: string | null
+          seo_description: string | null
+          seo_title: string | null
           slug: string
           sort_order: number
           tagline: string
@@ -148,7 +181,12 @@ export type Database = {
           created_at?: string
           description: string
           id?: never
+          media_asset_id?: number | null
           name: string
+          publication_status?: Database["public"]["Enums"]["publication_status"]
+          published_at?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
           slug: string
           sort_order?: number
           tagline: string
@@ -159,13 +197,26 @@ export type Database = {
           created_at?: string
           description?: string
           id?: never
+          media_asset_id?: number | null
           name?: string
+          publication_status?: Database["public"]["Enums"]["publication_status"]
+          published_at?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
           slug?: string
           sort_order?: number
           tagline?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "categories_media_asset_id_fkey"
+            columns: ["media_asset_id"]
+            isOneToOne: false
+            referencedRelation: "media_assets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       coupon_redemptions: {
         Row: {
@@ -1069,6 +1120,10 @@ export type Database = {
         Args: { p_object_path: string; p_operation: string }
         Returns: number
       }
+      reorder_categories: {
+        Args: { p_category_ids: number[] }
+        Returns: undefined
+      }
       reorder_product_images: {
         Args: { p_image_ids: number[]; p_product_id: number }
         Returns: undefined
@@ -1081,6 +1136,10 @@ export type Database = {
           p_specs: Json
         }
         Returns: undefined
+      }
+      save_bundle_with_items: {
+        Args: { p_bundle: Json; p_items: Json }
+        Returns: number
       }
       set_primary_product_image: {
         Args: { p_image_id: number; p_product_id: number }

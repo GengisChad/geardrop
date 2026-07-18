@@ -16,7 +16,10 @@ function rows(values: readonly string[]): string {
 
 export function generateSupabaseSeed(): string {
   const categoryRows = CATEGORIES.map((category, index) =>
-    [text(category.slug), text(category.name), text(category.tagline), text(category.description), "true", index].join(", "),
+    [
+      text(category.slug), text(category.name), text(category.tagline), text(category.description),
+      "true", index, "'published'::public.publication_status", "now()",
+    ].join(", "),
   );
   const productRows = PRODUCTS.map((product, index) =>
     [
@@ -72,7 +75,9 @@ insert into public.site_settings (singleton, accept_orders)
 values (true, false)
 on conflict (singleton) do nothing;
 
-insert into public.categories (slug, name, tagline, description, active, sort_order)
+insert into public.categories (
+  slug, name, tagline, description, active, sort_order, publication_status, published_at
+)
 values
 ${rows(categoryRows)}
 on conflict (slug) do update set
