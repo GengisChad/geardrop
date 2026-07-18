@@ -86,3 +86,9 @@ export async function deleteMediaAssetAction(input: unknown) {
   if (result.ok) refreshMedia();
   return result;
 }
+
+export async function deleteMediaAssetFormAction(formData: FormData): Promise<void> {
+  const parsed = deleteMediaSchema.parse({ mediaAssetId: formData.get("mediaAssetId") });
+  const result = await deleteMediaAsset(parsed, await dependencies(["owner", "admin"]));
+  if (result.ok) refreshMedia();
+}

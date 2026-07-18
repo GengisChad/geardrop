@@ -31,6 +31,16 @@ export type AdminProductEditorData = {
   readonly tags: readonly Database["public"]["Tables"]["product_tags"]["Row"][];
   readonly relations: readonly Database["public"]["Tables"]["product_relations"]["Row"][];
   readonly relationCandidates: readonly Pick<ProductRow, "id" | "name" | "sku">[];
+  readonly readyMedia: readonly AdminReadyMediaOption[];
+};
+
+export type AdminReadyMediaOption = {
+  readonly id: number;
+  readonly originalFilename: string;
+  readonly altText: string;
+  readonly width: number;
+  readonly height: number;
+  readonly previewUrl: string;
 };
 
 export type ProductDeletionImpact = {
@@ -149,7 +159,7 @@ export async function loadAdminProductEditor(
   client: SupabaseClient<Database>,
   id: number,
 ): Promise<AdminProductEditorData | null> {
-  const [product, categories, images, specs, features, boxContents, tags, relations, candidates] = await Promise.all([
+  const [product, categories, images, specs, features, boxContents, tags, relations, candidates, readyMediaRows] = await Promise.all([
     client.from("products").select("*").eq("id", id).maybeSingle(),
     client.from("categories").select("id,name,slug,active").order("sort_order"),
     client.from("product_images").select("*").eq("product_id", id).order("sort_order"),
@@ -159,21 +169,39 @@ export async function loadAdminProductEditor(
     client.from("product_tags").select("*").eq("product_id", id),
     client.from("product_relations").select("*").eq("product_id", id).order("sort_order"),
     client.from("products").select("id,name,sku").neq("id", id).order("name").limit(200),
+    client.from("media_assets").select("id,object_path,original_filename,alt_text,width,height").eq("status", "ready").order("created_at", { ascending: false }).limit(200),
   ]);
 
-  const results = [product, categories, images, specs, features, boxContents, tags, relations, candidates];
+  const results = [product, categories, images, specs, features, boxContents, tags, relations, candidates, readyMediaRows];
   if (results.some((result) => result.error)) throw new Error("Impossibile caricare il prodotto");
   if (!product.data) return null;
+  const readyMedia = (await Promise.all((readyMediaRows.data ?? []).map(async (media): Promise<AdminReadyMediaOption | null> => {
+    const preview = await client.storage.from("product-images").createSignedUrl(media.object_path, 300);
+    if (preview.error) return null;
+    return {
+      id: media.id,
+      originalFilename: media.original_filename,
+      altText: media.alt_text,
+      width: media.width,
+      height: media.height,
+      previewUrl: preview.data.signedUrl,
+    };
+  }))).filter((media): media is AdminReadyMediaOption => media !== null);
+  const previewByMediaId = new Map(readyMedia.map((media) => [media.id, media.previewUrl]));
   return {
     product: product.data,
     categories: categories.data ?? [],
-    images: images.data ?? [],
+    images: (images.data ?? []).map((image) => ({
+      ...image,
+      src: image.media_asset_id === null ? image.src : (previewByMediaId.get(image.media_asset_id) ?? image.src),
+    })),
     specs: specs.data ?? [],
     features: features.data ?? [],
     boxContents: boxContents.data ?? [],
     tags: tags.data ?? [],
     relations: relations.data ?? [],
     relationCandidates: candidates.data ?? [],
+    readyMedia,
   };
 }
 

@@ -27,4 +27,28 @@ describe("admin media server boundary", () => {
     expect(service).not.toContain("SUPABASE_SECRET_KEY");
     expect(service).not.toContain("originalFilename.replace");
   });
+
+  it("renders a real media library with server-signed previews", () => {
+    const page = readFileSync(join(root, "src/app/admin/(protected)/media/page.tsx"), "utf8");
+    const repository = readFileSync(join(root, "src/lib/admin/media-repository.ts"), "utf8");
+    expect(page).toContain("listAdminMedia");
+    expect(page).toContain("requireAdminAccess");
+    expect(repository).toContain("createSignedUrl");
+    expect(page).toContain("Nessun media caricato");
+  });
+
+  it("uploads only through signed tickets with isolated per-file state", () => {
+    const upload = readFileSync(join(root, "src/components/admin/media/media-upload-client.tsx"), "utf8");
+    expect(upload).toContain("uploadToSignedUrl");
+    expect(upload).toContain("multiple");
+    expect(upload).toContain("onDragOver");
+    expect(upload).toContain("onDrop");
+    expect(upload).toContain("altText");
+    expect(upload).toContain("Promise.allSettled");
+    for (const status of ["pending", "uploading", "finalizing", "ready", "failed"]) {
+      expect(upload).toContain(status);
+    }
+    expect(upload).not.toMatch(/\.upload\(|\.update\(|\.remove\(/);
+    expect(upload).not.toContain("SUPABASE_SECRET_KEY");
+  });
 });

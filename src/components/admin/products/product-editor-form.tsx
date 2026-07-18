@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
   addProductDetailAction,
+  associateProductMediaAction,
   addProductRelationAction,
   addProductTagAction,
   deleteProductAction,
@@ -13,6 +14,7 @@ import {
   removeProductImageLinkAction,
   removeProductRelationAction,
   removeProductTagAction,
+  reorderProductImagesAction,
   saveProductAction,
   updateProductImageAction,
 } from "@/app/admin/actions/products";
@@ -41,6 +43,20 @@ export function ProductEditorForm({ data, categories, deletionImpact, role }: Pr
   const canEditCommerce = role === "owner" || role === "admin";
   const deletionBlocked = deletionImpact !== null
     && (deletionImpact.orders > 0 || deletionImpact.bundles > 0 || deletionImpact.inventoryMovements > 0);
+  const [imageOrder, setImageOrder] = useState<readonly number[]>(() => data?.images.map((image) => image.id) ?? []);
+  const orderedImages = imageOrder
+    .map((id) => data?.images.find((image) => image.id === id))
+    .filter((image): image is NonNullable<typeof image> => image !== undefined);
+  const moveImage = (id: number, delta: -1 | 1) => {
+    setImageOrder((current) => {
+      const index = current.indexOf(id);
+      const target = index + delta;
+      if (index < 0 || target < 0 || target >= current.length) return current;
+      const next = [...current];
+      [next[index], next[target]] = [next[target] as number, next[index] as number];
+      return next;
+    });
+  };
 
   useEffect(() => {
     const form = formRef.current;
@@ -114,14 +130,16 @@ export function ProductEditorForm({ data, categories, deletionImpact, role }: Pr
 
     {product && data ? <>
       <ResourceSection id="immagini" title="Immagini" note="Upload e sostituzione file sono gestiti dalla media library (Task 4). Qui modifichi associazione e pubblicazione.">
-        {data.images.map((image) => <form action={updateProductImageAction} className={styles.resourceRow} key={image.id}>
+        {orderedImages.map((image, index) => <form action={updateProductImageAction} className={styles.resourceRow} key={image.id}>
           <input name="productId" type="hidden" value={product.id} /><input name="imageId" type="hidden" value={image.id} />
           <Image alt="" height={image.height} src={image.src} unoptimized width={image.width} /><input aria-label="Alt text" defaultValue={image.alt} name="alt" required />
-          <input aria-label="Ordine" defaultValue={image.sort_order} min={0} name="sortOrder" type="number" />
+          <span className={styles.orderControls}><button aria-label={`Sposta ${image.alt} su`} disabled={index === 0} onClick={() => moveImage(image.id, -1)} type="button">↑</button><button aria-label={`Sposta ${image.alt} giù`} disabled={index === orderedImages.length - 1} onClick={() => moveImage(image.id, 1)} type="button">↓</button></span>
           <label><input defaultChecked={image.published} name="published" type="checkbox" />Pubblica</label>
           <label><input defaultChecked={image.is_primary} name="isPrimary" type="checkbox" />Cover</label>
           <button type="submit">Aggiorna</button><button formAction={removeProductImageLinkAction} type="submit">Scollega</button>
         </form>)}
+        {orderedImages.length > 1 ? <form action={reorderProductImagesAction} className={styles.orderSave}><input name="productId" type="hidden" value={product.id} />{imageOrder.map((id) => <input key={id} name="imageIds" type="hidden" value={id} />)}<button type="submit">Salva ordine immagini</button></form> : null}
+        {data.readyMedia.length > 0 ? <form action={associateProductMediaAction} className={styles.resourceCreate}><input name="productId" type="hidden" value={product.id} /><select aria-label="Media pronto da associare" name="mediaAssetId" required><option value="">Seleziona media ready…</option>{data.readyMedia.map((media) => <option key={media.id} value={media.id}>{media.originalFilename} · {media.altText}</option>)}</select><button type="submit">Associa media</button></form> : <p className={styles.emptyResource}>Nessun asset ready disponibile nella media library.</p>}
         {data.images.length === 0 ? <p className={styles.emptyResource}>Nessuna immagine associata. Apri la media library per caricare gli asset.</p> : null}
       </ResourceSection>
 

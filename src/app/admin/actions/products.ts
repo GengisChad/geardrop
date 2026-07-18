@@ -14,6 +14,7 @@ import {
   promoTagSchema,
   relationTypeSchema,
 } from "@/lib/admin/products";
+import { associateMediaSchema } from "@/lib/admin/media";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Database, Json } from "@/lib/supabase/database.types";
 
@@ -476,6 +477,41 @@ export async function reorderProductImagesAction(formData: FormData): Promise<vo
     p_product_id: input.productId, p_image_ids: input.imageIds,
   });
   if (error) redirect(`/admin/prodotti/${input.productId}?error=image-order`);
+  refreshProductCache();
+  redirect(`/admin/prodotti/${input.productId}#immagini`);
+}
+
+export async function associateProductMediaAction(formData: FormData): Promise<void> {
+  const input = associateMediaSchema.parse({
+    productId: formData.get("productId"), mediaAssetId: formData.get("mediaAssetId"),
+  });
+  const client = await createSupabaseServerClient();
+  await verifiedStaff(client);
+  const [media, lastImage] = await Promise.all([
+    client.from("media_assets").select("id,object_path,width,height,alt_text,status").eq("id", input.mediaAssetId).single(),
+    client.from("product_images").select("sort_order").eq("product_id", input.productId).order("sort_order", { ascending: false }).limit(1).maybeSingle(),
+  ]);
+  if (media.error || lastImage.error || media.data.status !== "ready") {
+    redirect(`/admin/prodotti/${input.productId}?error=media-association`);
+  }
+  const { data: image, error } = await client.from("product_images").insert({
+    product_id: input.productId,
+    media_asset_id: media.data.id,
+    src: media.data.object_path,
+    width: media.data.width,
+    height: media.data.height,
+    alt: media.data.alt_text,
+    sort_order: (lastImage.data?.sort_order ?? -1) + 1,
+    published: false,
+    is_primary: lastImage.data === null,
+  }).select("id").single();
+  if (error) redirect(`/admin/prodotti/${input.productId}?error=media-association`);
+  if (lastImage.data === null) {
+    const { error: primaryError } = await client.rpc("set_primary_product_image", {
+      p_product_id: input.productId, p_image_id: image.id,
+    });
+    if (primaryError) redirect(`/admin/prodotti/${input.productId}?error=media-association`);
+  }
   refreshProductCache();
   redirect(`/admin/prodotti/${input.productId}#immagini`);
 }
