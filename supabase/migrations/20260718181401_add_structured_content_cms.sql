@@ -384,10 +384,11 @@ begin
     raise exception using errcode = '42501', message = 'GD_CMS_STAFF_REQUIRED';
   end if;
   if p_section_ids is null or array_length(p_section_ids,1) is null or array_position(p_section_ids,null) is not null
-    or (select count(distinct value) from unnest(p_section_ids) as value) <> cardinality(p_section_ids) then
+    or (select count(distinct section_id) from unnest(p_section_ids) as requested(section_id)) <> cardinality(p_section_ids) then
     raise exception using errcode = '22023', message = 'GD_HOMEPAGE_SECTION_ID_SET_MISMATCH';
   end if;
-  select count(*)::integer into section_count from public.homepage_sections for update;
+  perform 1 from public.homepage_sections order by id for update;
+  select count(*)::integer into section_count from public.homepage_sections;
   if section_count <> cardinality(p_section_ids)
     or exists (select 1 from unnest(p_section_ids) as requested(id) left join public.homepage_sections as section on section.id=requested.id where section.id is null) then
     raise exception using errcode = '22023', message = 'GD_HOMEPAGE_SECTION_ID_SET_MISMATCH';
