@@ -218,6 +218,63 @@ export type Database = {
           },
         ]
       }
+      content_pages: {
+        Row: {
+          active: boolean
+          created_at: string
+          ends_at: string | null
+          excerpt: string | null
+          format: Database["public"]["Enums"]["content_format"]
+          id: number
+          markdown_source: string
+          publication_status: Database["public"]["Enums"]["publication_status"]
+          published_at: string | null
+          seo_description: string | null
+          seo_title: string | null
+          slug: string
+          sort_order: number
+          starts_at: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          ends_at?: string | null
+          excerpt?: string | null
+          format?: Database["public"]["Enums"]["content_format"]
+          id?: never
+          markdown_source: string
+          publication_status?: Database["public"]["Enums"]["publication_status"]
+          published_at?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug: string
+          sort_order?: number
+          starts_at?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          ends_at?: string | null
+          excerpt?: string | null
+          format?: Database["public"]["Enums"]["content_format"]
+          id?: never
+          markdown_source?: string
+          publication_status?: Database["public"]["Enums"]["publication_status"]
+          published_at?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug?: string
+          sort_order?: number
+          starts_at?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       coupon_redemptions: {
         Row: {
           coupon_id: number
@@ -391,6 +448,269 @@ export type Database = {
         }
         Relationships: []
       }
+      footer_columns: {
+        Row: {
+          active: boolean
+          column_key: string
+          created_at: string
+          ends_at: string | null
+          id: number
+          publication_status: Database["public"]["Enums"]["publication_status"]
+          published_at: string | null
+          sort_order: number
+          starts_at: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          column_key: string
+          created_at?: string
+          ends_at?: string | null
+          id?: never
+          publication_status?: Database["public"]["Enums"]["publication_status"]
+          published_at?: string | null
+          sort_order: number
+          starts_at?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          column_key?: string
+          created_at?: string
+          ends_at?: string | null
+          id?: never
+          publication_status?: Database["public"]["Enums"]["publication_status"]
+          published_at?: string | null
+          sort_order?: number
+          starts_at?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      footer_items: {
+        Row: {
+          active: boolean
+          column_id: number
+          created_at: string
+          href: string
+          id: number
+          label: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          column_id: number
+          created_at?: string
+          href: string
+          id?: never
+          label: string
+          sort_order: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          column_id?: number
+          created_at?: string
+          href?: string
+          id?: never
+          label?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "footer_items_column_id_fkey"
+            columns: ["column_id"]
+            isOneToOne: false
+            referencedRelation: "footer_columns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      homepage_section_bundles: {
+        Row: {
+          bundle_id: number
+          section_id: number
+          sort_order: number
+        }
+        Insert: {
+          bundle_id: number
+          section_id: number
+          sort_order: number
+        }
+        Update: {
+          bundle_id?: number
+          section_id?: number
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homepage_section_bundles_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "bundles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "homepage_section_bundles_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "homepage_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      homepage_section_categories: {
+        Row: {
+          category_id: number
+          section_id: number
+          sort_order: number
+        }
+        Insert: {
+          category_id: number
+          section_id: number
+          sort_order: number
+        }
+        Update: {
+          category_id?: number
+          section_id?: number
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homepage_section_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "homepage_section_categories_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "homepage_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      homepage_section_products: {
+        Row: {
+          product_id: number
+          section_id: number
+          sort_order: number
+        }
+        Insert: {
+          product_id: number
+          section_id: number
+          sort_order: number
+        }
+        Update: {
+          product_id?: number
+          section_id?: number
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homepage_section_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "homepage_section_products_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "homepage_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      homepage_sections: {
+        Row: {
+          active: boolean
+          created_at: string
+          cta_href: string | null
+          cta_label: string | null
+          description: string | null
+          desktop_media_asset_id: number | null
+          ends_at: string | null
+          eyebrow: string | null
+          id: number
+          mobile_media_asset_id: number | null
+          publication_status: Database["public"]["Enums"]["publication_status"]
+          published_at: string | null
+          section_key: string
+          section_type: Database["public"]["Enums"]["homepage_section_type"]
+          sort_order: number
+          starts_at: string | null
+          subtitle: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          cta_href?: string | null
+          cta_label?: string | null
+          description?: string | null
+          desktop_media_asset_id?: number | null
+          ends_at?: string | null
+          eyebrow?: string | null
+          id?: never
+          mobile_media_asset_id?: number | null
+          publication_status?: Database["public"]["Enums"]["publication_status"]
+          published_at?: string | null
+          section_key: string
+          section_type: Database["public"]["Enums"]["homepage_section_type"]
+          sort_order: number
+          starts_at?: string | null
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          cta_href?: string | null
+          cta_label?: string | null
+          description?: string | null
+          desktop_media_asset_id?: number | null
+          ends_at?: string | null
+          eyebrow?: string | null
+          id?: never
+          mobile_media_asset_id?: number | null
+          publication_status?: Database["public"]["Enums"]["publication_status"]
+          published_at?: string | null
+          section_key?: string
+          section_type?: Database["public"]["Enums"]["homepage_section_type"]
+          sort_order?: number
+          starts_at?: string | null
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homepage_sections_desktop_media_asset_id_fkey"
+            columns: ["desktop_media_asset_id"]
+            isOneToOne: false
+            referencedRelation: "media_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "homepage_sections_mobile_media_asset_id_fkey"
+            columns: ["mobile_media_asset_id"]
+            isOneToOne: false
+            referencedRelation: "media_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_movements: {
         Row: {
           actor_user_id: string | null
@@ -493,6 +813,96 @@ export type Database = {
           updated_at?: string
           uploaded_by?: string
           width?: number
+        }
+        Relationships: []
+      }
+      navigation_items: {
+        Row: {
+          active: boolean
+          created_at: string
+          href: string
+          id: number
+          label: string
+          menu_id: number
+          parent_id: number | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          href: string
+          id?: never
+          label: string
+          menu_id: number
+          parent_id?: number | null
+          sort_order: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          href?: string
+          id?: never
+          label?: string
+          menu_id?: number
+          parent_id?: number | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "navigation_items_menu_id_fkey"
+            columns: ["menu_id"]
+            isOneToOne: false
+            referencedRelation: "navigation_menus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "navigation_items_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "navigation_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      navigation_menus: {
+        Row: {
+          active: boolean
+          created_at: string
+          ends_at: string | null
+          id: number
+          label: string
+          menu_key: string
+          publication_status: Database["public"]["Enums"]["publication_status"]
+          published_at: string | null
+          starts_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          ends_at?: string | null
+          id?: never
+          label: string
+          menu_key: string
+          publication_status?: Database["public"]["Enums"]["publication_status"]
+          published_at?: string | null
+          starts_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          ends_at?: string | null
+          id?: never
+          label?: string
+          menu_key?: string
+          publication_status?: Database["public"]["Enums"]["publication_status"]
+          published_at?: string | null
+          starts_at?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1025,6 +1435,51 @@ export type Database = {
         }
         Relationships: []
       }
+      social_links: {
+        Row: {
+          active: boolean
+          created_at: string
+          ends_at: string | null
+          href: string
+          id: number
+          label: string
+          platform_key: string
+          publication_status: Database["public"]["Enums"]["publication_status"]
+          published_at: string | null
+          sort_order: number
+          starts_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          ends_at?: string | null
+          href: string
+          id?: never
+          label: string
+          platform_key: string
+          publication_status?: Database["public"]["Enums"]["publication_status"]
+          published_at?: string | null
+          sort_order: number
+          starts_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          ends_at?: string | null
+          href?: string
+          id?: never
+          label?: string
+          platform_key?: string
+          publication_status?: Database["public"]["Enums"]["publication_status"]
+          published_at?: string | null
+          sort_order?: number
+          starts_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       staff_profiles: {
         Row: {
           active: boolean
@@ -1116,12 +1571,20 @@ export type Database = {
         Returns: undefined
       }
       product_deletion_impact: { Args: { p_product_id: number }; Returns: Json }
+      publish_homepage_section: {
+        Args: { p_section_id: number }
+        Returns: undefined
+      }
       record_completed_media_storage_mutation: {
         Args: { p_object_path: string; p_operation: string }
         Returns: number
       }
       reorder_categories: {
         Args: { p_category_ids: number[] }
+        Returns: undefined
+      }
+      reorder_homepage_sections: {
+        Args: { p_section_ids: number[] }
         Returns: undefined
       }
       reorder_product_images: {
@@ -1141,6 +1604,7 @@ export type Database = {
         Args: { p_bundle: Json; p_items: Json }
         Returns: number
       }
+      save_navigation_tree: { Args: { p_tree: Json }; Returns: number }
       set_primary_product_image: {
         Args: { p_image_id: number; p_product_id: number }
         Returns: undefined
@@ -1153,8 +1617,27 @@ export type Database = {
     Enums: {
       availability_override: "preorder" | "incoming"
       blade_type: "attacco" | "difesa" | "stamina" | "bilanciato"
+      content_format: "markdown"
       discount_kind: "percentage" | "fixed"
       enablement_check_status: "pending" | "passed" | "failed"
+      homepage_section_type:
+        | "hero"
+        | "announcement"
+        | "featured_products"
+        | "latest_drops"
+        | "categories"
+        | "competitive_products"
+        | "bestsellers"
+        | "new_arrivals"
+        | "offers"
+        | "bundle"
+        | "club"
+        | "status_legend"
+        | "trust"
+        | "newsletter"
+        | "promo_banner"
+        | "rich_text"
+        | "cta"
       inventory_reason:
         | "initial"
         | "manual_adjustment"
