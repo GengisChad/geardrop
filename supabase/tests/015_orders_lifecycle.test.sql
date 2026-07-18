@@ -31,18 +31,19 @@ select results_eq($$select public.create_order('guest@example.com',null,'{}','{}
 select results_eq($$select count(*)::bigint from public.orders where email='guest@example.com'$$,array[1::bigint],'idempotency creates no duplicate');
 select throws_ok($$select public.create_order('bad@example.com',null,'{}','{}','[{"product_id":9223372036854770000,"quantity":1}]',null,'orders-standard','00000000-0000-0000-0000-000000001598')$$,'P0001','GD_PRICING_PRODUCT_UNAVAILABLE','invalid cart rolls back order');
 select results_eq($$select count(*)::bigint from public.orders where email='bad@example.com'$$,array[0::bigint],'failed order leaves no partial row');
+select set_config('test.guest_order_id',(select id from public.orders where email='guest@example.com')::text,true);
 
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000001501',true); set local role authenticated;
 select lives_ok($$select public.transition_order_status((select id from public.orders where email='guest@example.com'),'confirmed','Confermato')$$,'manager confirms order');
 select throws_ok($$select public.transition_order_status((select id from public.orders where email='guest@example.com'),'shipped',null)$$,'22023','GD_ORDER_INVALID_TRANSITION','invalid status jump is rejected');
 select lives_ok($$select public.set_order_tracking((select id from public.orders where email='guest@example.com'),'GLS','TRACK-1','https://tracking.example/TRACK-1')$$,'manager stores tracking');
 select lives_ok($$select public.add_order_note((select id from public.orders where email='guest@example.com'),'Nota interna')$$,'staff adds internal note');
-select throws_ok($$update public.order_notes set note='Mutata' where order_id=(select id from public.orders where email='guest@example.com')$$,'55000','GD_ORDER_HISTORY_IMMUTABLE','order notes are append-only');
 reset role;
+select throws_ok($$update public.order_notes set note='Mutata' where order_id=current_setting('test.guest_order_id')::bigint$$,'55000','GD_ORDER_HISTORY_IMMUTABLE','order notes are append-only');
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000001502',true); set local role authenticated;
-select lives_ok($$select public.add_order_note((select id from public.orders where email='guest@example.com'),'Nota editor')$$,'editor may append internal notes');
-select throws_ok($$select public.set_order_tracking((select id from public.orders where email='guest@example.com'),'GLS','FORBIDDEN',null)$$,'42501','GD_ORDER_MANAGER_REQUIRED','editor cannot change tracking');
-select throws_ok($$select public.prepare_order_refund((select id from public.orders where email='guest@example.com'),100,'Forbidden')$$,'42501','GD_ORDER_MANAGER_REQUIRED','editor cannot prepare refunds');
+select lives_ok($$select public.add_order_note(current_setting('test.guest_order_id')::bigint,'Nota editor')$$,'editor may append internal notes');
+select throws_ok($$select public.set_order_tracking(current_setting('test.guest_order_id')::bigint,'GLS','FORBIDDEN',null)$$,'42501','GD_ORDER_MANAGER_REQUIRED','editor cannot change tracking');
+select throws_ok($$select public.prepare_order_refund(current_setting('test.guest_order_id')::bigint,100,'Forbidden')$$,'42501','GD_ORDER_MANAGER_REQUIRED','editor cannot prepare refunds');
 reset role;
 update public.orders set payment_status='paid' where email='guest@example.com';
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000001501',true); set local role authenticated;
