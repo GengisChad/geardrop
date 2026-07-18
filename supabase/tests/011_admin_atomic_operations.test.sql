@@ -206,8 +206,8 @@ select lives_ok(
   $$select public.reorder_product_images(
     (select id from public.products where slug = 'atomic-source'),
     array[
-      (select id from public.product_images where src = '/atomic/two.webp'),
-      (select id from public.product_images where src = '/atomic/one.webp')
+      (select image.id from public.product_images as image join public.products as product on product.id = image.product_id where image.src = '/atomic/two.webp' and product.slug = 'atomic-source'),
+      (select image.id from public.product_images as image join public.products as product on product.id = image.product_id where image.src = '/atomic/one.webp' and product.slug = 'atomic-source')
     ]
   )$$,
   'image reorder avoids unique position collisions'
@@ -222,7 +222,7 @@ select results_eq(
 select lives_ok(
   $$select public.set_primary_product_image(
     (select id from public.products where slug = 'atomic-source'),
-    (select id from public.product_images where src = '/atomic/two.webp')
+    (select image.id from public.product_images as image join public.products as product on product.id = image.product_id where image.src = '/atomic/two.webp' and product.slug = 'atomic-source')
   )$$,
   'primary image switch is atomic'
 );
@@ -245,7 +245,7 @@ select throws_ok(
 select results_eq(
   $$select count(*)::bigint from public.product_images
     where media_asset_id = (select id from public.media_assets where object_path = 'atomic/old.webp')$$,
-  array[2::bigint],
+  array[4::bigint],
   'failed media swap preserves old associations'
 );
 select results_eq(
@@ -253,7 +253,7 @@ select results_eq(
     (select id from public.media_assets where object_path = 'atomic/old.webp'),
     (select id from public.media_assets where object_path = 'atomic/new.webp')
   ) ->> 'updated_count')::integer$$,
-  array[2],
+  array[4],
   'ready media swap reports updated association count'
 );
 select results_eq(
