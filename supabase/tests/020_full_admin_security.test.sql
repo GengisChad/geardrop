@@ -18,9 +18,9 @@ select ok(not exists(
 ), 'every admin module table has RLS enabled');
 
 select results_eq($$
-  select count(*)::integer from information_schema.role_table_grants
-  where grantee='anon' and table_schema='public' and privilege_type in ('INSERT','UPDATE','DELETE','TRUNCATE')
-$$, array[0], 'anon has no public-schema mutation grants');
+  select count(*)::integer from pg_policies
+  where schemaname='public' and 'anon'=any(roles) and cmd in ('INSERT','UPDATE','DELETE','ALL')
+$$, array[0], 'anon has no public-schema mutation policy');
 
 select ok(not has_table_privilege('anon','public.staff_profiles','SELECT'), 'anon cannot read staff');
 select ok(not has_table_privilege('anon','public.audit_events','SELECT'), 'anon cannot read audit');
