@@ -84,8 +84,8 @@ select lives_ok(
   'staff preorder edit is recorded atomically');
 reset role;
 select results_eq(
-  $$select delta,balance_after from public.inventory_movements where note='Allocazione preordine aggiornata'$$,
-  $$values(1::integer,4::integer)$$,
+  $$select count(*)::bigint from public.inventory_movements where note='Allocazione preordine aggiornata' and delta=1 and balance_after=4$$,
+  array[1::bigint],
   'staff preorder movement stores exact delta and resulting allocation');
 
 select * from finish();
