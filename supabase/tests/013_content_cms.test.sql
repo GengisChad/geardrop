@@ -2,7 +2,7 @@ begin;
 select plan(36);
 
 select results_eq(
-  $$select enumlabel from pg_enum join pg_type on pg_type.oid = pg_enum.enumtypid
+  $$select enumlabel::text from pg_enum join pg_type on pg_type.oid = pg_enum.enumtypid
     where pg_type.typnamespace = 'public'::regnamespace and pg_type.typname = 'homepage_section_type'
     order by enumsortorder$$,
   $$values ('hero'), ('announcement'), ('featured_products'), ('latest_drops'), ('categories'),
