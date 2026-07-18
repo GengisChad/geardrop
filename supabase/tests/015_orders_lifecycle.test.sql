@@ -42,7 +42,7 @@ select lives_ok($$select public.add_order_note((select id from public.orders whe
 reset role;
 select throws_ok($$update public.order_notes set note='Mutata' where order_id=current_setting('test.guest_order_id')::bigint$$,'55000','GD_ORDER_HISTORY_IMMUTABLE','order notes are append-only');
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000001502',true); set local role authenticated;
-select lives_ok($$select public.add_order_note(current_setting('test.guest_order_id')::bigint,'Nota editor')$$,'editor may append internal notes');
+select throws_ok($$select public.add_order_note(current_setting('test.guest_order_id')::bigint,'Nota editor')$$,'42501','GD_ORDER_MANAGER_REQUIRED','editor cannot append internal notes');
 select throws_ok($$select public.set_order_tracking(current_setting('test.guest_order_id')::bigint,'GLS','FORBIDDEN',null)$$,'42501','GD_ORDER_MANAGER_REQUIRED','editor cannot change tracking');
 select throws_ok($$select public.prepare_order_refund(current_setting('test.guest_order_id')::bigint,100,'Forbidden')$$,'42501','GD_ORDER_MANAGER_REQUIRED','editor cannot prepare refunds');
 reset role;

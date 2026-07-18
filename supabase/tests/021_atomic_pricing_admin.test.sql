@@ -43,8 +43,8 @@ select results_eq(
   $$values('Atomic promotion'::text,1::bigint)$$,
   'failed promotion save preserves parent and targets');
 select results_eq(
-  $$select code,count(coupon_products.product_id)::bigint from public.coupons join public.coupon_products on coupon_products.coupon_id=coupons.id where code='ATOMIC' group by code$$,
-  $$values('ATOMIC'::text,1::bigint)$$,
+  $$select count(*)::bigint from public.coupons join public.coupon_products on coupon_products.coupon_id=coupons.id where coupons.code='ATOMIC'$$,
+  array[1::bigint],
   'failed coupon save preserves parent and targets');
 select throws_ok(
   $$select public.create_order('disabled@example.com',null,'{}','{}','[]',null,null,'00000000-0000-0000-0000-000000002199')$$,

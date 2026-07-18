@@ -21,7 +21,7 @@ The seed is generated from the checked-in catalogue with:
 pnpm seed:supabase
 ```
 
-The generator is idempotent. New products are inserted with `stock_quantity = 0`; reruns do not overwrite real stock, availability overrides, preorder allocations, shipping activation, enablement evidence, or `site_settings.accept_orders`.
+The generator is idempotent only during bootstrap. CI runs it twice before creating staff or operational activity. The SQL aborts with `GD_SEED_OPERATED_DATABASE` as soon as staff, orders, inventory movements, or audit events exist; never run it on an operated database. New products start with `stock_quantity = 0`.
 
 ## Client boundaries
 

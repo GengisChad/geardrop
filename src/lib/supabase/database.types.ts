@@ -828,6 +828,8 @@ export type Database = {
       inventory_movements: {
         Row: {
           actor_user_id: string | null
+          balance_after: number
+          balance_kind: string
           created_at: string
           delta: number
           id: number
@@ -839,6 +841,8 @@ export type Database = {
         }
         Insert: {
           actor_user_id?: string | null
+          balance_after?: number
+          balance_kind?: string
           created_at?: string
           delta: number
           id?: never
@@ -850,6 +854,8 @@ export type Database = {
         }
         Update: {
           actor_user_id?: string | null
+          balance_after?: number
+          balance_kind?: string
           created_at?: string
           delta?: number
           id?: never
@@ -2070,6 +2076,16 @@ export type Database = {
         Args: { p_object_path: string; p_operation: string }
         Returns: number
       }
+      record_staff_invite: {
+        Args: {
+          p_display_name: string
+          p_email: string
+          p_role: Database["public"]["Enums"]["staff_role"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
+      record_staff_login: { Args: never; Returns: undefined }
       reorder_categories: {
         Args: { p_category_ids: number[] }
         Returns: undefined
@@ -2095,6 +2111,10 @@ export type Database = {
       save_bundle_with_items: {
         Args: { p_bundle: Json; p_items: Json }
         Returns: number
+      }
+      save_footer_configuration: {
+        Args: { p_configuration: Json }
+        Returns: undefined
       }
       save_coupon_with_targets: {
         Args: {
@@ -2123,6 +2143,14 @@ export type Database = {
         Args: { p_confirmation: string; p_enabled: boolean }
         Returns: undefined
       }
+      set_manual_order_enablement_check: {
+        Args: {
+          p_evidence: string
+          p_key: string
+          p_status: Database["public"]["Enums"]["enablement_check_status"]
+        }
+        Returns: undefined
+      }
       set_order_tracking: {
         Args: {
           p_carrier: string
@@ -2149,6 +2177,16 @@ export type Database = {
           p_note?: string
           p_order_id: number
           p_to_status: Database["public"]["Enums"]["order_status"]
+        }
+        Returns: undefined
+      }
+      update_product_image_metadata: {
+        Args: {
+          p_alt: string
+          p_image_id: number
+          p_is_primary: boolean
+          p_product_id: number
+          p_published: boolean
         }
         Returns: undefined
       }

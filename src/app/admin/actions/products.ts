@@ -453,16 +453,11 @@ export async function updateProductImageAction(formData: FormData): Promise<void
   });
   const client = await createSupabaseServerClient();
   await verifiedStaff(client);
-  const { error } = await client.from("product_images").update({
-    alt: input.alt, published: input.published,
-  }).eq("id", input.imageId).eq("product_id", input.productId);
+  const { error } = await client.rpc("update_product_image_metadata", {
+    p_product_id: input.productId, p_image_id: input.imageId, p_alt: input.alt,
+    p_published: input.published, p_is_primary: input.isPrimary,
+  });
   if (error) redirect(`/admin/prodotti/${input.productId}?error=image`);
-  if (input.isPrimary) {
-    const { error: primaryError } = await client.rpc("set_primary_product_image", {
-      p_product_id: input.productId, p_image_id: input.imageId,
-    });
-    if (primaryError) redirect(`/admin/prodotti/${input.productId}?error=image`);
-  }
   refreshProductCache();
   redirect(`/admin/prodotti/${input.productId}#immagini`);
 }

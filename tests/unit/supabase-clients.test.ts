@@ -39,6 +39,7 @@ describe("Supabase client boundaries", () => {
     const browser = source("src/lib/supabase/client.ts");
     const server = source("src/lib/supabase/server.ts");
     const admin = source("src/lib/supabase/admin.ts");
+    const publicClient = source("src/lib/supabase/public.ts");
     const proxy = source("src/lib/supabase/proxy.ts");
     const guards = source("src/lib/auth/guards.ts");
     const provider = source("src/lib/commerce/supabase-provider.ts");
@@ -46,6 +47,7 @@ describe("Supabase client boundaries", () => {
     expect(browser).toContain("createBrowserClient<Database>");
     expect(server).toContain("createServerClient<Database>");
     expect(admin).toContain("createClient<Database>");
+    expect(publicClient).toContain("createClient<Database>");
     expect(proxy).toContain("createServerClient<Database>");
     expect(guards).toContain("SupabaseClient<Database>");
     expect(provider).toContain("SupabaseClient<Database>");

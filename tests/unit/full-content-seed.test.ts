@@ -31,6 +31,8 @@ describe("full reviewed storefront seed", () => {
   });
 
   it("preserves operational state while new catalogue rows start unavailable", () => {
+    expect(normalized).toContain("gd_seed_operated_database");
+    expect(normalized).toContain("exists(select 1 from public.audit_events)");
     expect(normalized).toContain("0 as stock_quantity");
     expect(normalized).toContain("values (true, false)");
     expect(normalized).not.toContain("stock_quantity = excluded.stock_quantity");

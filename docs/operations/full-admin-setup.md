@@ -29,7 +29,7 @@ pnpm seed:supabase
 git diff --exit-code -- supabase/seed.sql
 ```
 
-Il seed parte con stock `0`, spedizione inattiva e `accept_orders=false`; non crea ordini, clienti,
+Il seed è esclusivamente di bootstrap: può essere eseguito due volte prima di creare staff o attività operative, poi termina con `GD_SEED_OPERATED_DATABASE`. Non va mai eseguito su un database già operato. Parte con stock `0`, spedizione inattiva e `accept_orders=false`; non crea ordini, clienti,
 staff, coupon, promozioni, utilizzi o ricavi.
 
 ## Installazione remota — solo dopo approvazione separata
@@ -60,4 +60,3 @@ staff, coupon, promozioni, utilizzi o ricavi.
 
 Dashboard; prodotti; categorie; bundle; media; inventario; homepage; pagine; navigazione; footer;
 promozioni; coupon; ordini; spedizioni; impostazioni negozio/SEO/contatti/social; team; audit.
-

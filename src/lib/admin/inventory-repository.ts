@@ -89,6 +89,8 @@ export async function listAdminInventory(
     const product = Array.isArray(movement.product) ? movement.product[0] : movement.product;
     return {
       actor_user_id: movement.actor_user_id,
+      balance_after: movement.balance_after,
+      balance_kind: movement.balance_kind,
       created_at: movement.created_at,
       delta: movement.delta,
       id: movement.id,

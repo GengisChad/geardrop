@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { OrderActions } from "@/components/admin/orders/order-actions";
 import styles from "@/components/admin/orders/orders.module.css";
 import { requireAdminAccess } from "@/lib/admin/access";
@@ -15,7 +15,7 @@ const money = (amount:number)=>formatPrice({amount,currency:"EUR"});
 
 export default async function AdminOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id); if (!Number.isSafeInteger(id) || id <= 0) notFound();
-  const client = await createSupabaseServerClient(); const principal = await requireAdminAccess(client); const data = await loadAdminOrderDetail(client,id,principal.role); if(!data)notFound();
+  const client = await createSupabaseServerClient(); const principal = await requireAdminAccess(client); if(principal.role === "editor")redirect("/admin"); const data = await loadAdminOrderDetail(client,id,principal.role); if(!data)notFound();
   const order=data.order; const shipping=addressLines(order.shipping_address_snapshot); const billing=addressLines(order.billing_address_snapshot);
   return <div className={styles.page}>
     <header className={styles.heading}><div><p>Ordini / {order.order_number}</p><h1>{order.order_number}</h1><span>Snapshot immutabile · creato {new Intl.DateTimeFormat("it-IT",{dateStyle:"long",timeStyle:"short"}).format(new Date(order.created_at))}</span></div><Link href="/admin/ordini">Torna agli ordini</Link></header>

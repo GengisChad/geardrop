@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import styles from "@/components/admin/orders/orders.module.css";
 import { requireAdminAccess } from "@/lib/admin/access";
 import { listAdminOrders } from "@/lib/admin/order-repository";
@@ -16,6 +17,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
   const query = normalizeAdminOrderQuery(params);
   const client = await createSupabaseServerClient();
   const principal = await requireAdminAccess(client);
+  if (principal.role === "editor") redirect("/admin");
   const result = await listAdminOrders(client, query, principal.role);
   const hrefFor = (page: number) => ({ pathname: "/admin/ordini", query: { ...params, page: String(page) } });
   const exportParams = new URLSearchParams();

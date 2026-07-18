@@ -1,5 +1,5 @@
 begin;
-select plan(31);
+select plan(38);
 select has_type('public','staff_invite_status','staff invite status exists');
 select has_column('public','staff_profiles','invite_email','invite email exists');
 select has_column('public','staff_profiles','invite_status','invite status exists');
@@ -14,15 +14,28 @@ select has_column('public','audit_events','request_user_agent','audit user agent
 select has_function('public','change_staff_role',array['uuid','staff_role'],'role RPC exists');
 select has_function('public','set_staff_active',array['uuid','boolean'],'active RPC exists');
 select has_function('public','revoke_staff_access',array['uuid'],'revoke RPC exists');
+select has_function('public','record_staff_invite',array['uuid','text','text','staff_role'],'invite recording RPC exists');
+select has_function('public','record_staff_login',array[]::text[],'login lifecycle RPC exists');
 
 insert into auth.users(instance_id,id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at,confirmation_token,email_change,email_change_token_new,recovery_token) values
 ('00000000-0000-0000-0000-000000000000','00000000-0000-0000-0000-000000001701','authenticated','authenticated','staff-owner-one@example.com','',now(),'{}','{}',now(),now(),'','','',''),
 ('00000000-0000-0000-0000-000000000000','00000000-0000-0000-0000-000000001702','authenticated','authenticated','staff-owner-two@example.com','',now(),'{}','{}',now(),now(),'','','',''),
 ('00000000-0000-0000-0000-000000000000','00000000-0000-0000-0000-000000001703','authenticated','authenticated','staff-admin@example.com','',now(),'{}','{}',now(),now(),'','','',''),
-('00000000-0000-0000-0000-000000000000','00000000-0000-0000-0000-000000001704','authenticated','authenticated','staff-editor@example.com','',now(),'{}','{}',now(),now(),'','','','');
+('00000000-0000-0000-0000-000000000000','00000000-0000-0000-0000-000000001704','authenticated','authenticated','staff-editor@example.com','',now(),'{}','{}',now(),now(),'','','',''),
+('00000000-0000-0000-0000-000000000000','00000000-0000-0000-0000-000000001705','authenticated','authenticated','staff-invited@example.com','',now(),'{}','{}',now(),now(),'','','','');
 insert into public.staff_profiles(user_id,role,display_name,invite_email) values
 ('00000000-0000-0000-0000-000000001701','owner','Owner One','staff-owner-one@example.com'),('00000000-0000-0000-0000-000000001702','owner','Owner Two','staff-owner-two@example.com'),
 ('00000000-0000-0000-0000-000000001703','admin','Admin','staff-admin@example.com'),('00000000-0000-0000-0000-000000001704','editor','Editor','staff-editor@example.com');
+
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000001701',true);set local role authenticated;
+select lives_ok($$select public.record_staff_invite('00000000-0000-0000-0000-000000001705','staff-invited@example.com','Invited Editor','editor')$$,'owner records invite with caller identity');
+reset role;
+select results_eq($$select created_by from public.staff_profiles where user_id='00000000-0000-0000-0000-000000001705'$$,array['00000000-0000-0000-0000-000000001701'::uuid],'invite profile stores owner actor');
+select results_eq($$select actor_user_id from public.audit_events where action='staff.invited' and entity_id='00000000-0000-0000-0000-000000001705'$$,array['00000000-0000-0000-0000-000000001701'::uuid],'invite audit stores owner actor');
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000001705',true);set local role authenticated;
+select lives_ok($$select public.record_staff_login()$$,'invited staff login updates lifecycle');
+reset role;
+select results_eq($$select invite_status::text from public.staff_profiles where user_id='00000000-0000-0000-0000-000000001705' and accepted_at is not null and last_login_at is not null$$,array['active'::text],'first login records acceptance and last login');
 
 set local role anon;
 select throws_ok($$insert into public.staff_profiles(user_id,role,display_name) values('00000000-0000-0000-0000-000000001799','editor','Public')$$,'42501','permission denied for table staff_profiles','public cannot create staff accounts');

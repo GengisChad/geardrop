@@ -13,7 +13,6 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type OrderActionState = { readonly ok: boolean; readonly message: string };
 const MANAGERS = ["owner", "admin"] as const;
-const STAFF = ["owner", "admin", "editor"] as const;
 const text = (data: FormData, key: string) => typeof data.get(key) === "string" ? String(data.get(key)) : "";
 const cents = (value: string) => Math.round(Number(value.replace(",", ".")) * 100);
 
@@ -36,7 +35,7 @@ function failure(error: unknown): OrderActionState {
   return { ok: false, message: "Operazione non completata. Riprova." };
 }
 
-async function clientFor(roles: typeof MANAGERS | typeof STAFF) {
+async function clientFor(roles: typeof MANAGERS) {
   const client = await createSupabaseServerClient();
   await requireUser(client);
   await requireStaffRole(client, roles);
@@ -83,7 +82,7 @@ export async function addOrderNoteAction(_previous: OrderActionState, formData: 
   const parsed = orderNoteSchema.safeParse({ orderId: text(formData, "orderId"), note: text(formData, "note") });
   if (!parsed.success) return { ok: false, message: "Inserisci una nota valida." };
   try {
-    const client = await clientFor(STAFF);
+    const client = await clientFor(MANAGERS);
     const { error } = await client.rpc("add_order_note", { p_order_id: parsed.data.orderId, p_note: parsed.data.note });
     if (error) return failure(error);
     refresh(parsed.data.orderId);
