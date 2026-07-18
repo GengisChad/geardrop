@@ -18,7 +18,12 @@ export default defineConfig({
     url: "http://127.0.0.1:3100/admin/login",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
-    env: { COMMERCE_PROVIDER: "mock" },
+    env: {
+      COMMERCE_PROVIDER: "mock",
+      NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "",
+      SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY ?? "",
+    },
   },
   projects: [
     { name: "admin-390", use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 } } },

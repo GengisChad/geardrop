@@ -78,6 +78,8 @@ describe("admin browser configuration", () => {
     expect(source).toContain("fullyParallel: false");
     expect(source).toContain("workers: 1");
     expect(source).toContain('command: "pnpm exec next dev --hostname 127.0.0.1 --port 3100"');
+    expect(source).toContain("NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL");
+    expect(source).toContain("SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY");
     expect(source).toContain('name: "admin-390"');
     expect(source).toContain('viewport: { width: 390, height: 844 }');
     expect(source).toContain('name: "admin-768"');

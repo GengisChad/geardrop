@@ -8,7 +8,7 @@ test("anonymous redirect, generic error, no signup, staff login and logout", asy
   await page.getByLabel("Email staff").fill("invalid@example.test");
   await page.getByLabel("Password").fill("wrong-password");
   await page.getByRole("button", { name: "Accedi alla console" }).click();
-  await expect(page.getByRole("alert")).toContainText("Credenziali non valide o accesso staff non autorizzato");
+  await expect(page.locator('p[role="alert"]')).toContainText("Credenziali non valide o accesso staff non autorizzato");
   await login(page);
   await page.getByRole("button", { name: /Esci dall/ }).click();
   await expect(page).toHaveURL(/\/admin\/login/);
@@ -22,5 +22,5 @@ test("customer identity is denied with the same safe message", async ({ page }) 
   await page.getByLabel("Email staff").fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Accedi alla console" }).click();
-  await expect(page.getByRole("alert")).toContainText("Credenziali non valide o accesso staff non autorizzato");
+  await expect(page.locator('p[role="alert"]')).toContainText("Credenziali non valide o accesso staff non autorizzato");
 });
