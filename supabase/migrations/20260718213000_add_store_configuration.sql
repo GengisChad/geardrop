@@ -5,6 +5,7 @@ returns boolean language sql immutable set search_path = '' as $$
     and cardinality(value)=cardinality(array(select distinct code from unnest(value) as code));
 $$;
 revoke all on function private.valid_country_codes(text[]) from public,anon,authenticated,service_role;
+grant execute on function private.valid_country_codes(text[]) to authenticated;
 
 alter table public.shipping_methods
   add column description text check (description is null or char_length(description)<=1000),

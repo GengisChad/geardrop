@@ -46,8 +46,8 @@ select throws_ok($$select public.set_order_acceptance(true,'ATTIVA ORDINI')$$,'5
 reset role;
 
 insert into public.categories(slug,name,tagline,description,active,publication_status,published_at) values('settings-cat','Settings','Settings','Settings',true,'published',now());
-insert into public.products(category_id,slug,sku,name,tagline,description,price_cents,publication_status,published_at,active,stock_quantity)
-values((select id from public.categories where slug='settings-cat'),'settings-product','settings-product','Settings Product','Settings','Settings',1000,'published',now(),true,2);
+insert into public.products(category_id,slug,sku,name,tagline,description,price_cents,publication_status,active,stock_quantity)
+values((select id from public.categories where slug='settings-cat'),'settings-product','settings-product','Settings Product','Settings','Settings',1000,'published',true,2);
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000001601',true); set local role authenticated;
 update public.order_enablement_checks set status='passed',evidence='Provider verificato',verified_at=now(),verified_by='00000000-0000-0000-0000-000000001601' where key='payments';
 select lives_ok($$select public.set_order_acceptance(true,'ATTIVA ORDINI')$$,'owner activates only after live checklist passes');
