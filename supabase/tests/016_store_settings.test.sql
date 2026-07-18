@@ -32,7 +32,7 @@ reset role;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000001602',true); set local role authenticated;
 select lives_ok($$update public.site_settings set store_name='Admin forbidden' where singleton$$,'admin update is safely filtered by RLS');
 reset role;
-select results_eq($$select store_name from public.site_settings where singleton$$,array[''::text],'admin cannot change owner settings');
+select results_eq($$select store_name from public.site_settings where singleton$$,array['GEAR//DROP'::text],'admin cannot change seeded owner settings');
 
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000001601',true); set local role authenticated;
 select lives_ok($$update public.site_settings set store_name='GEAR//DROP',legal_name='GearDrop Srl',support_email='support@example.com',default_seo_title='GearDrop' where singleton$$,'owner manages typed settings');

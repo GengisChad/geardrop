@@ -1,6 +1,14 @@
 begin;
 select plan(41);
 
+-- Keep this module test independent from the reviewed public seed. The
+-- transaction rollback restores every seeded row for subsequent suites.
+delete from public.homepage_sections;
+delete from public.content_pages;
+delete from public.navigation_menus;
+delete from public.footer_columns;
+delete from public.social_links;
+
 select results_eq(
   $$select enumlabel::text collate "C" from pg_enum join pg_type on pg_type.oid = pg_enum.enumtypid
     where pg_type.typnamespace = 'public'::regnamespace and pg_type.typname = 'homepage_section_type'
