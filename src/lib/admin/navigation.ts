@@ -20,8 +20,8 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { label: "Ordini", href: "/admin/ordini", disabled: false },
   { label: "Spedizioni", href: "/admin/spedizioni", disabled: false },
   { label: "Impostazioni", href: "/admin/impostazioni", disabled: false },
-  { label: "Team", href: "/admin/team", disabled: true },
-  { label: "Attività", href: "/admin/attivita", disabled: true },
+  { label: "Team", href: "/admin/team", disabled: false },
+  { label: "Attività", href: "/admin/attivita", disabled: false },
 ];
 
 export function isAdminNavItemActive(pathname: string, href: string): boolean {

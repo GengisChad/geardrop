@@ -1,0 +1,11 @@
+import { z } from "zod";import type { Json } from "@/lib/supabase/database.types";
+const userId=z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+export const inviteStaffSchema=z.object({email:z.email().transform(value=>value.trim().toLowerCase()),displayName:z.string().trim().min(2).max(160),role:z.enum(["owner","admin","editor"])});
+export const teamRoleChangeSchema=z.object({userId,role:z.enum(["owner","admin","editor"])});
+export const teamStatusSchema=z.object({userId,active:z.boolean()});
+export const teamRevokeSchema=z.object({userId,confirmation:z.literal("REVOCA ACCESSO")});
+export type AuditQuery={readonly operator:string|null;readonly action:string;readonly entity:string;readonly from:string|null;readonly to:string|null;readonly page:number;readonly pageSize:number};
+type QueryRecord=Record<string,string|string[]|undefined>;const first=(value:string|string[]|undefined)=>Array.isArray(value)?value[0]:value;
+export function normalizeAuditQuery(input:QueryRecord):AuditQuery{const operator=first(input.operator)??"";const from=first(input.from)??"";const to=first(input.to)??"";const page=Number.parseInt(first(input.page)??"1",10);return {operator:userId.safeParse(operator).success?operator:null,action:(first(input.action)??"").trim().slice(0,120),entity:(first(input.entity)??"").trim().slice(0,120),from:z.iso.date().safeParse(from).success?from:null,to:z.iso.date().safeParse(to).success?to:null,page:Number.isSafeInteger(page)&&page>0?page:1,pageSize:50};}
+const labels:Readonly<Record<string,string>>={role:"Ruolo",active:"Attivo",status:"Stato",name:"Nome",sku:"SKU",slug:"Slug",stock_quantity:"Stock",price_cents:"Prezzo centesimi",publication_status:"Pubblicazione",total_cents:"Totale centesimi",amount_cents:"Importo centesimi",carrier:"Corriere",code:"Codice",note_id:"ID nota",accept_orders:"Ordini attivi"};
+export function summarizeAuditState(value:Json|null):readonly string[]{if(!value||typeof value!=="object"||Array.isArray(value))return[];const record=value as Record<string,Json|undefined>;return Object.entries(labels).flatMap(([key,label])=>{const candidate=record[key];if(typeof candidate==="string"||typeof candidate==="number")return [`${label}: ${candidate}`];if(typeof candidate==="boolean")return [`${label}: ${candidate?"sì":"no"}`];return[];});}
