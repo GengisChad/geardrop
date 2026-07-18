@@ -815,6 +815,7 @@ export type Database = {
           currency: string
           description: string
           id: number
+          is_low_stock: boolean
           is_purchasable: boolean | null
           low_stock_threshold: number
           manage_stock: boolean
@@ -849,6 +850,7 @@ export type Database = {
           currency?: string
           description: string
           id?: never
+          is_low_stock?: boolean
           is_purchasable?: boolean | null
           low_stock_threshold?: number
           manage_stock?: boolean
@@ -883,6 +885,7 @@ export type Database = {
           currency?: string
           description?: string
           id?: never
+          is_low_stock?: boolean
           is_purchasable?: boolean | null
           low_stock_threshold?: number
           manage_stock?: boolean
