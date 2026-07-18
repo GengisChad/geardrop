@@ -7,6 +7,8 @@ export type AdminNavItem = {
 export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { label: "Panoramica", href: "/admin", disabled: false },
   { label: "Prodotti", href: "/admin/prodotti", disabled: false },
+  { label: "Categorie", href: "/admin/categorie", disabled: false },
+  { label: "Bundle", href: "/admin/bundle", disabled: false },
   { label: "Inventario", href: "/admin/inventario", disabled: false },
   { label: "Media", href: "/admin/media", disabled: false },
   { label: "Homepage", href: "/admin/homepage", disabled: true },
