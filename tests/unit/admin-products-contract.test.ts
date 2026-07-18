@@ -49,4 +49,29 @@ describe("product admin server boundary", () => {
     }
   });
 
+  it("renders real stock, override, effective status, and purchasability", () => {
+    const list = readFileSync(join(root, "src/components/admin/products/product-list-client.tsx"), "utf8");
+    const editor = readFileSync(join(root, "src/components/admin/products/product-editor-form.tsx"), "utf8");
+    for (const label of ["Stock reale", "Override", "Stato effettivo", "Acquistabile"]) {
+      expect(`${list}\n${editor}`).toContain(label);
+    }
+    expect(`${list}\n${editor}`).toContain("is_purchasable");
+    expect(`${list}\n${editor}`).not.toContain("effectiveAvailability");
+    expect(list).toContain("Nuovo prodotto");
+    expect(editor).toContain("Archivia");
+  });
+
+  it("requires deletion impact and a two-step permanent confirmation", () => {
+    const page = readFileSync(join(root, "src/app/admin/(protected)/prodotti/[id]/page.tsx"), "utf8");
+    const editor = readFileSync(join(root, "src/components/admin/products/product-editor-form.tsx"), "utf8");
+    expect(page).toContain("loadProductDeletionImpact");
+    for (const consequence of ["Ordini", "Bundle", "Relazioni", "Media"]) {
+      expect(editor).toContain(consequence);
+    }
+    expect(editor).toContain("Confermo eliminazione permanente");
+    expect(editor).toContain('name="confirmPermanent"');
+    expect(editor).toContain("<details");
+    expect(editor).not.toMatch(/>Elimina<\/button>/);
+  });
+
 });
