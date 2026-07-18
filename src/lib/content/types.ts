@@ -22,3 +22,16 @@ export type Footer = { readonly columns: readonly FooterColumn[]; readonly socia
 
 export type ContentReadOptions = { readonly includeDrafts?: boolean };
 
+export type HomepageEditorMedia = {
+  readonly id: number;
+  readonly label: string;
+  readonly altText: string;
+  readonly previewUrl: string;
+};
+export type HomepageEditorOption = { readonly id: number; readonly label: string; readonly meta: string };
+export type HomepageEditorResources = {
+  readonly media: readonly HomepageEditorMedia[];
+  readonly products: readonly HomepageEditorOption[];
+  readonly categories: readonly HomepageEditorOption[];
+  readonly bundles: readonly HomepageEditorOption[];
+};

@@ -7,6 +7,7 @@ import type {
   ContentReadOptions,
   Footer,
   HomepageSection,
+  HomepageEditorResources,
   Navigation,
   NavigationItem,
   NavigationItemRow,
@@ -106,5 +107,30 @@ export async function getFooter(
       items: (items.data ?? []).filter((item) => item.column_id === column.id),
     })),
     socialLinks: socialLinks.data ?? [],
+  };
+}
+
+export async function loadHomepageEditorResources(
+  client: SupabaseClient<Database>,
+): Promise<HomepageEditorResources> {
+  const [media, products, categories, bundles] = await Promise.all([
+    client.from("media_assets").select("id,object_path,original_filename,alt_text").eq("status", "ready").order("created_at", { ascending: false }).limit(300),
+    client.from("products").select("id,name,sku,publication_status").order("name").limit(500),
+    client.from("categories").select("id,name,slug,publication_status").order("sort_order").limit(200),
+    client.from("bundles").select("id,title_line_one,title_line_two,slug").order("sort_order").limit(200),
+  ]);
+  if (media.error || products.error || categories.error || bundles.error) {
+    throw new Error("Impossibile caricare le risorse homepage");
+  }
+  const signedMedia = (await Promise.all((media.data ?? []).map(async (asset) => {
+    const signed = await client.storage.from("product-images").createSignedUrl(asset.object_path, 300);
+    if (signed.error) return null;
+    return { id: asset.id, label: asset.original_filename, altText: asset.alt_text, previewUrl: signed.data.signedUrl };
+  }))).filter((asset): asset is NonNullable<typeof asset> => asset !== null);
+  return {
+    media: signedMedia,
+    products: (products.data ?? []).map((item) => ({ id: item.id, label: item.name, meta: `${item.sku} · ${item.publication_status}` })),
+    categories: (categories.data ?? []).map((item) => ({ id: item.id, label: item.name, meta: `/${item.slug} · ${item.publication_status}` })),
+    bundles: (bundles.data ?? []).map((item) => ({ id: item.id, label: `${item.title_line_one} ${item.title_line_two}`, meta: `/${item.slug}` })),
   };
 }

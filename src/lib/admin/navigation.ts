@@ -11,7 +11,7 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { label: "Bundle", href: "/admin/bundle", disabled: false },
   { label: "Inventario", href: "/admin/inventario", disabled: false },
   { label: "Media", href: "/admin/media", disabled: false },
-  { label: "Homepage", href: "/admin/homepage", disabled: true },
+  { label: "Homepage", href: "/admin/homepage", disabled: false },
   { label: "Coupon", href: "/admin/coupon", disabled: true },
   { label: "Ordini", href: "/admin/ordini", disabled: true },
   { label: "Impostazioni", href: "/admin/impostazioni", disabled: true },
