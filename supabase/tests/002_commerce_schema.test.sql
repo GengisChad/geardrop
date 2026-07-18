@@ -86,8 +86,8 @@ select results_eq(
         'enablement_check_status', 'product_relation_type', 'promotion_discount_kind'
       ])
   $$,
-  array[13::bigint],
-  'exactly 13 commerce enums exist'
+  array[14::bigint],
+  'exactly 14 commerce enums exist'
 );
 select results_eq(
   $$select count(*)::bigint from pg_catalog.pg_policies where schemaname = 'public'$$,

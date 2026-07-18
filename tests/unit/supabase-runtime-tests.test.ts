@@ -10,7 +10,7 @@ describe("Supabase runtime test coverage", () => {
   it("covers exact schema, migration, policy, and double-seed counts", () => {
     const sql = pgTap("002_commerce_schema.test.sql");
 
-    for (const expected of ["schema_migrations", "32::bigint", "13::bigint", "89::bigint", "8::bigint", "9::bigint"]) {
+    for (const expected of ["schema_migrations", "32::bigint", "14::bigint", "89::bigint", "8::bigint", "9::bigint"]) {
       expect(sql).toContain(expected);
     }
   });

@@ -19,6 +19,10 @@ export type Database = {
           entity_id: string
           entity_type: string
           id: number
+          request_id: string | null
+          request_method: string | null
+          request_path: string | null
+          request_user_agent: string | null
         }
         Insert: {
           action: string
@@ -29,6 +33,10 @@ export type Database = {
           entity_id: string
           entity_type: string
           id?: never
+          request_id?: string | null
+          request_method?: string | null
+          request_path?: string | null
+          request_user_agent?: string | null
         }
         Update: {
           action?: string
@@ -39,6 +47,10 @@ export type Database = {
           entity_id?: string
           entity_type?: string
           id?: never
+          request_id?: string | null
+          request_method?: string | null
+          request_path?: string | null
+          request_user_agent?: string | null
         }
         Relationships: []
       }
@@ -1897,30 +1909,48 @@ export type Database = {
       }
       staff_profiles: {
         Row: {
+          accepted_at: string | null
           active: boolean
           created_at: string
           created_by: string | null
           display_name: string
+          invite_email: string | null
+          invite_status: Database["public"]["Enums"]["staff_invite_status"]
+          invited_at: string | null
+          last_login_at: string | null
+          revoked_at: string | null
           role: Database["public"]["Enums"]["staff_role"]
           updated_at: string
           updated_by: string | null
           user_id: string
         }
         Insert: {
+          accepted_at?: string | null
           active?: boolean
           created_at?: string
           created_by?: string | null
           display_name: string
+          invite_email?: string | null
+          invite_status?: Database["public"]["Enums"]["staff_invite_status"]
+          invited_at?: string | null
+          last_login_at?: string | null
+          revoked_at?: string | null
           role: Database["public"]["Enums"]["staff_role"]
           updated_at?: string
           updated_by?: string | null
           user_id: string
         }
         Update: {
+          accepted_at?: string | null
           active?: boolean
           created_at?: string
           created_by?: string | null
           display_name?: string
+          invite_email?: string | null
+          invite_status?: Database["public"]["Enums"]["staff_invite_status"]
+          invited_at?: string | null
+          last_login_at?: string | null
+          revoked_at?: string | null
           role?: Database["public"]["Enums"]["staff_role"]
           updated_at?: string
           updated_by?: string | null
@@ -1969,6 +1999,13 @@ export type Database = {
       }
       cancel_order_and_restore_stock: {
         Args: { p_note?: string; p_order_id: number }
+        Returns: undefined
+      }
+      change_staff_role: {
+        Args: {
+          p_role: Database["public"]["Enums"]["staff_role"]
+          p_user_id: string
+        }
         Returns: undefined
       }
       complete_media_delete: {
@@ -2049,6 +2086,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      revoke_staff_access: { Args: { p_user_id: string }; Returns: undefined }
       save_bundle_with_items: {
         Args: { p_bundle: Json; p_items: Json }
         Returns: number
@@ -2073,6 +2111,10 @@ export type Database = {
       }
       set_primary_product_image: {
         Args: { p_image_id: number; p_product_id: number }
+        Returns: undefined
+      }
+      set_staff_active: {
+        Args: { p_active: boolean; p_user_id: string }
         Returns: undefined
       }
       swap_media_asset_associations: {
@@ -2132,6 +2174,7 @@ export type Database = {
       promo_tag: "novita" | "offerta" | "limited" | "esclusiva"
       promotion_discount_kind: "percentage" | "fixed" | "promotional_price"
       publication_status: "draft" | "published" | "archived"
+      staff_invite_status: "invited" | "active" | "revoked"
       staff_role: "owner" | "admin" | "editor"
       stock_status: "disponibile" | "in-arrivo" | "pre-ordine" | "esaurito"
     }
@@ -2307,6 +2350,7 @@ export const Constants = {
       promo_tag: ["novita", "offerta", "limited", "esclusiva"],
       promotion_discount_kind: ["percentage", "fixed", "promotional_price"],
       publication_status: ["draft", "published", "archived"],
+      staff_invite_status: ["invited", "active", "revoked"],
       staff_role: ["owner", "admin", "editor"],
       stock_status: ["disponibile", "in-arrivo", "pre-ordine", "esaurito"],
     },
