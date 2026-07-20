@@ -14,7 +14,9 @@ const DARK_ITEMS: readonly TrustItem[] = [
 /** Light bar from mockup-home-lower / the PDP. */
 const LIGHT_ITEMS: readonly TrustItem[] = [
   { Icon: Truck, title: "Spedizione veloce", lines: ["Consegna rapida in tutta Italia", ""] },
-  { Icon: Lock, title: "Pagamenti sicuri", lines: ["PayPal, Carte, Klarna", ""] },
+  // No gateway is integrated: naming PayPal, cards or Klarna here would promise a
+  // checkout the backend cannot honour.
+  { Icon: Lock, title: "Checkout sicuro", lines: ["Connessione protetta SSL", ""] },
   { Icon: RotateCcw, title: "Reso facile", lines: ["30 giorni per cambiare idea", ""] },
   { Icon: Headphones, title: "Assistenza dedicata", lines: ["Siamo qui per te", ""] },
 ];

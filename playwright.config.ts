@@ -7,7 +7,9 @@ const isCI = Boolean(process.env["CI"]);
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  testIgnore: ["**/admin/**", "**/screenshots.spec.ts"],
+  // The admin and storefront gates need the live Supabase stack and run from their own
+  // configs; this one exercises the storefront on the mock provider.
+  testIgnore: ["**/admin/**", "**/storefront/**", "**/screenshots.spec.ts"],
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,

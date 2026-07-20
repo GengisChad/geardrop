@@ -6,7 +6,11 @@ import { NewsletterForm } from "@/components/layout/newsletter-form";
 import { brand, brandSize } from "@/data/assets";
 import type { StorefrontChrome } from "@/lib/content/types";
 
-const PAYMENTS = ["Visa", "Mastercard", "PayPal", "Klarna"] as const;
+/**
+ * No payment gateway is integrated yet, so no card or wallet brand is advertised here.
+ * Re-add the badges when the matching method is actually accepted at checkout.
+ */
+const PAYMENTS: readonly string[] = [];
 
 export function Footer({ content }: { readonly content: StorefrontChrome }) {
   return (
@@ -91,7 +95,7 @@ export function Footer({ content }: { readonly content: StorefrontChrome }) {
             </p>
             <p className="flex items-center gap-2.5 text-small text-grey-400">
               <Lock className="size-4 text-lime" aria-hidden="true" />
-              Pagamenti 100% sicuri con crittografia SSL
+              Connessione protetta con crittografia SSL
             </p>
           </div>
           <ul className="flex flex-wrap items-center gap-2">

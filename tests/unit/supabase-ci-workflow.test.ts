@@ -75,6 +75,35 @@ describe("Supabase database CI workflow", () => {
     );
     expect(yaml.indexOf("playwright test --config playwright.config.ts")).toBeLessThan(yaml.indexOf("pnpm lint"));
   });
+
+  it("runs the storefront order gate against the live stack, before the mock gate", () => {
+    const yaml = workflow();
+    expect(yaml).toContain("playwright test --config playwright.storefront.config.ts");
+    expect(yaml.indexOf("playwright test --config playwright.storefront.config.ts")).toBeLessThan(
+      yaml.indexOf("playwright test --config playwright.config.ts"),
+    );
+  });
+});
+
+describe("storefront order gate configuration", () => {
+  it("drives the real provider serially, without retries that would reuse spent stock", () => {
+    const source = readFileSync(join(process.cwd(), "playwright.storefront.config.ts"), "utf8");
+    expect(source).toContain('COMMERCE_PROVIDER: "supabase"');
+    expect(source).toContain("fullyParallel: false");
+    expect(source).toContain("workers: 1");
+    expect(source).toContain("retries: 0");
+    expect(source).toContain('testDir: "./tests/e2e/storefront"');
+  });
+
+  it("seeds fixtures only against a loopback Supabase URL", () => {
+    const source = readFileSync(join(process.cwd(), "tests/e2e/storefront/global-setup.ts"), "utf8");
+    expect(source).toContain("localhost");
+    expect(source).toContain("Storefront order tests require the local ephemeral Supabase stack");
+    expect(source).toContain("accept_orders = true");
+    // The fixture price must not collide with the bundled catalogue, or the test could
+    // pass while the static prices were still winning.
+    expect(source).toContain("1234");
+  });
 });
 
 describe("admin browser configuration", () => {
@@ -94,9 +123,9 @@ describe("admin browser configuration", () => {
     expect(source).toContain('viewport: { width: 1440, height: 900 }');
   });
 
-  it("keeps public and admin browser suites isolated", () => {
+  it("keeps the public, admin and storefront browser suites isolated", () => {
     const source = readFileSync(join(process.cwd(), "playwright.config.ts"), "utf8");
-    expect(source).toContain('testIgnore: ["**/admin/**", "**/screenshots.spec.ts"]');
+    expect(source).toContain('testIgnore: ["**/admin/**", "**/storefront/**", "**/screenshots.spec.ts"]');
   });
 
   it("bootstraps identities only against a loopback Supabase URL", () => {

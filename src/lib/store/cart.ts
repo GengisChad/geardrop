@@ -3,8 +3,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { CartLine } from "@/lib/commerce/types";
+import { MAX_QUANTITY_PER_LINE } from "@/lib/commerce/limits";
 
-export const MAX_QUANTITY_PER_LINE = 10;
+export { MAX_QUANTITY_PER_LINE };
 
 type CartState = {
   lines: CartLine[];

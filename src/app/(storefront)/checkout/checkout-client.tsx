@@ -4,51 +4,53 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useForm, useWatch } from "react-hook-form";
-import { ArrowRight, CheckCircle2, Lock } from "lucide-react";
+import { AlertTriangle, ArrowRight, CheckCircle2, Info } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Field, TextInput, inputClass } from "@/components/ui/field";
 import { CartTotalsPanel } from "@/components/cart/cart-summary";
-import { useCartDetails } from "@/lib/use-cart-details";
+import { useCartQuote } from "@/lib/use-cart-quote";
 import { useCart } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/format";
-import { PAYMENT_METHODS, SHIPPING_METHODS, checkoutSchema, type CheckoutValues } from "@/lib/checkout-schema";
+import { checkoutSchema, type CheckoutValues } from "@/lib/checkout-schema";
+import { submitOrder } from "./actions";
+import type { Money } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
 
-const STEPS = ["Carrello", "Spedizione", "Pagamento"] as const;
+const STEPS = ["Carrello", "Spedizione", "Conferma"] as const;
 
-/**
- * Placeholder order reference. A real order number is issued by the backend when the
- * order is created; this only exists so the confirmation screen has something to show.
- * Module scope keeps the impure `Date.now()` out of the render path.
- */
-function makeOrderReference(): string {
-  return `GD-${Date.now().toString().slice(-6)}`;
-}
+type Placed = { readonly orderNumber: string; readonly total: Money | null };
 
 export function CheckoutClient() {
-  const { lines, totals, hydrated } = useCartDetails();
+  const lines = useCart((s) => s.lines);
   const clear = useCart((s) => s.clear);
-  const [orderId, setOrderId] = useState<string | null>(null);
+
+  const [placed, setPlaced] = useState<Placed | null>(null);
+  const [failure, setFailure] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+
+  // One key for the whole checkout attempt: a retry after a lost response must return
+  // the order the database already created rather than creating a second one.
+  const [idempotencyKey] = useState(() => globalThis.crypto.randomUUID());
 
   const {
     register,
     handleSubmit,
     control,
-    formState: { errors, isSubmitting },
-  } = useForm<CheckoutValues>({
-    mode: "onBlur",
-    defaultValues: { shippingMethod: "standard", paymentMethod: "carta" },
-  });
+    formState: { errors },
+  } = useForm<CheckoutValues>({ mode: "onBlur" });
 
   // useWatch rather than watch(): it subscribes at this component only, and unlike
   // watch() it can be memoized, so the React Compiler doesn't bail out on this file.
-  const shippingMethod = useWatch({ control, name: "shippingMethod" });
-  const surcharge = SHIPPING_METHODS.find((m) => m.value === shippingMethod)?.surcharge ?? 0;
-  const grandTotal = totals.total.amount + surcharge;
+  const selectedShipping = useWatch({ control, name: "shippingMethod" });
+  const { quote, hydrated } = useCartQuote({ shippingCode: selectedShipping });
 
-  if (orderId) {
+  // Before the customer touches a radio the backend's own default is what the totals
+  // were computed with, so that is what the form shows as selected.
+  const activeShipping = selectedShipping || quote?.shippingCode || "";
+
+  if (placed) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 12 }}
@@ -57,10 +59,18 @@ export function CheckoutClient() {
         className="mx-auto mt-10 flex max-w-lg flex-col items-center rounded-[--radius-card] border border-available/30 bg-available-bg px-6 py-14 text-center"
       >
         <CheckCircle2 className="size-14 text-available" strokeWidth={1.5} aria-hidden="true" />
-        <h2 className="mt-5 text-h2 font-bold text-graphite">Ordine confermato</h2>
+        <h2 className="mt-5 text-h2 font-bold text-graphite">Ordine registrato</h2>
         <p className="mt-2 text-small text-grey-600">
-          Grazie. Il tuo ordine <span className="gd-display font-bold text-graphite">{orderId}</span> è stato registrato.
-          Ti abbiamo inviato una email di conferma.
+          Il tuo ordine{" "}
+          <span className="gd-display font-bold text-graphite" data-testid="order-number">
+            {placed.orderNumber}
+          </span>{" "}
+          è stato registrato.
+          {placed.total ? <> Totale: {formatPrice(placed.total)}.</> : null}
+        </p>
+        <p className="mt-3 max-w-sm text-[0.6875rem] text-grey-600">
+          Nessun pagamento è stato addebitato e nessuna email automatica è stata inviata: ti
+          ricontattiamo noi per completare l&apos;ordine. Annota il numero qui sopra.
         </p>
         <Button as={Link} href="/negozio" variant="primary" size="lg" className="mt-7">
           Continua ad acquistare
@@ -69,9 +79,11 @@ export function CheckoutClient() {
     );
   }
 
-  if (!hydrated) return <div className="gd-glass-panel mt-8 h-96 animate-pulse rounded-[--radius-glass]" />;
+  if (!hydrated || !quote) {
+    return <div className="gd-glass-panel mt-8 h-96 animate-pulse rounded-[--radius-glass]" data-testid="checkout-loading" />;
+  }
 
-  if (lines.length === 0) {
+  if (quote.lines.length === 0) {
     return (
       <EmptyState
         className="mt-8"
@@ -83,16 +95,33 @@ export function CheckoutClient() {
     );
   }
 
+  const blocked = !quote.orderable;
+
   return (
     <form
       noValidate
       data-testid="checkout-form"
-      onSubmit={handleSubmit(async () => {
-        // No payment backend exists. This is where the provider would create the order;
-        // nothing is charged and no card data is ever collected by this form.
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        setOrderId(makeOrderReference());
-        clear();
+      onSubmit={handleSubmit(async (values) => {
+        setFailure(null);
+        setPending(true);
+        try {
+          const result = await submitOrder({
+            // The shipping code the quote was priced with wins if the customer never
+            // touched the radios; the database rejects it anyway if it is not active.
+            contact: { ...values, shippingMethod: values.shippingMethod || activeShipping },
+            lines: lines.map((line) => ({ slug: line.slug, quantity: line.quantity })),
+            idempotencyKey,
+          });
+          if (!result.ok) {
+            // The cart is deliberately left untouched: nothing was ordered.
+            setFailure(result.message);
+            return;
+          }
+          setPlaced({ orderNumber: result.orderNumber, total: result.total });
+          clear();
+        } finally {
+          setPending(false);
+        }
       })}
       className="mt-8 grid items-start gap-8 lg:grid-cols-[1fr_22rem]"
     >
@@ -117,6 +146,16 @@ export function CheckoutClient() {
             </li>
           ))}
         </ol>
+
+        {quote.notice ? (
+          <p
+            data-testid="checkout-notice"
+            className="flex items-start gap-2 rounded-xl border border-soldout/30 bg-soldout-bg p-4 text-small text-graphite"
+          >
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-soldout" aria-hidden="true" />
+            {quote.notice}
+          </p>
+        ) : null}
 
         <fieldset className="gd-glass-panel rounded-[--radius-glass] p-5">
           <legend className="gd-display px-1 text-small font-bold tracking-wider text-graphite">Contatti</legend>
@@ -212,44 +251,49 @@ export function CheckoutClient() {
             </div>
           </div>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            {SHIPPING_METHODS.map((method) => (
-              <label
-                key={method.value}
-                className={cn(
-                  "flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 transition-colors",
-                  shippingMethod === method.value ? "border-violet bg-violet-tint" : "border-grey-300 hover:border-grey-400",
-                )}
-              >
-                <input type="radio" value={method.value} className="size-4 accent-violet" {...register("shippingMethod")} />
-                <span className="flex-1">
-                  <span className="gd-display block text-small font-bold tracking-wider text-graphite">{method.label}</span>
-                  <span className="block text-[0.6875rem] text-grey-600">{method.hint}</span>
-                </span>
-                <span className="tabular text-small font-semibold text-graphite">
-                  {method.surcharge === 0 ? "Incluso" : `+${formatPrice({ amount: method.surcharge, currency: "EUR" })}`}
-                </span>
-              </label>
-            ))}
+          {/* Only the options the backend currently sells. */}
+          <div className="mt-5 grid gap-3 sm:grid-cols-2" data-testid="shipping-options">
+            {quote.shippingOptions.length === 0 ? (
+              <p className="text-small text-grey-600 sm:col-span-2">
+                Nessun metodo di spedizione è attivo in questo momento.
+              </p>
+            ) : (
+              quote.shippingOptions.map((option) => (
+                <label
+                  key={option.code}
+                  className={cn(
+                    "flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 transition-colors",
+                    activeShipping === option.code ? "border-violet bg-violet-tint" : "border-grey-300 hover:border-grey-400",
+                  )}
+                >
+                  <input
+                    type="radio"
+                    value={option.code}
+                    defaultChecked={option.code === quote.shippingCode}
+                    className="size-4 accent-violet"
+                    {...register("shippingMethod")}
+                  />
+                  <span className="flex-1">
+                    <span className="gd-display block text-small font-bold tracking-wider text-graphite">{option.label}</span>
+                    {option.hint ? <span className="block text-[0.6875rem] text-grey-600">{option.hint}</span> : null}
+                  </span>
+                  <span className="tabular text-small font-semibold text-graphite">
+                    {option.price.amount === 0 ? "Gratis" : formatPrice(option.price)}
+                  </span>
+                </label>
+              ))
+            )}
           </div>
         </fieldset>
 
         <fieldset className="gd-glass-panel rounded-[--radius-glass] p-5">
           <legend className="gd-display px-1 text-small font-bold tracking-wider text-graphite">Pagamento</legend>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {PAYMENT_METHODS.map((method) => (
-              <label
-                key={method.value}
-                className="flex cursor-pointer items-center gap-3 rounded-xl border border-grey-300 p-3.5 transition-colors has-[:checked]:border-violet has-[:checked]:bg-violet-tint"
-              >
-                <input type="radio" value={method.value} className="size-4 accent-violet" {...register("paymentMethod")} />
-                <span className="gd-display text-small font-bold tracking-wider text-graphite">{method.label}</span>
-              </label>
-            ))}
-          </div>
-          <p className="mt-4 flex items-center gap-2 text-[0.6875rem] text-grey-600">
-            <Lock className="size-3.5 text-violet" aria-hidden="true" />
-            Demo: nessun pagamento viene elaborato e nessun dato di carta viene raccolto.
+          {/* No gateway is integrated. Offering card, PayPal or Klarna here would be a
+              promise the backend cannot keep. */}
+          <p className="mt-4 flex items-start gap-2 text-small text-grey-600" data-testid="payment-notice">
+            <Info className="mt-0.5 size-4 shrink-0 text-violet" aria-hidden="true" />
+            Nessun pagamento online è attivo. Confermando registri l&apos;ordine: non viene
+            richiesto né addebitato alcun importo e non raccogliamo dati di pagamento.
           </p>
 
           <Field label="Note per il corriere (facoltativo)" htmlFor="notes" error={errors.notes?.message} className="mt-4">
@@ -267,34 +311,37 @@ export function CheckoutClient() {
         <h2 className="gd-display text-small font-bold tracking-wider text-graphite">Il tuo ordine</h2>
 
         <ul className="flex flex-col gap-3">
-          {lines.map(({ product, quantity, lineTotal }) => {
-            const image = product.images[0];
-            return (
-              <li key={product.slug} className="flex items-center gap-3">
-                {image ? (
-                  <span className="relative shrink-0">
-                    <Image src={image.src} alt="" aria-hidden="true" width={image.width} height={image.height} sizes="48px" className="size-12 object-contain" />
-                    <span className="tabular absolute -right-1 -top-1 inline-flex min-w-4 items-center justify-center rounded-full bg-graphite px-1 text-[0.5625rem] font-bold leading-4 text-white">
-                      {quantity}
-                    </span>
+          {quote.lines.map((line) => (
+            <li key={line.slug} className="flex items-center gap-3">
+              {line.image ? (
+                <span className="relative shrink-0">
+                  <Image src={line.image.src} alt="" aria-hidden="true" width={line.image.width} height={line.image.height} sizes="48px" className="size-12 object-contain" />
+                  <span className="tabular absolute -right-1 -top-1 inline-flex min-w-4 items-center justify-center rounded-full bg-graphite px-1 text-[0.5625rem] font-bold leading-4 text-white">
+                    {line.quantity}
                   </span>
-                ) : null}
-                <span className="min-w-0 flex-1 truncate text-small text-grey-600">{product.name}</span>
-                <span className="tabular shrink-0 text-small font-semibold text-graphite">
-                  {formatPrice({ amount: lineTotal, currency: "EUR" })}
                 </span>
-              </li>
-            );
-          })}
+              ) : null}
+              <span className="min-w-0 flex-1 truncate text-small text-grey-600">{line.name}</span>
+              <span className="tabular shrink-0 text-small font-semibold text-graphite">
+                {formatPrice(line.lineTotal)}
+              </span>
+            </li>
+          ))}
         </ul>
 
         <div className="border-t border-grey-200 pt-4">
-          <CartTotalsPanel totals={{ ...totals, total: { amount: grandTotal, currency: "EUR" } }} />
+          <CartTotalsPanel totals={quote.totals} />
         </div>
 
-        <Button type="submit" variant="primary" size="lg" fullWidth disabled={isSubmitting} data-testid="place-order">
-          {isSubmitting ? "Elaborazione..." : "Conferma ordine"}
-          {!isSubmitting ? <ArrowRight className="size-4" aria-hidden="true" /> : null}
+        {failure ? (
+          <p role="alert" data-testid="checkout-error" className="rounded-xl border border-soldout/30 bg-soldout-bg p-3 text-small text-graphite">
+            {failure}
+          </p>
+        ) : null}
+
+        <Button type="submit" variant="primary" size="lg" fullWidth disabled={pending || blocked} data-testid="place-order">
+          {pending ? "Registrazione..." : "Conferma ordine"}
+          {!pending ? <ArrowRight className="size-4" aria-hidden="true" /> : null}
         </Button>
       </aside>
     </form>

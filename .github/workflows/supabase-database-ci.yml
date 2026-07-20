@@ -99,6 +99,9 @@ jobs:
       - name: Run admin browser gate
         run: pnpm exec playwright test --config playwright.admin.config.ts
 
+      - name: Run storefront order gate
+        run: pnpm exec playwright test --config playwright.storefront.config.ts
+
       - name: Run public browser gate
         env:
           COMMERCE_PROVIDER: mock
