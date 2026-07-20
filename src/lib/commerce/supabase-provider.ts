@@ -64,7 +64,7 @@ const PRODUCT_SELECT = `
   rating,
   review_count,
   category:categories!inner(slug),
-  images:product_images!inner(src,width,height,alt,sort_order,published,media_asset:media_assets(status)),
+  images:product_images!inner(src,width,height,alt,sort_order,published),
   specs:product_specs(label,value,sort_order),
   features:product_features(title,description,sort_order),
   box_contents:product_box_contents(content,sort_order),
