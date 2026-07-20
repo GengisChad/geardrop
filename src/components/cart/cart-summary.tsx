@@ -1,12 +1,17 @@
 import { Truck } from "lucide-react";
 import { formatPrice, formatShipping } from "@/lib/format";
-import { FREE_SHIPPING_THRESHOLD } from "@/data/catalog";
 import type { CartTotals } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
 
-/** Progress toward free shipping — the threshold is promised in the announcement bar. */
-export function FreeShippingMeter({ totals }: { totals: CartTotals }) {
-  const progress = Math.min(100, (totals.subtotal.amount / FREE_SHIPPING_THRESHOLD) * 100);
+/**
+ * Progress toward free shipping. The threshold arrives with the quote rather than from a
+ * local constant: it belongs to the shipping method the backend is currently selling,
+ * and a shop with no free-shipping tier must not be shown a meter at all.
+ */
+export function FreeShippingMeter({ totals, threshold }: { totals: CartTotals; threshold: number | null }) {
+  if (!threshold) return null;
+
+  const progress = Math.min(100, (totals.subtotal.amount / threshold) * 100);
   const reached = totals.freeShippingRemaining === 0 && totals.subtotal.amount > 0;
 
   return (
@@ -44,6 +49,14 @@ export function CartTotalsPanel({ totals, className }: { totals: CartTotals; cla
           {formatPrice(totals.subtotal)}
         </dd>
       </div>
+      {totals.discount.amount > 0 ? (
+        <div className="flex justify-between text-small">
+          <dt className="text-grey-600">Sconto</dt>
+          <dd className="tabular font-semibold text-available" data-testid="cart-discount">
+            −{formatPrice(totals.discount)}
+          </dd>
+        </div>
+      ) : null}
       <div className="flex justify-between text-small">
         <dt className="text-grey-600">Spedizione</dt>
         <dd

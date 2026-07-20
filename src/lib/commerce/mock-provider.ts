@@ -10,8 +10,9 @@ import { BUNDLE, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_FLAT_RA
 import type {
   BladeType,
   Bundle,
-  CartLine,
-  CartTotals,
+  CartQuote,
+  CartQuoteLine,
+  CartQuoteRequest,
   Category,
   CategorySlug,
   CommerceProvider,
@@ -19,11 +20,23 @@ import type {
   Product,
   ProductPage,
   ProductQuery,
+  ShippingOption,
   SortKey,
   StockStatus,
 } from "./types";
 
 const DEFAULT_PER_PAGE = 12;
+
+/**
+ * The one delivery option the local catalogue knows about. Real shipping options come
+ * from the backend; hardcoding them is allowed here and nowhere else.
+ */
+const MOCK_SHIPPING: ShippingOption = {
+  code: "standard",
+  label: "Spedizione standard",
+  hint: "Consegna in 24/48h",
+  price: { amount: SHIPPING_FLAT_RATE, currency: "EUR" },
+};
 
 /** Popularity is not a stored field; the mockups rank by review volume. */
 const byPopularity = (a: Product, b: Product) => b.reviewCount - a.reviewCount;
@@ -148,21 +161,61 @@ export function createMockProvider(catalogue: readonly Product[] = PRODUCTS): Co
       return BUNDLE;
     },
 
-    async computeTotals(lines: readonly CartLine[]): Promise<CartTotals> {
-      const subtotal = lines.reduce((sum, line) => {
-        const product = bySlug.get(line.slug);
-        return product ? sum + product.price.amount * line.quantity : sum;
-      }, 0);
+    async quoteCart(request: CartQuoteRequest): Promise<CartQuote> {
+      const missingSlugs: string[] = [];
+      const quoteLines: CartQuoteLine[] = [];
 
+      for (const line of request.lines) {
+        const product = bySlug.get(line.slug);
+        if (!product) {
+          missingSlugs.push(line.slug);
+          continue;
+        }
+        quoteLines.push({
+          slug: product.slug,
+          name: product.name,
+          quantity: line.quantity,
+          unitPrice: product.price,
+          lineTotal: { amount: product.price.amount * line.quantity, currency: "EUR" },
+          image: product.images[0] ?? null,
+          stock: product.stock,
+          issue:
+            product.stock === "esaurito"
+              ? "Non disponibile: rimuovilo per procedere."
+              : null,
+        });
+      }
+
+      const sellable = quoteLines.filter((line) => line.issue === null);
+      const subtotal = sellable.reduce((sum, line) => sum + line.lineTotal.amount, 0);
       const isEmpty = subtotal === 0;
       const qualifies = subtotal >= FREE_SHIPPING_THRESHOLD;
       const shipping = isEmpty || qualifies ? 0 : SHIPPING_FLAT_RATE;
 
       return {
-        subtotal: { amount: subtotal, currency: "EUR" },
-        shipping: { amount: shipping, currency: "EUR" },
-        total: { amount: subtotal + shipping, currency: "EUR" },
-        freeShippingRemaining: isEmpty || qualifies ? 0 : FREE_SHIPPING_THRESHOLD - subtotal,
+        lines: quoteLines,
+        missingSlugs,
+        shippingOptions: [MOCK_SHIPPING],
+        shippingCode: MOCK_SHIPPING.code,
+        totals: {
+          subtotal: { amount: subtotal, currency: "EUR" },
+          discount: { amount: 0, currency: "EUR" },
+          shipping: { amount: shipping, currency: "EUR" },
+          total: { amount: subtotal + shipping, currency: "EUR" },
+          freeShippingRemaining: isEmpty || qualifies ? 0 : FREE_SHIPPING_THRESHOLD - subtotal,
+        },
+        freeShippingThreshold: FREE_SHIPPING_THRESHOLD,
+        // The local catalogue has no coupon engine; a code is neither honoured nor
+        // silently swallowed.
+        couponCode: null,
+        couponError: request.couponCode
+          ? "I codici sconto non sono disponibili in questa modalità."
+          : null,
+        // There is no order backend behind the local catalogue, and pretending
+        // otherwise is exactly the bug this replaces.
+        orderIntake: "unconfigured",
+        orderable: false,
+        notice: "Gli ordini non sono ancora attivi su questo sito.",
       };
     },
   };

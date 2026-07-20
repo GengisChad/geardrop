@@ -114,42 +114,71 @@ describe("getFacets", () => {
   });
 });
 
-describe("computeTotals", () => {
+describe("quoteCart", () => {
   it("totals an empty cart to zero and charges no shipping", async () => {
-    const totals = await provider.computeTotals([]);
-    expect(totals.total.amount).toBe(0);
-    expect(totals.shipping.amount).toBe(0);
-    expect(totals.freeShippingRemaining).toBe(0);
+    const quote = await provider.quoteCart({ lines: [] });
+    expect(quote.totals.total.amount).toBe(0);
+    expect(quote.totals.shipping.amount).toBe(0);
+    expect(quote.totals.freeShippingRemaining).toBe(0);
   });
 
   it("charges flat-rate shipping below the threshold", async () => {
-    const totals = await provider.computeTotals([{ slug: "wizard-arrow-4-80b", quantity: 1 }]);
-    expect(totals.subtotal.amount).toBe(2499);
-    expect(totals.shipping.amount).toBe(SHIPPING_FLAT_RATE);
-    expect(totals.total.amount).toBe(2499 + SHIPPING_FLAT_RATE);
-    expect(totals.freeShippingRemaining).toBe(FREE_SHIPPING_THRESHOLD - 2499);
+    const quote = await provider.quoteCart({ lines: [{ slug: "wizard-arrow-4-80b", quantity: 1 }] });
+    expect(quote.totals.subtotal.amount).toBe(2499);
+    expect(quote.totals.shipping.amount).toBe(SHIPPING_FLAT_RATE);
+    expect(quote.totals.total.amount).toBe(2499 + SHIPPING_FLAT_RATE);
+    expect(quote.totals.freeShippingRemaining).toBe(FREE_SHIPPING_THRESHOLD - 2499);
   });
 
   it("gives free shipping exactly at the threshold, not just above it", async () => {
     // 3 x 24,99 = 74,97 clears 59,00; check the boundary explicitly.
-    const totals = await provider.computeTotals([{ slug: "wizard-arrow-4-80b", quantity: 3 }]);
-    expect(totals.subtotal.amount).toBeGreaterThanOrEqual(FREE_SHIPPING_THRESHOLD);
-    expect(totals.shipping.amount).toBe(0);
-    expect(totals.freeShippingRemaining).toBe(0);
+    const quote = await provider.quoteCart({ lines: [{ slug: "wizard-arrow-4-80b", quantity: 3 }] });
+    expect(quote.totals.subtotal.amount).toBeGreaterThanOrEqual(FREE_SHIPPING_THRESHOLD);
+    expect(quote.totals.shipping.amount).toBe(0);
+    expect(quote.totals.freeShippingRemaining).toBe(0);
   });
 
   it("multiplies by quantity", async () => {
-    const totals = await provider.computeTotals([{ slug: "wizard-arrow-4-80b", quantity: 2 }]);
-    expect(totals.subtotal.amount).toBe(2499 * 2);
+    const quote = await provider.quoteCart({ lines: [{ slug: "wizard-arrow-4-80b", quantity: 2 }] });
+    expect(quote.totals.subtotal.amount).toBe(2499 * 2);
+    expect(quote.lines[0]?.unitPrice.amount).toBe(2499);
+    expect(quote.lines[0]?.lineTotal.amount).toBe(4998);
   });
 
-  it("ignores lines whose product no longer exists", async () => {
+  it("reports lines whose product no longer exists instead of pricing them", async () => {
     // A stale localStorage cart must not crash or inflate the total.
-    const totals = await provider.computeTotals([
-      { slug: "wizard-arrow-4-80b", quantity: 1 },
-      { slug: "prodotto-rimosso" as never, quantity: 5 },
-    ]);
-    expect(totals.subtotal.amount).toBe(2499);
+    const quote = await provider.quoteCart({
+      lines: [
+        { slug: "wizard-arrow-4-80b", quantity: 1 },
+        { slug: "prodotto-rimosso" as never, quantity: 5 },
+      ],
+    });
+    expect(quote.totals.subtotal.amount).toBe(2499);
+    expect(quote.missingSlugs).toEqual(["prodotto-rimosso"]);
+    expect(quote.lines).toHaveLength(1);
+  });
+
+  it("offers only the shipping option the local catalogue knows about", async () => {
+    const quote = await provider.quoteCart({ lines: [{ slug: "wizard-arrow-4-80b", quantity: 1 }] });
+    expect(quote.shippingOptions.map((option) => option.code)).toEqual(["standard"]);
+    expect(quote.shippingCode).toBe("standard");
+  });
+
+  it("never claims an order can be placed against the local catalogue", async () => {
+    const quote = await provider.quoteCart({ lines: [{ slug: "wizard-arrow-4-80b", quantity: 1 }] });
+    expect(quote.orderIntake).toBe("unconfigured");
+    expect(quote.orderable).toBe(false);
+    expect(quote.notice).toContain("Gli ordini non sono ancora attivi");
+  });
+
+  it("refuses a coupon rather than silently ignoring it", async () => {
+    const quote = await provider.quoteCart({
+      lines: [{ slug: "wizard-arrow-4-80b", quantity: 1 }],
+      couponCode: "SCONTO10",
+    });
+    expect(quote.couponCode).toBeNull();
+    expect(quote.couponError).toContain("non sono disponibili");
+    expect(quote.totals.discount.amount).toBe(0);
   });
 });
 

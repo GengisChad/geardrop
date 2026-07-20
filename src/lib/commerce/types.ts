@@ -69,10 +69,71 @@ export type CartLine = {
 
 export type CartTotals = {
   readonly subtotal: Money;
+  /** Promotions and coupon, combined. Zero when nothing applies. */
+  readonly discount: Money;
   readonly shipping: Money;
   readonly total: Money;
   /** Cents still needed to reach free shipping; 0 once the threshold is met. */
   readonly freeShippingRemaining: number;
+};
+
+/** A delivery option the backend currently sells. Never a hardcoded UI constant. */
+export type ShippingOption = {
+  readonly code: string;
+  readonly label: string;
+  readonly hint: string | null;
+  readonly price: Money;
+};
+
+export type CartQuoteLine = {
+  readonly slug: ProductSlug;
+  readonly name: string;
+  readonly quantity: number;
+  readonly unitPrice: Money;
+  readonly lineTotal: Money;
+  readonly image: ProductImage | null;
+  readonly stock: StockStatus;
+  /** Italian sentence when this line cannot be ordered as requested, else null. */
+  readonly issue: string | null;
+};
+
+/**
+ * Whether the backend is currently taking orders. `unconfigured` means no order
+ * backend exists at all (the mock provider), which is different from a shop that has
+ * deliberately closed intake.
+ */
+export type OrderIntake = "open" | "closed" | "unconfigured";
+
+/**
+ * Everything the cart and checkout screens are allowed to display as final.
+ *
+ * The browser holds only slugs and quantities; every amount here is computed by the
+ * provider, which for Supabase means the `calculate_cart_pricing` RPC. No caller can
+ * influence a price by sending one.
+ */
+export type CartQuote = {
+  readonly lines: readonly CartQuoteLine[];
+  /** Cart slugs that no longer resolve to a product at all. */
+  readonly missingSlugs: readonly string[];
+  readonly shippingOptions: readonly ShippingOption[];
+  /** The option the totals were computed with; null when none is available. */
+  readonly shippingCode: string | null;
+  readonly totals: CartTotals;
+  /** Free-shipping threshold in cents, or null when the backend offers none. */
+  readonly freeShippingThreshold: number | null;
+  readonly couponCode: string | null;
+  readonly couponError: string | null;
+  readonly orderIntake: OrderIntake;
+  /** True only when every line is orderable and a shipping option exists. */
+  readonly orderable: boolean;
+  /** Why the cart cannot be ordered, when it cannot. */
+  readonly notice: string | null;
+};
+
+export type CartQuoteRequest = {
+  readonly lines: readonly CartLine[];
+  readonly shippingCode?: string;
+  readonly couponCode?: string;
 };
 
 export type SortKey = "popolari" | "novita" | "prezzo-asc" | "prezzo-desc" | "nome";
@@ -137,5 +198,9 @@ export type CommerceProvider = {
   getBundle(): Promise<Bundle | null>;
   /** Products by explicit slug list, preserving the order given. */
   getProductsBySlugs(slugs: readonly string[]): Promise<readonly Product[]>;
-  computeTotals(lines: readonly CartLine[]): Promise<CartTotals>;
+  /**
+   * Prices a cart. This is the only source of money the storefront may display as
+   * final, and the only place shipping options come from.
+   */
+  quoteCart(request: CartQuoteRequest): Promise<CartQuote>;
 };

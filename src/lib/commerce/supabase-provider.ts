@@ -1,17 +1,23 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/database.types";
+import type { ProductImage } from "@/data/assets";
+import { checkoutErrorCode, checkoutErrorMessage } from "./checkout-errors";
 import type {
   BladeType,
   Bundle,
+  CartQuote,
+  CartQuoteLine,
   CartTotals,
   Category,
   CategorySlug,
   CommerceProvider,
   Facets,
+  OrderIntake,
   Product,
   ProductPage,
   ProductQuery,
   PromoTag,
+  ShippingOption,
   SortKey,
   StockStatus,
 } from "./types";
@@ -271,19 +277,229 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>)
       };
     },
 
-    async computeTotals(lines): Promise<CartTotals> {
-      if(lines.length===0)return{subtotal:{amount:0,currency:"EUR"},shipping:{amount:0,currency:"EUR"},total:{amount:0,currency:"EUR"},freeShippingRemaining:0};
-      const productRows=await client.from("products").select("id,slug").eq("publication_status","published").eq("active",true).in("slug",lines.map(line=>line.slug));
-      if(productRows.error)throw productRows.error;const bySlug=new Map((productRows.data??[]).map(product=>[product.slug,product.id]));
-      const pricingLines=lines.map(line=>({product_id:bySlug.get(line.slug),quantity:line.quantity}));if(pricingLines.some(line=>line.product_id===undefined))throw new Error("Prodotto non disponibile");
-      const [pricing,shippingMethod]=await Promise.all([client.rpc("calculate_cart_pricing",{p_lines:pricingLines,p_shipping_code:"standard"}),client.from("shipping_methods").select("free_from_cents").eq("code","standard").eq("active",true).single()]);
-      if(pricing.error)throw pricing.error;if(shippingMethod.error)throw shippingMethod.error;const payload=pricing.data as Record<string,unknown>;const subtotal=Number(payload.subtotal_cents);const shipping=Number(payload.shipping_cents);const total=Number(payload.total_cents);if(![subtotal,shipping,total].every(Number.isSafeInteger))throw new Error("Totali autorevoli non validi");const freeFrom=shippingMethod.data.free_from_cents??0;
+    async quoteCart(request): Promise<CartQuote> {
+      const [methodRows, settingsRow] = await Promise.all([
+        client
+          .from("shipping_methods")
+          .select("code,name,price_cents,free_from_cents,estimate_min_days,estimate_max_days")
+          .eq("active", true)
+          .order("sort_order")
+          .order("code"),
+        client.from("site_settings").select("accept_orders").eq("singleton", true).maybeSingle(),
+      ]);
+      if (methodRows.error) throw methodRows.error;
+      if (settingsRow.error) throw settingsRow.error;
+
+      const shippingOptions: ShippingOption[] = (methodRows.data ?? []).map((method) => ({
+        code: method.code,
+        label: method.name,
+        hint: deliveryEstimate(method.estimate_min_days, method.estimate_max_days),
+        price: { amount: method.price_cents, currency: "EUR" },
+      }));
+      const orderIntake: OrderIntake = settingsRow.data?.accept_orders ? "open" : "closed";
+
+      // The requested option only counts if it is one the shop actually sells.
+      const selected =
+        shippingOptions.find((option) => option.code === request.shippingCode) ??
+        shippingOptions[0] ??
+        null;
+
+      const { data: productData, error: productError } = await client
+        .from("products")
+        .select(
+          `id,slug,name,price_cents,stock_status,stock_quantity,preorder_allocation,
+           availability_override,is_purchasable,
+           images:product_images(src,width,height,alt,sort_order,is_primary,published)`,
+        )
+        .in("slug", request.lines.map((line) => line.slug));
+      if (productError) throw productError;
+
+      const rows = (productData ?? []) as unknown as readonly QuotableProduct[];
+      const bySlug = new Map(rows.map((row) => [row.slug, row]));
+
+      const missingSlugs: string[] = [];
+      const lines: CartQuoteLine[] = [];
+      const sellable: PricingLine[] = [];
+
+      for (const line of request.lines) {
+        const row = bySlug.get(line.slug);
+        if (!row) {
+          missingSlugs.push(line.slug);
+          continue;
+        }
+        const issue = lineIssue(row, line.quantity);
+        lines.push({
+          slug: row.slug as Product["slug"],
+          name: row.name,
+          quantity: line.quantity,
+          unitPrice: { amount: row.price_cents, currency: "EUR" },
+          lineTotal: { amount: row.price_cents * line.quantity, currency: "EUR" },
+          image: primaryImage(row),
+          stock: row.stock_status,
+          issue,
+        });
+        if (!issue) sellable.push({ product_id: row.id, quantity: line.quantity });
+      }
+
+      const freeShippingThreshold = selected
+        ? ((methodRows.data ?? []).find((method) => method.code === selected.code)?.free_from_cents ?? null)
+        : null;
+
+      // Without a sellable line or a shipping option there is nothing the pricing RPC
+      // can be asked. Report that plainly instead of inventing a tariff.
+      if (sellable.length === 0 || !selected) {
+        return {
+          lines,
+          missingSlugs,
+          shippingOptions,
+          shippingCode: selected?.code ?? null,
+          totals: emptyTotals(),
+          freeShippingThreshold,
+          couponCode: null,
+          couponError: null,
+          orderIntake,
+          orderable: false,
+          notice: selected
+            ? null
+            : "Nessun metodo di spedizione è attivo: il checkout non è disponibile.",
+        };
+      }
+
+      let couponError: string | null = null;
+      let pricing = await priceCart(client, sellable, selected.code, request.couponCode);
+      if (pricing.error && checkoutErrorCode(pricing.error) === "GD_PRICING_COUPON_INVALID") {
+        // A bad code must not hide the price of the cart the customer can still buy.
+        couponError = checkoutErrorMessage(pricing.error);
+        pricing = await priceCart(client, sellable, selected.code, undefined);
+      }
+      if (pricing.error) {
+        return {
+          lines,
+          missingSlugs,
+          shippingOptions,
+          shippingCode: selected.code,
+          totals: emptyTotals(),
+          freeShippingThreshold,
+          couponCode: null,
+          couponError,
+          orderIntake,
+          orderable: false,
+          notice: checkoutErrorMessage(pricing.error),
+        };
+      }
+
+      const payload = pricing.data as Record<string, unknown>;
+      const subtotal = Number(payload["subtotal_cents"]);
+      const discount = Number(payload["discount_cents"]);
+      const shipping = Number(payload["shipping_cents"]);
+      const total = Number(payload["total_cents"]);
+      if (![subtotal, discount, shipping, total].every(Number.isSafeInteger)) {
+        throw new Error("Totali autorevoli non validi");
+      }
+
+      const threshold = freeShippingThreshold ?? 0;
+      const blocked = lines.some((line) => line.issue !== null) || missingSlugs.length > 0;
+
       return {
-        subtotal: { amount: subtotal, currency: "EUR" },
-        shipping: { amount: shipping, currency: "EUR" },
-        total: { amount: total, currency: "EUR" },
-        freeShippingRemaining: freeFrom > subtotal ? freeFrom - subtotal : 0,
+        lines,
+        missingSlugs,
+        shippingOptions,
+        shippingCode: selected.code,
+        totals: {
+          subtotal: { amount: subtotal, currency: "EUR" },
+          discount: { amount: discount, currency: "EUR" },
+          shipping: { amount: shipping, currency: "EUR" },
+          total: { amount: total, currency: "EUR" },
+          freeShippingRemaining: threshold > subtotal ? threshold - subtotal : 0,
+        },
+        freeShippingThreshold,
+        couponCode: typeof payload["coupon_code"] === "string" ? payload["coupon_code"] : null,
+        couponError,
+        orderIntake,
+        orderable: orderIntake === "open" && !blocked,
+        notice:
+          orderIntake === "open"
+            ? blocked
+              ? "Alcuni articoli non sono ordinabili: aggiorna il carrello per procedere."
+              : null
+            : "Gli ordini non sono al momento attivi.",
       };
     },
+  };
+}
+
+/** Shape the pricing RPC expects: an id and a quantity, never a price. */
+type PricingLine = { product_id: number; quantity: number };
+
+type QuotableProduct = {
+  readonly id: number;
+  readonly slug: string;
+  readonly name: string;
+  readonly price_cents: number;
+  readonly stock_status: StockStatus;
+  readonly stock_quantity: number;
+  readonly preorder_allocation: number;
+  readonly availability_override: string | null;
+  readonly is_purchasable: boolean | null;
+  readonly images: readonly {
+    readonly src: string;
+    readonly width: number;
+    readonly height: number;
+    readonly alt: string;
+    readonly sort_order: number;
+    readonly is_primary: boolean;
+    readonly published: boolean;
+  }[];
+};
+
+function priceCart(
+  client: SupabaseClient<Database>,
+  lines: PricingLine[],
+  shippingCode: string,
+  couponCode: string | undefined,
+) {
+  return client.rpc("calculate_cart_pricing", {
+    p_lines: lines,
+    p_shipping_code: shippingCode,
+    ...(couponCode ? { p_coupon_code: couponCode } : {}),
+  });
+}
+
+/**
+ * Availability, not money: derived from the authoritative product row so the customer
+ * learns which line is the problem instead of getting one opaque failure for the cart.
+ */
+function lineIssue(row: QuotableProduct, quantity: number): string | null {
+  if (!row.is_purchasable) return "Non disponibile: rimuovilo per procedere.";
+  const stock =
+    row.availability_override === "preorder" ? row.preorder_allocation : row.stock_quantity;
+  if (quantity > stock) {
+    return stock > 0
+      ? `Disponibilità insufficiente: ne restano ${stock}.`
+      : "Non disponibile: rimuovilo per procedere.";
+  }
+  return null;
+}
+
+function primaryImage(row: QuotableProduct): ProductImage | null {
+  const published = row.images.filter((image) => image.published);
+  const chosen =
+    published.find((image) => image.is_primary) ??
+    [...published].sort((a, b) => a.sort_order - b.sort_order)[0];
+  if (!chosen) return null;
+  return { src: chosen.src, width: chosen.width, height: chosen.height, alt: chosen.alt };
+}
+
+function deliveryEstimate(min: number, max: number): string {
+  return min === max ? `Consegna in ${max} giorni` : `Consegna in ${min}-${max} giorni`;
+}
+
+function emptyTotals(): CartTotals {
+  return {
+    subtotal: { amount: 0, currency: "EUR" },
+    discount: { amount: 0, currency: "EUR" },
+    shipping: { amount: 0, currency: "EUR" },
+    total: { amount: 0, currency: "EUR" },
+    freeShippingRemaining: 0,
   };
 }
