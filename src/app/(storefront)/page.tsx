@@ -7,6 +7,7 @@ import { BundleBanner } from "@/components/home/bundle-banner";
 import { CompetitivePicks } from "@/components/home/competitive-picks";
 import { ClubBand } from "@/components/home/club-band";
 import { ProductCarousel } from "@/components/product/product-carousel";
+import { Reveal } from "@/components/ui/reveal";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { storefrontContent } from "@/lib/content/provider";
 import { HomepageSectionRenderer } from "@/components/content/homepage-section-renderer";
@@ -38,32 +39,52 @@ export default async function HomePage() {
   return (
     <>
       <IntroGate />
+      {/* The hero is the LCP element and sits above the fold, so it is never revealed on
+          scroll: it must paint at once. Reveal starts below it. */}
       <Hero product={hero} />
       <CategoryTiles />
       <StatusLegend />
 
-      <ProductCarousel title="In evidenza" products={featured.items} href="/negozio" dots className="pb-12" />
+      <Reveal>
+        <ProductCarousel title="In evidenza" products={featured.items} href="/negozio" dots className="pb-12" />
+      </Reveal>
 
-      <TrustBandDark className="pb-12" />
+      <Reveal>
+        <TrustBandDark className="pb-12" />
+      </Reveal>
 
-      <ProductCarousel title="Ultimi drop" products={latest.items} href="/negozio?sort=novita" className="pb-12" />
+      <Reveal>
+        <ProductCarousel title="Ultimi drop" products={latest.items} href="/negozio?sort=novita" className="pb-12" />
+      </Reveal>
 
-      <ProductCarousel
-        title="Più venduti"
-        products={bestSellers.items}
-        href="/negozio/beyblade-x"
-        ranked
-        showRating
-        className="pb-4"
-      />
+      <Reveal>
+        <ProductCarousel
+          title="Più venduti"
+          products={bestSellers.items}
+          href="/negozio/beyblade-x"
+          ranked
+          showRating
+          className="pb-4"
+        />
+      </Reveal>
 
-      {bundle ? <BundleBanner bundle={bundle} hero={hero} /> : null}
+      {bundle ? (
+        <Reveal>
+          <BundleBanner bundle={bundle} hero={hero} />
+        </Reveal>
+      ) : null}
 
-      <TrustBarLight className="pb-12" />
+      <Reveal>
+        <TrustBarLight className="pb-12" />
+      </Reveal>
 
-      <CompetitivePicks products={all.items} />
+      <Reveal>
+        <CompetitivePicks products={all.items} />
+      </Reveal>
 
-      <ClubBand />
+      <Reveal>
+        <ClubBand />
+      </Reveal>
     </>
   );
 }
