@@ -1,5 +1,5 @@
 begin;
-select plan(31);
+select plan(33);
 
 -- Fixtures ------------------------------------------------------------------
 insert into auth.users(instance_id,id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at,confirmation_token,email_change,email_change_token_new,recovery_token) values
@@ -159,6 +159,18 @@ select results_eq(
   array['Checkout product'::text],
   'RLS, not the product trigger, is what keeps customers out of the catalogue');
 select set_config('request.jwt.claim.sub','',true);
+
+-- 32-33. A customer's order is audited as an order, not as a catalogue edit ---
+select results_eq(
+  $$select count(*)::bigint from public.audit_events
+    where entity_type='products' and actor_user_id='00000000-0000-0000-0000-000000002301'::uuid$$,
+  array[0::bigint],
+  'reserving stock does not forge a catalogue-edit audit row for the buyer');
+select results_eq(
+  $$select count(*)::bigint from public.audit_events
+    where action='order.created' and actor_user_id='00000000-0000-0000-0000-000000002301'::uuid$$,
+  array[1::bigint],
+  'the order itself is audited against the customer who placed it');
 
 select * from finish();
 rollback;
