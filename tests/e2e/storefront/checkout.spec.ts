@@ -33,9 +33,17 @@ function sql(statement: string): string {
   ).trim();
 }
 
+/**
+ * Seeds the cart once per context. Init scripts re-run on every navigation, so without
+ * the marker a reload would silently refill a cart the checkout had just emptied — and
+ * the assertions about clearing and preserving it would both pass for the wrong reason.
+ */
 async function seedCart(page: Page, quantity: number) {
   await page.addInitScript(
     ([cartSlug, cartQuantity]) => {
+      const marker = "geardrop.cart.seeded";
+      if (window.sessionStorage.getItem(marker) !== null) return;
+      window.sessionStorage.setItem(marker, "true");
       window.localStorage.setItem(
         "geardrop.cart",
         JSON.stringify({ state: { lines: [{ slug: cartSlug, quantity: cartQuantity }] }, version: 1 }),

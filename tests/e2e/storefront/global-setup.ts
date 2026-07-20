@@ -37,6 +37,13 @@ export default async function globalSetup(): Promise<void> {
       -- show this number, proving the bundled catalogue is no longer an authority.
       1234, 'published', true, 5, 0
     );
+    -- private.is_public_product requires a published image, so without this the fixture
+    -- would simply be invisible to the anonymous storefront client.
+    insert into public.product_images (product_id, src, width, height, alt, sort_order, published, is_primary)
+    values (
+      (select id from public.products where slug = ${literal(`checkout-product-${run}`)}),
+      '/products/wizard-arrow-4-80b-1.webp', 800, 800, 'Prodotto checkout', 0, true, true
+    );
     -- Exactly one active method, so the option the quote picks is not a race with
     -- whatever the admin gate left behind.
     update public.shipping_methods set active = false;

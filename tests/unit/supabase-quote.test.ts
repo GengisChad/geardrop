@@ -140,6 +140,8 @@ describe("Supabase quoteCart", () => {
 
     expect(quote.lines[0]?.issue).toBe("Disponibilità insufficiente: ne restano 1.");
     expect(quote.orderable).toBe(false);
+    // A disabled checkout button must always come with a reason.
+    expect(quote.notice).toContain("Alcuni articoli non sono ordinabili");
     // Nothing sellable is left, so the RPC is never asked to price an empty cart.
     expect(rpc).not.toHaveBeenCalled();
   });

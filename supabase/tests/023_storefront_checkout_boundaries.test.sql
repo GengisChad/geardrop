@@ -15,6 +15,12 @@ insert into public.products(category_id,slug,sku,name,tagline,description,price_
 values((select id from public.categories where slug='checkout-cat'),'checkout-product','checkout-product','Checkout product','Checkout','Checkout',1000,'published',true,20);
 insert into public.products(category_id,slug,sku,name,tagline,description,price_cents,publication_status,active,stock_quantity,availability_override,preorder_allocation)
 values((select id from public.categories where slug='checkout-cat'),'checkout-preorder','checkout-preorder','Checkout preorder','Checkout','Checkout',2000,'published',true,0,'preorder',1);
+-- private.is_public_product requires at least one published image, so without these the
+-- fixtures would be invisible to anon and authenticated and every guest call would fail
+-- on a null product id long before reaching the behaviour under test.
+insert into public.product_images(product_id,src,width,height,alt,sort_order,published,is_primary) values
+((select id from public.products where sku='checkout-product'),'/products/checkout.webp',800,800,'Checkout product',0,true,true),
+((select id from public.products where sku='checkout-preorder'),'/products/checkout-preorder.webp',800,800,'Checkout preorder',0,true,true);
 insert into public.shipping_methods(code,name,price_cents,active) values('checkout-standard','Standard',500,true);
 update public.site_settings set accept_orders=true where singleton;
 

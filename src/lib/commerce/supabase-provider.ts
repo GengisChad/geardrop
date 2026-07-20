@@ -346,7 +346,8 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>)
         : null;
 
       // Without a sellable line or a shipping option there is nothing the pricing RPC
-      // can be asked. Report that plainly instead of inventing a tariff.
+      // can be asked. Report why plainly instead of inventing a tariff — a disabled
+      // button with no explanation is its own kind of lie.
       if (sellable.length === 0 || !selected) {
         return {
           lines,
@@ -359,9 +360,7 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>)
           couponError: null,
           orderIntake,
           orderable: false,
-          notice: selected
-            ? null
-            : "Nessun metodo di spedizione è attivo: il checkout non è disponibile.",
+          notice: blockedNotice({ hasShipping: Boolean(selected), orderIntake, blocked: lines.length > 0 }),
         };
       }
 
@@ -417,12 +416,7 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>)
         couponError,
         orderIntake,
         orderable: orderIntake === "open" && !blocked,
-        notice:
-          orderIntake === "open"
-            ? blocked
-              ? "Alcuni articoli non sono ordinabili: aggiorna il carrello per procedere."
-              : null
-            : "Gli ordini non sono al momento attivi.",
+        notice: blockedNotice({ hasShipping: true, orderIntake, blocked }),
       };
     },
   };
@@ -488,6 +482,23 @@ function primaryImage(row: QuotableProduct): ProductImage | null {
     [...published].sort((a, b) => a.sort_order - b.sort_order)[0];
   if (!chosen) return null;
   return { src: chosen.src, width: chosen.width, height: chosen.height, alt: chosen.alt };
+}
+
+/**
+ * Why this cart cannot be ordered, most actionable reason first. Null only when nothing
+ * is wrong: the checkout disables its button on `orderable`, so a silent null here would
+ * leave the customer staring at a dead control.
+ */
+function blockedNotice(state: {
+  readonly hasShipping: boolean;
+  readonly orderIntake: OrderIntake;
+  readonly blocked: boolean;
+}): string | null {
+  if (!state.hasShipping) return "Nessun metodo di spedizione è attivo: il checkout non è disponibile.";
+  // A closed shop outranks a fixable line: editing the cart would not help.
+  if (state.orderIntake !== "open") return "Gli ordini non sono al momento attivi.";
+  if (state.blocked) return "Alcuni articoli non sono ordinabili: aggiorna il carrello per procedere.";
+  return null;
 }
 
 function deliveryEstimate(min: number, max: number): string {
