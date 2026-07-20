@@ -1,5 +1,5 @@
 begin;
-select plan(28);
+select plan(31);
 
 -- Fixtures ------------------------------------------------------------------
 insert into auth.users(instance_id,id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at,confirmation_token,email_change,email_change_token_new,recovery_token) values
@@ -140,6 +140,25 @@ select results_eq(
   $$select count(*)::bigint from public.orders where email='bad@example.com'$$,
   array[0::bigint],
   'no rejected payload leaves a partial order');
+
+-- 29-31. Letting order intake reserve stock did not open the catalogue -------
+-- Reserving stock during checkout runs under the buyer's auth.uid(), so the product
+-- trigger can no longer refuse every non-staff write. These pin the layers that
+-- actually keep a customer out of the catalogue.
+select ok(
+  not has_column_privilege('authenticated','public.products','stock_quantity','UPDATE'),
+  'customers hold no grant on the stock column at all');
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000002301',true);
+set local role authenticated;
+select lives_ok(
+  $$update public.products set name='Compromesso' where sku='checkout-product'$$,
+  'a customer''s catalogue write is a silent no-op, not an error');
+reset role;
+select results_eq(
+  $$select name from public.products where sku='checkout-product'$$,
+  array['Checkout product'::text],
+  'RLS, not the product trigger, is what keeps customers out of the catalogue');
+select set_config('request.jwt.claim.sub','',true);
 
 select * from finish();
 rollback;
