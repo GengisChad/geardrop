@@ -22,7 +22,7 @@
     "db:lint": "supabase db lint --local --level error --fail-on error",
     "db:types": "supabase gen types typescript --local --schema public > src/lib/supabase/database.types.ts",
     "seed:supabase": "tsx scripts/generate-supabase-seed.ts",
-    "shots": "playwright test tests/e2e/screenshots.spec.ts",
+    "shots": "playwright test --config playwright.shots.config.ts",
     "assets": "python scripts/build-assets.py",
     "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "typegen": "next typegen"

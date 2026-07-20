@@ -6,6 +6,13 @@ import { mkdir } from "node:fs/promises";
  * so the build can be compared against the mockups by eye. Run with `pnpm shots`.
  */
 
+// The intro plays once per visitor and covers the hero; a shot of it hides the page the
+// capture exists to document. Same opt-out the other e2e specs use. intro.spec.ts still
+// covers the intro itself.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => window.localStorage.setItem("geardrop_intro_seen_v1", "true"));
+});
+
 const SHOTS: readonly { name: string; path: string }[] = [
   { name: "home", path: "/" },
   { name: "catalogo", path: "/negozio" },

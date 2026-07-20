@@ -47,3 +47,5 @@ __pycache__/
 # assets-source/ holds the originals exactly as supplied (the brief requires keeping
 # them); public/ holds the derived binaries, which are produced by scripts/build-assets.py
 # and committed so a clone builds without Python installed.
+
+.vercel
