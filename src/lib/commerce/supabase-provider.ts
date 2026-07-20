@@ -150,7 +150,11 @@ function count<T extends string>(values: readonly T[]): Map<T, number> {
 export function createSupabaseCommerceProvider(client: SupabaseClient<Database>): CommerceProvider {
   async function allProducts(): Promise<readonly Product[]> {
     // Product-image RLS admits linked media only when ready and also preserves the
-    // reviewed static assets whose legacy rows intentionally have no Storage link.
+    // reviewed static assets whose legacy rows intentionally have no Storage link:
+    // product_images_public_read is `published AND is_public_product(product_id) AND
+    // (media_asset_id IS NULL OR is_ready_media_asset(media_asset_id))`. The helper is
+    // security definer, so the guarantee holds without anon reading media_assets —
+    // which it cannot: that table grants SELECT to staff and service_role only.
     const { data, error } = await client.from("products").select(PRODUCT_SELECT).eq("publication_status", "published").eq("active", true).eq("images.published", true);
     if (error) throw error;
     return (data as unknown as readonly RawProduct[]).map(mapSupabaseProduct);

@@ -33,7 +33,12 @@ describe("Supabase commerce provider mapping", () => {
 });
 
 describe("Supabase storefront boundaries",()=>{
-  it("explicitly filters public products and delegates ready/static image safety to RLS",()=>{const source=readFileSync(join(process.cwd(),"src/lib/commerce/supabase-provider.ts"),"utf8");expect(source).toContain('.eq("publication_status", "published")');expect(source).toContain('.eq("active", true)');expect(source).toContain('.eq("images.published", true)');expect(source).toContain('media_assets(status)');expect(source).toContain("Product-image RLS admits linked media only when ready");expect(source).not.toContain('media_assets!inner(status)');});
+  it("explicitly filters public products and delegates ready/static image safety to RLS",()=>{const source=readFileSync(join(process.cwd(),"src/lib/commerce/supabase-provider.ts"),"utf8");expect(source).toContain('.eq("publication_status", "published")');expect(source).toContain('.eq("active", true)');expect(source).toContain('.eq("images.published", true)');expect(source).toContain("Product-image RLS admits linked media only when ready");
+    // The ready/static guarantee belongs to product_images_public_read, whose
+    // is_ready_media_asset() helper is security definer. The storefront must NOT embed
+    // media_assets to restate it: anon has no SELECT on that staff table, so PostgREST
+    // answers 42501 and every product page fails to render.
+    expect(source).not.toContain("media_assets(");expect(source).not.toContain("media_asset:media_assets");});
   it("uses authoritative pricing totals",()=>{const source=readFileSync(join(process.cwd(),"src/lib/commerce/supabase-provider.ts"),"utf8");expect(source).toContain('rpc("calculate_cart_pricing"');expect(source).not.toContain("subtotal + shipping");});
   it("keeps mock default and reads Supabase storefront data as anon",()=>{const source=readFileSync(join(process.cwd(),"src/lib/commerce/provider.ts"),"utf8");expect(source).toContain('process.env["COMMERCE_PROVIDER"] ?? "mock"');expect(source).toContain("createSupabasePublicClient");expect(source).toContain("cacheStorefrontRead");expect(source).not.toContain("createSupabaseServerClient");expect(source).not.toContain("NEXT_PUBLIC_COMMERCE_PROVIDER");});
 });
