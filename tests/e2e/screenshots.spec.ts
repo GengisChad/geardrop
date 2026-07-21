@@ -46,6 +46,16 @@ async function settle(page: Page) {
 }
 
 test.describe("screenshots", () => {
+  // Force every scroll-driven reveal to its finished state for the capture. A full-page
+  // shot does not scroll like a visitor, so without this the below-the-fold sections stay
+  // at opacity 0 and the image shows empty bands. The flag lives only in the capture; the
+  // live site is untouched.
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      document.documentElement.dataset.screenshot = "true";
+    });
+  });
+
   for (const shot of SHOTS) {
     test(`capture ${shot.name}`, async ({ page }, testInfo) => {
       const dir = `docs/screenshots/${testInfo.project.name}`;
