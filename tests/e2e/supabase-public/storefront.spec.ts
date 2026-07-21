@@ -53,17 +53,42 @@ async function visit(page: Page, path: string): Promise<string> {
 
 
 test.describe("anonymous storefront on Supabase", () => {
-  test("the homepage renders remote catalogue and CMS content", async ({ page }) => {
-    await visit(page, "/");
+  test("the homepage renders the managed liquid glass storefront, not the scaffold", async ({ page }) => {
+    const body = await visit(page, "/");
+
+    // The exact regression this gate exists to catch. The managed homepage used to render
+    // through a placeholder that printed "N target relazionali" on a graphite scaffold —
+    // real production data, wrong presentation, and only the mock gate was watching. This
+    // runs against the real database, on the managed path, where the black page lived.
+    expect(body, "the placeholder CMS scaffold is back").not.toContain("target relazionali");
+
+    // The liquid glass hero with the impact artwork, not the old stadium product shot.
+    await expect(page.getByTestId("hero-impact")).toBeVisible();
+    await expect(page.getByTestId("hero-glass")).toBeVisible();
+    await expect(page.getByTestId("hero-impact").locator("img")).toHaveAttribute("src", /impact\.(png|webp)/);
+    await expect(page.getByTestId("hero-impact").locator('img[src*="stadio"]')).toHaveCount(0);
+
+    // No section paints a full graphite scaffold panel.
+    expect(await page.locator("section.bg-graphite").count(), "a graphite scaffold section is rendering").toBe(0);
+
+    // Real glass with a real blur somewhere on the page.
+    const blurred = await page.locator('[class*="gd-glass"]').first().evaluate((element) => {
+      const style = getComputedStyle(element);
+      return (style.backdropFilter || style.webkitBackdropFilter || "").includes("blur");
+    });
+    expect(blurred, "no element is actually compositing a glass blur").toBe(true);
 
     // Exactly one h1, from the CMS hero section. The static homepage has always had
     // one; the managed one rendered every section as h2 and so had none.
     await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    // Four seeded categories, each linked from the homepage tiles.
+
+    // Four seeded categories linked from the tiles, and real product cards on the page.
     for (const slug of ["beyblade-x", "lanciatori", "stadi", "accessori"]) {
       await expect(page.locator(`a[href="/negozio/${slug}"]`).first()).toBeVisible();
     }
+    expect(await page.getByTestId("product-card").count()).toBeGreaterThan(0);
+
     // Chrome comes from the CMS tables, not from a hardcoded fallback.
     await expect(page.getByRole("contentinfo")).toBeVisible();
     await expect(page.getByRole("banner")).toBeVisible();
