@@ -256,7 +256,12 @@ def cut_glow(im: Image.Image, floor: float = 0.05) -> Image.Image:
                 col_mass[x] += v
                 row_mass[y] += v
 
-    def mass_bounds(mass: list[int], cut: float = 0.012) -> tuple[int, int]:
+    # 0.5% of the alpha mass per side. Load-bearing constant: it is the value the
+    # committed public/hero/impact.png was cut with, and hero-impact.tsx declares the
+    # resulting 1353x830 as the image's intrinsic size. Raising it re-crops the hero and
+    # makes those width/height attributes lie. tests/unit/hero-asset.test.ts pins the
+    # three together.
+    def mass_bounds(mass: list[int], cut: float = 0.005) -> tuple[int, int]:
         total = sum(mass)
         lo_target, hi_target = total * cut, total * (1 - cut)
         acc = 0
