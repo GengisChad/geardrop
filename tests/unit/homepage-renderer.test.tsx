@@ -17,10 +17,17 @@ describe("registered storefront content renderers", () => {
   });
 
   it("uses a closed homepage registry and returns null for unknown runtime types", () => {
-    const renderer = read("src/components/content/homepage-section-renderer.tsx");
+    const renderer = read("src/components/content/managed-homepage.tsx");
     expect(renderer).toContain("switch (section.section_type)");
     expect(renderer).toMatch(/default:\s*return null/);
     expect(renderer).not.toContain("eval(");
+
+    // The managed renderer drives the real storefront components, never the retired
+    // graphite scaffold or its placeholder copy.
+    expect(renderer).toContain("ProductCarousel");
+    expect(renderer).toContain("Hero");
+    expect(renderer).not.toContain("target relazionali");
+    expect(renderer).not.toContain("bg-graphite");
   });
 
   it("selects public content through a provider whose default remains mock", () => {

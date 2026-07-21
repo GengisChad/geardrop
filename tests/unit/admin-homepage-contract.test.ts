@@ -39,13 +39,21 @@ describe("admin homepage editor contract", () => {
     expect(`${sortable}\n${editor}`).toContain("useActionState");
   });
 
-  it("protects preview and shares the registered renderer", () => {
+  it("protects preview and shares the public storefront renderer", () => {
     const page = read("src/app/admin/(protected)/homepage/anteprima/page.tsx");
     expect(page).toContain("requireAdminAccess");
     expect(page).toContain("includeDrafts: true");
-    expect(page).toContain("HomepageSectionRenderer");
-    const renderer = read("src/components/content/homepage-section-renderer.tsx");
+
+    // The preview must render through the same component the public homepage uses, not a
+    // second renderer that could drift from what ships. The old graphite placeholder
+    // (HomepageSectionRenderer, "target relazionali") is gone from both.
+    expect(page).toContain("ManagedHomepage");
+    expect(page).not.toContain("HomepageSectionRenderer");
+
+    const renderer = read("src/components/content/managed-homepage.tsx");
     expect(renderer).toContain("switch (section.section_type)");
+    expect(renderer).not.toContain("target relazionali");
+    expect(renderer).not.toContain("bg-graphite");
     expect(renderer).not.toContain("eval(");
     expect(renderer).not.toContain("dangerouslySetInnerHTML");
   });

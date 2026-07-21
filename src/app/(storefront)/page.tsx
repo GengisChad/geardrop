@@ -8,30 +8,46 @@ import { CompetitivePicks } from "@/components/home/competitive-picks";
 import { ClubBand } from "@/components/home/club-band";
 import { ProductCarousel } from "@/components/product/product-carousel";
 import { Reveal } from "@/components/ui/reveal";
+import { ManagedHomepage, type ManagedHomepageFallback } from "@/components/content/managed-homepage";
 import { getCommerceProvider } from "@/lib/commerce/provider";
+import { storefrontContent } from "@/lib/content/provider";
+import { resolveHomepageSections } from "@/lib/storefront/homepage-resolver";
 
 export default async function HomePage() {
   const commerce = await getCommerceProvider();
 
-  const [featured, latest, bestSellers, bundle, hero, all] = await Promise.all([
+  const [featured, latest, bestSellers, bundle, hero, all, managed] = await Promise.all([
     commerce.listProducts({ sort: "popolari", perPage: 6 }),
     commerce.listProducts({ sort: "novita", perPage: 6 }),
     commerce.listProducts({ sort: "popolari", category: "beyblade-x", perPage: 5 }),
     commerce.getBundle(),
     commerce.getProduct("stadio-beystadium-x-attack-set"),
     commerce.listProducts({ perPage: 100 }),
+    storefrontContent.getHomepage(),
   ]);
 
   // The hero product is the catalogue's anchor SKU; without it the page is meaningless.
   if (!hero) notFound();
 
-  // The full liquid glass composition, served straight from the Supabase catalogue.
-  //
-  // The managed-homepage branch used to short-circuit this whole page and hand the CMS
-  // rows to a placeholder renderer that painted a black scaffold reading "N target
-  // relazionali" — real production data, wrong presentation. That branch is gone; the
-  // managed CMS renderer that drives these same components lands next. This order is the
-  // fallback for when no managed content is published, and it is never the black page.
+  const fallback: ManagedHomepageFallback = {
+    heroProduct: hero,
+    bundle,
+    featured: featured.items,
+    latest: latest.items,
+    bestSellers: bestSellers.items,
+    all: all.items,
+  };
+
+  // Managed path: the CMS controls order, copy, visibility and product targets; the same
+  // liquid glass components render them. This is what production serves. It replaced the
+  // placeholder renderer whose "N target relazionali" graphite scaffold was the black
+  // page. When no managed content is published, the hardcoded composition below stands
+  // in — never the scaffold.
+  if (managed && managed.length > 0) {
+    const sections = await resolveHomepageSections(managed, commerce);
+    return <ManagedHomepage sections={sections} fallback={fallback} />;
+  }
+
   return (
     <>
       {/* The hero is the LCP element and sits above the fold, so it is never revealed on
