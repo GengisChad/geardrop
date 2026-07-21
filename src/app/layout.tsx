@@ -17,6 +17,8 @@ const archivo = Archivo({
   display: "swap",
 });
 
+import { PRODUCTION_ORIGIN } from "@/lib/site-url";
+
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
@@ -24,11 +26,12 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://geardrop.it"),
+  metadataBase: new URL(PRODUCTION_ORIGIN),
   title: {
     default: "GEAR//DROP — Beyblade X per la community italiana",
     template: "%s | GEAR//DROP",
   },
+  alternates: { canonical: "/" },
   description:
     "Trottole, lanciatori, stadi e accessori Beyblade X. Prodotti originali, spedizione veloce in tutta Italia, drop settimanali.",
   applicationName: "GEAR//DROP",
