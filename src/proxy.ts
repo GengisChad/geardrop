@@ -6,5 +6,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/preview"],
+  // Customer routes need the same cookie refresh as the staff ones, otherwise an expiring
+  // session silently drops the visitor out of /account mid-visit.
+  matcher: ["/admin/:path*", "/account/:path*", "/auth/:path*", "/api/preview"],
 };
