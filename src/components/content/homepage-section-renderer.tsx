@@ -12,6 +12,11 @@ export function HomepageSectionRenderer({ section, preview = false }: {
   readonly section: HomepageSection;
   readonly preview?: boolean;
 }) {
+  // The hero carries the page title, so it is the document's h1; every other section is
+  // a sibling heading below it. Rendering h2 everywhere left the CMS-driven homepage
+  // with no h1 at all — the static homepage has one, so the defect only existed on the
+  // path production actually uses, and only the mock gate was watching.
+  const Heading = section.section_type === "hero" ? "h1" : "h2";
   let targetCount = 0;
   switch (section.section_type) {
     case "featured_products":
@@ -44,7 +49,7 @@ export function HomepageSectionRenderer({ section, preview = false }: {
   return <section className="border-b border-white/10 bg-graphite px-5 py-12 text-white sm:px-10" data-section-type={section.section_type}>
     <div className="mx-auto max-w-6xl">
       <p className="mb-3 text-[10px] font-black uppercase tracking-[.18em] text-lime">{section.eyebrow || typeLabels[section.section_type]}{preview ? " · preview" : ""}</p>
-      <h2 className="gd-display max-w-4xl text-4xl font-extrabold uppercase leading-[.9] tracking-[-.045em] sm:text-6xl">{section.title || typeLabels[section.section_type]}</h2>
+      <Heading className="gd-display max-w-4xl text-4xl font-extrabold uppercase leading-[.9] tracking-[-.045em] sm:text-6xl">{section.title || typeLabels[section.section_type]}</Heading>
       {section.subtitle ? <p className="mt-4 max-w-2xl text-base text-grey-300">{section.subtitle}</p> : null}
       {section.description ? <p className="mt-3 max-w-2xl whitespace-pre-line text-sm leading-relaxed text-grey-400">{section.description}</p> : null}
       {targetCount > 0 ? <p className="mt-6 font-mono text-xs text-violet">{targetCount} target relazionali</p> : null}

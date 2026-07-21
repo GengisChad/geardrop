@@ -78,9 +78,9 @@ jobs:
       - name: Run unit tests
         run: pnpm test
 
-      - name: Reset empty database for admin browser tests
-        run: supabase db reset --local --no-seed
-
+      # Exported before the empty reset because the public Supabase gate below needs the
+      # seeded database. The keys are stack-wide and survive a reset, so the later gates
+      # keep working from the same values.
       - name: Export local Supabase browser environment
         shell: bash
         run: |
@@ -93,8 +93,17 @@ jobs:
           printf 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=%s\n' "$anon_key" >> "$GITHUB_ENV"
           printf 'SUPABASE_SECRET_KEY=%s\n' "$secret_key" >> "$GITHUB_ENV"
 
-      - name: Install Chromium for admin browser gate
+      - name: Install Chromium for the browser gates
         run: pnpm exec playwright install --with-deps chromium
+
+      # Runs while the database still holds the seed: the anonymous storefront is served
+      # by the real provider and must show the seeded catalogue. This is the gate the
+      # mock one cannot be — it is what catches a privilege or RLS regression.
+      - name: Run public Supabase gate
+        run: pnpm exec playwright test --config playwright.supabase-public.config.ts
+
+      - name: Reset empty database for admin browser tests
+        run: supabase db reset --local --no-seed
 
       - name: Run admin browser gate
         run: pnpm exec playwright test --config playwright.admin.config.ts

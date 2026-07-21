@@ -7,9 +7,11 @@ const isCI = Boolean(process.env["CI"]);
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  // The admin and storefront gates need the live Supabase stack and run from their own
-  // configs; this one exercises the storefront on the mock provider.
-  testIgnore: ["**/admin/**", "**/storefront/**", "**/screenshots.spec.ts"],
+  // The admin, storefront-order and public-Supabase gates need the live Supabase stack
+  // and run from their own configs; this one exercises the storefront on the mock
+  // provider. Both public gates are kept: mock catches UI regressions offline, the
+  // Supabase one catches privilege and RLS regressions the mock cannot see.
+  testIgnore: ["**/admin/**", "**/storefront/**", "**/supabase-public/**", "**/screenshots.spec.ts"],
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
