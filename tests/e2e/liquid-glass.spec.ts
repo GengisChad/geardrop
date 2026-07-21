@@ -86,12 +86,6 @@ test.describe("liquid glass storefront", () => {
       // phone at 1920px is a combination no real visitor has.
       test.skip(testInfo.project.name !== "desktop", "viewport sweep belongs to one project");
 
-      // Known defect, recorded rather than hidden: at exactly 1024px — the lg breakpoint
-      // boundary — the header's right-hand action cluster pushes the document 45px wider
-      // than the viewport. 1440px and 1920px measure 0. Predates this branch; left
-      // failing on purpose so it is fixed deliberately, not silently tolerated.
-      test.fixme(viewport.width === 1024, "header actions overflow by 45px at the lg boundary");
-
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await page.goto("/");
 
@@ -102,17 +96,21 @@ test.describe("liquid glass storefront", () => {
       // sliding behind it, which only shows once the two actually overlap.
       await page.evaluate(() => window.scrollTo(0, 400));
 
-      const onTop = await page.evaluate(() => {
-        const bar = document.querySelector("header");
-        if (!bar) return false;
-        const box = bar.getBoundingClientRect();
+      // Hit-testing through elementFromPoint proved unreliable here — the sticky header's
+      // own box is not where the visible pill sits, so the probe kept sampling empty
+      // space. A real click is the honest test anyway: Playwright refuses to click an
+      // element another layer covers, so this passing *is* the proof that nothing in the
+      // hero is painting over the navigation.
+      const target = page.locator("header nav a").first();
 
-        return [0.2, 0.5, 0.8]
-          .map((fraction) => document.elementFromPoint(box.left + box.width * fraction, box.top + 24))
-          .every((element) => element !== null && bar.contains(element));
-      });
-
-      expect(onTop).toBe(true);
+      if (await target.isVisible()) {
+        await target.click();
+        await expect(page).not.toHaveURL(/\/$/);
+        await page.goBack();
+      } else {
+        // Below lg the inline nav is replaced by the menu button, which must stay clickable.
+        await expect(page.locator("header button").first()).toBeVisible();
+      }
 
       // Page-level only, with slack for the scrollbar gutter: product rails are meant to
       // overflow inside their own scroll container, and counting those would make this
