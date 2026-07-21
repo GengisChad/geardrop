@@ -51,9 +51,6 @@ async function visit(page: Page, path: string): Promise<string> {
   return body;
 }
 
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => window.localStorage.setItem("geardrop_intro_seen_v1", "true"));
-});
 
 test.describe("anonymous storefront on Supabase", () => {
   test("the homepage renders remote catalogue and CMS content", async ({ page }) => {

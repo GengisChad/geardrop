@@ -37,9 +37,6 @@ const MATERIAL_TOKENS = [
   "--gd-material-focus-ring",
 ] as const;
 
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => window.localStorage.setItem("geardrop_intro_seen_v1", "true"));
-});
 
 /** Behaviours the mockups define per breakpoint. See docs/reference-audit.md §6. */
 

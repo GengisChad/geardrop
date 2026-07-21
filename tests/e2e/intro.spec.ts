@@ -18,7 +18,11 @@ async function expectIntro(page: Page) {
   return intro;
 }
 
-test.describe("one-time homepage intro", () => {
+// The intro overlay is disabled for launch: the homepage must paint immediately, with no
+// gate in front of it. The IntroGate component, its video and this spec are kept for a
+// future reactivation rather than deleted, so the whole suite is skipped rather than
+// removed. Re-enable it together with rendering <IntroGate /> on the homepage again.
+test.describe.skip("one-time homepage intro (disabled for launch)", () => {
   test.skip(({ isMobile }) => isMobile, "core lifecycle is covered once on desktop");
 
   test("first visit shows the intro over the rendered homepage", async ({ page }) => {
@@ -181,14 +185,14 @@ test.describe("one-time homepage intro", () => {
   });
 });
 
-test("internal storefront routes never mount the intro", async ({ page }) => {
+test.skip("internal storefront routes never mount the intro", async ({ page }) => {
   await clearIntroPreference(page);
   await page.goto("/negozio");
 
   await expect(page.getByTestId("site-intro")).toHaveCount(0);
 });
 
-test("admin routes never mount the intro", async ({ page }) => {
+test.skip("admin routes never mount the intro", async ({ page }) => {
   await clearIntroPreference(page);
   const loginResponse = await page.goto("/admin/login");
 
@@ -200,7 +204,7 @@ test("admin routes never mount the intro", async ({ page }) => {
   await expect(page.getByTestId("site-intro")).toHaveCount(0);
 });
 
-test("mobile intro locks vertical scroll without horizontal overflow", async ({ page, isMobile }) => {
+test.skip("mobile intro locks vertical scroll without horizontal overflow", async ({ page, isMobile }) => {
   test.skip(!isMobile, "mobile-only layout check");
   await clearIntroPreference(page);
   await page.goto("/");

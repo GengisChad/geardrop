@@ -9,21 +9,10 @@ import { ClubBand } from "@/components/home/club-band";
 import { ProductCarousel } from "@/components/product/product-carousel";
 import { Reveal } from "@/components/ui/reveal";
 import { getCommerceProvider } from "@/lib/commerce/provider";
-import { storefrontContent } from "@/lib/content/provider";
-import { HomepageSectionRenderer } from "@/components/content/homepage-section-renderer";
-import { IntroGate } from "@/components/intro/intro-gate";
 
 export default async function HomePage() {
-  const commerce=await getCommerceProvider();
-  const managedHomepage = await storefrontContent.getHomepage();
-  if (managedHomepage !== null) {
-    return (
-      <>
-        <IntroGate />
-        {managedHomepage.map((section) => <HomepageSectionRenderer key={section.id} section={section} />)}
-      </>
-    );
-  }
+  const commerce = await getCommerceProvider();
+
   const [featured, latest, bestSellers, bundle, hero, all] = await Promise.all([
     commerce.listProducts({ sort: "popolari", perPage: 6 }),
     commerce.listProducts({ sort: "novita", perPage: 6 }),
@@ -36,9 +25,15 @@ export default async function HomePage() {
   // The hero product is the catalogue's anchor SKU; without it the page is meaningless.
   if (!hero) notFound();
 
+  // The full liquid glass composition, served straight from the Supabase catalogue.
+  //
+  // The managed-homepage branch used to short-circuit this whole page and hand the CMS
+  // rows to a placeholder renderer that painted a black scaffold reading "N target
+  // relazionali" — real production data, wrong presentation. That branch is gone; the
+  // managed CMS renderer that drives these same components lands next. This order is the
+  // fallback for when no managed content is published, and it is never the black page.
   return (
     <>
-      <IntroGate />
       {/* The hero is the LCP element and sits above the fold, so it is never revealed on
           scroll: it must paint at once. Reveal starts below it. */}
       <Hero product={hero} />
