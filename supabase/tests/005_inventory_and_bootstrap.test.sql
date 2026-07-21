@@ -1,5 +1,11 @@
 begin;
-select plan(19);
+select plan(11);
+
+-- private.bootstrap_initial_owners is retired (20260721010000_retire_owner_bootstrap), so
+-- the assertions about its argument validation, its single use and the rows it wrote are
+-- gone with it; 024_owner_bootstrap_retired covers the removal itself. What this file
+-- still owns is inventory, and that needs an owner to act as. The bootstrap used to be
+-- that fixture, so the staff row is now inserted directly — the same shape it produced.
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
@@ -16,50 +22,9 @@ select results_eq(
   array[0::bigint],
   'auth users receive no automatic owner privilege'
 );
-select throws_ok(
-  $$select private.bootstrap_initial_owners(array['owner-one@example.com'])$$,
-  '22023',
-  'GD_OWNER_BOOTSTRAP_REQUIRES_TWO_EMAILS',
-  'bootstrap requires exactly two emails'
-);
-select throws_ok(
-  $$select private.bootstrap_initial_owners(array['owner-one@example.com', 'owner-one@example.com'])$$,
-  '22023',
-  'GD_OWNER_BOOTSTRAP_REQUIRES_TWO_DISTINCT_EMAILS',
-  'bootstrap requires two distinct emails'
-);
-select throws_ok(
-  $$select private.bootstrap_initial_owners(array['owner-one@example.com', 'unconfirmed@example.com'])$$,
-  'P0002',
-  'GD_OWNER_BOOTSTRAP_USERS_NOT_READY',
-  'bootstrap rejects an unconfirmed user'
-);
-select results_eq(
-  $$select private.bootstrap_initial_owners(array['owner-one@example.com', 'owner-two@example.com'])$$,
-  array[2],
-  'bootstrap creates exactly two owners'
-);
-select results_eq(
-  $$select count(*)::bigint from public.staff_profiles where active and role = 'owner'$$,
-  array[2::bigint],
-  'exactly two active owner rows exist'
-);
-select results_eq(
-  $$select count(*)::bigint from public.staff_profiles$$,
-  array[2::bigint],
-  'bootstrap creates no additional staff row'
-);
-select results_eq(
-  $$select count(*)::bigint from public.audit_events where action = 'initial_owner_bootstrap'$$,
-  array[2::bigint],
-  'bootstrap records two audit events'
-);
-select throws_ok(
-  $$select private.bootstrap_initial_owners(array['owner-one@example.com', 'owner-two@example.com'])$$,
-  'P0001',
-  'GD_OWNER_BOOTSTRAP_ALREADY_USED',
-  'bootstrap cannot be reused'
-);
+insert into public.staff_profiles (user_id, role, display_name, active)
+values ('00000000-0000-0000-0000-000000000301', 'owner', 'Owner One', true);
+
 select results_eq(
   $$select stock_quantity from public.products where sku = 'wizard-arrow-4-80b'$$,
   array[0],
