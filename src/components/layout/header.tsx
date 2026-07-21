@@ -32,7 +32,7 @@ export function Header({ navigation, mobileNavigation }: {
           <Logo priority className="shrink-0" />
 
           <nav aria-label="Navigazione principale" className="hidden flex-1 justify-center lg:flex">
-            <ul className="flex items-center gap-5 xl:gap-7">
+            <ul className="flex items-center gap-3 xl:gap-7">
               {navigation.map((item) => {
                 const active = pathname === item.href.split("?")[0];
                 return (

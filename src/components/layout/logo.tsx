@@ -16,8 +16,8 @@ export function Logo({ className, priority = false }: { className?: string; prio
         width={brandSize.lockup.width}
         height={brandSize.lockup.height}
         priority={priority}
-        sizes="(min-width: 1024px) 260px, 190px"
-        className="h-8 w-auto sm:h-10 lg:h-11"
+        sizes="(min-width: 1280px) 260px, 190px"
+        className="h-8 w-auto sm:h-10 xl:h-11"
       />
     </Link>
   );
