@@ -3,6 +3,7 @@ import type { Route } from "next";
 import { ArrowRight, Circle, Lock, ShieldCheck, X, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HeroImpact } from "@/components/home/hero-impact";
+import { DEFAULT_HERO_TITLE, heroTitleLines } from "@/lib/home/hero-title";
 import type { Product } from "@/lib/commerce/types";
 
 const TRUST = [
@@ -43,6 +44,7 @@ export function Hero({ product, content }: { product: Product; content?: HeroCon
     content?.description?.trim() ||
     content?.subtitle?.trim() ||
     "Prodotti originali, drop esclusivi e una community di appassionati. Massima performance, ogni battaglia.";
+  const titleLines = heroTitleLines(content?.title?.trim() || DEFAULT_HERO_TITLE);
 
   return (
     <section className="gd-hero-field relative px-3 pb-6 pt-4 sm:px-6">
@@ -73,15 +75,14 @@ export function Hero({ product, content }: { product: Product; content?: HeroCon
               </p>
 
               <h1 className="gd-display-wide mt-6 text-[2.75rem] font-extrabold leading-[0.9] sm:text-[3.5rem] lg:text-[4.25rem]">
-                {content?.title?.trim() ? (
-                  <span className="block text-graphite">{content.title}</span>
-                ) : (
-                  <>
-                    <span className="block text-graphite">Pronti alla</span>{" "}
-                    <span className="block text-graphite">battaglia.</span>{" "}
-                    <span className="block text-lime-ink">Nati per vincere.</span>
-                  </>
-                )}
+                {titleLines.map((line, index) => (
+                  <span
+                    key={line}
+                    className={`block ${index === titleLines.length - 1 ? "text-lime-ink" : "text-graphite"}`}
+                  >
+                    {line}
+                  </span>
+                ))}
               </h1>
 
               <p className="mt-6 max-w-md text-body text-grey-600">{description}</p>

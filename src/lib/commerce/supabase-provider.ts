@@ -281,6 +281,43 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>)
       };
     },
 
+    async getBundleBySlug(slug): Promise<Bundle | null> {
+      const { data, error } = await client
+        .from("bundles")
+        .select(`
+          slug,eyebrow,title_line_one,title_line_two,description,price_cents,compare_at_price_cents,
+          hero:products!bundles_hero_product_id_fkey(slug),
+          items:bundle_items(sort_order,product:products(slug))
+        `)
+        .eq("slug", slug)
+        .eq("active", true)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return null;
+
+      const row = data as unknown as {
+        slug: string;
+        eyebrow: string;
+        title_line_one: string;
+        title_line_two: string;
+        description: string;
+        price_cents: number;
+        compare_at_price_cents: number;
+        hero: { slug: string } | readonly { slug: string }[];
+        items: readonly (Ordered & { product: { slug: string } | readonly { slug: string }[] })[];
+      };
+      return {
+        slug: row.slug,
+        eyebrow: row.eyebrow,
+        title: [row.title_line_one, row.title_line_two],
+        description: row.description,
+        price: { amount: row.price_cents, currency: "EUR" },
+        compareAtPrice: { amount: row.compare_at_price_cents, currency: "EUR" },
+        heroSlug: first(row.hero).slug as Product["slug"],
+        includes: ordered(row.items).map(({ product }) => first(product).slug as Product["slug"]),
+      };
+    },
+
     async quoteCart(request): Promise<CartQuote> {
       const [methodRows, settingsRow] = await Promise.all([
         client

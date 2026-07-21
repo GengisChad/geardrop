@@ -36,6 +36,22 @@ test.describe("public homepage", () => {
     // Exactly one h1, and it is the hero's.
     await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
 
+    // The headline is three typed lines and the last one carries the lime accent — the
+    // graphite-only title from the reported screenshot must not come back.
+    const h1 = page.getByRole("heading", { level: 1 });
+    const lines = h1.locator("span.block");
+    await expect(lines).toHaveCount(3);
+    await expect(lines.last()).toHaveText("Nati per vincere.");
+    const accentIsLime = await lines.last().evaluate((el) => {
+      const lime = getComputedStyle(el).color;
+      const graphite = getComputedStyle(el.parentElement!.querySelector("span.block")!).color;
+      return lime !== graphite;
+    });
+    expect(accentIsLime, "the accent line is not distinct from the graphite lines").toBe(true);
+
+    // HeroImpact is unchanged: still the impact artwork inside the hero.
+    await expect(page.getByTestId("hero-impact").locator("img")).toHaveAttribute("src", /impact\.(png|webp)/);
+
     // None of the placeholder scaffold: no relation-count text, no full graphite section.
     await expect(page.locator("body")).not.toContainText("target relazionali");
     expect(await page.locator("section.bg-graphite").count()).toBe(0);

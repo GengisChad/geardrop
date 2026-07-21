@@ -89,11 +89,9 @@ function GenericSection({ section }: { readonly section: HomepageSection }) {
   );
 }
 
-function renderSection(
-  { section, products }: ResolvedHomepageSection,
-  fallback: ManagedHomepageFallback,
-  index: number,
-): React.ReactNode {
+function renderSection(resolved: ResolvedHomepageSection, fallback: ManagedHomepageFallback): React.ReactNode {
+  const { section, products } = resolved;
+
   switch (section.section_type) {
     case "hero":
       // Above the fold and the LCP element: never wrapped in Reveal, must paint at once.
@@ -102,7 +100,7 @@ function renderSection(
     case "categories":
       return (
         <Reveal key={section.id}>
-          <CategoryTiles />
+          <CategoryTiles categorySlugs={resolved.categorySlugs} />
         </Reveal>
       );
 
@@ -114,9 +112,16 @@ function renderSection(
       );
 
     case "trust":
+      // Deterministic by section_key, never by position: the approved composition puts
+      // TrustBandDark under the `trust` key. A light variant is opt-in via an explicit
+      // key (`trust-light`/`…-bar`), so moving the section never changes its design.
       return (
         <Reveal key={section.id}>
-          {index % 2 === 0 ? <TrustBarLight className="pb-12" /> : <TrustBandDark className="pb-12" />}
+          {/(light|bar)/i.test(section.section_key) ? (
+            <TrustBarLight className="pb-12" />
+          ) : (
+            <TrustBandDark className="pb-12" />
+          )}
         </Reveal>
       );
 
@@ -172,12 +177,21 @@ function renderSection(
         </Reveal>
       );
 
-    case "bundle":
-      return fallback.bundle ? (
+    case "bundle": {
+      // The CMS-selected bundle with its own hero product; the default bundle only when
+      // the section names none. A section that names an unpublishable bundle renders
+      // nothing rather than quietly showing a different one.
+      const chosen = resolved.bundle
+        ? resolved.bundle
+        : section.bundleIds.length === 0 && fallback.bundle
+          ? { bundle: fallback.bundle, hero: fallback.heroProduct }
+          : null;
+      return chosen ? (
         <Reveal key={section.id}>
-          <BundleBanner bundle={fallback.bundle} hero={fallback.heroProduct} />
+          <BundleBanner bundle={chosen.bundle} hero={chosen.hero} />
         </Reveal>
       ) : null;
+    }
 
     case "competitive_products":
       return (
@@ -212,5 +226,5 @@ export function ManagedHomepage({
   readonly sections: readonly ResolvedHomepageSection[];
   readonly fallback: ManagedHomepageFallback;
 }) {
-  return <>{sections.map((resolved, index) => renderSection(resolved, fallback, index))}</>;
+  return <>{sections.map((resolved) => renderSection(resolved, fallback))}</>;
 }

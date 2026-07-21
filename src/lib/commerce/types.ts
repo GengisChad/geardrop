@@ -196,6 +196,8 @@ export type CommerceProvider = {
   listCategories(): Promise<readonly Category[]>;
   getCategory(slug: string): Promise<Category | null>;
   getBundle(): Promise<Bundle | null>;
+  /** A specific bundle by slug — how the CMS pulls the bundle a homepage section targets. */
+  getBundleBySlug(slug: string): Promise<Bundle | null>;
   /** Products by explicit slug list, preserving the order given. */
   getProductsBySlugs(slugs: readonly string[]): Promise<readonly Product[]>;
   /**

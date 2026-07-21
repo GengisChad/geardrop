@@ -161,6 +161,10 @@ export function createMockProvider(catalogue: readonly Product[] = PRODUCTS): Co
       return BUNDLE;
     },
 
+    async getBundleBySlug(slug: string): Promise<Bundle | null> {
+      return slug === BUNDLE.slug ? BUNDLE : null;
+    },
+
     async quoteCart(request: CartQuoteRequest): Promise<CartQuote> {
       const missingSlugs: string[] = [];
       const quoteLines: CartQuoteLine[] = [];

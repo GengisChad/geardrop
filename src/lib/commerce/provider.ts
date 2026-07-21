@@ -44,6 +44,8 @@ function cachedSupabaseProvider(): CommerceProvider {
     getCategory: (slug) =>
       cacheStorefrontRead(["commerce", "category", slug], tags, () => provider.getCategory(slug)),
     getBundle: () => cacheStorefrontRead(["commerce", "bundle"], tags, () => provider.getBundle()),
+    getBundleBySlug: (slug) =>
+      cacheStorefrontRead(["commerce", "bundle", slug], tags, () => provider.getBundleBySlug(slug)),
     // Deliberately uncached: a quote reads live stock and live order intake, and two
     // shoppers holding the same cart must never share a cached answer.
     quoteCart: (request) => provider.quoteCart(request),
