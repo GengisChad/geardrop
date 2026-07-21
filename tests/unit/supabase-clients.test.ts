@@ -31,8 +31,16 @@ describe("Supabase client boundaries", () => {
 
   it("does not require Supabase environment for the mock storefront", () => {
     const proxy = source("src/proxy.ts");
-    expect(proxy).toContain('matcher: ["/admin/:path*", "/api/preview"]');
+
+    // The matcher covers the authenticated surfaces only — staff, customer account and
+    // the auth callback. Everything the anonymous storefront serves stays off it, so a
+    // mock deployment never reaches for Supabase environment on a catalogue request.
+    for (const route of ["/admin/:path*", "/account/:path*", "/auth/:path*", "/api/preview"]) {
+      expect(proxy).toContain(route);
+    }
+
     expect(proxy).not.toContain("_next/static");
+    expect(proxy).not.toContain('"/:path*"');
   });
 
   it("binds every Supabase client boundary to the generated Database type", () => {
