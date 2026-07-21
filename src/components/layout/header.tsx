@@ -60,9 +60,17 @@ export function Header({ navigation, mobileNavigation }: {
 
           <div className="ml-auto flex items-center gap-0.5 lg:ml-0">
             <SearchBox />
+            {/*
+              Always /account. Resolving the session here would mean reading cookies in the
+              storefront layout, which turns every static and prerendered page dynamic for
+              the sake of one icon; a client-side lookup would flash the wrong target on
+              first paint. /account itself redirects anonymous visitors to /login, so the
+              destination is right either way and costs nothing.
+            */}
             <Link
               href="/account"
               aria-label="Account"
+              data-testid="account-link"
               className="hidden size-10 items-center justify-center rounded-full transition-colors hover:bg-white/60 sm:inline-flex"
             >
               <User className="size-5 text-graphite" strokeWidth={2} aria-hidden="true" />
