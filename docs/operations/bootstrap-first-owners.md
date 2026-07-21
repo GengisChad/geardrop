@@ -1,5 +1,17 @@
 # One-shot bootstrap for the first two owners
 
+> **Concluso, e la funzione è stata rimossa.** I due owner sono stati creati e promossi sul
+> progetto GEAR//DROP: due utenti Auth confermati, due righe `owner` attive, due eventi di
+> audit `initial_owner_bootstrap`. La migration `20260721010000_retire_owner_bootstrap` ha
+> poi eliminato `private.bootstrap_initial_owners(text[])`, quindi questa procedura non è
+> più eseguibile e resta solo come traccia di come sono nati i primi owner.
+>
+> Da qui lo staff si gestisce dal pannello admin e dalle sue RPC — `record_staff_invite`,
+> `change_staff_role`, `set_staff_active`, `revoke_staff_access` — che ricontrollano il
+> ruolo del chiamante. Un database che avesse di nuovo bisogno del *primo* owner
+> richiederebbe di reintrodurre la funzione con una nuova migration, deliberatamente e
+> sotto revisione.
+
 Do not run this procedure during local Phase 1 or before explicit approval of the remote rollout gate. It never creates Auth users: both email/password accounts must already exist and be confirmed.
 
 The migration creates `private.bootstrap_initial_owners(text[])` with no grants for `anon`, `authenticated`, `service_role`, or `PUBLIC`. It can be called only through a reviewed direct database administrator connection. The function:
