@@ -123,32 +123,14 @@ test.describe("wishlist", () => {
   });
 });
 
+/**
+ * The public gate runs against the mock provider, which has no order backend. These
+ * tests pin the honest behaviour: the checkout refuses and never fabricates an order.
+ * The real guest and authenticated flows live in tests/e2e/storefront, against the
+ * ephemeral Supabase stack.
+ */
 test.describe("checkout", () => {
-  test("blocks submission and reports errors when the form is empty", async ({ page }) => {
-    await page.goto("/prodotto/wizard-arrow-4-80b");
-    await buyPanel(page).getByTestId("add-to-cart").click();
-    await page.goto("/checkout");
-
-    await page.getByTestId("place-order").click();
-    await expect(page.getByTestId("order-confirmation")).toHaveCount(0);
-    await expect(page.getByRole("alert").first()).toBeVisible();
-  });
-
-  test("rejects a malformed CAP", async ({ page }) => {
-    await page.goto("/prodotto/wizard-arrow-4-80b");
-    await buyPanel(page).getByTestId("add-to-cart").click();
-    await page.goto("/checkout");
-
-    await page.locator("#postalCode").fill("123");
-    await page.getByTestId("place-order").click();
-    await expect(page.getByText("Il CAP deve essere di 5 cifre.")).toBeVisible();
-  });
-
-  test("completes an order and empties the cart", async ({ page }) => {
-    await page.goto("/prodotto/wizard-arrow-4-80b");
-    await buyPanel(page).getByTestId("add-to-cart").click();
-    await page.goto("/checkout");
-
+  const fillValidContact = async (page: Page) => {
     await page.locator("#email").fill("mario.rossi@email.it");
     await page.locator("#phone").fill("+39 333 1234567");
     await page.locator("#firstName").fill("Mario");
@@ -157,22 +139,64 @@ test.describe("checkout", () => {
     await page.locator("#city").fill("Milano");
     await page.locator("#postalCode").fill("20121");
     await page.locator("#province").fill("MI");
+  };
 
-    await page.getByTestId("place-order").click();
-
-    await expect(page.getByTestId("order-confirmation")).toBeVisible();
-    await expect(page.getByTestId("cart-count")).toHaveCount(0);
-  });
-
-  test("express shipping adds its surcharge to the total", async ({ page }) => {
+  test("reports field errors on blur", async ({ page }) => {
     await page.goto("/prodotto/wizard-arrow-4-80b");
     await buyPanel(page).getByTestId("add-to-cart").click();
     await page.goto("/checkout");
 
-    // 24,99 + 4,90 shipping = 29,89; express adds 6,90.
+    await page.locator("#email").fill("mario@");
+    await page.locator("#email").blur();
+    await expect(page.getByText("Inserisci un indirizzo email valido.")).toBeVisible();
+  });
+
+  test("rejects a malformed CAP", async ({ page }) => {
+    await page.goto("/prodotto/wizard-arrow-4-80b");
+    await buyPanel(page).getByTestId("add-to-cart").click();
+    await page.goto("/checkout");
+
+    await page.locator("#postalCode").fill("123");
+    await page.locator("#postalCode").blur();
+    await expect(page.getByText("Il CAP deve essere di 5 cifre.")).toBeVisible();
+  });
+
+  test("never confirms an order when no order backend is configured", async ({ page }) => {
+    await page.goto("/prodotto/wizard-arrow-4-80b");
+    await buyPanel(page).getByTestId("add-to-cart").click();
+    await page.goto("/checkout");
+    await fillValidContact(page);
+
+    await expect(page.getByTestId("checkout-notice")).toContainText("Gli ordini non sono ancora attivi");
+    await expect(page.getByTestId("place-order")).toBeDisabled();
+    await expect(page.getByTestId("order-confirmation")).toHaveCount(0);
+
+    // Above all: the cart survives. Nothing was ordered, so nothing is cleared.
+    await page.reload();
+    await expect(page.getByTestId("cart-count")).toHaveText("1");
+  });
+
+  test("promises no email and no payment it cannot deliver", async ({ page }) => {
+    await page.goto("/prodotto/wizard-arrow-4-80b");
+    await buyPanel(page).getByTestId("add-to-cart").click();
+    await page.goto("/checkout");
+
+    await expect(page.getByTestId("payment-notice")).toContainText("Nessun pagamento online è attivo");
+    for (const absent of ["Carta di credito", "PayPal", "Klarna", "email di conferma"]) {
+      await expect(page.getByText(absent, { exact: false })).toHaveCount(0);
+    }
+  });
+
+  test("offers only the shipping options the backend returns", async ({ page }) => {
+    await page.goto("/prodotto/wizard-arrow-4-80b");
+    await buyPanel(page).getByTestId("add-to-cart").click();
+    await page.goto("/checkout");
+
+    const options = page.getByTestId("shipping-options").getByRole("radio");
+    await expect(options).toHaveCount(1);
+    await expect(page.getByTestId("shipping-options")).toContainText("Spedizione standard");
+    await expect(page.getByTestId("shipping-options")).not.toContainText("Express");
     await expect(page.getByTestId("cart-total")).toHaveText("€29,89");
-    await page.getByRole("radio", { name: /Express/ }).check();
-    await expect(page.getByTestId("cart-total")).toHaveText("€36,79");
   });
 
   test("checkout with an empty cart offers nothing to pay for", async ({ page }) => {

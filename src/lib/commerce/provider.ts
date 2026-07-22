@@ -1,31 +1,61 @@
-/**
- * Provider selection.
- *
- * The whole app reads the catalogue through `commerce`. Today that resolves to the
- * local mock provider; pointing it at Shopify/Supabase later means adding an adapter
- * that satisfies CommerceProvider and switching on the env var here — no page or
- * component imports a concrete provider.
- */
+import "server-only";
 
 import { createMockProvider } from "./mock-provider";
+import { createSupabaseCommerceProvider } from "./supabase-provider";
 import type { CommerceProvider } from "./types";
+import { createSupabasePublicClient } from "@/lib/supabase/public";
+import { cacheStorefrontRead, STOREFRONT_CACHE_TAGS } from "@/lib/storefront/cache";
 
-export type ProviderName = "mock";
+export type ProviderName = "mock" | "supabase";
 
-function resolveProvider(): CommerceProvider {
-  const requested = (process.env["NEXT_PUBLIC_COMMERCE_PROVIDER"] ?? "mock") as ProviderName;
-
-  switch (requested) {
-    case "mock":
-      return createMockProvider();
-    default: {
-      // Exhaustiveness guard: adding a ProviderName without an adapter fails typecheck.
-      const _never: never = requested;
-      throw new Error(`Provider commerce non supportato: ${String(_never)}`);
-    }
-  }
+export function resolveCommerceProviderName(
+  value: string | undefined = process.env["COMMERCE_PROVIDER"] ?? "mock",
+): ProviderName {
+  if (value === "mock" || value === "supabase") return value;
+  throw new Error(`Provider commerce non supportato: ${value}`);
 }
 
-export const commerce: CommerceProvider = resolveProvider();
+function cachedSupabaseProvider(): CommerceProvider {
+  const provider = createSupabaseCommerceProvider(createSupabasePublicClient());
+  const tags = [
+    STOREFRONT_CACHE_TAGS.products,
+    STOREFRONT_CACHE_TAGS.categories,
+    STOREFRONT_CACHE_TAGS.promotions,
+  ];
 
+  return {
+    name: "supabase",
+    getProduct: (slug) =>
+      cacheStorefrontRead(["commerce", "product", slug], tags, () => provider.getProduct(slug)),
+    getProductsBySlugs: (slugs) =>
+      cacheStorefrontRead(["commerce", "products-by-slug", ...slugs], tags, () =>
+        provider.getProductsBySlugs(slugs),
+      ),
+    listProducts: (query) =>
+      cacheStorefrontRead(["commerce", "list", JSON.stringify(query ?? {})], tags, () =>
+        provider.listProducts(query),
+      ),
+    getFacets: (query) =>
+      cacheStorefrontRead(["commerce", "facets", JSON.stringify(query ?? {})], tags, () =>
+        provider.getFacets(query),
+      ),
+    listCategories: () =>
+      cacheStorefrontRead(["commerce", "categories"], tags, () => provider.listCategories()),
+    getCategory: (slug) =>
+      cacheStorefrontRead(["commerce", "category", slug], tags, () => provider.getCategory(slug)),
+    getBundle: () => cacheStorefrontRead(["commerce", "bundle"], tags, () => provider.getBundle()),
+    getBundleBySlug: (slug) =>
+      cacheStorefrontRead(["commerce", "bundle", slug], tags, () => provider.getBundleBySlug(slug)),
+    // Deliberately uncached: a quote reads live stock and live order intake, and two
+    // shoppers holding the same cart must never share a cached answer.
+    quoteCart: (request) => provider.quoteCart(request),
+  };
+}
+
+export async function getCommerceProvider(): Promise<CommerceProvider> {
+  const requested = resolveCommerceProviderName();
+  return requested === "mock" ? createMockProvider() : cachedSupabaseProvider();
+}
+
+export const commerce: CommerceProvider = createMockProvider();
 export type { CommerceProvider };

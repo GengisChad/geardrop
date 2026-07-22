@@ -217,6 +217,73 @@ def trim(im: Image.Image, pad: int = 8) -> Image.Image:
     )
 
 
+def cut_glow(im: Image.Image, floor: float = 0.05) -> Image.Image:
+    """Cut an additive glow / VFX off its painted near-white checkerboard.
+
+    The supplied hero VFX is emissive light (energy trails, sparks, debris) on the same
+    fake-transparency checkerboard as the logos. Alpha is derived per pixel as
+    1 - min(r,g,b)/255: flat near-white keys to ~0, the saturated beams and dark debris key
+    to opaque, and the hot white core keys to transparent — which reads correctly as the
+    brightest point once the effect sits on a light surface. A floor zeroes the checkerboard
+    completely so no grey veil is left, and the feathered ramp means no hard edge or halo.
+    """
+    im = im.convert("RGB")
+    w, h = im.size
+    px = im.load()
+    out = Image.new("RGBA", (w, h), (255, 255, 255, 0))
+    op = out.load()
+    denom = 1.0 - floor
+    for y in range(h):
+        for x in range(w):
+            r, g, b = px[x, y]
+            a = (1.0 - min(r, g, b) / 255.0 - floor) / denom
+            if a <= 0:
+                continue
+            op[x, y] = (r, g, b, 255 if a >= 1 else int(a * 255))
+
+    # Crop to the region holding ~99% of the alpha *mass*, not the alpha bbox: stray
+    # single sparks reach the canvas edges and would keep the huge empty margins, which
+    # makes the effect render tiny when shown whole. Trimming by mass keeps every legible
+    # trail and drops only outlier pixels; a generous pad keeps the composition airy.
+    alpha = out.getchannel("A")
+    ap = alpha.load()
+    col_mass = [0] * w
+    row_mass = [0] * h
+    for y in range(h):
+        for x in range(w):
+            v = ap[x, y]
+            if v:
+                col_mass[x] += v
+                row_mass[y] += v
+
+    # 0.5% of the alpha mass per side. Load-bearing constant: it is the value the
+    # committed public/hero/impact.png was cut with, and hero-impact.tsx declares the
+    # resulting 1353x830 as the image's intrinsic size. Raising it re-crops the hero and
+    # makes those width/height attributes lie. tests/unit/hero-asset.test.ts pins the
+    # three together.
+    def mass_bounds(mass: list[int], cut: float = 0.005) -> tuple[int, int]:
+        total = sum(mass)
+        lo_target, hi_target = total * cut, total * (1 - cut)
+        acc = 0
+        lo = 0
+        hi = len(mass) - 1
+        for i, v in enumerate(mass):
+            acc += v
+            if acc <= lo_target:
+                lo = i
+            if acc <= hi_target:
+                hi = i
+        return lo, hi
+
+    x0, x1 = mass_bounds(col_mass)
+    y0, y1 = mass_bounds(row_mass)
+    pad_x = round((x1 - x0) * 0.06)
+    pad_y = round((y1 - y0) * 0.06)
+    return out.crop(
+        (max(0, x0 - pad_x), max(0, y0 - pad_y), min(w, x1 + pad_x), min(h, y1 + pad_y))
+    )
+
+
 def save(im: Image.Image, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     im.save(path)
@@ -274,6 +341,13 @@ def main() -> None:
         im = extract(mk, box, excl, ma, scrub_rects=sc)
         save(im, PUB / "categories" / f"{slug}.png")
         print(f"categories/{slug:32s} mockup-{MOCKUPS[mk]:20s} {im.size}")
+
+    # 4. hero VFX — the energy-impact visual, checkerboard removed (see cut_glow).
+    hero_src = RAW / "hero.png"
+    if hero_src.exists():
+        vfx = cut_glow(Image.open(hero_src))
+        save(vfx, PUB / "hero" / "impact.png")
+        print(f"hero/impact.png {'':20s} {vfx.size}")
 
 
 if __name__ == "__main__":

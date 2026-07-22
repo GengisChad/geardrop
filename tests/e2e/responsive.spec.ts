@@ -37,6 +37,7 @@ const MATERIAL_TOKENS = [
   "--gd-material-focus-ring",
 ] as const;
 
+
 /** Behaviours the mockups define per breakpoint. See docs/reference-audit.md §6. */
 
 test.describe("mobile", () => {
@@ -69,6 +70,7 @@ test.describe("mobile", () => {
 
   test("the sticky buy bar appears once the main CTA scrolls away", async ({ page }) => {
     await page.goto("/prodotto/wizard-arrow-4-80b");
+    await page.locator("#buy-panel").scrollIntoViewIfNeeded();
     await expect(page.getByTestId("sticky-buy-bar")).toBeHidden();
 
     await page.getByRole("heading", { name: "Si abbina bene con" }).scrollIntoViewIfNeeded();

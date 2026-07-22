@@ -1,0 +1,99 @@
+.productsPage { display: grid; gap: 24px; }
+.heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; }
+.heading p { margin: 0 0 7px; color: #7a3cff; font-size: 10px; font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
+.heading h1 { margin: 0; font: 800 clamp(30px,5vw,48px)/.95 var(--font-archivo),sans-serif; letter-spacing: -.045em; }
+.heading span { display: block; margin-top: 10px; color: #686d75; font-size: 12px; }
+.heading > a { color: #202329; font-size: 12px; font-weight: 800; }
+.primaryButton,.secondaryButton,.filters button,.bulkBar button,.rowAction,.stickyActions button,.stickyActions a { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; border: 0; border-radius: 10px; padding: 0 16px; background: #7a3cff; color: #fff; cursor: pointer; font-size: 12px; font-weight: 850; text-decoration: none; }
+.secondaryButton,.rowAction,.stickyActions a { border: 1px solid #d8dbe0; background: #fff; color: #202329; }
+.filters { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; border: 1px solid #e1e3e7; border-radius: 18px; padding: 16px; background: rgba(255,255,255,.9); }
+.filters label,.editorForm label,.dangerZone label { display: grid; gap: 6px; color: #555a62; font-size: 10px; font-weight: 800; letter-spacing: .02em; }
+.filters input,.filters select,.bulkBar select,.editorForm input,.editorForm select,.editorForm textarea,.resourceCreate input,.resourceCreate select,.resourceRow input,.dangerZone input { min-height: 42px; min-width: 0; border: 1px solid #d3d6dc; border-radius: 10px; padding: 0 12px; background: #fff; color: #16191d; font: 13px var(--font-inter),sans-serif; }
+.editorForm textarea { padding-block: 12px; resize: vertical; }
+.filters button { align-self: end; }
+.filters > a { align-self: center; color: #686d75; font-size: 11px; font-weight: 800; }
+.checkbox { display: flex!important; min-height: 42px; align-items: center; grid-column: span 2; }
+.checkbox input { min-height: auto; }
+.bulkForm { display: grid; gap: 10px; min-width: 0; }
+.bulkBar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; border-radius: 14px; padding: 10px; background: #17191d; color: #fff; }
+.bulkBar strong { margin-inline: 5px auto; font-size: 11px; }
+.bulkBar select { border-color: #404349; background: #282b30; color: #fff; }
+.bulkBar button { min-height: 42px; background: #c6ff00; color: #141619; }
+.tableWrap { overflow-x: auto; border: 1px solid #e0e2e6; border-radius: 18px; background: #fff; }
+.productTable { width: 100%; min-width: 1180px; border-collapse: collapse; font-size: 11px; }
+.productTable th { padding: 12px 10px; background: #f1f2f4; color: #666b73; font-size: 9px; letter-spacing: .05em; text-align: left; text-transform: uppercase; }
+.productTable td { border-top: 1px solid #eceef1; padding: 12px 10px; vertical-align: middle; }
+.productIdentity { display: flex; min-width: 180px; align-items: center; gap: 10px; }
+.productIdentity > div:last-child { display: grid; gap: 3px; }
+.productIdentity span,.availability + small,.numeric small { display: block; color: #81858c; font-size: 9px; }
+.thumb { display: grid; width: 42px; height: 42px; flex: 0 0 auto; place-items: center; overflow: hidden; border-radius: 9px; background: #eef0f3; color: #7a3cff; font-weight: 900; }
+.thumb img,.resourceRow img { width: 100%; height: 100%; object-fit: cover; }
+.mono { font-family: ui-monospace,SFMono-Regular,Consolas,monospace!important; font-variant-numeric: tabular-nums; }
+.numeric { font-variant-numeric: tabular-nums; }
+.status,.availability,.purchasable { display: inline-flex; border-radius: 999px; padding: 5px 8px; background: #eef0f3; font-size: 9px; font-weight: 850; text-transform: uppercase; white-space: nowrap; }
+.status[data-status="published"],.availability[data-status="disponibile"] { background: #dcfbd9; color: #17652a; }
+.status[data-status="draft"] { background: #eee5ff; color: #6332b9; }
+.availability[data-status="esaurito"] { background: #ffe5e8; color: #a42d41; }
+.availability[data-status="pre-ordine"],.availability[data-status="in-arrivo"] { background: #fff0cb; color: #805c0d; }
+.purchasable[data-enabled="true"] { background: #dcfbd9; color: #17652a; }
+.purchasable[data-enabled="false"] { background: #ffe5e8; color: #a42d41; }
+.empty { display: grid; justify-items: center; gap: 14px; padding: 50px; color: #72767e; text-align: center; }
+.empty p { margin: 0; }
+.pagination { display: flex; align-items: center; justify-content: space-between; color: #656a72; font-size: 11px; font-weight: 750; }
+.pagination a { color: #30343a; }
+.success,.error { margin: 0; border-radius: 10px; padding: 10px 12px; background: #e0f7e4; color: #1d6b33; font-size: 11px; font-weight: 750; }
+.error { background: #ffe4e7; color: #a1283e; }
+.editorLayout { display: grid; gap: 18px; }
+.editorTabs { position: sticky; top: 48px; z-index: 12; display: flex; gap: 4px; overflow-x: auto; border: 1px solid #e0e2e6; border-radius: 14px; padding: 6px; background: rgba(255,255,255,.94); backdrop-filter: blur(14px); }
+.editorTabs a { flex: 0 0 auto; border-radius: 9px; padding: 10px 12px; color: #5e636b; font-size: 10px; font-weight: 850; text-decoration: none; }
+.editorTabs a:hover { background: #17191d; color: #fff; }
+.editorForm { display: grid; gap: 18px; }
+.editorSection,.dangerZone { scroll-margin-top: 120px; border: 1px solid #e0e2e6; border-radius: 20px; padding: clamp(16px,3vw,24px); background: rgba(255,255,255,.92); }
+.editorSection > header { margin-bottom: 20px; }
+.editorSection h2,.dangerZone h2 { margin: 0; font: 750 19px var(--font-archivo),sans-serif; letter-spacing: -.025em; }
+.editorSection header p { max-width: 680px; margin: 6px 0 0; color: #747982; font-size: 11px; line-height: 1.5; }
+.fieldGrid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+.wideField { grid-column: 1/-1; }
+.checkField { display: flex!important; min-height: 42px; align-items: center; gap: 9px!important; border: 1px solid #e1e3e7; border-radius: 10px; padding: 0 12px; }
+.checkField input { min-height: auto; }
+.editorForm :disabled { background: #f0f1f3; color: #747982; }
+.inlineNote { grid-column: 1/-1; margin: 0; color: #666b73; font-size: 11px; }
+.capabilityNote { grid-column: 1/-1; margin: 0; border: 1px solid #ddd3ef; border-radius: 10px; padding: 9px 11px; background: #f7f4fb; color: #543f73; font-size: 11px; line-height: 1.5; }
+.stickyActions { position: sticky; bottom: 80px; z-index: 11; display: flex; flex-wrap: wrap; gap: 8px; border: 1px solid rgba(18,20,23,.12); border-radius: 16px; padding: 10px; background: rgba(255,255,255,.93); box-shadow: 0 16px 42px rgba(18,20,23,.12); backdrop-filter: blur(18px); }
+.stickyActions button:not(.primaryButton) { border: 1px solid #d8dbe0; background: #fff; color: #202329; }
+.resourceList { display: grid; gap: 6px; margin-bottom: 10px; }
+.resourceLine,.resourceRow,.resourceCreate { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; border-radius: 11px; padding: 9px; background: #f3f4f6; }
+.resourceLine span { min-width: 180px; flex: 1; color: #34383e; font-size: 11px; }
+.resourceLine button,.resourceRow button,.resourceCreate button,.chips button,.dangerZone button { min-height: 38px; border: 1px solid #d3d6dc; border-radius: 9px; padding: 0 12px; background: #fff; cursor: pointer; color: #272a30; font-size: 10px; font-weight: 800; }
+.resourceCreate input,.resourceCreate select { flex: 1 1 140px; }
+.resourceRow { display: grid; grid-template-columns: 56px minmax(160px,1fr) auto auto auto auto auto; margin-bottom: 8px; }
+.resourceRow img { width: 56px; height: 56px; border-radius: 8px; background: #ddd; }
+.resourceRow label { display: flex; align-items: center; gap: 5px; font-size: 10px; }
+.resourceRow label input { min-height: auto; }
+.orderControls { display: inline-flex; gap: 4px; }
+.orderControls button { min-width: 34px; padding: 0; }
+.orderSave { display: flex; justify-content: end; margin: 8px 0 14px; }
+.orderSave button { min-height: 38px; border: 0; border-radius: 9px; padding: 0 13px; background: #17191d; color: #fff; font-size: 10px; font-weight: 800; }
+.emptyResource { color: #72767e; font-size: 11px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.chips form { display: inline-flex; }
+.chips button { border-radius: 999px; background: #eee5ff; color: #6332b9; }
+.dangerZone { border-color: #efbac2; background: #fff7f8; }
+.dangerZone > div { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 16px; }
+.dangerZone form { display: flex; align-items: end; gap: 8px; }
+.dangerZone details { margin-top: 16px; border-top: 1px solid #efbac2; padding-top: 14px; }
+.dangerZone summary { cursor: pointer; color: #8f2639; font-size: 11px; font-weight: 850; }
+.dangerZone details > p { color: #6f5960; font-size: 11px; line-height: 1.5; }
+.impactGrid { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 8px; margin: 14px 0; }
+.impactGrid div { border: 1px solid #f0cdd3; border-radius: 10px; padding: 10px; background: #fff; }
+.impactGrid dt { color: #7b6268; font-size: 9px; font-weight: 800; text-transform: uppercase; }
+.impactGrid dd { margin: 5px 0 0; color: #651d2b; font: 800 20px var(--font-archivo),sans-serif; }
+.confirmDelete { display: flex!important; min-height: 42px; align-items: center; grid-template-columns: auto 1fr!important; }
+.confirmDelete input { min-height: auto; }
+.blockedDelete { color: #8f2639!important; font-weight: 800; }
+.dangerButton { border-color: #a1283e!important; background: #a1283e!important; color: #fff!important; }
+.productsPage :focus-visible { outline: 3px solid #7a3cff; outline-offset: 2px; }
+@media (min-width:800px) { .filters { grid-template-columns: 2fr repeat(4,1fr); } .searchField { grid-row: span 1; } .checkbox { grid-column: auto; } }
+@media (max-width:700px) { .heading { align-items: start; flex-direction: column; } .fieldGrid { grid-template-columns: 1fr; } .wideField { grid-column: auto; } .resourceRow { grid-template-columns: 50px 1fr; } .stickyActions { bottom: 84px; } .impactGrid { grid-template-columns: repeat(2,minmax(0,1fr)); } .dangerZone form { align-items: stretch; flex-direction: column; } }
+@media (min-width:1024px) { .stickyActions { bottom: 20px; } }
+@media (prefers-reduced-motion:reduce) { .editorTabs { scroll-behavior: auto; } }

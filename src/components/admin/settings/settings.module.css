@@ -1,0 +1,282 @@
+.page {
+  display: grid;
+  gap: 22px;
+}
+.heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 15px;
+}
+.heading p,
+.form header p {
+  margin: 0 0 5px;
+  color: #7a3cff;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.heading h1 {
+  margin: 0;
+  font:
+    850 clamp(32px, 5vw, 50px)/0.92 var(--font-archivo),
+    sans-serif;
+  letter-spacing: -0.055em;
+}
+.heading span {
+  display: block;
+  margin-top: 8px;
+  color: #70757d;
+  font-size: 10px;
+}
+.heading a,
+.form button,
+.activation button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 9px;
+  padding: 0 14px;
+  background: #7a3cff;
+  color: #fff;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 900;
+  text-decoration: none;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 11px;
+}
+.card,
+.form,
+.activation,
+.checklist {
+  border: 1px solid #dfe2e6;
+  border-radius: 15px;
+  padding: 18px;
+  background: #fff;
+}
+.card {
+  display: grid;
+  gap: 7px;
+  color: #17191d;
+  text-decoration: none;
+}
+.card strong {
+  font:
+    780 21px var(--font-archivo),
+    sans-serif;
+}
+.card span {
+  color: #72777f;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.stack {
+  display: grid;
+  gap: 13px;
+}
+.form {
+  display: grid;
+  gap: 15px;
+}
+.form header {
+  border-bottom: 1px solid #e4e6e9;
+  padding-bottom: 11px;
+}
+.form h2 {
+  margin: 0;
+  font:
+    780 21px var(--font-archivo),
+    sans-serif;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.grid label,
+.activation label {
+  display: grid;
+  gap: 6px;
+  color: #555a62;
+  font-size: 9px;
+  font-weight: 850;
+}
+.grid input,
+.grid select,
+.grid textarea,
+.activation input,
+.activation select {
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid #d3d7dc;
+  border-radius: 9px;
+  padding: 0 11px;
+  background: #fff;
+  color: #17191d;
+  font:
+    12px var(--font-inter),
+    sans-serif;
+}
+.grid textarea {
+  padding-block: 10px;
+  resize: vertical;
+}
+.wide {
+  grid-column: 1/-1;
+}
+.check {
+  display: flex !important;
+  align-items: center;
+  gap: 8px !important;
+}
+.check input {
+  min-height: auto;
+}
+.actions {
+  display: flex;
+  justify-content: end;
+  gap: 7px;
+}
+.actions form {
+  display: contents;
+}
+.form .secondary {
+  background: #eceef1;
+  color: #202329;
+}
+.success,
+.error {
+  margin: 0;
+  border-radius: 8px;
+  padding: 10px;
+  background: #e2f7e6;
+  color: #176b31;
+  font-size: 9px;
+  font-weight: 800;
+}
+.error {
+  background: #ffe5e8;
+  color: #9e273c;
+}
+.preview {
+  display: grid;
+  gap: 5px;
+  border: 1px solid #dfe2e6;
+  border-radius: 10px;
+  padding: 13px;
+}
+.preview span {
+  color: #7a3cff;
+  font-size: 8px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.preview strong {
+  font:
+    750 18px var(--font-archivo),
+    sans-serif;
+}
+.preview p {
+  margin: 0;
+  color: #686d74;
+  font-size: 10px;
+}
+.checklist {
+  display: grid;
+  gap: 0;
+}
+.checklist h2 {
+  margin: 0 0 10px;
+  font:
+    780 22px var(--font-archivo),
+    sans-serif;
+}
+.checkRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  border-top: 1px solid #eceef0;
+  padding: 11px 0;
+}
+.checkRow strong,
+.checkRow span {
+  display: block;
+}
+.checkRow span {
+  color: #757a82;
+  font-size: 9px;
+}
+.status {
+  align-self: center;
+  border-radius: 999px;
+  padding: 6px 9px;
+  background: #eff0f2;
+  font-size: 8px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.activation {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 0.6fr) auto;
+  align-items: end;
+  gap: 13px;
+}
+.manualCheck {
+  grid-template-columns: minmax(0, 1.2fr) repeat(3, minmax(140px, 0.6fr)) auto;
+}
+.activation span,
+.activation strong {
+  display: block;
+}
+.activation span {
+  color: #777c84;
+  font-size: 8px;
+  text-transform: uppercase;
+}
+.activation strong {
+  margin-top: 4px;
+  font:
+    780 22px var(--font-archivo),
+    sans-serif;
+}
+.activation p {
+  margin: 7px 0 0;
+  color: #656a72;
+  font-size: 10px;
+}
+.activation code {
+  font-weight: 850;
+}
+.activation .success,
+.activation .error {
+  grid-column: 1/-1;
+}
+.page :focus-visible {
+  outline: 3px solid #7a3cff;
+  outline-offset: 2px;
+}
+@media (max-width: 760px) {
+  .heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .cards,
+  .grid,
+  .activation {
+    grid-template-columns: 1fr;
+  }
+  .wide {
+    grid-column: auto;
+  }
+  .activation .success,
+  .activation .error {
+    grid-column: auto;
+  }
+}

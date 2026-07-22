@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { categoryArt, productImages } from "@/data/assets";
 import { CATEGORIES } from "@/data/catalog";
+import { selectHomepageCategories } from "@/lib/home/category-selection";
 import type { CategorySlug } from "@/lib/commerce/types";
 
 /**
@@ -16,12 +17,22 @@ const TILE_ART: Record<CategorySlug, { src: string; width: number; height: numbe
   accessori: categoryArt.accessori,
 };
 
-export function CategoryTiles() {
+/**
+ * The tiles. Order and selection can come from the CMS (`categorySlugs`); when it selects
+ * nothing renderable the standard catalogue set stands in. Tile art, name and tagline
+ * always come from the catalogue data keyed by slug, so a managed order restyles nothing —
+ * a category the tiles have no art for is skipped rather than rendered broken.
+ */
+const RENDERABLE_TILE_SLUGS = new Set(Object.keys(TILE_ART));
+
+export function CategoryTiles({ categorySlugs }: { categorySlugs?: readonly CategorySlug[] } = {}) {
+  const categories = selectHomepageCategories(CATEGORIES, categorySlugs, RENDERABLE_TILE_SLUGS);
+
   return (
     <section className="mx-auto max-w-[1400px] px-4 py-10 sm:px-6">
       <h2 className="sr-only">Categorie</h2>
       <ul className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-        {CATEGORIES.map((category) => {
+        {categories.map((category) => {
           const art = TILE_ART[category.slug];
           return (
             <li key={category.slug}>

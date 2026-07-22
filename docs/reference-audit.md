@@ -209,3 +209,16 @@ I mockup sono generati e si contraddicono tra loro. Decisioni prese:
    grande. Il token `--color-lime-ink` (`#7B9A03`, 3.00:1) è il lime più vicino per tinta che
    supera la soglia, e si usa per il testo lime su chiaro. Su grafite si usa l'Acid Lime pieno
    (15.6:1). Stesso motivo per la pill "OFFERTA", ridisegnata grafite-su-lime (§5, `labels.ts`).
+
+## 10. Migrazione idempotente nel CMS Supabase
+
+`src/data/content-seed.ts` raccoglie esclusivamente la copy pubblica già revisionata in questo
+repository: dieci sezioni homepage, il menu principale, quattro colonne footer e sette pagine
+informative. `scripts/generate-supabase-seed.ts` la converte in `supabase/seed.sql` usando chiavi
+naturali stabili; il seed può essere eseguito più volte e aggiorna la copy senza ripubblicare
+contenuti disattivati o sovrascrivere l'ordinamento scelto dall'admin.
+
+Il seed crea i nuovi prodotti con stock `0` e lascia `accept_orders=false`. Non inserisce ordini,
+clienti, staff, promozioni, coupon, utilizzi, movimenti inventario o eventi audit. I percorsi delle
+immagini già revisionate restano asset statici locali: `media_asset_id` rimane nullo finché un file
+non viene caricato davvero nello Storage tramite il flusso admin autenticato.

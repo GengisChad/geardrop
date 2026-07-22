@@ -3,12 +3,13 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
+import type { Route } from "next";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Emblem } from "@/components/layout/logo";
-import { MAIN_NAV } from "@/lib/navigation";
 import { cn } from "@/lib/cn";
+import type { StorefrontNavItem } from "@/lib/content/types";
 
 // SSR-safe "are we on the client" without a setState-in-effect. Returns false on the
 // server and during the first client render, then true — so the body portal only mounts
@@ -22,7 +23,7 @@ function useIsClient() {
   );
 }
 
-export function MobileMenu() {
+export function MobileMenu({ navigation }: { readonly navigation: readonly StorefrontNavItem[] }) {
   const [open, setOpen] = useState(false);
   const isClient = useIsClient();
   const pathname = usePathname();
@@ -89,7 +90,7 @@ export function MobileMenu() {
 
             <nav className="flex-1 overflow-y-auto px-5 py-4">
               <ul className="flex flex-col">
-                {MAIN_NAV.map((item, index) => (
+                {navigation.map((item, index) => (
                   <motion.li
                     key={item.label}
                     initial={{ opacity: 0, x: -16 }}
@@ -97,7 +98,7 @@ export function MobileMenu() {
                     transition={{ delay: 0.06 * index + 0.05, ease: [0.16, 1, 0.3, 1] }}
                   >
                     <Link
-                      href={item.href}
+                      href={item.href as Route}
                       className={cn(
                         "gd-display flex items-center justify-between border-b border-white/30 py-4 text-h3 font-bold tracking-tight",
                         item.tone === "lime" && "text-lime-ink",

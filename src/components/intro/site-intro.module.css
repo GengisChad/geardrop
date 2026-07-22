@@ -1,0 +1,98 @@
+.overlay {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  overflow: hidden;
+  background: #090a0c;
+  opacity: 1;
+  transform: scale(1);
+  transform-origin: center;
+  transition:
+    opacity 420ms var(--ease-out-gear),
+    transform 420ms var(--ease-out-gear);
+}
+
+.overlay::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, transparent 68%, rgba(9, 10, 12, 0.58)),
+    radial-gradient(circle at 92% 92%, rgba(122, 60, 255, 0.14), transparent 30%);
+}
+
+.exiting {
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.985);
+}
+
+.video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #090a0c;
+  object-fit: contain;
+}
+
+.skipButton {
+  position: absolute;
+  z-index: 1;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  display: inline-flex;
+  min-width: 9.5rem;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(198, 255, 0, 0.72);
+  border-radius: 0.2rem;
+  background: rgba(18, 20, 23, 0.82);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 12px 34px rgba(0, 0, 0, 0.35);
+  color: #f5f6f8;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variation-settings: "wdth" 112;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+  transition:
+    color 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    transform 180ms ease;
+}
+
+.skipButton:hover {
+  border-color: #c6ff00;
+  background: #c6ff00;
+  color: #121417;
+  transform: translateY(-2px);
+}
+
+.skipButton:focus-visible {
+  outline: 3px solid #c6ff00;
+  outline-offset: 4px;
+}
+
+@media (min-width: 48rem) {
+  .skipButton {
+    right: max(2rem, env(safe-area-inset-right));
+    bottom: max(2rem, env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .skipButton {
+    transition: none;
+  }
+}
+

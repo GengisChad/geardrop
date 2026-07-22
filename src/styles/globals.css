@@ -466,6 +466,16 @@
   }
 }
 
+/* Screenshot mode: a full-page capture never scrolls the way a visitor does, so scroll-
+   driven reveals below the fold stay at opacity 0 and the shot shows empty bands. Setting
+   data-screenshot on <html> (the capture harness does this, never the live site) forces
+   every reveal to its finished state. It changes nothing for real visitors. */
+:root[data-screenshot="true"] [data-reveal] {
+  opacity: 1 !important;
+  transform: none !important;
+  animation: none !important;
+}
+
 /* One-shot specular sweep across a glass surface on load. */
 @keyframes gd-sheen {
   0% {

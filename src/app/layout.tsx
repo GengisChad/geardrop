@@ -1,9 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, Inter } from "next/font/google";
-import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/layout/footer";
-import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
-import { ToastProvider } from "@/components/ui/toast";
+import { Providers } from "@/components/providers";
 import { brand } from "@/data/assets";
 import "@/styles/globals.css";
 
@@ -20,6 +17,8 @@ const archivo = Archivo({
   display: "swap",
 });
 
+import { PRODUCTION_ORIGIN } from "@/lib/site-url";
+
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
@@ -27,11 +26,12 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://geardrop.it"),
+  metadataBase: new URL(PRODUCTION_ORIGIN),
   title: {
     default: "GEAR//DROP — Beyblade X per la community italiana",
     template: "%s | GEAR//DROP",
   },
+  alternates: { canonical: "/" },
   description:
     "Trottole, lanciatori, stadi e accessori Beyblade X. Prodotti originali, spedizione veloce in tutta Italia, drop settimanali.",
   applicationName: "GEAR//DROP",
@@ -59,21 +59,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="it" className={`${archivo.variable} ${inter.variable}`}>
       <body className="min-h-dvh">
-        <ToastProvider>
+        <Providers>
           <a
             href="#contenuto"
             className="gd-display sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-lime focus:px-5 focus:py-3 focus:text-small focus:font-bold focus:text-graphite"
           >
             Salta al contenuto
           </a>
-          <Header />
-          {/* Bottom tab bar overlays mobile content; reserve its height. */}
-          <main id="contenuto" className="pb-20 lg:pb-0">
-            {children}
-          </main>
-          <Footer />
-          <BottomTabBar />
-        </ToastProvider>
+          {children}
+        </Providers>
       </body>
     </html>
   );

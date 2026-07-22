@@ -1,7 +1,10 @@
+import { Fragment } from "react";
 import Link from "next/link";
+import type { Route } from "next";
 import { ArrowRight, Circle, Lock, ShieldCheck, X, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HeroImpact } from "@/components/home/hero-impact";
+import { DEFAULT_HERO_TITLE, heroTitleLines } from "@/lib/home/hero-title";
 import type { Product } from "@/lib/commerce/types";
 
 const TRUST = [
@@ -21,7 +24,29 @@ const HUD = [
  * the energised GEAR//DROP emblem (no product), the left is the pitch. Everything is CSS
  * motion — no client JS — so it renders identically with scripts off or motion reduced.
  */
-export function Hero({ product }: { product: Product }) {
+/**
+ * Optional CMS overrides. Any field left undefined keeps the approved default, so a
+ * managed hero can restyle the copy and the primary CTA without touching the design,
+ * the glass card or the impact artwork.
+ */
+export type HeroContent = {
+  readonly eyebrow?: string | null;
+  readonly title?: string | null;
+  readonly subtitle?: string | null;
+  readonly description?: string | null;
+  readonly ctaLabel?: string | null;
+  readonly ctaHref?: string | null;
+};
+
+export function Hero({ product, content }: { product: Product; content?: HeroContent }) {
+  const primaryHref = (content?.ctaHref?.trim() || `/prodotto/${product.slug}`) as Route;
+  const primaryLabel = content?.ctaLabel?.trim() || "Acquista ora";
+  const description =
+    content?.description?.trim() ||
+    content?.subtitle?.trim() ||
+    "Prodotti originali, drop esclusivi e una community di appassionati. Massima performance, ogni battaglia.";
+  const titleLines = heroTitleLines(content?.title?.trim() || DEFAULT_HERO_TITLE);
+
   return (
     <section className="gd-hero-field relative px-3 pb-6 pt-4 sm:px-6">
       <div className="relative mx-auto max-w-[1400px]">
@@ -41,22 +66,33 @@ export function Hero({ product }: { product: Product }) {
             {/* Left — the pitch */}
             <div>
               <p className="gd-display-wide gd-glass-compact inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-small font-bold tracking-[0.2em] text-graphite">
-                Beyblade <span className="text-lime-ink">X</span>
+                {content?.eyebrow?.trim() ? (
+                  content.eyebrow
+                ) : (
+                  <>
+                    Beyblade <span className="text-lime-ink">X</span>
+                  </>
+                )}
               </p>
 
               <h1 className="gd-display-wide mt-6 text-[2.75rem] font-extrabold leading-[0.9] sm:text-[3.5rem] lg:text-[4.25rem]">
-                <span className="block text-graphite">Pronti alla</span>{" "}
-                <span className="block text-graphite">battaglia.</span>{" "}
-                <span className="block text-lime-ink">Nati per vincere.</span>
+                {titleLines.map((line, index) => (
+                  <Fragment key={line}>
+                    {/* The space between spans is real text: the lines are visual blocks,
+                        but the heading's accessible name must still read as a sentence. */}
+                    {index > 0 ? " " : null}
+                    <span className={`block ${index === titleLines.length - 1 ? "text-lime-ink" : "text-graphite"}`}>
+                      {line}
+                    </span>
+                  </Fragment>
+                ))}
               </h1>
 
-              <p className="mt-6 max-w-md text-body text-grey-600">
-                Prodotti originali, drop esclusivi e una community di appassionati. Massima performance, ogni battaglia.
-              </p>
+              <p className="mt-6 max-w-md text-body text-grey-600">{description}</p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Button as={Link} href={`/prodotto/${product.slug}`} variant="primary" size="lg" className="sm:w-auto">
-                  Acquista ora
+                <Button as={Link} href={primaryHref} variant="primary" size="lg" className="sm:w-auto">
+                  {primaryLabel}
                   <ArrowRight className="size-4" aria-hidden="true" />
                 </Button>
                 <Button as={Link} href="/negozio" variant="glass" size="lg" className="sm:w-auto">
