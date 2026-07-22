@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { ArrowRight, Circle, Lock, ShieldCheck, X, Zap } from "lucide-react";
@@ -76,12 +77,14 @@ export function Hero({ product, content }: { product: Product; content?: HeroCon
 
               <h1 className="gd-display-wide mt-6 text-[2.75rem] font-extrabold leading-[0.9] sm:text-[3.5rem] lg:text-[4.25rem]">
                 {titleLines.map((line, index) => (
-                  <span
-                    key={line}
-                    className={`block ${index === titleLines.length - 1 ? "text-lime-ink" : "text-graphite"}`}
-                  >
-                    {line}
-                  </span>
+                  <Fragment key={line}>
+                    {/* The space between spans is real text: the lines are visual blocks,
+                        but the heading's accessible name must still read as a sentence. */}
+                    {index > 0 ? " " : null}
+                    <span className={`block ${index === titleLines.length - 1 ? "text-lime-ink" : "text-graphite"}`}>
+                      {line}
+                    </span>
+                  </Fragment>
                 ))}
               </h1>
 
