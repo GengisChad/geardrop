@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { RegisterForm } from "@/components/auth/auth-forms";
+import { ResendConfirmationForm } from "@/components/auth/confirm-forms";
 import { getCustomerSession } from "@/lib/auth/customer";
 
 export const metadata: Metadata = {
@@ -20,6 +21,9 @@ export default async function RegisterPage() {
       breadcrumb="Registrati"
     >
       <RegisterForm />
+      <div className="mt-6 border-t border-white/60 pt-6">
+        <ResendConfirmationForm />
+      </div>
     </AuthShell>
   );
 }

@@ -87,7 +87,7 @@ export async function registerAction(
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
-      emailRedirectTo: authRedirectUrl(origin, "/auth/callback?next=/account"),
+      emailRedirectTo: authRedirectUrl(origin, "/conferma-email"),
       ...(displayName ? { data: { display_name: displayName } } : {}),
     },
   });
@@ -118,7 +118,7 @@ export async function recoverAction(
   const origin = await requestOrigin();
 
   await client.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: authRedirectUrl(origin, "/auth/callback?next=/nuova-password"),
+    redirectTo: authRedirectUrl(origin, "/conferma-recupero"),
   });
 
   return { error: null, notice: RECOVER_NOTICE };
