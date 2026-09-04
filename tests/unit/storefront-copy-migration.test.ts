@@ -7,6 +7,21 @@ const migrationPath = join(
   "supabase/migrations/20260904150000_align_storefront_copy.sql",
 );
 
+type PublicationFixture = {
+  readonly createdAt: string;
+  readonly publishedAt: string | null;
+};
+
+function publicationGuardMatches(guard: string, fixture: PublicationFixture): boolean {
+  if (guard.includes("section.published_at = section.created_at")) {
+    return fixture.publishedAt === fixture.createdAt;
+  }
+  if (guard.includes("section.published_at is not null")) {
+    return fixture.publishedAt !== null;
+  }
+  throw new Error("Migration publication guard is missing");
+}
+
 describe("truthful storefront copy migration", () => {
   it("exists as the guarded forward migration", () => {
     expect(existsSync(migrationPath)).toBe(true);
@@ -50,7 +65,6 @@ describe("truthful storefront copy migration", () => {
       { custom: "scheduled publication", guard: "section.starts_at is null" },
       { custom: "scheduled expiry", guard: "section.ends_at is null" },
       { custom: "publication status", guard: "section.publication_status = 'published'" },
-      { custom: "publication timestamp", guard: "section.published_at is not null" },
       { custom: "active state", guard: "section.active = true" },
     ];
 
@@ -58,6 +72,20 @@ describe("truthful storefront copy migration", () => {
       expect(bundleGuard, `bundle would hide customized ${fixture.custom}`).toContain(fixture.guard);
       expect(clubGuard, `Club would hide customized ${fixture.custom}`).toContain(fixture.guard);
     }
+
+    const originalSeededPublication = {
+      createdAt: "2026-07-18T18:14:01.000Z",
+      publishedAt: "2026-07-18T18:14:01.000Z",
+    };
+    const adminChangedPublication = {
+      createdAt: "2026-07-18T18:14:01.000Z",
+      publishedAt: "2026-09-04T20:00:00.000Z",
+    };
+    expect(publicationGuardMatches(bundleGuard, originalSeededPublication)).toBe(true);
+    expect(publicationGuardMatches(clubGuard, originalSeededPublication)).toBe(true);
+    expect(publicationGuardMatches(bundleGuard, adminChangedPublication)).toBe(false);
+    expect(publicationGuardMatches(clubGuard, adminChangedPublication)).toBe(false);
+    expect(hideDefaults).not.toContain("section.published_at is not null");
 
     expect(bundleGuard).toContain("section.title = 'bundle campione'");
     expect(bundleGuard).toContain("section.subtitle is null");

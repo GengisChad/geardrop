@@ -63,7 +63,7 @@ where section.section_key in ('champion-bundle', 'club')
       and section.cta_label is null
       and section.cta_href is null
       and section.publication_status = 'published'
-      and section.published_at is not null
+      and section.published_at = section.created_at
       and section.starts_at is null
       and section.ends_at is null
       and section.active = true
@@ -103,7 +103,7 @@ where section.section_key in ('champion-bundle', 'club')
       and section.cta_label = 'Scopri di più'
       and section.cta_href = '/account'
       and section.publication_status = 'published'
-      and section.published_at is not null
+      and section.published_at = section.created_at
       and section.starts_at is null
       and section.ends_at is null
       and section.active = true
