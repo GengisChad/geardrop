@@ -46,18 +46,24 @@
 
 - `src/components/product/buy-panel.tsx`
 - `src/components/product/quantity-stepper.tsx`
+- `src/components/product/product-details.tsx`
 - `src/app/(storefront)/carrello/cart-client.tsx`
 - `src/app/(storefront)/prodotto/[slug]/page.tsx`
 - `src/app/(storefront)/page.tsx`
+- `src/app/(storefront)/chi-siamo/page.tsx`
+- `src/app/layout.tsx` (truthful description only)
 - `src/components/content/managed-homepage.tsx`
 - `src/components/home/{hero,trust}.tsx`
 - `src/components/layout/footer.tsx`
 - `src/lib/labels.ts`
+- `src/lib/commerce/{mock-provider,supabase-provider}.ts` (shipping wording only)
 - `src/data/pages.ts`
 - `src/data/content-seed.ts`
 - `scripts/generate-supabase-seed.ts`
 - `supabase/seed.sql` (generated only)
 - `supabase/migrations/20260904150000_align_storefront_copy.sql`
+- `supabase/tests/{002_commerce_schema,004_rls_roles,019_full_seed}.test.sql`
+- `docs/operations/enable-orders-checklist.md`
 - affected unit/E2E tests
 
 1. Add failing tests for “N pre-ordini rimasti”, stepper cap, no zero-review rating/structured-data block, no `45.000`, no fake newsletter success, no fake Club/bundle, no “Più venduti”, and preorder dispatch copy. Include generated-seed assertions against stale phrases.
@@ -66,7 +72,7 @@
 4. Omit rating UI and `AggregateRating` JSON-LD when `reviewCount` is zero. Rename the bestseller presentation to “Pre-ordini aperti” and remove ranking/rating decoration.
 5. Remove the newsletter form from the footer, replace the `45.000` sentence with neutral project copy, and remove Club/bundle from fallback and seeded homepage presentation. Leave the underlying reusable admin/component infrastructure intact.
 6. Replace rapid-shipping/payment/social-proof claims with: preorder dispatch within 14 days, carrier transit after dispatch, assisted order/no online charge, and neutral Beyblade-X catalogue language. Do not invent supply-chain authenticity evidence or legal identity.
-7. Keep placeholder Terms/Privacy out of published seed content. Update the operations checklist to require reviewed seller identity, Terms, and Privacy before order acceptance. Add a guarded forward migration that updates only known seeded CMS defaults, hides Club/bundle, and unpublishes legal rows only when the known placeholder marker is still present. It must not overwrite reviewed admin-authored legal text.
+7. Keep placeholder Terms/Privacy out of published seed content. Update the operations checklist to require reviewed seller identity, Terms, and Privacy before order acceptance. Add a guarded forward migration that updates only known seeded CMS defaults, hides Club/bundle, and unpublishes legal rows only when the known placeholder marker is still present. It must not overwrite reviewed admin-authored legal text. Update the three legacy pgTAP seed-count assertions to the reviewed six-product/six-primary-image catalogue; do not weaken unrelated database assertions.
 8. Regenerate `supabase/seed.sql`, run focused unit/E2E tests, `pnpm lint`, and `pnpm typecheck`. Commit.
 
 ## Task 3: Vercel page analytics and canonical URLs
