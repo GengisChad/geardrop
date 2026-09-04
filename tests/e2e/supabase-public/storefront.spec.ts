@@ -148,14 +148,16 @@ test.describe("anonymous storefront on Supabase", () => {
     await visit(page, "/checkout");
   });
 
-  test("checkout cannot place an order while sales are closed", async ({ page }) => {
+  test("checkout stays closed while the seeded shipping method is inactive", async ({ page }) => {
     await visit(page, "/prodotto/cobalt-dragoon-2-60c");
     // A positive preorder allocation permits cart browsing even while intake is closed.
-    // The authoritative checkout quote must still block the actual order.
+    // The safe seed keeps both shipping and order intake disabled. Shipping is the first
+    // actionable blocker; the order gate separately exercises closed intake with shipping on.
     await page.locator("#buy-panel").getByTestId("add-to-cart").click();
     await expect(page.getByTestId("cart-count")).toHaveText("1");
     await visit(page, "/checkout");
-    await expect(page.getByTestId("checkout-notice")).toContainText("Gli ordini non sono ancora attivi");
+    await expect(page.getByTestId("checkout-notice")).toContainText("Nessun metodo di spedizione è attivo");
+    await expect(page.getByTestId("shipping-options").getByRole("radio")).toHaveCount(0);
     await expect(page.getByTestId("place-order")).toBeDisabled();
     await expect(page.getByTestId("order-confirmation")).toHaveCount(0);
     await expect(page.getByTestId("cart-count")).toHaveText("1");
