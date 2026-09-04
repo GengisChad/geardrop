@@ -44,17 +44,83 @@ where section_key = 'competitive-picks'
 
 -- Keep the reusable section types and bundle records, but do not publish the two
 -- unsupported seeded presentations. Custom admin-authored sections do not match.
-update public.homepage_sections
+update public.homepage_sections as section
 set publication_status = 'draft',
     published_at = null,
     active = false,
     updated_at = now()
-where section_key in ('champion-bundle', 'club')
+where section.section_key in ('champion-bundle', 'club')
   and (
-    (section_key = 'champion-bundle' and section_type = 'bundle' and title = 'Bundle campione')
+    (
+      section.section_key = 'champion-bundle'
+      and section.section_type = 'bundle'
+      and section.eyebrow is null
+      and section.title = 'Bundle campione'
+      and section.subtitle is null
+      and section.description is null
+      and section.desktop_media_asset_id is null
+      and section.mobile_media_asset_id is null
+      and section.cta_label is null
+      and section.cta_href is null
+      and section.publication_status = 'published'
+      and section.published_at is not null
+      and section.starts_at is null
+      and section.ends_at is null
+      and section.active = true
+      and section.sort_order = 7
+      and (
+        select count(*)
+        from public.homepage_section_bundles as relation
+        where relation.section_id = section.id
+      ) = 1
+      and exists (
+        select 1
+        from public.homepage_section_bundles as relation
+        join public.bundles as bundle on bundle.id = relation.bundle_id
+        where relation.section_id = section.id
+          and relation.sort_order = 0
+          and bundle.slug = 'bundle-campione'
+      )
+      and not exists (
+        select 1 from public.homepage_section_products as relation
+        where relation.section_id = section.id
+      )
+      and not exists (
+        select 1 from public.homepage_section_categories as relation
+        where relation.section_id = section.id
+      )
+    )
     or
-    (section_key = 'club' and section_type = 'club' and title = 'GEAR//DROP Club'
-      and subtitle = 'Entra nel club. Sblocca vantaggi esclusivi.')
+    (
+      section.section_key = 'club'
+      and section.section_type = 'club'
+      and section.eyebrow is null
+      and section.title = 'GEAR//DROP Club'
+      and section.subtitle = 'Entra nel club. Sblocca vantaggi esclusivi.'
+      and section.description is null
+      and section.desktop_media_asset_id is null
+      and section.mobile_media_asset_id is null
+      and section.cta_label = 'Scopri di più'
+      and section.cta_href = '/account'
+      and section.publication_status = 'published'
+      and section.published_at is not null
+      and section.starts_at is null
+      and section.ends_at is null
+      and section.active = true
+      and section.sort_order = 9
+      and not exists (
+        select 1 from public.homepage_section_products as relation
+        where relation.section_id = section.id
+      )
+      and not exists (
+        select 1 from public.homepage_section_categories as relation
+        where relation.section_id = section.id
+      )
+      and not exists (
+        select 1 from public.homepage_section_bundles as relation
+        where relation.section_id = section.id
+      )
+    )
   );
 
 -- Update only the known stale sentences inside the known seeded information pages.
@@ -120,6 +186,7 @@ set excerpt = 'GEAR//DROP è un progetto indipendente dedicato al catalogo Beybl
     seo_description = 'GEAR//DROP è un progetto indipendente dedicato al catalogo Beyblade X.',
     markdown_source = replace(
       replace(
+      replace(
         replace(
           replace(
             replace(
@@ -146,6 +213,9 @@ set excerpt = 'GEAR//DROP è un progetto indipendente dedicato al catalogo Beybl
       ),
       'Siamo nati dalla community italiana di Beyblade X e continuiamo a farne parte, dentro e fuori dallo stadio.',
       'L''ordine viene gestito con assistenza e senza addebito online finché il servizio di pagamento non è attivo.'
+      ),
+      '### Community prima di tutto',
+      '### Assistenza prima dell''ordine'
     ),
     updated_at = now()
 where slug = 'chi-siamo'

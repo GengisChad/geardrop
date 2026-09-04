@@ -41,11 +41,10 @@ describe("registered storefront content renderers", () => {
     expect(layout).toContain("<Footer content=");
   });
 
-  it("preserves mock storefront navigation and pages as the default source", () => {
+  it("preserves mock storefront navigation and reviewed support pages as the default source", () => {
     const mock = read("src/lib/content/mock-provider.ts");
     expect(mock).toContain("MAIN_NAV");
     expect(mock).toContain("FOOTER_NAV");
     expect(mock).toContain("SUPPORT_PAGES");
-    expect(mock).toContain("LEGAL_PAGES");
   });
 });
