@@ -15,7 +15,7 @@ const SENSITIVE_ROUTE_FAMILIES = [
   "/preferiti",
 ] as const;
 
-function isSensitivePath(pathname: string): boolean {
+export function isSensitiveAnalyticsPath(pathname: string): boolean {
   let decodedPath: string;
 
   try {
@@ -35,7 +35,7 @@ export function sanitizeAnalyticsEvent(event: BeforeSendEvent): BeforeSendEvent 
   try {
     const url = new URL(event.url);
     if (url.protocol !== "https:" && url.protocol !== "http:") return null;
-    if (isSensitivePath(url.pathname)) return null;
+    if (isSensitiveAnalyticsPath(url.pathname)) return null;
 
     return { ...event, url: `${url.origin}${url.pathname}` };
   } catch {
