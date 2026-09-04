@@ -1,7 +1,7 @@
 # GearDrop preorder go-live design
 
-**Date:** 2026-09-04  
-**Base:** `origin/main` at `2264f497a48a30e4a78551b89bc4904da9be95e0`  
+**Date:** 2026-09-04
+**Base:** `origin/main` at `2264f497a48a30e4a78551b89bc4904da9be95e0`
 **Goal:** publish the owner-supplied six-product preorder catalogue, remove unsupported claims, add privacy-minimised Vercel page analytics, and deploy the verified result through the repository's `main` branch.
 
 ## Scope and invariants
