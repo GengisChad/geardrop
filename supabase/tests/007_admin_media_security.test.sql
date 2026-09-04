@@ -32,7 +32,7 @@ insert into public.inventory_movements (
 )
 select id, 1, 1, 'initial', null, 'media security fixture'
 from public.products
-where sku = 'wizard-arrow-4-80b';
+where sku = 'SOAR-PHOENIX-9-60GF';
 
 select is(has_table_privilege('anon', 'public.media_assets', 'select'), false, 'anonymous users have no media-library grant');
 select is(has_table_privilege('anon', 'public.media_assets', 'insert'), false, 'anonymous users have no media write grant');
@@ -92,7 +92,7 @@ select throws_like(
   'editor cannot permanently delete media'
 );
 select throws_ok(
-  $$select public.adjust_inventory('wizard-arrow-4-80b', 1, 'manual_adjustment', 'editor denied')$$,
+  $$select public.adjust_inventory('SOAR-PHOENIX-9-60GF', 1, 'manual_adjustment', 'editor denied')$$,
   '42501',
   'GD_INVENTORY_MANAGER_REQUIRED',
   'editor cannot adjust inventory'
@@ -141,7 +141,7 @@ reset role;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000402', true);
 set local role authenticated;
 select lives_ok(
-  $$update public.products set seo_title = 'Audited product SEO' where sku = 'wizard-arrow-4-80b'$$,
+  $$update public.products set seo_title = 'Audited product SEO' where sku = 'SOAR-PHOENIX-9-60GF'$$,
   'admin can mutate product content'
 );
 select lives_ok(

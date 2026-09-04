@@ -89,8 +89,8 @@ with seed(product_slug, src, width, height, alt, sort_order) as (
   ('drop-attack-battle-set', '/products/drop-attack-battle-set.webp', 1000, 1000, 'Beyblade X Drop Attack Battle Set: stadio blu, due trottole e due lanciatori', 0),
   ('sneak-attack-battle-set', '/products/sneak-attack-battle-set.webp', 1000, 1000, 'Beyblade X Sneak Attack Battle Set: stadio verde, due trottole e due lanciatori', 0)
 )
-insert into public.product_images (product_id, src, width, height, alt, sort_order, published)
-select product.id, seed.src, seed.width, seed.height, seed.alt, seed.sort_order, true
+insert into public.product_images (product_id, src, width, height, alt, sort_order, published, is_primary)
+select product.id, seed.src, seed.width, seed.height, seed.alt, seed.sort_order, true, seed.sort_order = 0
 from seed
 join public.products as product on product.slug = seed.product_slug
 on conflict (product_id, sort_order) do update set

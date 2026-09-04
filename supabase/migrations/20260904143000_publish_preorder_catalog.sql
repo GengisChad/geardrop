@@ -64,13 +64,13 @@ $$;
 
 insert into public.products (
   category_id, slug, sku, name, tagline, description, price_cents,
-  compare_at_price_cents, publication_status, published_at, active,
+  compare_at_price_cents, publication_status, active,
   stock_quantity, availability_override, preorder_allocation, blade_type,
   rating, review_count, sort_order
 )
 select
   category.id, seed.slug, seed.sku, seed.name, seed.tagline, seed.description,
-  seed.price_cents, null, 'published', now(), true, 0, 'preorder',
+  seed.price_cents, null, 'published', true, 0, 'preorder',
   seed.initial_allocation, seed.blade_type, 0, 0, seed.sort_order
 from preorder_catalog_seed as seed
 join public.categories as category on category.slug = seed.category_slug
@@ -83,7 +83,6 @@ on conflict (slug) do update set
   price_cents = excluded.price_cents,
   compare_at_price_cents = excluded.compare_at_price_cents,
   publication_status = excluded.publication_status,
-  published_at = coalesce(public.products.published_at, excluded.published_at),
   active = true,
   availability_override = 'preorder',
   preorder_allocation = case
@@ -219,16 +218,46 @@ from (values ('drop-attack-battle-set',0),('cobalt-dragoon-2-60c',1),('soar-phoe
 join public.products as product on product.slug=item.slug
 join public.bundles as bundle on bundle.slug='bundle-campione';
 
+-- A known section key is not ownership: merchants can change its type, selection,
+-- or ordering. Snapshot only exact original seeded relations before replacing any.
+-- Hold writes while fingerprinting so a concurrent CMS save cannot be overwritten.
+lock table public.homepage_sections, public.homepage_section_products in share row exclusive mode;
+create temporary table preorder_untouched_homepage_sections on commit drop as
+with original(section_key, section_type, product_slugs, sort_orders) as (
+  values
+    ('featured-products', 'featured_products'::public.homepage_section_type,
+      array['stadio-beystadium-x-attack-set','wizard-arrow-4-80b','cobalt-dragoon-2-60c','phoenix-wing-9-60gf','shark-edge-3-60lf','dran-sword-4-80db'], array[0,1,2,3,4,5]),
+    ('latest-drops', 'latest_drops'::public.homepage_section_type,
+      array['stadio-beystadium-x-attack-set','wizard-arrow-4-80b','cobalt-dragoon-2-60c','phoenix-wing-9-60gf','shark-edge-3-60lf','dran-sword-4-80db'], array[0,1,2,3,4,5]),
+    ('bestsellers', 'bestsellers'::public.homepage_section_type,
+      array['wizard-arrow-4-80b','cobalt-dragoon-2-60c','phoenix-wing-9-60gf','shark-edge-3-60lf','dran-sword-4-80db'], array[0,1,2,3,4]),
+    ('competitive-picks', 'competitive_products'::public.homepage_section_type,
+      array['wizard-arrow-4-80b','cobalt-dragoon-2-60c','shark-edge-3-60lf','dran-sword-4-80db','phoenix-wing-9-60gf','dran-buster-1-60a'], array[0,1,2,3,4,5])
+)
+select section.id
+from public.homepage_sections as section
+join original on original.section_key = section.section_key
+where section.section_type = original.section_type
+  and (
+    select array_agg(product.slug order by relation.sort_order)
+    from public.homepage_section_products as relation
+    join public.products as product on product.id = relation.product_id
+    where relation.section_id = section.id
+  ) = original.product_slugs
+  and (
+    select array_agg(relation.sort_order order by relation.sort_order)
+    from public.homepage_section_products as relation
+    where relation.section_id = section.id
+  ) = original.sort_orders;
+
 delete from public.homepage_section_products as relation
-using public.homepage_sections as section
-where relation.section_id=section.id
-  and section.section_key in ('featured-products','latest-drops','bestsellers','competitive-picks');
+using preorder_untouched_homepage_sections as section
+where relation.section_id = section.id;
 insert into public.homepage_section_products(section_id,product_id,sort_order)
 select section.id,product.id,product.sort_order
-from public.homepage_sections as section
+from preorder_untouched_homepage_sections as section
 cross join public.products as product
-where section.section_key in ('featured-products','latest-drops','bestsellers','competitive-picks')
-  and product.slug in (select slug from preorder_catalog_seed);
+where product.slug in (select slug from preorder_catalog_seed);
 
 insert into private.preorder_catalog_campaigns(campaign_key)
 values ('2026-09-04-owner-preorder-catalog')

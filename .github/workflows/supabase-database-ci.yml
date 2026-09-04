@@ -62,6 +62,9 @@ jobs:
       - name: Run pgTAP database tests
         run: supabase test db --local supabase/tests
 
+      - name: Verify populated catalogue upgrade and replay
+        run: pnpm db:test:upgrades
+
       - name: Lint PostgreSQL schema
         run: supabase db lint --local --level error --fail-on error
 

@@ -83,7 +83,7 @@ export function ProductEditorForm({ data, categories, deletionImpact, role }: Pr
         <Field label="Nome"><input defaultValue={product?.name ?? ""} maxLength={160} name="name" required /></Field>
         <Field label="Nome breve"><input defaultValue={product?.short_name ?? ""} maxLength={80} name="shortName" /></Field>
         <Field label="Slug"><input defaultValue={product?.slug ?? ""} name="slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required /></Field>
-        <Field label="SKU"><input className={styles.mono} defaultValue={product?.sku ?? ""} name="sku" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required /></Field>
+        <Field label="SKU"><input className={styles.mono} defaultValue={product?.sku ?? ""} name="sku" pattern="[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*" required /></Field>
         <Field label="Categoria"><select defaultValue={product?.category_id ?? ""} name="categoryId" required><option disabled value="">Seleziona categoria</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}{category.active ? "" : " · inattiva"}</option>)}</select></Field>
         <Field label="Tipo blade"><select defaultValue={product?.blade_type ?? ""} name="bladeType"><option value="">Non definito</option><option value="attacco">Attacco</option><option value="difesa">Difesa</option><option value="stamina">Stamina</option><option value="bilanciato">Bilanciato</option></select></Field>
         <Field wide label="Tagline"><input defaultValue={product?.tagline ?? ""} maxLength={240} name="tagline" required /></Field>

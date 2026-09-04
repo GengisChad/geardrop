@@ -11,7 +11,7 @@ test.describe("home", () => {
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Pronti alla battaglia");
     await expect(page.getByRole("link", { name: "GEAR//DROP — vai alla home" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "In evidenza" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Più venduti" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Pre-ordini aperti" })).toBeVisible();
     await expect(page.getByTestId("product-card").first()).toBeVisible();
   });
 
@@ -60,17 +60,20 @@ test.describe("catalogue", () => {
     };
 
     const panel = await openFilters();
-    await panel.getByTestId("filter-stock-esaurito").check();
+    // No reviewed preorder is sold out; that zero-count facet is intentionally disabled.
+    // Four attack blades and two arena sets provide a real, nonempty filter subset.
+    await expect(panel.getByTestId("filter-stock-esaurito")).toBeDisabled();
+    await panel.getByTestId("filter-type-attacco").check();
     if (isMobile) await page.getByTestId("filters-apply").click();
 
     await expect(page.getByTestId("result-count")).not.toHaveText(String(before));
-    await expect(page).toHaveURL(/stock=esaurito/);
-    await expect(page.getByTestId("product-card")).toHaveCount(1);
+    await expect(page).toHaveURL(/type=attacco/);
+    await expect(page.getByTestId("product-card")).toHaveCount(4);
 
     // Filter state lives in the URL, so it must survive a reload.
     await page.reload();
     const reopened = await openFilters();
-    await expect(reopened.getByTestId("filter-stock-esaurito")).toBeChecked();
+    await expect(reopened.getByTestId("filter-type-attacco")).toBeChecked();
   });
 
   test("category pages only show their own products", async ({ page }) => {
@@ -79,7 +82,7 @@ test.describe("catalogue", () => {
     const cards = page.getByTestId("product-card");
     await expect(cards.first()).toBeVisible();
     for (const slug of await cards.evaluateAll((els) => els.map((e) => e.getAttribute("data-slug")))) {
-      expect(["stadio-beystadium-x-attack-set", "sneak-attack-battle-set"]).toContain(slug);
+      expect(["drop-attack-battle-set", "sneak-attack-battle-set"]).toContain(slug);
     }
   });
 
@@ -99,17 +102,18 @@ test.describe("catalogue", () => {
 
 test.describe("product page", () => {
   test("shows price, availability and gallery", async ({ page }) => {
-    await page.goto("/prodotto/wizard-arrow-4-80b");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Wizard Arrow 4-80B");
-    await expect(page.getByTestId("pdp-price")).toHaveText("€24,99");
+    await page.goto("/prodotto/cobalt-dragoon-2-60c");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Cobalt Dragoon 2-60C");
+    await expect(page.getByTestId("pdp-price")).toHaveText("€25,50");
     await expect(buyPanel(page).getByTestId("add-to-cart")).toBeVisible();
   });
 
-  test("an out-of-stock product offers notify instead of add-to-cart", async ({ page }) => {
-    // Phoenix Wing is the out-of-stock example in the design system sheet.
-    await page.goto("/prodotto/phoenix-wing-9-60gf");
-    await expect(buyPanel(page).getByTestId("notify-me")).toBeVisible();
-    await expect(buyPanel(page).getByTestId("add-to-cart")).toHaveCount(0);
+  test("a removed catalogue product cannot still be purchased", async ({ page }) => {
+    // All current products are preorders. The sold-out CTA is covered with an explicit
+    // product fixture in preorder-storefront.test.tsx; archived routes must be real 404s.
+    const response = await page.goto("/prodotto/phoenix-wing-9-60gf");
+    expect(response?.status()).toBe(404);
+    await expect(page.getByTestId("add-to-cart")).toHaveCount(0);
   });
 
   test("a pre-order product offers pre-order", async ({ page }) => {
@@ -118,12 +122,12 @@ test.describe("product page", () => {
   });
 
   test("publishes Product structured data matching the visible price", async ({ page }) => {
-    await page.goto("/prodotto/wizard-arrow-4-80b");
+    await page.goto("/prodotto/cobalt-dragoon-2-60c");
     const raw = await page.locator('script[type="application/ld+json"]').innerText();
     const data = JSON.parse(raw);
     expect(data["@type"]).toBe("Product");
-    expect(data.offers.price).toBe("24.99");
-    expect(data.offers.availability).toBe("https://schema.org/InStock");
+    expect(data.offers.price).toBe("25.50");
+    expect(data.offers.availability).toBe("https://schema.org/PreOrder");
   });
 
   test("an unknown product 404s", async ({ page }) => {
@@ -141,9 +145,9 @@ test.describe("product page", () => {
 
 test.describe("search", () => {
   test("finds a product by name", async ({ page }) => {
-    await page.goto("/ricerca?q=wizard");
+    await page.goto("/ricerca?q=cobalt");
     await expect(page.getByTestId("search-results")).toBeVisible();
-    await expect(page.getByTestId("product-card").first()).toContainText("Wizard Arrow");
+    await expect(page.getByTestId("product-card").first()).toContainText("Cobalt Dragoon");
   });
 
   test("shows an empty state for no matches", async ({ page }) => {

@@ -7,7 +7,7 @@ export const adminProductComputedStateSchema = z.object({
   stock_status: z.enum(["disponibile", "in-arrivo", "pre-ordine", "esaurito"]),
   is_purchasable: z.boolean(),
 });
-export const skuSchema = z.string().trim().min(2).max(80).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+export const skuSchema = z.string().trim().min(2).max(80).regex(/^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$/);
 
 const nullableText = (max: number) => z.string().trim().max(max).transform((value) => value || null).nullable();
 

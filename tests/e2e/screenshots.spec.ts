@@ -12,10 +12,10 @@ const SHOTS: readonly { name: string; path: string }[] = [
   { name: "catalogo", path: "/negozio" },
   { name: "categoria-beyblade-x", path: "/negozio/beyblade-x" },
   { name: "categoria-vuota", path: "/negozio/lanciatori" },
-  { name: "pdp-stadio", path: "/prodotto/stadio-beystadium-x-attack-set" },
+  { name: "pdp-stadio", path: "/prodotto/drop-attack-battle-set" },
   { name: "pdp-cobalt", path: "/prodotto/cobalt-dragoon-2-60c" },
-  { name: "pdp-esaurito", path: "/prodotto/phoenix-wing-9-60gf" },
-  { name: "ricerca", path: "/ricerca?q=dran" },
+  { name: "pdp-preordine", path: "/prodotto/soar-phoenix-9-60gf" },
+  { name: "ricerca", path: "/ricerca?q=cobalt" },
   { name: "chi-siamo", path: "/chi-siamo" },
   { name: "404", path: "/pagina-inesistente" },
 ];
@@ -70,9 +70,9 @@ test.describe("screenshots", () => {
     const dir = `docs/screenshots/${testInfo.project.name}`;
     await mkdir(dir, { recursive: true });
 
-    await page.goto("/prodotto/wizard-arrow-4-80b");
+    await page.goto("/prodotto/cobalt-dragoon-2-60c");
     await page.locator("#buy-panel").getByTestId("add-to-cart").click();
-    await page.goto("/prodotto/shark-edge-3-60lf");
+    await page.goto("/prodotto/saber-samurai-2-70l");
     await page.locator("#buy-panel").getByTestId("add-to-cart").click();
 
     await page.goto("/carrello");

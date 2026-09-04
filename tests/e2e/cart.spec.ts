@@ -25,7 +25,7 @@ test.describe("cart", () => {
   });
 
   test("the cart survives a reload", async ({ page }) => {
-    await page.goto("/prodotto/wizard-arrow-4-80b");
+    await page.goto("/prodotto/cobalt-dragoon-2-60c");
     await buyPanel(page).getByTestId("add-to-cart").click();
     await expect(page.getByTestId("cart-count")).toHaveText("1");
 
@@ -34,44 +34,44 @@ test.describe("cart", () => {
   });
 
   test("adding the same product twice increments one line instead of duplicating it", async ({ page }) => {
-    await page.goto("/prodotto/wizard-arrow-4-80b");
+    await page.goto("/prodotto/cobalt-dragoon-2-60c");
     await buyPanel(page).getByTestId("add-to-cart").click();
     await buyPanel(page).getByTestId("add-to-cart").click();
 
     await page.goto("/carrello");
     await expect(page.getByTestId("cart-line")).toHaveCount(1);
     await expect(page.getByTestId("qty-input")).toHaveValue("2");
-    await expect(page.getByTestId("line-total")).toHaveText("€49,98");
+    await expect(page.getByTestId("line-total")).toHaveText("€51,00");
   });
 
   test("quantity drives the line total and the cart total", async ({ page }) => {
-    await page.goto("/prodotto/wizard-arrow-4-80b");
+    await page.goto("/prodotto/cobalt-dragoon-2-60c");
     await buyPanel(page).getByTestId("add-to-cart").click();
     await page.goto("/carrello");
 
     await page.getByTestId("qty-increase").click();
-    await expect(page.getByTestId("line-total")).toHaveText("€49,98");
-    await expect(page.getByTestId("cart-subtotal")).toHaveText("€49,98");
+    await expect(page.getByTestId("line-total")).toHaveText("€51,00");
+    await expect(page.getByTestId("cart-subtotal")).toHaveText("€51,00");
   });
 
   test("shipping is charged below 59€ and free at or above it", async ({ page }) => {
-    await page.goto("/prodotto/wizard-arrow-4-80b");
+    await page.goto("/prodotto/cobalt-dragoon-2-60c");
     await buyPanel(page).getByTestId("add-to-cart").click();
     await page.goto("/carrello");
 
-    // 1 x 24,99 -> below the threshold
+    // 1 x 25,50 -> below the threshold
     await expect(page.getByTestId("cart-shipping")).toHaveText("€4,90");
-    await expect(page.getByTestId("cart-total")).toHaveText("€29,89");
+    await expect(page.getByTestId("cart-total")).toHaveText("€30,40");
 
-    // 3 x 24,99 = 74,97 -> free shipping
+    // 3 x 25,50 = 76,50 -> free shipping
     await page.getByTestId("qty-increase").click();
     await page.getByTestId("qty-increase").click();
     await expect(page.getByTestId("cart-shipping")).toHaveText("Gratis");
-    await expect(page.getByTestId("cart-total")).toHaveText("€74,97");
+    await expect(page.getByTestId("cart-total")).toHaveText("€76,50");
   });
 
   test("removing the last line shows the empty state", async ({ page }) => {
-    await page.goto("/prodotto/wizard-arrow-4-80b");
+    await page.goto("/prodotto/cobalt-dragoon-2-60c");
     await buyPanel(page).getByTestId("add-to-cart").click();
     await page.goto("/carrello");
 
@@ -142,7 +142,7 @@ test.describe("checkout", () => {
   };
 
   test("reports field errors on blur", async ({ page }) => {
-    await page.goto("/prodotto/wizard-arrow-4-80b");
+    await page.goto("/prodotto/cobalt-dragoon-2-60c");
     await buyPanel(page).getByTestId("add-to-cart").click();
     await page.goto("/checkout");
 
@@ -152,7 +152,7 @@ test.describe("checkout", () => {
   });
 
   test("rejects a malformed CAP", async ({ page }) => {
-    await page.goto("/prodotto/wizard-arrow-4-80b");
+    await page.goto("/prodotto/cobalt-dragoon-2-60c");
     await buyPanel(page).getByTestId("add-to-cart").click();
     await page.goto("/checkout");
 
@@ -162,7 +162,7 @@ test.describe("checkout", () => {
   });
 
   test("never confirms an order when no order backend is configured", async ({ page }) => {
-    await page.goto("/prodotto/wizard-arrow-4-80b");
+    await page.goto("/prodotto/cobalt-dragoon-2-60c");
     await buyPanel(page).getByTestId("add-to-cart").click();
     await page.goto("/checkout");
     await fillValidContact(page);
@@ -177,7 +177,7 @@ test.describe("checkout", () => {
   });
 
   test("promises no email and no payment it cannot deliver", async ({ page }) => {
-    await page.goto("/prodotto/wizard-arrow-4-80b");
+    await page.goto("/prodotto/cobalt-dragoon-2-60c");
     await buyPanel(page).getByTestId("add-to-cart").click();
     await page.goto("/checkout");
 
@@ -188,7 +188,7 @@ test.describe("checkout", () => {
   });
 
   test("offers only the shipping options the backend returns", async ({ page }) => {
-    await page.goto("/prodotto/wizard-arrow-4-80b");
+    await page.goto("/prodotto/cobalt-dragoon-2-60c");
     await buyPanel(page).getByTestId("add-to-cart").click();
     await page.goto("/checkout");
 
@@ -196,7 +196,7 @@ test.describe("checkout", () => {
     await expect(options).toHaveCount(1);
     await expect(page.getByTestId("shipping-options")).toContainText("Spedizione standard");
     await expect(page.getByTestId("shipping-options")).not.toContainText("Express");
-    await expect(page.getByTestId("cart-total")).toHaveText("€29,89");
+    await expect(page.getByTestId("cart-total")).toHaveText("€30,40");
   });
 
   test("checkout with an empty cart offers nothing to pay for", async ({ page }) => {

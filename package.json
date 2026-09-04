@@ -19,6 +19,7 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset --local",
     "db:test": "supabase test db --local supabase/tests",
+    "db:test:upgrades": "tsx scripts/test-supabase-upgrades.ts",
     "db:lint": "supabase db lint --local --level error --fail-on error",
     "db:types": "supabase gen types typescript --local --schema public > src/lib/supabase/database.types.ts",
     "seed:supabase": "tsx scripts/generate-supabase-seed.ts",

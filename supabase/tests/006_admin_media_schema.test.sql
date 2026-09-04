@@ -115,12 +115,16 @@ select results_eq(
   'admin product search, sort, and low-stock filters are indexed'
 );
 
+-- Bootstrap now supplies a primary cover; the duplicate-primary test owns a fresh pair.
+update public.product_images set is_primary = false
+where product_id = (select id from public.products where sku = 'SOAR-PHOENIX-9-60GF');
+
 insert into public.product_images (
   product_id, src, width, height, alt, sort_order, published, is_primary
 )
 select id, '/primary-contract-one.png', 10, 10, 'Primary one', 9000, false, true
 from public.products
-where sku = 'wizard-arrow-4-80b';
+where sku = 'SOAR-PHOENIX-9-60GF';
 
 select throws_ok(
   $$
@@ -129,7 +133,7 @@ select throws_ok(
     )
     select id, '/primary-contract-two.png', 10, 10, 'Primary two', 9001, false, true
     from public.products
-    where sku = 'wizard-arrow-4-80b'
+    where sku = 'SOAR-PHOENIX-9-60GF'
   $$,
   '23505',
   'duplicate key value violates unique constraint "product_images_one_primary_idx"',

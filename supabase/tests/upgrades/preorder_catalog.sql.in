@@ -1,0 +1,112 @@
+-- Expanded and run by pnpm db:test:upgrades against the local seeded database.
+-- Restores pre-campaign catalogue/CMS data, then executes the actual migration.
+begin;
+select plan(20);
+
+insert into public.products(category_id, slug, sku, name, tagline, description, price_cents, publication_status, active)
+select category.id, legacy.slug, legacy.slug, legacy.slug, 'Legacy fixture', 'Legacy fixture', 2499, 'published', true
+from (values ('stadio-beystadium-x-attack-set'), ('wizard-arrow-4-80b'), ('phoenix-wing-9-60gf'),
+  ('shark-edge-3-60lf'), ('dran-sword-4-80db'), ('dran-buster-1-60a')) as legacy(slug)
+cross join public.categories as category where category.slug = 'beyblade-x';
+
+create temporary table original_homepage_targets(section_key text, section_type public.homepage_section_type, slugs text[]) on commit drop;
+insert into original_homepage_targets values
+  ('featured-products', 'featured_products', array['stadio-beystadium-x-attack-set','wizard-arrow-4-80b','cobalt-dragoon-2-60c','phoenix-wing-9-60gf','shark-edge-3-60lf','dran-sword-4-80db']),
+  ('latest-drops', 'latest_drops', array['stadio-beystadium-x-attack-set','wizard-arrow-4-80b','cobalt-dragoon-2-60c','phoenix-wing-9-60gf','shark-edge-3-60lf','dran-sword-4-80db']),
+  ('bestsellers', 'bestsellers', array['wizard-arrow-4-80b','cobalt-dragoon-2-60c','phoenix-wing-9-60gf','shark-edge-3-60lf','dran-sword-4-80db']),
+  ('competitive-picks', 'competitive_products', array['wizard-arrow-4-80b','cobalt-dragoon-2-60c','shark-edge-3-60lf','dran-sword-4-80db','phoenix-wing-9-60gf','dran-buster-1-60a']);
+
+delete from public.homepage_section_products where section_id in (
+  select id from public.homepage_sections where section_key in (select section_key from original_homepage_targets)
+);
+insert into public.homepage_section_products(section_id, product_id, sort_order)
+select section.id, product.id, target.position - 1
+from original_homepage_targets as original
+join public.homepage_sections as section on section.section_key = original.section_key
+cross join lateral unnest(original.slugs) with ordinality as target(slug, position)
+join public.products as product on product.slug = target.slug;
+
+delete from private.preorder_catalog_campaigns where campaign_key = '2026-09-04-owner-preorder-catalog';
+update public.products set availability_override = null, preorder_allocation = 0, stock_quantity = 0;
+
+-- @run-preorder-migration
+
+select results_eq(
+  $$select section.section_key, array_agg(product.slug order by target.sort_order)
+    from public.homepage_sections as section
+    join public.homepage_section_products as target on target.section_id = section.id
+    join public.products as product on product.id = target.product_id
+    where section.section_key in (select section_key from original_homepage_targets)
+    group by section.section_key order by section.section_key$$,
+  $$select section_key, array['cobalt-dragoon-2-60c','soar-phoenix-9-60gf','saber-samurai-2-70l','blast-pegasus-a-tr','drop-attack-battle-set','sneak-attack-battle-set']::text[]
+    from original_homepage_targets order by section_key$$,
+  'all four untouched original sections migrate to the reviewed ordered products'
+);
+select is((select count(*)::integer from public.products where active and publication_status = 'published'), 6, 'exactly six products are public after upgrade');
+select is((select count(*)::integer from public.products where publication_status = 'archived'), 6, 'legacy products are archived, not deleted');
+select is((select preorder_allocation from public.products where slug = 'cobalt-dragoon-2-60c'), 10, 'first upgrade seeds initial allocation');
+select is((select count(*)::integer from public.product_images where is_primary and published), 6, 'upgrade publishes six primary covers');
+select is((select accept_orders from public.site_settings where singleton), false, 'upgrade leaves order intake closed');
+
+-- Reconstruct another pre-campaign installation with four admin customizations.
+delete from public.homepage_section_products where section_id in (
+  select id from public.homepage_sections where section_key in (select section_key from original_homepage_targets)
+);
+insert into public.homepage_section_products(section_id, product_id, sort_order)
+select section.id, product.id, target.position - 1
+from original_homepage_targets as original
+join public.homepage_sections as section on section.section_key = original.section_key
+cross join lateral unnest(original.slugs) with ordinality as target(slug, position)
+join public.products as product on product.slug = target.slug
+where original.section_key in ('featured-products', 'latest-drops');
+-- A subset and an equal-count replacement must both be recognized as custom.
+delete from public.homepage_section_products where section_id = (select id from public.homepage_sections where section_key = 'featured-products') and sort_order > 0;
+update public.homepage_section_products set product_id = (select id from public.products where slug = 'sneak-attack-battle-set')
+where section_id = (select id from public.homepage_sections where section_key = 'latest-drops') and sort_order = 0;
+update public.homepage_sections set section_type = 'rich_text', title = 'Testo del negoziante', description = 'Contenuto personalizzato'
+where section_key = 'bestsellers';
+update public.homepage_sections set section_type = 'categories' where section_key = 'competitive-picks';
+insert into public.homepage_section_categories(section_id, category_id, sort_order)
+select section.id, category.id, 0 from public.homepage_sections as section cross join public.categories as category
+where section.section_key = 'competitive-picks' and category.slug = 'stadi';
+create temporary table customized_targets on commit drop as select * from public.homepage_section_products;
+delete from private.preorder_catalog_campaigns where campaign_key = '2026-09-04-owner-preorder-catalog';
+update public.products set availability_override = null, preorder_allocation = 0, stock_quantity = 0;
+
+-- @run-preorder-migration
+
+select results_eq($$select * from public.homepage_section_products order by section_id, sort_order$$,
+  $$select * from customized_targets order by section_id, sort_order$$, 'same-type subset and equal-count replacement survive initial upgrade');
+select is((select section_type::text from public.homepage_sections where section_key = 'bestsellers'), 'rich_text', 'supported rich_text change survives');
+select is((select description from public.homepage_sections where section_key = 'bestsellers'), 'Contenuto personalizzato', 'custom content survives');
+select is((select section_type::text from public.homepage_sections where section_key = 'competitive-picks'), 'categories', 'supported categories change survives');
+select results_eq($$select category.slug from public.homepage_section_categories as target
+  join public.homepage_sections as section on section.id = target.section_id
+  join public.categories as category on category.id = target.category_id where section.section_key = 'competitive-picks'$$,
+  array['stadi']::text[], 'custom category target survives');
+select is((select count(*)::integer from public.homepage_section_products as target join public.homepage_sections as section on section.id = target.section_id
+  where section.section_key in ('bestsellers', 'competitive-picks')), 0, 'non-product sections acquire no invalid product targets');
+
+-- An order consumes allocation; a merchant also reorders the full original set.
+update public.products set preorder_allocation = 7, rating = 4.5, review_count = 2 where slug = 'cobalt-dragoon-2-60c';
+delete from public.homepage_section_products where section_id = (select id from public.homepage_sections where section_key = 'featured-products');
+insert into public.homepage_section_products(section_id, product_id, sort_order)
+select section.id, product.id, cardinality(original.slugs) - target.position
+from original_homepage_targets as original
+join public.homepage_sections as section on section.section_key = original.section_key
+cross join lateral unnest(original.slugs) with ordinality as target(slug, position)
+join public.products as product on product.slug = target.slug where original.section_key = 'featured-products';
+delete from customized_targets;
+insert into customized_targets select * from public.homepage_section_products;
+
+-- @run-preorder-migration
+
+select results_eq($$select * from public.homepage_section_products order by section_id, sort_order$$,
+  $$select * from customized_targets order by section_id, sort_order$$, 'rerun preserves reordered original products and every custom selection');
+select is((select preorder_allocation from public.products where slug = 'cobalt-dragoon-2-60c'), 7, 'rerun never replenishes consumed allocation');
+select is((select review_count from public.products where slug = 'cobalt-dragoon-2-60c'), 2, 'rerun preserves operated review aggregates');
+select is((select accept_orders from public.site_settings where singleton), false, 'rerun leaves order intake closed');
+select is((select count(*)::integer from private.preorder_catalog_campaigns where campaign_key = '2026-09-04-owner-preorder-catalog'), 1, 'rerun retains exactly one campaign marker');
+
+select * from finish();
+rollback;

@@ -26,7 +26,7 @@ insert into public.staff_profiles (user_id, role, display_name, active)
 values ('00000000-0000-0000-0000-000000000301', 'owner', 'Owner One', true);
 
 select results_eq(
-  $$select stock_quantity from public.products where sku = 'wizard-arrow-4-80b'$$,
+  $$select stock_quantity from public.products where sku = 'SOAR-PHOENIX-9-60GF'$$,
   array[0],
   'inventory test starts from zero stock'
 );
@@ -35,12 +35,12 @@ select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000301
 select set_config('request.jwt.claim.role', 'authenticated', true);
 set local role authenticated;
 select results_eq(
-  $$select public.adjust_inventory('wizard-arrow-4-80b', 5, 'manual_adjustment', 'CI stock test')$$,
+  $$select public.adjust_inventory('SOAR-PHOENIX-9-60GF', 5, 'manual_adjustment', 'CI stock test')$$,
   array[5],
   'owner can increase stock through adjust_inventory'
 );
 select results_eq(
-  $$select stock_quantity from public.products where sku = 'wizard-arrow-4-80b'$$,
+  $$select stock_quantity from public.products where sku = 'SOAR-PHOENIX-9-60GF'$$,
   array[5],
   'adjust_inventory updates authoritative stock'
 );
@@ -65,18 +65,18 @@ select is(
   'authenticated role cannot update stock directly'
 );
 select throws_ok(
-  $$select public.adjust_inventory('wizard-arrow-4-80b', -6, 'manual_adjustment', 'negative stock')$$,
+  $$select public.adjust_inventory('SOAR-PHOENIX-9-60GF', -6, 'manual_adjustment', 'negative stock')$$,
   '23514',
   'GD_INSUFFICIENT_STOCK',
   'adjust_inventory blocks negative stock'
 );
 select results_eq(
-  $$select stock_quantity from public.products where sku = 'wizard-arrow-4-80b'$$,
+  $$select stock_quantity from public.products where sku = 'SOAR-PHOENIX-9-60GF'$$,
   array[5],
   'failed negative adjustment leaves stock unchanged'
 );
 select results_eq(
-  $$select count(*)::bigint from public.inventory_movements where product_id = (select id from public.products where sku = 'wizard-arrow-4-80b')$$,
+  $$select count(*)::bigint from public.inventory_movements where product_id = (select id from public.products where sku = 'SOAR-PHOENIX-9-60GF')$$,
   array[1::bigint],
   'failed negative adjustment creates no movement'
 );

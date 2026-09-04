@@ -214,8 +214,8 @@ with seed(product_slug, src, width, height, alt, sort_order) as (
   values
 ${rows(imageRows)}
 )
-insert into public.product_images (product_id, src, width, height, alt, sort_order, published)
-select product.id, seed.src, seed.width, seed.height, seed.alt, seed.sort_order, true
+insert into public.product_images (product_id, src, width, height, alt, sort_order, published, is_primary)
+select product.id, seed.src, seed.width, seed.height, seed.alt, seed.sort_order, true, seed.sort_order = 0
 from seed
 join public.products as product on product.slug = seed.product_slug
 on conflict (product_id, sort_order) do update set

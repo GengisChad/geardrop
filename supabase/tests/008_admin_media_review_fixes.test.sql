@@ -46,7 +46,7 @@ where id = (
   select image.id
   from public.product_images as image
   join public.products as product on product.id = image.product_id
-  where product.sku = 'wizard-arrow-4-80b'
+  where product.sku = 'SOAR-PHOENIX-9-60GF'
     and image.published
   order by image.sort_order
   limit 1
@@ -92,8 +92,8 @@ select lives_ok(
     insert into public.product_relations (
       product_id, related_product_id, relation_type, sort_order
     ) values (
-      (select id from public.products where sku = 'wizard-arrow-4-80b'),
-      (select id from public.products where sku = 'cobalt-dragoon-2-60c'),
+      (select id from public.products where sku = 'SOAR-PHOENIX-9-60GF'),
+      (select id from public.products where sku = 'COBALT-DRAGOON-2-60C'),
       'cross_sell',
       700
     )

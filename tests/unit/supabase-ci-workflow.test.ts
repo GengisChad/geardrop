@@ -30,6 +30,7 @@ describe("Supabase database CI workflow", () => {
       "supabase db reset --local",
       'psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres"',
       "supabase test db --local supabase/tests",
+      "pnpm db:test:upgrades",
       "supabase db lint --local --level error --fail-on error",
       "supabase gen types typescript --local --schema public",
       "diff --unified",

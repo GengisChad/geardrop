@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -20,6 +20,18 @@ const allocations = new Map([
 ]);
 
 describe("preorder catalogue forward migration", () => {
+  it("inserts only product columns that the preceding schema actually defines", () => {
+    const directory = join(process.cwd(), "supabase/migrations");
+    const preceding = readdirSync(directory).filter((name) => name < "20260904143000_publish_preorder_catalog.sql")
+      .map((name) => readFileSync(join(directory, name), "utf8").replaceAll("\r\n", "\n")).join("\n");
+    const foundation = preceding.match(/create table public\.products \(([\s\S]+?)\n\);/)![1]!;
+    const columns = new Set([
+      ...[...foundation.matchAll(/^  ([a-z_]+) (?:bigint|text|integer|boolean|numeric|timestamptz|public\.)/gm)].map((match) => match[1]),
+      ...[...preceding.matchAll(/alter table public\.products add column ([a-z_]+)/g)].map((match) => match[1]),
+    ]);
+    const inserted = migration.match(/insert into public\.products \(([^)]+)\)/)![1]!.split(",").map((column) => column.trim());
+    expect(inserted.filter((column) => !columns.has(column))).toEqual([]);
+  });
   it("publishes all six reviewed allocations under one advisory lock", () => {
     expect(existsSync(migrationPath)).toBe(true);
     expect(migration).toContain("pg_advisory_xact_lock");
@@ -69,5 +81,14 @@ describe("preorder catalogue forward migration", () => {
     expect(migration).not.toMatch(/accept_orders\s*=/);
     expect(migration).not.toMatch(/delete\s+from\s+public\.(products|orders|product_images|media_assets|inventory_movements)\b/);
     expect(migration).not.toMatch(/\btruncate\b/);
+  });
+
+  it("limits CMS replacement to the exact original type and complete ordered target set", () => {
+    expect(migration).toContain("preorder_untouched_homepage_sections");
+    expect(migration).toContain("section.section_type = original.section_type");
+    expect(migration).toMatch(/array_agg\(product\.slug order by relation\.sort_order\)[\s\S]+?= original\.product_slugs/);
+    expect(migration).toMatch(/array_agg\(relation\.sort_order order by relation\.sort_order\)[\s\S]+?= original\.sort_orders/);
+    expect(migration).toMatch(/delete from public\.homepage_section_products[\s\S]+?preorder_untouched_homepage_sections/);
+    expect(migration).toMatch(/insert into public\.homepage_section_products[\s\S]+?preorder_untouched_homepage_sections/);
   });
 });

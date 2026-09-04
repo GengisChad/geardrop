@@ -12,6 +12,12 @@ import type { StorefrontChrome } from "@/lib/content/types";
 const product = PRODUCTS[0]!;
 
 describe("preorder quantity presentation", () => {
+  it("offers notify instead of purchase for an explicitly sold-out product", () => {
+    const html = renderToStaticMarkup(<Providers><BuyPanel product={{ ...product, stock: "esaurito", availableQuantity: 0 }} /></Providers>);
+    expect(html).toContain('data-testid="notify-me"');
+    expect(html).not.toContain('data-testid="add-to-cart"');
+    expect(html).not.toContain('data-testid="qty-input"');
+  });
   it("renders the current allocation and caps the PDP control at the lower availability", () => {
     const html = renderToStaticMarkup(
       <Providers>

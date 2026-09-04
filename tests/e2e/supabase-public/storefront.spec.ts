@@ -98,10 +98,10 @@ test.describe("anonymous storefront on Supabase", () => {
     await visit(page, "/negozio");
 
     await expect(page.getByTestId("product-grid")).toBeVisible();
-    // The seed ships eight published products. A silent RLS regression shows up here as
+    // The seed ships six published products. A silent RLS regression shows up here as
     // a smaller number rather than as an error.
-    await expect(page.getByTestId("product-card")).toHaveCount(8);
-    await expect(page.getByTestId("result-count")).toHaveText("8");
+    await expect(page.getByTestId("product-card")).toHaveCount(6);
+    await expect(page.getByTestId("result-count")).toHaveText("6");
   });
 
   test("a category page filters to its own products", async ({ page }) => {
@@ -110,7 +110,7 @@ test.describe("anonymous storefront on Supabase", () => {
     const cards = page.getByTestId("product-card");
     await expect(cards.first()).toBeVisible();
     expect(await cards.count()).toBeGreaterThan(0);
-    expect(await cards.count()).toBeLessThan(8);
+    expect(await cards.count()).toBeLessThan(6);
   });
 
   test("a product page shows its gallery, which is the query that used to 42501", async ({ page }) => {
@@ -129,7 +129,7 @@ test.describe("anonymous storefront on Supabase", () => {
     const hrefs = await page.getByTestId("product-card").locator("a[href^='/prodotto/']").evaluateAll(
       (nodes) => [...new Set(nodes.map((node) => (node as HTMLAnchorElement).getAttribute("href") ?? ""))],
     );
-    expect(hrefs.length).toBe(8);
+    expect(hrefs.length).toBe(6);
 
     // One broken product is enough to break the shop; check them all rather than a sample.
     for (const href of hrefs) {
@@ -139,7 +139,7 @@ test.describe("anonymous storefront on Supabase", () => {
   });
 
   test("search reads the remote catalogue", async ({ page }) => {
-    await visit(page, "/ricerca?q=dran");
+    await visit(page, "/ricerca?q=cobalt");
     await expect(page.getByTestId("product-card").first()).toBeVisible();
   });
 
@@ -149,15 +149,16 @@ test.describe("anonymous storefront on Supabase", () => {
   });
 
   test("checkout cannot place an order while sales are closed", async ({ page }) => {
-    await visit(page, "/prodotto/wizard-arrow-4-80b");
-    // Seeded stock is zero and accept_orders is false, so the buy path must refuse
-    // rather than offer a checkout that the database would reject.
-    const addToCart = page.getByTestId("add-to-cart");
-    if (await addToCart.count()) {
-      await expect(addToCart.first()).toBeDisabled();
-    } else {
-      await expect(page.getByTestId("notify-me").or(page.getByText(/esaurito|non disponibile/i)).first()).toBeVisible();
-    }
+    await visit(page, "/prodotto/cobalt-dragoon-2-60c");
+    // A positive preorder allocation permits cart browsing even while intake is closed.
+    // The authoritative checkout quote must still block the actual order.
+    await page.locator("#buy-panel").getByTestId("add-to-cart").click();
+    await expect(page.getByTestId("cart-count")).toHaveText("1");
+    await visit(page, "/checkout");
+    await expect(page.getByTestId("checkout-notice")).toContainText("Gli ordini non sono ancora attivi");
+    await expect(page.getByTestId("place-order")).toBeDisabled();
+    await expect(page.getByTestId("order-confirmation")).toHaveCount(0);
+    await expect(page.getByTestId("cart-count")).toHaveText("1");
   });
 
   test("anonymous visitors never reach the admin panel", async ({ page }) => {

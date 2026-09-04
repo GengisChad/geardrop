@@ -1,12 +1,22 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { PRODUCTS } from "@/data/catalog";
 
 function pgTap(name: string): string {
   return readFileSync(join(process.cwd(), "supabase", "tests", name), "utf8").toLowerCase();
 }
 
 describe("Supabase runtime test coverage", () => {
+  it("resolves every seeded inventory/media fixture SKU to the current bootstrap catalogue", () => {
+    const skus = new Set(PRODUCTS.map((product) => product.slug.toUpperCase()));
+    for (const name of ["005_inventory_and_bootstrap.test.sql", "006_admin_media_schema.test.sql", "007_admin_media_security.test.sql", "008_admin_media_review_fixes.test.sql"]) {
+      const source = readFileSync(join(process.cwd(), "supabase/tests", name), "utf8");
+      const references = [...source.matchAll(/(?:sku\s*=\s*|adjust_inventory\()'([^']+)'/g)].map((match) => match[1]!);
+      expect(references.length, name).toBeGreaterThan(0);
+      for (const sku of references) expect(skus.has(sku), `${name}: ${sku}`).toBe(true);
+    }
+  });
   it("covers exact schema, migration, policy, and double-seed counts", () => {
     const sql = pgTap("002_commerce_schema.test.sql");
 

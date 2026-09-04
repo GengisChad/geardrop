@@ -55,4 +55,14 @@ describe("Supabase catalogue seed", () => {
   it("casts nullable numeric seed columns for PostgreSQL CTE inference", () => {
     expect(sql).toContain("seed.compare_at_price_cents::integer");
   });
+
+  it("marks the first bootstrap image as primary without overwriting an operated cover", () => {
+    const imageInsert = sql.match(/insert into public\.product_images\s*\(([^)]+)\)\s*select ([\s\S]+?)\nfrom seed/);
+    expect(imageInsert).not.toBeNull();
+    const columns = imageInsert![1]!.split(",").map((column) => column.trim());
+    const values = imageInsert![2]!.split(",").map((value) => value.trim());
+    expect(values[columns.indexOf("is_primary")]).toBe("seed.sort_order = 0");
+    const conflict = sql.match(/on conflict \(product_id, sort_order\) do update set([\s\S]+?);/)![1];
+    expect(conflict).not.toContain("is_primary =");
+  });
 });
