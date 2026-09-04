@@ -16,7 +16,13 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const { slug } = await params;
   if (!isSupportSlug(slug)) return { title: "Pagina non trovata" };
   const page = await storefrontContent.getPage(slug);
-  return page ? { title: page.seoTitle ?? page.title, description: page.seoDescription ?? page.lead } : { title: "Pagina non trovata" };
+  return page
+    ? {
+        title: page.seoTitle ?? page.title,
+        description: page.seoDescription ?? page.lead,
+        alternates: { canonical: `/assistenza/${slug}` },
+      }
+    : { title: "Pagina non trovata" };
 }
 
 export default async function AssistenzaPage({ params }: { params: Promise<Params> }) {

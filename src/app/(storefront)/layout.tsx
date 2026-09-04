@@ -1,3 +1,4 @@
+import { StorefrontAnalytics } from "@/components/analytics/storefront-analytics";
 import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
@@ -7,6 +8,7 @@ import { getPublicStoreSettings } from "@/lib/storefront/settings-repository";
 export default async function StorefrontLayout({ children }: { children: React.ReactNode }) {
   const chrome = await storefrontContent.getChrome();
   const settings=process.env["CONTENT_PROVIDER"]==="supabase"?await getPublicStoreSettings():null;
+  const analyticsEnabled = process.env["VERCEL_ENV"] === "production";
   return (
     <>
       <Header navigation={chrome.desktopNavigation} mobileNavigation={chrome.mobileNavigation} />
@@ -16,6 +18,7 @@ export default async function StorefrontLayout({ children }: { children: React.R
       </main>
       <Footer content={chrome} />
       <BottomTabBar />
+      <StorefrontAnalytics enabled={analyticsEnabled} />
     </>
   );
 }

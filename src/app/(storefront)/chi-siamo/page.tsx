@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   title: "Chi siamo",
   description:
     "GEAR//DROP è un progetto indipendente dedicato al catalogo Beyblade X.",
+  alternates: { canonical: "/chi-siamo" },
 };
 
 const PILLARS = [

@@ -10,6 +10,7 @@ import { parseProductQuery, type RawSearchParams } from "@/lib/search-params";
 export const metadata: Metadata = {
   title: "Tutti i prodotti",
   description: "Scopri l'intera collezione Beyblade X: trottole, lanciatori, stadi e accessori per dominare ogni scontro.",
+  alternates: { canonical: "/negozio" },
 };
 
 export default async function NegozioPage({ searchParams }: { searchParams: Promise<RawSearchParams> }) {

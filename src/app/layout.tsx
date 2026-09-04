@@ -31,7 +31,6 @@ export const metadata: Metadata = {
     default: "GEAR//DROP — Beyblade X per la community italiana",
     template: "%s | GEAR//DROP",
   },
-  alternates: { canonical: "/" },
   description:
     "Catalogo Beyblade X in pre-ordine: trottole, lanciatori, stadi e accessori con disponibilità indicate.",
   applicationName: "GEAR//DROP",

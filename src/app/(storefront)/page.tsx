@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Hero } from "@/components/home/hero";
 import { CategoryTiles } from "@/components/home/category-tiles";
@@ -9,6 +10,10 @@ import { ManagedHomepage, type ManagedHomepageFallback } from "@/components/cont
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { storefrontContent } from "@/lib/content/provider";
 import { resolveHomepageSections } from "@/lib/storefront/homepage-resolver";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default async function HomePage() {
   const commerce = await getCommerceProvider();

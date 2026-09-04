@@ -33,6 +33,26 @@ Non configurare project ref, access token CLI o credenziali IBNApp nell'applicaz
    contenuti pubblicati, poi valutare `COMMERCE_PROVIDER=supabase` in un rollout distinto.
 9. Promuovere a Production soltanto dopo checklist firmata e piano rollback verificato.
 
+## Web Analytics
+
+Vercel Web Analytics è incluso nell'applicazione, ma il componente viene attivato soltanto quando
+Vercel imposta `VERCEL_ENV=production`. Non aggiungere una variabile pubblica equivalente e non
+abilitare eventi personalizzati: questa release raccoglie esclusivamente pageview anonimizzate.
+
+1. Abilitare Web Analytics dalla dashboard Vercel del progetto GearDrop.
+2. Eseguire un nuovo deploy Production dopo l'abilitazione; un deploy già pubblicato non basta a
+   garantire l'iniezione e la raccolta dello script.
+3. In una finestra privata, aprire una pagina pubblica e verificare in DevTools > Network che
+   `/_vercel/insights/script.js` risponda con esito positivo.
+4. Navigare tra home, negozio, categoria e prodotto e verificare le richieste pageview verso
+   `/_vercel/insights/view`. Il campo URL non deve contenere query string o frammenti.
+5. Eseguire i controlli negativi su `/account`, `/admin`, `/auth/callback`, `/carrello`, `/checkout`,
+   `/login`, `/registrati`, `/password-dimenticata`, `/nuova-password`, `/conferma-email`,
+   `/conferma-recupero` e `/preferiti`: nessuna pageview deve essere inviata per la route esatta o
+   per un suo segmento figlio.
+6. Verificare nella dashboard che compaiano soltanto percorsi pubblici puliti, senza email, numero
+   ordine, idempotency key, coupon, nomi prodotto inseriti dall'utente o altri identificatori.
+
 ## Rollback
 
 - Ripristinare immediatamente `COMMERCE_PROVIDER=mock` e `CONTENT_PROVIDER=mock` e ridistribuire lo

@@ -27,7 +27,11 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const commerce=await getCommerceProvider();
   const category = await commerce.getCategory((await params).categoria);
   if (!category) return { title: "Categoria non trovata" };
-  return { title: category.name, description: category.description };
+  return {
+    title: category.name,
+    description: category.description,
+    alternates: { canonical: `/negozio/${category.slug}` },
+  };
 }
 
 export default async function CategoriaPage({
