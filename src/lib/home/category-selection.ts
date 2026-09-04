@@ -1,10 +1,9 @@
 /**
  * Order and select homepage category tiles from a CMS slug list.
  *
- * The CMS controls which categories appear and in what order; the tiles' art, name and
- * tagline always come from the catalogue data keyed by slug. A slug the tiles have no art
- * for is dropped rather than rendered broken, and an empty (or fully unrenderable)
- * selection falls back to the full catalogue set — never an empty band.
+ * The CMS controls which categories appear and in what order; tile labels always come
+ * from the catalogue data keyed by slug. An unsupported slug is dropped, and an empty
+ * (or fully unsupported) selection falls back to the full catalogue set — never an empty band.
  */
 export function selectHomepageCategories<T extends { readonly slug: string }>(
   all: readonly T[],

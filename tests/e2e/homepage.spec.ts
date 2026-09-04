@@ -56,12 +56,30 @@ test.describe("public homepage", () => {
     await expect(page.locator("body")).not.toContainText("target relazionali");
     expect(await page.locator("section.bg-graphite").count()).toBe(0);
 
-    // The real sections rendered: a visible tile links to each category (the mobile menu
-    // carries the same links hidden, so scope to the visible one), plus product cards.
-    for (const slug of ["beyblade-x", "lanciatori", "stadi", "accessori"]) {
-      await expect(page.locator(`a[href="/negozio/${slug}"]:visible`).first()).toBeVisible();
+    // The real sections rendered: each category is a clean, text-only glass card whose
+    // exact href is the matching catalogue section. The mobile menu carries the same
+    // links hidden, so scope the assertion to the storefront's visible card.
+    const categorySection = page.locator("section").filter({ has: page.getByRole("heading", { name: "Categorie" }) });
+    const categoryGrid = categorySection.locator("ul");
+    for (const [slug, label] of [
+      ["beyblade-x", "Beyblade X"],
+      ["lanciatori", "Lanciatori"],
+      ["stadi", "Stadi"],
+      ["accessori", "Accessori"],
+    ] as const) {
+      const categoryCard = categorySection.locator(`a[href="/negozio/${slug}"]`);
+      await expect(categoryCard).toBeVisible();
+      await expect(categoryCard).toHaveText(label);
+      await expect(categoryCard.locator("img, svg")).toHaveCount(0);
     }
+    await expect(categoryGrid.locator(":scope > li")).toHaveCount(4);
+    const renderedColumns = await categoryGrid.evaluate((element) =>
+      getComputedStyle(element).gridTemplateColumns.split(" ").filter(Boolean).length,
+    );
+    expect(renderedColumns).toBe((page.viewportSize()?.width ?? 0) >= 768 ? 4 : 2);
+
     expect(await page.getByTestId("product-card").count()).toBeGreaterThan(0);
+    await expect(page.getByTestId("product-card").getByText(/^Attacco$/i)).toHaveCount(0);
 
     // Glass actually composites a blur, not just a class name.
     const blurred = await page.locator('[class*="gd-glass"]').first().evaluate((element) => {

@@ -14,11 +14,6 @@ export function PromoBadge({ tag, className }: { tag: PromoTag; className?: stri
   return <span className={cn(PILL, PROMO_CHIP[tag], className)}>{PROMO_LABEL[tag]}</span>;
 }
 
-/** Violet type badge used on the mobile catalogue cards ("ATTACK TYPE"). */
-export function TypeBadge({ children, className }: { children: string; className?: string }) {
-  return <span className={cn(PILL, "bg-violet text-white", className)}>{children}</span>;
-}
-
 /** Numbered rank badge from "PIÙ VENDUTI"; first place is lime. */
 export function RankBadge({ rank }: { rank: number }) {
   return (

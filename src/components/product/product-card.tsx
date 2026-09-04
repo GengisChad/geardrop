@@ -2,10 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { AddToCartButton } from "@/components/product/add-to-cart-button";
 import { WishlistButton } from "@/components/product/wishlist-button";
-import { PromoBadge, RankBadge, StockBadge, TypeBadge } from "@/components/ui/badge";
+import { PromoBadge, RankBadge, StockBadge } from "@/components/ui/badge";
 import { Rating } from "@/components/ui/rating";
 import { formatPrice } from "@/lib/format";
-import { BLADE_TYPE_LABEL } from "@/lib/labels";
 import type { Product } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
 
@@ -66,9 +65,6 @@ export function ProductCard({
           <span className="flex items-center gap-1.5">
             {rank !== undefined ? <RankBadge rank={rank} /> : null}
             {promo ? <PromoBadge tag={promo} /> : null}
-            {rank === undefined && !promo && product.bladeType ? (
-              <TypeBadge>{BLADE_TYPE_LABEL[product.bladeType]}</TypeBadge>
-            ) : null}
           </span>
           <span className="pointer-events-auto">
             <WishlistButton slug={product.slug} name={product.name} />
