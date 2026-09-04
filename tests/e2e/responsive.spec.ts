@@ -31,7 +31,7 @@ test.describe("mobile", () => {
   });
 
   test("the sticky buy bar appears once the main CTA scrolls away", async ({ page }) => {
-    await page.goto("/prodotto/wizard-arrow-4-80b");
+    await page.goto("/prodotto/cobalt-dragoon-2-60c");
     await expect(page.getByTestId("sticky-buy-bar")).toBeHidden();
 
     await page.getByRole("heading", { name: "Si abbina bene con" }).scrollIntoViewIfNeeded();
@@ -52,7 +52,7 @@ test.describe("mobile", () => {
   });
 
   test("no page scrolls sideways at 375px", async ({ page }) => {
-    for (const path of ["/", "/negozio", "/prodotto/stadio-beystadium-x-attack-set", "/carrello", "/checkout"]) {
+    for (const path of ["/", "/negozio", "/prodotto/drop-attack-battle-set", "/carrello", "/checkout"]) {
       await page.goto(path);
       const overflows = await page.evaluate(
         () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
@@ -122,7 +122,7 @@ test.describe("desktop", () => {
   });
 
   test("storefront routes share the liquid glass vocabulary", async ({ page }) => {
-    const routes = ["/", "/negozio", "/prodotto/wizard-arrow-4-80b", "/carrello", "/checkout", "/account"];
+    const routes = ["/", "/negozio", "/prodotto/cobalt-dragoon-2-60c", "/carrello", "/checkout", "/account"];
 
     for (const route of routes) {
       await page.goto(route);
@@ -155,16 +155,16 @@ test.describe("desktop", () => {
   test("header search navigates to the results page", async ({ page }) => {
     await page.goto("/");
     await page.getByTestId("search-toggle").click();
-    await page.getByTestId("search-input").fill("shark");
+    await page.getByTestId("search-input").fill("cobalt");
     await page.getByTestId("search-input").press("Enter");
-    await expect(page).toHaveURL(/\/ricerca\?q=shark/);
-    await expect(page.getByTestId("product-card").first()).toContainText("Shark Edge");
+    await expect(page).toHaveURL(/\/ricerca\?q=cobalt/);
+    await expect(page.getByTestId("product-card").first()).toContainText("Cobalt Dragoon");
   });
 });
 
 test.describe("accessibility basics", () => {
   test("every page has exactly one h1", async ({ page }) => {
-    for (const path of ["/", "/negozio", "/prodotto/wizard-arrow-4-80b", "/carrello", "/preferiti", "/chi-siamo"]) {
+    for (const path of ["/", "/negozio", "/prodotto/cobalt-dragoon-2-60c", "/carrello", "/preferiti", "/chi-siamo"]) {
       await page.goto(path);
       await expect(page.locator("h1"), `${path} h1 count`).toHaveCount(1);
     }

@@ -29,7 +29,7 @@ Payment processing is explicitly out of scope for this phase. New orders are cre
 - Stripe, PayPal, Klarna, or any other payment gateway.
 - Payment webhooks and asynchronous fulfillment jobs.
 - Transactional order email delivery. The UI must not claim an order email was sent until an email provider is added.
-- A visual staff administration dashboard. This phase creates its authorization model and database capabilities, but not the dashboard UI.
+- ~~A visual staff administration dashboard.~~ **Amended 2026-07-20:** the back-office UI is now in scope and implemented at `/admin`, on top of the authorization model below. It adds no new privilege: every page and action re-checks `staff_profiles` and the database enforces the same matrix through RLS.
 - Synchronizing the browser cart or wishlist across devices.
 - Deleting Supabase-managed schemas or existing `auth.users` records.
 

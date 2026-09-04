@@ -6,16 +6,16 @@ import { CatalogView } from "@/components/catalog/catalog-view";
 import { TrustBandDark } from "@/components/home/trust";
 import { categoryArt, productImages } from "@/data/assets";
 import { CATEGORIES } from "@/data/catalog";
-import { commerce } from "@/lib/commerce/provider";
+import { getCommerceProvider } from "@/lib/commerce/provider";
 import { parseProductQuery, type RawSearchParams } from "@/lib/search-params";
 import type { CategorySlug } from "@/lib/commerce/types";
 
 type Params = { categoria: string };
 
 const HERO_ART: Record<CategorySlug, { src: string; width: number; height: number }> = {
-  "beyblade-x": productImages["wizard-arrow-4-80b"][0],
+  "beyblade-x": productImages["cobalt-dragoon-2-60c"][0],
   lanciatori: categoryArt.lanciatori,
-  stadi: productImages["stadio-beystadium-x-attack-set"][0],
+  stadi: productImages["drop-attack-battle-set"][0],
   accessori: categoryArt.accessori,
 };
 
@@ -24,6 +24,7 @@ export function generateStaticParams(): Params[] {
 }
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
+  const commerce = await getCommerceProvider();
   const category = await commerce.getCategory((await params).categoria);
   if (!category) return { title: "Categoria non trovata" };
   return { title: category.name, description: category.description };
@@ -37,6 +38,7 @@ export default async function CategoriaPage({
   searchParams: Promise<RawSearchParams>;
 }) {
   const { categoria } = await params;
+  const commerce = await getCommerceProvider();
   const category = await commerce.getCategory(categoria);
   if (!category) notFound();
 

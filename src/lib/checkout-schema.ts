@@ -28,7 +28,8 @@ export const checkoutSchema = z.object({
     .transform((value) => value.toUpperCase()),
   phone,
   shippingMethod: z.enum(["standard", "express"]),
-  paymentMethod: z.enum(["carta", "paypal", "klarna", "contrassegno"]),
+  // One method only for now: PayPal.Me (see src/lib/payments.ts).
+  paymentMethod: z.enum(["paypalme"]),
   notes: z.string().trim().max(300, "Massimo 300 caratteri.").optional(),
 });
 
@@ -39,9 +40,4 @@ export const SHIPPING_METHODS = [
   { value: "express", label: "Express", hint: "Consegna il giorno successivo", surcharge: 690 },
 ] as const;
 
-export const PAYMENT_METHODS = [
-  { value: "carta", label: "Carta di credito" },
-  { value: "paypal", label: "PayPal" },
-  { value: "klarna", label: "Klarna" },
-  { value: "contrassegno", label: "Pagamento alla consegna" },
-] as const;
+export const PAYMENT_METHODS = [{ value: "paypalme", label: "PayPal.Me" }] as const;

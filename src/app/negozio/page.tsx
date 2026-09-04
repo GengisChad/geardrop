@@ -4,7 +4,7 @@ import { CatalogHero } from "@/components/catalog/catalog-hero";
 import { CatalogView } from "@/components/catalog/catalog-view";
 import { TrustBandDark } from "@/components/home/trust";
 import { productImages } from "@/data/assets";
-import { commerce } from "@/lib/commerce/provider";
+import { getCommerceProvider } from "@/lib/commerce/provider";
 import { parseProductQuery, type RawSearchParams } from "@/lib/search-params";
 
 export const metadata: Metadata = {
@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 
 export default async function NegozioPage({ searchParams }: { searchParams: Promise<RawSearchParams> }) {
   const query = parseProductQuery(await searchParams);
+  const commerce = await getCommerceProvider();
   const [page, facets] = await Promise.all([commerce.listProducts(query), commerce.getFacets(query)]);
 
   return (
@@ -22,7 +23,7 @@ export default async function NegozioPage({ searchParams }: { searchParams: Prom
         title="Tutti i prodotti"
         description="Scopri l'intera collezione Beyblade X: trottole, lanciatori, stadi e accessori per dominare ogni scontro."
         crumbs={[{ label: "Home", href: "/" }, { label: "Negozio" }]}
-        art={productImages["stadio-beystadium-x-attack-set"][0]}
+        art={productImages["drop-attack-battle-set"][0]}
       />
 
       <div className="py-8">

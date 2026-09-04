@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { ProductCard } from "@/components/product/product-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SortSelect } from "@/components/catalog/sort-select";
-import { commerce } from "@/lib/commerce/provider";
+import { getCommerceProvider } from "@/lib/commerce/provider";
 import { parseProductQuery, type RawSearchParams } from "@/lib/search-params";
 
 export const metadata: Metadata = {
@@ -15,6 +15,7 @@ export default async function RicercaPage({ searchParams }: { searchParams: Prom
   const params = await searchParams;
   const query = parseProductQuery(params);
   const term = typeof params["q"] === "string" ? params["q"] : "";
+  const commerce = await getCommerceProvider();
   const page = await commerce.listProducts({ ...query, perPage: 24 });
 
   return (

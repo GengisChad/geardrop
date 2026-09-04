@@ -11,7 +11,7 @@ const valid = {
   province: "mi",
   phone: "+39 333 1234567",
   shippingMethod: "standard",
-  paymentMethod: "carta",
+  paymentMethod: "paypalme",
 } as const;
 
 describe("checkoutSchema", () => {

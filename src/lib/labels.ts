@@ -18,7 +18,7 @@ export const STOCK_LABEL: Record<StockStatus, string> = {
 export const STOCK_HINT: Record<StockStatus, string> = {
   disponibile: "Pronto per la spedizione",
   "in-arrivo": "Nuove uscite in arrivo presto",
-  "pre-ordine": "Ordina ora, spediamo appena disponibile",
+  "pre-ordine": "Pagamento anticipato · arrivo a destinazione massimo 14 giorni",
   esaurito: "Attualmente non disponibile",
 };
 

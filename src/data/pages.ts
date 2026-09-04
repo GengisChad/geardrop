@@ -6,6 +6,8 @@
  * carry an explicit notice: placeholder wording is not a substitute for reviewed terms.
  */
 
+import { COMPANY_LEGAL } from "@/lib/company";
+
 export type ContentSection = { heading: string; body: readonly string[] };
 
 export type ContentPage = {
@@ -42,7 +44,7 @@ export const SUPPORT_PAGES = {
       {
         heading: "Cosa significa “pre-ordine”?",
         body: [
-          "Il prodotto non è ancora uscito. Ordinandolo ora ti assicuri una unità del primo stock e lo spediamo il giorno dell'uscita.",
+          "Ordini ora con pagamento anticipato e ti assicuri il prodotto. Arriva a destinazione entro un massimo di 14 giorni dalla conferma del pagamento.",
         ],
       },
       {
@@ -76,7 +78,7 @@ export const SUPPORT_PAGES = {
       {
         heading: "Prodotti in pre-ordine",
         body: [
-          "Se il tuo ordine contiene un pre-ordine, spediamo tutto insieme alla data di uscita. Se preferisci ricevere prima il resto, effettua due ordini separati.",
+          "I pre-ordini si pagano in anticipo tramite PayPal.Me. Il prodotto arriva a destinazione entro un massimo di 14 giorni dalla conferma del pagamento.",
         ],
       },
     ],
@@ -130,6 +132,14 @@ export const SUPPORT_PAGES = {
         heading: "Collaborazioni",
         body: ["Organizzi tornei o gestisci un negozio? Scrivi a partner@geardrop.it."],
       },
+      {
+        heading: "Dati societari",
+        body: [
+          `${COMPANY_LEGAL.legalName} — ${COMPANY_LEGAL.registeredOffice}.`,
+          `P.IVA ${COMPANY_LEGAL.euVatNumber} · REA ${COMPANY_LEGAL.reaNumber} · PEC ${COMPANY_LEGAL.certifiedEmail}.`,
+          "Store ufficiale affiliato a Gear Sports Italia.",
+        ],
+      },
     ],
   },
 } as const satisfies Record<string, ContentPage>;
@@ -145,7 +155,10 @@ export const LEGAL_PAGES = {
     sections: [
       {
         heading: "Oggetto",
-        body: ["Questa sezione descriverà l'ambito del contratto di vendita tra GEAR//DROP e il cliente."],
+        body: [
+          "Questo contratto regola la vendita a distanza dei prodotti offerti su GEAR//DROP, store ufficiale affiliato a Gear Sports Italia.",
+          `Venditore: ${COMPANY_LEGAL.legalName} (${COMPANY_LEGAL.legalForm}), ${COMPANY_LEGAL.registeredOffice} — P.IVA ${COMPANY_LEGAL.euVatNumber}, REA ${COMPANY_LEGAL.reaNumber}, PEC ${COMPANY_LEGAL.certifiedEmail}.`,
+        ],
       },
       {
         heading: "Ordini e prezzi",
@@ -160,7 +173,13 @@ export const LEGAL_PAGES = {
     lead: "Come trattiamo i dati personali.",
     notice: LEGAL_NOTICE,
     sections: [
-      { heading: "Titolare del trattamento", body: ["Questa sezione indicherà il titolare e i contatti."] },
+      {
+        heading: "Titolare del trattamento",
+        body: [
+          `Il titolare del trattamento è ${COMPANY_LEGAL.legalName}, ${COMPANY_LEGAL.registeredOffice}, P.IVA ${COMPANY_LEGAL.euVatNumber}.`,
+          `Per esercitare i tuoi diritti scrivi a ${COMPANY_LEGAL.supportEmail} (PEC ${COMPANY_LEGAL.certifiedEmail}).`,
+        ],
+      },
       { heading: "Dati raccolti e finalità", body: ["Questa sezione elencherà dati, finalità e basi giuridiche."] },
       { heading: "Cookie", body: ["Questa sezione elencherà i cookie usati e le modalità di consenso."] },
       { heading: "Diritti dell'interessato", body: ["Questa sezione descriverà i diritti previsti dal GDPR."] },

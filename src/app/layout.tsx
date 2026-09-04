@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
-import { ToastProvider } from "@/components/ui/toast";
+import { Providers } from "@/components/providers";
 import { brand } from "@/data/assets";
 import "@/styles/globals.css";
 
@@ -59,7 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="it" className={`${archivo.variable} ${inter.variable}`}>
       <body className="min-h-dvh">
-        <ToastProvider>
+        <Providers>
           <a
             href="#contenuto"
             className="gd-display sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-lime focus:px-5 focus:py-3 focus:text-small focus:font-bold focus:text-graphite"
@@ -73,7 +74,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </main>
           <Footer />
           <BottomTabBar />
-        </ToastProvider>
+        </Providers>
+        {/* Cookieless traffic analytics (Vercel). No consent banner required. */}
+        <Analytics />
       </body>
     </html>
   );

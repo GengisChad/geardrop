@@ -52,6 +52,8 @@ export type Product = {
   readonly category: CategorySlug;
   readonly bladeType?: BladeType;
   readonly stock: StockStatus;
+  /** Units on hand. Optional: the backend catalogue may not expose a count. */
+  readonly stockQuantity?: number;
   readonly tags: readonly PromoTag[];
   readonly rating: number;
   readonly reviewCount: number;

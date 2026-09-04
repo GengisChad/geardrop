@@ -10,27 +10,93 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Field, TextInput, inputClass } from "@/components/ui/field";
 import { CartTotalsPanel } from "@/components/cart/cart-summary";
-import { useCartDetails } from "@/lib/use-cart-details";
+import { useCartDetails, type DetailedLine } from "@/lib/use-cart-details";
 import { useCart } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/format";
 import { PAYMENT_METHODS, SHIPPING_METHODS, checkoutSchema, type CheckoutValues } from "@/lib/checkout-schema";
+import { track } from "@vercel/analytics";
+import { PAYPAL_ME, paypalMeLink, whatsappLink } from "@/lib/payments";
+import type { AppHref } from "@/lib/routes";
+import { placeOrderAction, type CheckoutResult } from "./actions";
 import { cn } from "@/lib/cn";
 
 const STEPS = ["Carrello", "Spedizione", "Pagamento"] as const;
 
+type PlacedOrder = Extract<CheckoutResult, { ok: true }>;
+
 /**
- * Placeholder order reference. A real order number is issued by the backend when the
- * order is created; this only exists so the confirmation screen has something to show.
- * Module scope keeps the impure `Date.now()` out of the render path.
+ * Orders persist to Supabase only when the project keys are present. Without them GEAR//DROP
+ * runs as a manual PayPal.Me shop: the order is built in the browser and handed to the
+ * merchant by email (the only channel available without a backend), and the customer pays
+ * via PayPal.Me. Flip automatically once a Supabase project is configured.
  */
-function makeOrderReference(): string {
-  return `GD-${Date.now().toString().slice(-6)}`;
+const BACKEND_ORDERS = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL);
+
+/** Records a pre-order for traffic/demand analytics (Vercel, cookieless). */
+function trackPreOrder(orderNumber: string, lines: readonly DetailedLine[], totalCents: number) {
+  track("pre_order", { order: orderNumber, items: lines.length, total_eur: totalCents / 100 });
+  for (const { product, quantity } of lines) {
+    track("pre_order_item", { product: product.slug, name: product.name, quantity });
+  }
+}
+
+/** Human, roughly-unique order reference for the manual flow (no DB sequence available). */
+function makeOrderNumber(): string {
+  const now = new Date();
+  const ymd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
+  return `GD-${ymd}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+}
+
+/**
+ * Plain-text order summary the customer sends to the merchant on WhatsApp so the order can
+ * be shipped — the only delivery channel while there is no backend.
+ */
+function buildOrderMessage(
+  orderNumber: string,
+  form: CheckoutValues,
+  lines: readonly DetailedLine[],
+  totals: PlacedOrder["totals"],
+): string {
+  const eur = (cents: number) => `${(cents / 100).toFixed(2)} €`;
+  const shippingLabel = SHIPPING_METHODS.find((m) => m.value === form.shippingMethod)?.label ?? form.shippingMethod;
+  return [
+    `Ordine GEAR//DROP: ${orderNumber}`,
+    "",
+    "Prodotti:",
+    ...lines.map(({ product, quantity, lineTotal }) => `- ${quantity}x ${product.name} — ${eur(lineTotal)}`),
+    "",
+    `Subtotale: ${eur(totals.subtotalCents)}`,
+    `Spedizione (${shippingLabel}): ${eur(totals.shippingCents)}`,
+    `Totale: ${eur(totals.totalCents)}`,
+    "",
+    "Spedizione a:",
+    `${form.firstName} ${form.lastName}`,
+    form.address,
+    `${form.postalCode} ${form.city} (${form.province}) — Italia`,
+    "",
+    `Email: ${form.email}`,
+    `Telefono: ${form.phone}`,
+    ...(form.notes ? [`Note: ${form.notes}`] : []),
+    "",
+    `Pagamento: PayPal.Me (paypal.me/${PAYPAL_ME.handle}) — causale ${orderNumber}`,
+  ].join("\n");
 }
 
 export function CheckoutClient() {
   const { lines, totals, hydrated } = useCartDetails();
   const clear = useCart((s) => s.clear);
-  const [orderId, setOrderId] = useState<string | null>(null);
+  const [order, setOrder] = useState<PlacedOrder | null>(null);
+  /** Set in the manual (no-backend) flow: the plain-text order summary for the merchant. */
+  const [orderMessage, setOrderMessage] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  /**
+   * One key per checkout session, not per submit: retrying after a network blip or a
+   * double click sends the same key, and the RPC returns the order it already created
+   * instead of taking the stock twice. State (not a ref) because the value is read inside
+   * the submit handler, which the React Compiler treats as render-adjacent.
+   */
+  const [idempotencyKey] = useState(() => crypto.randomUUID());
 
   const {
     register,
@@ -39,7 +105,7 @@ export function CheckoutClient() {
     formState: { errors, isSubmitting },
   } = useForm<CheckoutValues>({
     mode: "onBlur",
-    defaultValues: { shippingMethod: "standard", paymentMethod: "carta" },
+    defaultValues: { shippingMethod: "standard", paymentMethod: "paypalme" },
   });
 
   // useWatch rather than watch(): it subscribes at this component only, and unlike
@@ -48,7 +114,12 @@ export function CheckoutClient() {
   const surcharge = SHIPPING_METHODS.find((m) => m.value === shippingMethod)?.surcharge ?? 0;
   const grandTotal = totals.total.amount + surcharge;
 
-  if (orderId) {
+  if (order) {
+    const orderTotal = formatPrice({ amount: order.totals.totalCents, currency: "EUR" });
+    // External URLs below are cast past Button's internal AppHref typing.
+    const payLink = paypalMeLink(order.totals.totalCents) as AppHref | null;
+    // Manual flow (no backend): link that hands the full order to the merchant on WhatsApp.
+    const orderWhatsapp = orderMessage ? (whatsappLink(orderMessage) as AppHref) : null;
     return (
       <motion.div
         initial={{ opacity: 0, y: 12 }}
@@ -57,12 +128,56 @@ export function CheckoutClient() {
         className="mx-auto mt-10 flex max-w-lg flex-col items-center rounded-[--radius-card] border border-available/30 bg-available-bg px-6 py-14 text-center"
       >
         <CheckCircle2 className="size-14 text-available" strokeWidth={1.5} aria-hidden="true" />
-        <h2 className="mt-5 text-h2 font-bold text-graphite">Ordine confermato</h2>
+        <h2 className="mt-5 text-h2 font-bold text-graphite">Ordine registrato</h2>
+        {/* No email provider exists yet, so this must not promise a confirmation email. */}
         <p className="mt-2 text-small text-grey-600">
-          Grazie. Il tuo ordine <span className="gd-display font-bold text-graphite">{orderId}</span> è stato registrato.
-          Ti abbiamo inviato una email di conferma.
+          Grazie. Il tuo ordine <span className="gd-display font-bold text-graphite">{order.orderNumber}</span> è stato
+          registrato per un totale di{" "}
+          <span className="gd-display font-bold text-graphite">{orderTotal}</span>. Completa il pagamento su PayPal.Me
+          indicando il numero d&apos;ordine{" "}
+          <span className="gd-display font-bold text-graphite">{order.orderNumber}</span> nella causale.
         </p>
-        <Button as={Link} href="/negozio" variant="primary" size="lg" className="mt-7">
+        {orderMessage ? (
+          <p className="mt-2 text-[0.6875rem] text-grey-600">
+            Per la spedizione inviaci il riepilogo con il tuo indirizzo su WhatsApp: il pulsante qui sotto apre il
+            messaggio già compilato.
+          </p>
+        ) : null}
+        <p className="mt-2 text-[0.6875rem] text-grey-600">
+          Pre-ordine con pagamento anticipato: arrivo a destinazione massimo 14 giorni dalla conferma. Conserva il
+          numero d&apos;ordine.
+        </p>
+        {payLink ? (
+          <Button
+            as="a"
+            href={payLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            variant="primary"
+            size="lg"
+            className="mt-7"
+          >
+            Paga {orderTotal} con PayPal.Me
+          </Button>
+        ) : (
+          <p className="mt-6 rounded-xl bg-white/70 px-4 py-3 text-[0.6875rem] text-grey-600">
+            Ti inviamo a breve il link PayPal.Me per completare il pagamento.
+          </p>
+        )}
+        {orderWhatsapp ? (
+          <Button
+            as="a"
+            href={orderWhatsapp}
+            target="_blank"
+            rel="noopener noreferrer"
+            variant="secondary"
+            size="md"
+            className="mt-3"
+          >
+            Invia l&apos;ordine su WhatsApp
+          </Button>
+        ) : null}
+        <Button as={Link} href="/negozio" variant="text" size="md" className="mt-3">
           Continua ad acquistare
         </Button>
       </motion.div>
@@ -87,11 +202,46 @@ export function CheckoutClient() {
     <form
       noValidate
       data-testid="checkout-form"
-      onSubmit={handleSubmit(async () => {
-        // No payment backend exists. This is where the provider would create the order;
-        // nothing is charged and no card data is ever collected by this form.
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        setOrderId(makeOrderReference());
+      onSubmit={handleSubmit(async (values) => {
+        setSubmitError(null);
+
+        if (BACKEND_ORDERS) {
+          // Only identifiers and quantities leave the browser: the server recomputes every
+          // amount from the database. Nothing is charged and no card data is collected.
+          const result = await placeOrderAction({
+            items: lines.map(({ product, quantity }) => ({ slug: product.slug, quantity })),
+            idempotencyKey,
+            form: values,
+          });
+
+          if (!result.ok) {
+            setSubmitError(result.error);
+            return;
+          }
+
+          trackPreOrder(result.orderNumber, lines, result.totals.totalCents);
+          setOrder(result);
+          clear();
+          return;
+        }
+
+        // Manual PayPal.Me flow (no backend): build the order in the browser so the customer
+        // gets a confirmation and a pay link, and prepare the email that carries the full
+        // order and shipping address to the merchant. Nothing is charged here.
+        const manualOrder: PlacedOrder = {
+          ok: true,
+          orderNumber: makeOrderNumber(),
+          totals: {
+            subtotalCents: totals.subtotal.amount,
+            discountCents: 0,
+            shippingCents: totals.shipping.amount + surcharge,
+            totalCents: grandTotal,
+          },
+        };
+
+        trackPreOrder(manualOrder.orderNumber, lines, manualOrder.totals.totalCents);
+        setOrderMessage(buildOrderMessage(manualOrder.orderNumber, values, lines, manualOrder.totals));
+        setOrder(manualOrder);
         clear();
       })}
       className="mt-8 grid items-start gap-8 lg:grid-cols-[1fr_22rem]"
@@ -249,7 +399,8 @@ export function CheckoutClient() {
           </div>
           <p className="mt-4 flex items-center gap-2 text-[0.6875rem] text-grey-600">
             <Lock className="size-3.5 text-violet" aria-hidden="true" />
-            Demo: nessun pagamento viene elaborato e nessun dato di carta viene raccolto.
+            Al momento accettiamo solo PayPal.Me. Dopo la conferma ti mostriamo il link per pagare l&apos;importo:
+            indica il numero d&apos;ordine nella causale.
           </p>
 
           <Field label="Note per il corriere (facoltativo)" htmlFor="notes" error={errors.notes?.message} className="mt-4">
@@ -291,6 +442,12 @@ export function CheckoutClient() {
         <div className="border-t border-grey-200 pt-4">
           <CartTotalsPanel totals={{ ...totals, total: { amount: grandTotal, currency: "EUR" } }} />
         </div>
+
+        {submitError ? (
+          <p role="alert" className="rounded-xl bg-soldout/10 px-3.5 py-2.5 text-small text-soldout">
+            {submitError}
+          </p>
+        ) : null}
 
         <Button type="submit" variant="primary" size="lg" fullWidth disabled={isSubmitting} data-testid="place-order">
           {isSubmitting ? "Elaborazione..." : "Conferma ordine"}

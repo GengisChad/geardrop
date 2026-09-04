@@ -4,8 +4,9 @@ import { Lock, Package } from "lucide-react";
 import { NewsletterForm } from "@/components/layout/newsletter-form";
 import { brand, brandSize } from "@/data/assets";
 import { FOOTER_NAV } from "@/lib/navigation";
+import { AFFILIATION, COMPANY_LEGAL } from "@/lib/company";
 
-const PAYMENTS = ["Visa", "Mastercard", "PayPal", "Klarna"] as const;
+const PAYMENTS = ["PayPal.Me"] as const;
 
 export function Footer() {
   return (
@@ -60,6 +61,9 @@ export function Footer() {
           <p className="mt-4 max-w-xs text-small leading-relaxed text-grey-400">
             Il punto di riferimento in Italia per Beyblade X e per tutti i blader. Qualità. Velocità. Passione.
           </p>
+          <p className="mt-4 max-w-xs text-[0.6875rem] font-bold uppercase tracking-wider text-lime">
+            {AFFILIATION.statement}
+          </p>
         </div>
 
         {FOOTER_NAV.map((column) => (
@@ -104,10 +108,16 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="border-t border-white/10 py-5 text-center">
-        <p className="text-small text-grey-600">
-          © {new Date().getFullYear()} GEAR//DROP. Tutti i diritti riservati.
-        </p>
+      <div className="border-t border-white/10 py-6">
+        <div className="mx-auto flex max-w-[1400px] flex-col gap-2 px-4 text-center sm:px-6">
+          <p className="text-[0.6875rem] leading-relaxed text-grey-600">
+            {COMPANY_LEGAL.legalName} · P.IVA {COMPANY_LEGAL.euVatNumber} · REA {COMPANY_LEGAL.reaNumber} ·{" "}
+            {COMPANY_LEGAL.registeredOffice} · PEC {COMPANY_LEGAL.certifiedEmail}
+          </p>
+          <p className="text-[0.6875rem] text-grey-600">
+            © {new Date().getFullYear()} GEAR//DROP — {AFFILIATION.parentName}. Tutti i diritti riservati.
+          </p>
+        </div>
       </div>
     </footer>
   );

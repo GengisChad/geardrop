@@ -22,3 +22,13 @@ export type AppHref =
   | `/prodotto/${ProductSlug}`
   | `/assistenza/${SupportSlug}`
   | `/legale/${LegalSlug}`;
+
+/**
+ * Escape hatch for paths that only exist at runtime: a `?redirect=` value coming back
+ * from the login form, or a `next=` in a Supabase confirmation link. Typed routes cannot
+ * check those, so the caller must have validated the string is a same-site path first
+ * (see safeRedirect in src/app/auth/actions.ts).
+ */
+export function appRoute(path: string): Route {
+  return path as Route;
+}

@@ -1,21 +1,19 @@
 import { notFound } from "next/navigation";
 import { Hero } from "@/components/home/hero";
 import { CategoryTiles } from "@/components/home/category-tiles";
-import { StatusLegend } from "@/components/home/status-legend";
-import { TrustBandDark, TrustBarLight } from "@/components/home/trust";
-import { BundleBanner } from "@/components/home/bundle-banner";
+import { TrustBandDark } from "@/components/home/trust";
 import { CompetitivePicks } from "@/components/home/competitive-picks";
-import { ClubBand } from "@/components/home/club-band";
 import { ProductCarousel } from "@/components/product/product-carousel";
-import { commerce } from "@/lib/commerce/provider";
+import { Reveal } from "@/components/ui/reveal";
+import { getCommerceProvider } from "@/lib/commerce/provider";
 
 export default async function HomePage() {
-  const [featured, latest, bestSellers, bundle, hero, all] = await Promise.all([
+  const commerce = await getCommerceProvider();
+  const [featured, latest, bestSellers, hero, all] = await Promise.all([
     commerce.listProducts({ sort: "popolari", perPage: 6 }),
     commerce.listProducts({ sort: "novita", perPage: 6 }),
     commerce.listProducts({ sort: "popolari", category: "beyblade-x", perPage: 5 }),
-    commerce.getBundle(),
-    commerce.getProduct("stadio-beystadium-x-attack-set"),
+    commerce.getProduct("drop-attack-battle-set"),
     commerce.listProducts({ perPage: 100 }),
   ]);
 
@@ -25,31 +23,37 @@ export default async function HomePage() {
   return (
     <>
       <Hero product={hero} />
-      <CategoryTiles />
-      <StatusLegend />
 
-      <ProductCarousel title="In evidenza" products={featured.items} href="/negozio" dots className="pb-12" />
+      <Reveal>
+        <CategoryTiles />
+      </Reveal>
 
-      <TrustBandDark className="pb-12" />
+      <Reveal>
+        <ProductCarousel title="In evidenza" products={featured.items} href="/negozio" dots className="pb-12 pt-2" />
+      </Reveal>
 
-      <ProductCarousel title="Ultimi drop" products={latest.items} href="/negozio?sort=novita" className="pb-12" />
+      <Reveal>
+        <TrustBandDark className="pb-12" />
+      </Reveal>
 
-      <ProductCarousel
-        title="Più venduti"
-        products={bestSellers.items}
-        href="/negozio/beyblade-x"
-        ranked
-        showRating
-        className="pb-4"
-      />
+      <Reveal>
+        <ProductCarousel title="Ultimi drop" products={latest.items} href="/negozio?sort=novita" className="pb-12" />
+      </Reveal>
 
-      {bundle ? <BundleBanner bundle={bundle} hero={hero} /> : null}
+      <Reveal>
+        <ProductCarousel
+          title="Più venduti"
+          products={bestSellers.items}
+          href="/negozio/beyblade-x"
+          ranked
+          showRating
+          className="pb-12"
+        />
+      </Reveal>
 
-      <TrustBarLight className="pb-12" />
-
-      <CompetitivePicks products={all.items} />
-
-      <ClubBand />
+      <Reveal>
+        <CompetitivePicks products={all.items} />
+      </Reveal>
     </>
   );
 }
