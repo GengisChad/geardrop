@@ -9,6 +9,7 @@ import { Reveal } from "@/components/ui/reveal";
 import { ManagedHomepage, type ManagedHomepageFallback } from "@/components/content/managed-homepage";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { storefrontContent } from "@/lib/content/provider";
+import { allocateUniqueProductSections } from "@/lib/home/product-selection";
 import { resolveHomepageSections } from "@/lib/storefront/homepage-resolver";
 
 export const metadata: Metadata = {
@@ -50,6 +51,9 @@ export default async function HomePage() {
     return <ManagedHomepage sections={sections} fallback={fallback} />;
   }
 
+  const [homeFeatured = [], homeLatest = [], homeBestSellers = [], homeAll = []] =
+    allocateUniqueProductSections([featured.items, latest.items, bestSellers.items, all.items]);
+
   return (
     <>
       {/* The hero is the LCP element and sits above the fold, so it is never revealed on
@@ -59,7 +63,7 @@ export default async function HomePage() {
       <StatusLegend />
 
       <Reveal>
-        <ProductCarousel title="In evidenza" products={featured.items} href="/negozio" dots className="pb-12" />
+        <ProductCarousel title="In evidenza" products={homeFeatured} href="/negozio" dots className="pb-12" />
       </Reveal>
 
       <Reveal>
@@ -67,13 +71,13 @@ export default async function HomePage() {
       </Reveal>
 
       <Reveal>
-        <ProductCarousel title="Ultimi drop" products={latest.items} href="/negozio?sort=novita" className="pb-12" />
+        <ProductCarousel title="Ultimi drop" products={homeLatest} href="/negozio?sort=novita" className="pb-12" />
       </Reveal>
 
       <Reveal>
         <ProductCarousel
           title="Pre-ordini aperti"
-          products={bestSellers.items}
+          products={homeBestSellers}
           href="/negozio/beyblade-x"
           className="pb-4"
         />
@@ -86,7 +90,7 @@ export default async function HomePage() {
       <Reveal>
         <ProductCarousel
           title="Esplora il catalogo"
-          products={all.items}
+          products={homeAll}
           href="/negozio/beyblade-x"
           className="pb-12"
         />

@@ -10,6 +10,7 @@ import { ProductCarousel } from "@/components/product/product-carousel";
 import { Reveal } from "@/components/ui/reveal";
 import type { Bundle, Product } from "@/lib/commerce/types";
 import type { HomepageSection } from "@/lib/content/types";
+import { allocateUniqueProductSections } from "@/lib/home/product-selection";
 import type { ResolvedHomepageSection } from "@/lib/storefront/homepage-resolver";
 
 /**
@@ -50,6 +51,29 @@ function productsFor(
   return resolved.length > 0 ? resolved : fallback;
 }
 
+/** Resolve a product section before the page-wide first-occurrence allocation runs. */
+function productCandidatesFor(
+  resolved: ResolvedHomepageSection,
+  fallback: ManagedHomepageFallback,
+): readonly Product[] | undefined {
+  const { section, products } = resolved;
+
+  switch (section.section_type) {
+    case "featured_products":
+    case "offers":
+      return productsFor(products, fallback.featured);
+    case "latest_drops":
+    case "new_arrivals":
+      return productsFor(products, fallback.latest);
+    case "bestsellers":
+      return productsFor(products, fallback.bestSellers);
+    case "competitive_products":
+      return productsFor(products, fallback.all);
+    default:
+      return undefined;
+  }
+}
+
 /**
  * Light-glass frame for the secondary section types the enum allows but that have no
  * bespoke component yet (announcement, newsletter, promo_banner, rich_text, cta). It is
@@ -88,8 +112,12 @@ function GenericSection({ section }: { readonly section: HomepageSection }) {
   );
 }
 
-function renderSection(resolved: ResolvedHomepageSection, fallback: ManagedHomepageFallback): React.ReactNode {
-  const { section, products } = resolved;
+function renderSection(
+  resolved: ResolvedHomepageSection,
+  fallback: ManagedHomepageFallback,
+  displayProducts: readonly Product[] | undefined,
+): React.ReactNode {
+  const { section } = resolved;
 
   switch (section.section_type) {
     case "hero":
@@ -129,7 +157,7 @@ function renderSection(resolved: ResolvedHomepageSection, fallback: ManagedHomep
         <Reveal key={section.id}>
           <ProductCarousel
             title={section.title || "In evidenza"}
-            products={productsFor(products, fallback.featured)}
+            products={displayProducts ?? []}
             href="/negozio"
             dots
             className="pb-12"
@@ -143,7 +171,7 @@ function renderSection(resolved: ResolvedHomepageSection, fallback: ManagedHomep
         <Reveal key={section.id}>
           <ProductCarousel
             title={section.title || "Ultimi drop"}
-            products={productsFor(products, fallback.latest)}
+            products={displayProducts ?? []}
             href="/negozio?sort=novita"
             className="pb-12"
           />
@@ -155,7 +183,7 @@ function renderSection(resolved: ResolvedHomepageSection, fallback: ManagedHomep
         <Reveal key={section.id}>
           <ProductCarousel
             title={section.title || "Pre-ordini aperti"}
-            products={productsFor(products, fallback.bestSellers)}
+            products={displayProducts ?? []}
             href="/negozio/beyblade-x"
             className="pb-4"
           />
@@ -167,7 +195,7 @@ function renderSection(resolved: ResolvedHomepageSection, fallback: ManagedHomep
         <Reveal key={section.id}>
           <ProductCarousel
             title={section.title || "Offerte"}
-            products={productsFor(products, fallback.featured)}
+            products={displayProducts ?? []}
             href="/negozio"
             className="pb-12"
           />
@@ -195,7 +223,7 @@ function renderSection(resolved: ResolvedHomepageSection, fallback: ManagedHomep
         <Reveal key={section.id}>
           <ProductCarousel
             title={section.title || "Esplora il catalogo"}
-            products={productsFor(products, fallback.all)}
+            products={displayProducts ?? []}
             href="/negozio/beyblade-x"
             className="pb-12"
           />
@@ -228,5 +256,9 @@ export function ManagedHomepage({
   readonly sections: readonly ResolvedHomepageSection[];
   readonly fallback: ManagedHomepageFallback;
 }) {
-  return <>{sections.map((resolved) => renderSection(resolved, fallback))}</>;
+  const allocatedProducts = allocateUniqueProductSections(
+    sections.map((resolved) => productCandidatesFor(resolved, fallback)),
+  );
+
+  return <>{sections.map((resolved, index) => renderSection(resolved, fallback, allocatedProducts[index]))}</>;
 }

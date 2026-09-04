@@ -16,6 +16,15 @@ const DATABASE_FAILURE = /permission denied|42501|PGRST\d{3}|row-level security|
 
 type Watcher = { readonly problems: string[] };
 
+const EXPECTED_HOME_PRODUCT_SLUGS = [
+  "cobalt-dragoon-2-60c",
+  "soar-phoenix-9-60gf",
+  "saber-samurai-2-70l",
+  "blast-pegasus-a-tr",
+  "drop-attack-battle-set",
+  "sneak-attack-battle-set",
+] as const;
+
 /** Collects console errors, page exceptions and 5xx responses for the whole test. */
 function watch(page: Page): Watcher {
   const problems: string[] = [];
@@ -87,7 +96,16 @@ test.describe("anonymous storefront on Supabase", () => {
     for (const slug of ["beyblade-x", "lanciatori", "stadi", "accessori"]) {
       await expect(page.locator(`a[href="/negozio/${slug}"]`).first()).toBeVisible();
     }
-    expect(await page.getByTestId("product-card").count()).toBeGreaterThan(0);
+    const productCards = page.getByTestId("product-card");
+    await expect(productCards).toHaveCount(EXPECTED_HOME_PRODUCT_SLUGS.length);
+    await expect(page.getByTestId("product-carousel")).toHaveCount(1);
+    const homepageProductSlugs = await productCards.evaluateAll((cards) =>
+      cards.map((card) => card.getAttribute("data-slug")).filter((slug): slug is string => Boolean(slug)),
+    );
+    expect(homepageProductSlugs, "managed homepage product order or allocation changed").toEqual(
+      EXPECTED_HOME_PRODUCT_SLUGS,
+    );
+    expect(new Set(homepageProductSlugs).size, "managed homepage repeats products across shelves").toBe(6);
 
     // Chrome comes from the CMS tables, not from a hardcoded fallback.
     await expect(page.getByRole("contentinfo")).toBeVisible();
