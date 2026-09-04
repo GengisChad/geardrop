@@ -2,7 +2,10 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const migration = readFileSync(join(process.cwd(), "supabase/migrations/20260718185745_add_promotions_and_coupon_rules.sql"), "utf8");
+const migration = readFileSync(
+  join(process.cwd(), "supabase/migrations/20260718185745_add_promotions_and_coupon_rules.sql"),
+  "utf8",
+).replaceAll("\r\n", "\n");
 
 describe("promotions, coupons, and authoritative pricing migration", () => {
   it("creates typed promotion rules and all relational targets", () => {

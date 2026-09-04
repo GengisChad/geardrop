@@ -23,8 +23,8 @@ const SHIPPING = [
 
 const PRODUCT_ROW = {
   id: 7,
-  slug: "wizard-arrow-4-80b",
-  name: "Wizard Arrow 4-80B",
+  slug: "cobalt-dragoon-2-60c",
+  name: "Cobalt Dragoon 2-60C",
   price_cents: 1999,
   stock_status: "disponibile",
   stock_quantity: 5,
@@ -72,18 +72,19 @@ function fakeProvider(options: Options = {}) {
   return { provider: createSupabaseCommerceProvider({ from, rpc } as never), rpc };
 }
 
-const cart = { lines: [{ slug: "wizard-arrow-4-80b" as never, quantity: 2 }] };
+const cart = { lines: [{ slug: "cobalt-dragoon-2-60c" as never, quantity: 2 }] };
 
 describe("Supabase quoteCart", () => {
   it("prices from the database, not from the bundled catalogue", async () => {
     const { provider } = fakeProvider();
     const quote = await provider.quoteCart(cart);
 
-    const staticPrice = PRODUCTS.find((p) => p.slug === "wizard-arrow-4-80b")?.price.amount;
-    expect(staticPrice).toBe(2499);
+    const staticPrice = PRODUCTS.find((p) => p.slug === "cobalt-dragoon-2-60c")?.price.amount;
+    expect(staticPrice).toBe(2550);
     // The row says 19,99. The static catalogue must lose.
     expect(quote.lines[0]?.unitPrice.amount).toBe(1999);
     expect(quote.lines[0]?.lineTotal.amount).toBe(3998);
+    expect(quote.lines[0]?.availableQuantity).toBe(5);
     expect(quote.totals.subtotal.amount).toBe(3998);
     expect(quote.totals.total.amount).toBe(4488);
   });
@@ -139,6 +140,7 @@ describe("Supabase quoteCart", () => {
     const quote = await provider.quoteCart(cart);
 
     expect(quote.lines[0]?.issue).toBe("Disponibilità insufficiente: ne restano 1.");
+    expect(quote.lines[0]?.availableQuantity).toBe(1);
     expect(quote.orderable).toBe(false);
     // A disabled checkout button must always come with a reason.
     expect(quote.notice).toContain("Alcuni articoli non sono ordinabili");
@@ -168,7 +170,7 @@ describe("Supabase quoteCart", () => {
     const { provider } = fakeProvider({ products: [] });
     const quote = await provider.quoteCart(cart);
 
-    expect(quote.missingSlugs).toEqual(["wizard-arrow-4-80b"]);
+    expect(quote.missingSlugs).toEqual(["cobalt-dragoon-2-60c"]);
     expect(quote.lines).toEqual([]);
     expect(quote.orderable).toBe(false);
   });

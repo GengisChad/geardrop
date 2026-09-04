@@ -34,6 +34,9 @@ type RawProduct = {
   readonly compare_at_price_cents: number | null;
   readonly blade_type: BladeType | null;
   readonly stock_status: StockStatus;
+  readonly stock_quantity: number;
+  readonly preorder_allocation: number;
+  readonly availability_override: string | null;
   readonly rating: number | string;
   readonly review_count: number;
   readonly category: { readonly slug: string } | readonly { readonly slug: string }[];
@@ -61,6 +64,9 @@ const PRODUCT_SELECT = `
   compare_at_price_cents,
   blade_type,
   stock_status,
+  stock_quantity,
+  preorder_allocation,
+  availability_override,
   rating,
   review_count,
   category:categories!inner(slug),
@@ -100,6 +106,7 @@ export function mapSupabaseProduct(row: RawProduct): Product {
     category: category.slug as CategorySlug,
     ...bladeType,
     stock: row.stock_status,
+    availableQuantity: projectedAvailability(row),
     tags: row.tags.map(({ tag }) => tag),
     rating: Number(row.rating),
     reviewCount: row.review_count,
@@ -377,6 +384,7 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>)
           lineTotal: { amount: row.price_cents * line.quantity, currency: "EUR" },
           image: primaryImage(row),
           stock: row.stock_status,
+          availableQuantity: projectedAvailability(row),
           issue,
         });
         if (!issue) sellable.push({ product_id: row.id, quantity: line.quantity });
@@ -506,14 +514,21 @@ function priceCart(
  */
 function lineIssue(row: QuotableProduct, quantity: number): string | null {
   if (!row.is_purchasable) return "Non disponibile: rimuovilo per procedere.";
-  const stock =
-    row.availability_override === "preorder" ? row.preorder_allocation : row.stock_quantity;
+  const stock = projectedAvailability(row);
   if (quantity > stock) {
     return stock > 0
       ? `Disponibilità insufficiente: ne restano ${stock}.`
       : "Non disponibile: rimuovilo per procedere.";
   }
   return null;
+}
+
+function projectedAvailability(row: {
+  readonly stock_quantity: number;
+  readonly preorder_allocation: number;
+  readonly availability_override: string | null;
+}): number {
+  return row.availability_override === "preorder" ? row.preorder_allocation : row.stock_quantity;
 }
 
 function primaryImage(row: QuotableProduct): ProductImage | null {

@@ -21,7 +21,7 @@ export default async function HomePage() {
     commerce.listProducts({ sort: "novita", perPage: 6 }),
     commerce.listProducts({ sort: "popolari", category: "beyblade-x", perPage: 5 }),
     commerce.getBundle(),
-    commerce.getProduct("stadio-beystadium-x-attack-set"),
+    commerce.getProduct("drop-attack-battle-set"),
     commerce.listProducts({ perPage: 100 }),
     storefrontContent.getHomepage(),
   ]);

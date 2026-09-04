@@ -183,9 +183,14 @@ export function createMockProvider(catalogue: readonly Product[] = PRODUCTS): Co
           lineTotal: { amount: product.price.amount * line.quantity, currency: "EUR" },
           image: product.images[0] ?? null,
           stock: product.stock,
+          ...(product.availableQuantity === undefined
+            ? {}
+            : { availableQuantity: product.availableQuantity }),
           issue:
             product.stock === "esaurito"
               ? "Non disponibile: rimuovilo per procedere."
+              : product.availableQuantity !== undefined && line.quantity > product.availableQuantity
+                ? `Disponibilità insufficiente: ne restano ${product.availableQuantity}.`
               : null,
         });
       }

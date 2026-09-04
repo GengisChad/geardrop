@@ -48,6 +48,17 @@ describe("Supabase database CI workflow", () => {
     for (const fragment of requiredFragments) expect(yaml).toContain(fragment);
   });
 
+  it("rejects generated seed drift before resetting the database", () => {
+    const yaml = workflow();
+    const generate = yaml.indexOf("pnpm seed:supabase");
+    const diff = yaml.indexOf("git diff --exit-code -- supabase/seed.sql");
+    const reset = yaml.indexOf("supabase db reset --local");
+
+    expect(generate).toBeGreaterThan(-1);
+    expect(diff).toBeGreaterThan(generate);
+    expect(reset).toBeGreaterThan(diff);
+  });
+
   it("contains no remote Supabase credential or linked command", () => {
     const yaml = workflow();
 

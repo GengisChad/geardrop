@@ -52,6 +52,8 @@ export type Product = {
   readonly category: CategorySlug;
   readonly bladeType?: BladeType;
   readonly stock: StockStatus;
+  /** Current backend allocation/stock projection; final validation remains server-side. */
+  readonly availableQuantity?: number;
   readonly tags: readonly PromoTag[];
   readonly rating: number;
   readonly reviewCount: number;
@@ -93,6 +95,8 @@ export type CartQuoteLine = {
   readonly lineTotal: Money;
   readonly image: ProductImage | null;
   readonly stock: StockStatus;
+  /** Availability from the authoritative row used to validate this quote line. */
+  readonly availableQuantity?: number;
   /** Italian sentence when this line cannot be ordered as requested, else null. */
   readonly issue: string | null;
 };

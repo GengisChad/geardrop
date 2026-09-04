@@ -33,21 +33,19 @@ on conflict (slug) do update set
   description = excluded.description,
   sort_order = excluded.sort_order;
 
-with seed(category_slug, slug, sku, name, tagline, description, price_cents, compare_at_price_cents, blade_type, rating, review_count, sort_order) as (
+with seed(category_slug, slug, sku, preorder_allocation, name, tagline, description, price_cents, compare_at_price_cents, blade_type, rating, review_count, sort_order) as (
   values
-  ('stadi', 'stadio-beystadium-x-attack-set', 'stadio-beystadium-x-attack-set', 'Stadio Beystadium X Attack Set', 'Arena, 2 trottole e 2 lanciatori inclusi.', 'Lo Stadium X Attack Set è l''arena definitiva per chi ama l''azione senza compromessi. La sua forma esclusiva guida le trottole verso il centro, aumentando la frequenza degli urti e le possibilità di KO spettacolari. Il set include 2 trottole ufficiali Beyblade X e 2 lanciatori di precisione, per sfide epiche subito pronte all''azione.', 4999, null, null, 4.8, 237, 0),
-  ('beyblade-x', 'wizard-arrow-4-80b', 'wizard-arrow-4-80b', 'Wizard Arrow 4-80B', 'Equilibrio perfetto tra velocità e impatto.', 'Wizard Arrow 4-80B unisce una linea aggressiva a un assetto stabile: accelera in curva e mantiene la traiettoria anche dopo gli urti più duri. Una scelta solida per chi costruisce combo d''attacco affidabili.', 2499, null, 'attacco', 4.5, 1230, 1),
-  ('beyblade-x', 'cobalt-dragoon-2-60c', 'cobalt-dragoon-2-60c', 'Cobalt Dragoon 2-60C Starter Pack', 'Potenza esplosiva. Colpisci senza pietà.', 'Cobalt Dragoon 2-60C combina un design aggressivo con prestazioni bilanciate per offrire attacchi devastanti e stabilità costante. Ideale per blader che vogliono imporsi in ogni scontro. Lo starter pack include il lanciatore a corda.', 3499, null, 'attacco', 4.5, 987, 2),
-  ('beyblade-x', 'phoenix-wing-9-60gf', 'phoenix-wing-9-60gf', 'Phoenix Wing 9-60GF', 'Resistenza e controllo in ogni scontro.', 'Phoenix Wing 9-60GF è costruita per durare: assorbe gli urti e restituisce rotazione, logorando gli avversari fino all''ultimo giro. La scelta di chi vince ai punti.', 2499, null, 'bilanciato', 4.5, 845, 3),
-  ('beyblade-x', 'shark-edge-3-60lf', 'shark-edge-3-60lf', 'Shark Edge 3-60LF', 'Difesa solida. Resisti fino alla fine.', 'Shark Edge 3-60LF è pensata per incassare: profilo basso, baricentro compatto e un bordo che devia gli attacchi invece di subirli. Chi prova a spingerti fuori se ne pentirà.', 2499, null, 'difesa', 4.5, 612, 4),
-  ('beyblade-x', 'dran-sword-4-80db', 'dran-sword-4-80db', 'Dran Sword 4-80DB', 'Stamina infinita. Non fermarti mai.', 'Dran Sword 4-80DB gira, e gira ancora. Dispersione minima e assetto pulito per portare il duello alla distanza e chiuderlo quando gli altri si sono già fermati.', 2499, null, 'stamina', 4.5, 543, 5),
-  ('beyblade-x', 'dran-buster-1-60a', 'dran-buster-1-60a', 'Dran Buster 1-60A', 'Impatto puro. Chiudi il match al primo colpo.', 'Dran Buster 1-60A concentra tutta la massa dove serve: sull''urto. Costruita per chi non vuole aspettare i punti e preferisce chiudere con un KO.', 2499, null, 'attacco', 4.5, 112, 6),
-  ('stadi', 'sneak-attack-battle-set', 'sneak-attack-battle-set', 'Sneak Attack Battle Set', 'Il set completo per iniziare a vincere.', 'Sneak Attack Battle Set mette in scatola tutto quello che serve per il primo scontro: arena, trottole e lanciatori. Ordina ora, spediamo appena disponibile.', 6499, null, null, 4.6, 58, 7)
+  ('beyblade-x', 'cobalt-dragoon-2-60c', 'COBALT-DRAGOON-2-60C', 10, 'Cobalt Dragoon 2-60C', 'Attacco left-spin. Smash devastante.', 'Cobalt Dragoon 2-60C è una trottola d''attacco a rotazione sinistra (left-spin): quattro lame inclinate verso l''alto concentrano uno Smash Attack estremo, mentre il Ratchet 2-60 e il Bit Cyclone bilanciano velocità e stabilità. Lo starter include il lanciatore a corda left-spin dedicato.', 2550, null, 'attacco', 0, 0, 0),
+  ('beyblade-x', 'soar-phoenix-9-60gf', 'SOAR-PHOENIX-9-60GF', 60, 'Soar Phoenix 9-60GF', 'Upper attack. Colpisci verso l''alto.', 'Soar Phoenix 9-60GF è una trottola d''attacco a tre lame che salgono verso l''alto per un Upper Attack capace di sollevare l''avversario, unito allo Smash che lo spinge fuori arena. Tra le blade più pesanti della serie. Lo starter include il lanciatore a corda.', 3200, null, 'attacco', 0, 0, 1),
+  ('beyblade-x', 'saber-samurai-2-70l', 'SABER-SAMURAI-2-70L', 30, 'Saber Samurai 2-70L', 'Doppia lama. Colpi da katana.', 'Saber Samurai 2-70L (linea UX) è una trottola d''attacco: le due protuberanze si ritraggono a metà battaglia, passando da colpi ripetuti in stile katana a un singolo impatto "tachi" per KO improvvisi. Lo starter include il lanciatore con impugnatura (grip).', 2790, null, 'attacco', 0, 0, 2),
+  ('beyblade-x', 'blast-pegasus-a-tr', 'BLAST-PEGASUS-A-TR', 30, 'Blast Pegasus A Tr', 'Attacco portatile. Clip & Rip Launcher.', 'Blast Pegasus A Tr è una trottola d''attacco a rotazione destra della linea CX, venduta con il Clip & Rip Launcher: un lanciatore portatile che si aggancia a cintura e zaino e ripone il ripcord all''interno. Richiede un Beystadium Beyblade X (venduto separatamente).', 2950, null, 'attacco', 0, 0, 3),
+  ('stadi', 'drop-attack-battle-set', 'DROP-ATTACK-BATTLE-SET', 30, 'Drop Attack Battle Set', 'Stadio + 2 trottole + 2 lanciatori.', 'Il Drop Attack Battle Set include tutto per giocare: il Beystadium con X-Celerator Rail rialzato che porta le trottole in alto per farle piombare sull''avversario, due trottole (Impact Drake 9-60LR d''attacco e Hover Wyvern 3-85N di difesa) e due lanciatori a corda.', 4650, null, null, 0, 0, 4),
+  ('stadi', 'sneak-attack-battle-set', 'SNEAK-ATTACK-BATTLE-SET', 30, 'Sneak Attack Battle Set', 'Stadio verde + 2 trottole + 2 lanciatori.', 'Il Sneak Attack Battle Set mette in scatola tutto per il primo scontro: il Beystadium con rail a scomparsa che devia le trottole in una nuova direzione, due trottole (Rampart Aegis GB di stamina e Cutter Shinobi LF d''attacco) e due lanciatori a corda.', 4500, null, null, 0, 0, 5)
 )
 insert into public.products (
   category_id, slug, sku, name, tagline, description, price_cents,
   compare_at_price_cents, publication_status, active, stock_quantity,
-  blade_type, rating, review_count, sort_order
+  availability_override, preorder_allocation, blade_type, rating, review_count, sort_order
 )
 select
   category.id,
@@ -61,6 +59,8 @@ select
   'published'::public.publication_status,
   true,
   0 as stock_quantity,
+  'preorder'::public.availability_override,
+  seed.preorder_allocation,
   seed.blade_type::public.blade_type,
   seed.rating,
   seed.review_count,
@@ -82,15 +82,12 @@ on conflict (slug) do update set
 
 with seed(product_slug, src, width, height, alt, sort_order) as (
   values
-  ('stadio-beystadium-x-attack-set', '/products/stadio-beystadium-x-attack-set-1.png', 530, 472, 'Stadio Beystadium X Attack Set con arena verde, due trottole e due lanciatori', 0),
-  ('wizard-arrow-4-80b', '/products/wizard-arrow-4-80b-1.png', 213, 195, 'Trottola Wizard Arrow 4-80B nera e oro', 0),
-  ('cobalt-dragoon-2-60c', '/products/cobalt-dragoon-2-60c-1.png', 430, 459, 'Confezione Cobalt Dragoon 2-60C con lanciatore blu e trottola', 0),
-  ('cobalt-dragoon-2-60c', '/products/cobalt-dragoon-2-60c-2.png', 261, 171, 'Lanciatore blu e trottola Cobalt Dragoon 2-60C', 1),
-  ('phoenix-wing-9-60gf', '/products/phoenix-wing-9-60gf-1.png', 189, 167, 'Trottola Phoenix Wing 9-60GF rossa e oro', 0),
-  ('shark-edge-3-60lf', '/products/shark-edge-3-60lf-1.png', 194, 155, 'Trottola Shark Edge 3-60LF argento e teal', 0),
-  ('dran-sword-4-80db', '/products/dran-sword-4-80db-1.png', 191, 151, 'Trottola Dran Sword 4-80DB bianca e viola con lanciatore', 0),
-  ('dran-buster-1-60a', '/products/dran-buster-1-60a-1.png', 176, 165, 'Trottola Dran Buster 1-60A rossa e argento', 0),
-  ('sneak-attack-battle-set', '/products/sneak-attack-battle-set-1.png', 172, 168, 'Confezione Sneak Attack Battle Set', 0)
+  ('cobalt-dragoon-2-60c', '/products/cobalt-dragoon-2-60c.webp', 1000, 1000, 'Confezione Beyblade X Cobalt Dragoon 2-60C con lanciatore a corda blu e trottola', 0),
+  ('soar-phoenix-9-60gf', '/products/soar-phoenix-9-60gf.webp', 1000, 1000, 'Confezione Beyblade X Soar Phoenix 9-60GF rossa con lanciatore e trottola', 0),
+  ('saber-samurai-2-70l', '/products/saber-samurai-2-70l.webp', 1000, 1000, 'Confezione Beyblade X Saber Samurai 2-70L viola con lanciatore a impugnatura e trottola', 0),
+  ('blast-pegasus-a-tr', '/products/blast-pegasus-a-tr.webp', 1000, 1000, 'Beyblade X Blast Pegasus A Tr con Clip & Rip Launcher verde e trottola', 0),
+  ('drop-attack-battle-set', '/products/drop-attack-battle-set.webp', 1000, 1000, 'Beyblade X Drop Attack Battle Set: stadio blu, due trottole e due lanciatori', 0),
+  ('sneak-attack-battle-set', '/products/sneak-attack-battle-set.webp', 1000, 1000, 'Beyblade X Sneak Attack Battle Set: stadio verde, due trottole e due lanciatori', 0)
 )
 insert into public.product_images (product_id, src, width, height, alt, sort_order, published)
 select product.id, seed.src, seed.width, seed.height, seed.alt, seed.sort_order, true
@@ -104,38 +101,36 @@ on conflict (product_id, sort_order) do update set
 
 with seed(product_slug, label, value, sort_order) as (
   values
-  ('stadio-beystadium-x-attack-set', 'Tipo', 'Kit arena', 0),
-  ('stadio-beystadium-x-attack-set', 'Sistema', 'Beyblade X', 1),
-  ('stadio-beystadium-x-attack-set', 'Componenti', '1 stadio, 2 trottole, 2 lanciatori', 2),
-  ('stadio-beystadium-x-attack-set', 'Materiale', 'Plastica e metallo', 3),
-  ('wizard-arrow-4-80b', 'Tipo', 'Attacco', 0),
-  ('wizard-arrow-4-80b', 'Sistema', 'Beyblade X', 1),
-  ('wizard-arrow-4-80b', 'Componenti', '1 Top', 2),
-  ('wizard-arrow-4-80b', 'Materiale', 'Plastica e metallo', 3),
-  ('cobalt-dragoon-2-60c', 'Tipo', 'Attacco', 0),
+  ('cobalt-dragoon-2-60c', 'Tipo', 'Attacco (left-spin)', 0),
   ('cobalt-dragoon-2-60c', 'Sistema', 'Beyblade X', 1),
-  ('cobalt-dragoon-2-60c', 'Componenti', '1 Top, 1 Lancia a corda', 2),
-  ('cobalt-dragoon-2-60c', 'Materiale', 'Plastica e metallo', 3),
-  ('phoenix-wing-9-60gf', 'Tipo', 'Bilanciato', 0),
-  ('phoenix-wing-9-60gf', 'Sistema', 'Beyblade X', 1),
-  ('phoenix-wing-9-60gf', 'Componenti', '1 Top', 2),
-  ('phoenix-wing-9-60gf', 'Materiale', 'Plastica e metallo', 3),
-  ('shark-edge-3-60lf', 'Tipo', 'Difesa', 0),
-  ('shark-edge-3-60lf', 'Sistema', 'Beyblade X', 1),
-  ('shark-edge-3-60lf', 'Componenti', '1 Top', 2),
-  ('shark-edge-3-60lf', 'Materiale', 'Plastica e metallo', 3),
-  ('dran-sword-4-80db', 'Tipo', 'Stamina', 0),
-  ('dran-sword-4-80db', 'Sistema', 'Beyblade X', 1),
-  ('dran-sword-4-80db', 'Componenti', '1 Top, 1 Lancia a corda', 2),
-  ('dran-sword-4-80db', 'Materiale', 'Plastica e metallo', 3),
-  ('dran-buster-1-60a', 'Tipo', 'Attacco', 0),
-  ('dran-buster-1-60a', 'Sistema', 'Beyblade X', 1),
-  ('dran-buster-1-60a', 'Componenti', '1 Top', 2),
-  ('dran-buster-1-60a', 'Materiale', 'Plastica e metallo', 3),
+  ('cobalt-dragoon-2-60c', 'Codice', '2-60C', 2),
+  ('cobalt-dragoon-2-60c', 'Componenti', '1 trottola, 1 lanciatore a corda', 3),
+  ('cobalt-dragoon-2-60c', 'Materiale', 'Plastica e metallo', 4),
+  ('soar-phoenix-9-60gf', 'Tipo', 'Attacco', 0),
+  ('soar-phoenix-9-60gf', 'Sistema', 'Beyblade X', 1),
+  ('soar-phoenix-9-60gf', 'Codice', '9-60GF', 2),
+  ('soar-phoenix-9-60gf', 'Componenti', '1 trottola, 1 lanciatore a corda', 3),
+  ('soar-phoenix-9-60gf', 'Materiale', 'Plastica e metallo', 4),
+  ('saber-samurai-2-70l', 'Tipo', 'Attacco', 0),
+  ('saber-samurai-2-70l', 'Sistema', 'Beyblade X', 1),
+  ('saber-samurai-2-70l', 'Linea', 'UX (UX-09)', 2),
+  ('saber-samurai-2-70l', 'Codice', '2-70L', 3),
+  ('saber-samurai-2-70l', 'Componenti', '1 trottola, 1 lanciatore con impugnatura', 4),
+  ('blast-pegasus-a-tr', 'Tipo', 'Attacco', 0),
+  ('blast-pegasus-a-tr', 'Sistema', 'Beyblade X', 1),
+  ('blast-pegasus-a-tr', 'Linea', 'CX', 2),
+  ('blast-pegasus-a-tr', 'Componenti', '1 trottola, 1 Clip & Rip Launcher', 3),
+  ('blast-pegasus-a-tr', 'Nota', 'Richiede un Beystadium (venduto a parte)', 4),
+  ('drop-attack-battle-set', 'Tipo', 'Kit arena', 0),
+  ('drop-attack-battle-set', 'Sistema', 'Beyblade X', 1),
+  ('drop-attack-battle-set', 'Componenti', '1 stadio, 2 trottole, 2 lanciatori', 2),
+  ('drop-attack-battle-set', 'Trottole incluse', 'Impact Drake 9-60LR, Hover Wyvern 3-85N', 3),
+  ('drop-attack-battle-set', 'Materiale', 'Plastica e metallo', 4),
   ('sneak-attack-battle-set', 'Tipo', 'Kit arena', 0),
   ('sneak-attack-battle-set', 'Sistema', 'Beyblade X', 1),
   ('sneak-attack-battle-set', 'Componenti', '1 stadio, 2 trottole, 2 lanciatori', 2),
-  ('sneak-attack-battle-set', 'Materiale', 'Plastica e metallo', 3)
+  ('sneak-attack-battle-set', 'Trottole incluse', 'Rampart Aegis GB, Cutter Shinobi LF', 3),
+  ('sneak-attack-battle-set', 'Materiale', 'Plastica e metallo', 4)
 )
 insert into public.product_specs (product_id, label, value, sort_order)
 select product.id, seed.label, seed.value, seed.sort_order
@@ -146,32 +141,30 @@ on conflict (product_id, sort_order) do update set
 
 with seed(product_slug, title, description, sort_order) as (
   values
-  ('stadio-beystadium-x-attack-set', 'Stadio X Attack', 'Design ottimizzato per scontri intensi e KO spettacolari', 0),
-  ('stadio-beystadium-x-attack-set', 'Include 2 trottole', 'Pronte all''azione con ottime performance', 1),
-  ('stadio-beystadium-x-attack-set', '2 lanciatori inclusi', 'Lanci potenti e precisi per dominare l''arena', 2),
-  ('stadio-beystadium-x-attack-set', 'Compatibile Beyblade X', 'Usa tutte le trottole e accessori della serie Beyblade X', 3),
-  ('stadio-beystadium-x-attack-set', 'Perfetto per sfide epiche', 'Ideale per duelli 1 contro 1 tra amici e collezionisti', 4),
-  ('wizard-arrow-4-80b', 'Assetto d''attacco', 'Massimizza l''aggressività su ogni traiettoria', 0),
-  ('wizard-arrow-4-80b', 'Blade 4-80B', 'Bilanciamento tra velocità di rotazione e impatto', 1),
-  ('wizard-arrow-4-80b', 'Compatibile Beyblade X', 'Si monta con tutte le parti della serie', 2),
-  ('cobalt-dragoon-2-60c', 'Starter pack completo', 'Trottola e lanciatore pronti all''uso', 0),
-  ('cobalt-dragoon-2-60c', 'Rotazioni stabili', 'Attacchi rapidi senza perdere il controllo', 1),
-  ('cobalt-dragoon-2-60c', 'Compatibile Beyblade X', 'Usa tutte le parti e gli accessori della serie', 2),
-  ('phoenix-wing-9-60gf', 'Assetto bilanciato', 'Versatilità totale su attacco e difesa', 0),
-  ('phoenix-wing-9-60gf', 'Blade 9-60GF', 'Resistenza agli urti e rotazione prolungata', 1),
-  ('phoenix-wing-9-60gf', 'Compatibile Beyblade X', 'Si monta con tutte le parti della serie', 2),
-  ('shark-edge-3-60lf', 'Assetto difensivo', 'Resistenza e controllo sotto pressione', 0),
-  ('shark-edge-3-60lf', 'Blade 3-60LF', 'Profilo basso che devia gli impatti', 1),
-  ('shark-edge-3-60lf', 'Compatibile Beyblade X', 'Si monta con tutte le parti della serie', 2),
-  ('dran-sword-4-80db', 'Assetto stamina', 'Durata senza pari sulla lunga distanza', 0),
-  ('dran-sword-4-80db', 'Blade 4-80DB', 'Rotazione pulita e dispersione minima', 1),
-  ('dran-sword-4-80db', 'Compatibile Beyblade X', 'Si monta con tutte le parti della serie', 2),
-  ('dran-buster-1-60a', 'Assetto d''attacco', 'Massa concentrata sull''impatto', 0),
-  ('dran-buster-1-60a', 'Blade 1-60A', 'Colpo secco, pensato per il KO', 1),
-  ('dran-buster-1-60a', 'Compatibile Beyblade X', 'Si monta con tutte le parti della serie', 2),
-  ('sneak-attack-battle-set', 'Set completo', 'Arena, trottole e lanciatori in un''unica confezione', 0),
-  ('sneak-attack-battle-set', 'Pronto al gioco', 'Tutto quello che serve per il primo duello', 1),
-  ('sneak-attack-battle-set', 'Compatibile Beyblade X', 'Usa tutte le trottole della serie', 2)
+  ('cobalt-dragoon-2-60c', 'Rotazione sinistra', 'Left-spin che spiazza gli assetti a rotazione destra', 0),
+  ('cobalt-dragoon-2-60c', 'Smash estremo', 'Quattro lame inclinate per KO potenti', 1),
+  ('cobalt-dragoon-2-60c', 'Starter completo', 'Include il lanciatore a corda dedicato', 2),
+  ('cobalt-dragoon-2-60c', 'Compatibile Beyblade X', 'Blade, Ratchet e Bit intercambiabili con la serie', 3),
+  ('soar-phoenix-9-60gf', 'Upper Attack', 'Le tre lame sollevano l''avversario da terra', 0),
+  ('soar-phoenix-9-60gf', 'Peso elevato', 'Massa che domina i confronti d''attacco', 1),
+  ('soar-phoenix-9-60gf', 'Starter completo', 'Include il lanciatore a corda', 2),
+  ('soar-phoenix-9-60gf', 'Compatibile Beyblade X', 'Blade, Ratchet e Bit intercambiabili con la serie', 3),
+  ('saber-samurai-2-70l', 'Gimmick a doppia modalità', 'Da colpi ripetuti a singolo impatto tachi', 0),
+  ('saber-samurai-2-70l', 'Linea UX', 'Meccanica esclusiva della Unique Line', 1),
+  ('saber-samurai-2-70l', 'Lanciatore grip incluso', 'Impugnatura per lanci potenti e stabili', 2),
+  ('saber-samurai-2-70l', 'Compatibile Beyblade X', 'Blade, Ratchet e Bit intercambiabili con la serie', 3),
+  ('blast-pegasus-a-tr', 'Clip & Rip Launcher', 'Lanciatore portatile: si aggancia e riponi il ripcord', 0),
+  ('blast-pegasus-a-tr', 'Linea CX', 'Trottola d''attacco a rotazione destra', 1),
+  ('blast-pegasus-a-tr', 'X-Celerator', 'Accelera sull''X-Celerator Rail dello stadio', 2),
+  ('blast-pegasus-a-tr', 'Compatibile Beyblade X', 'Blade, Ratchet e Bit intercambiabili con la serie', 3),
+  ('drop-attack-battle-set', 'X-Celerator Rail rialzato', 'Porta le trottole in alto per il Drop Attack', 0),
+  ('drop-attack-battle-set', 'Set completo', 'Stadio, due trottole e due lanciatori pronti al gioco', 1),
+  ('drop-attack-battle-set', 'Impact Drake + Hover Wyvern', 'Un assetto d''attacco e uno di difesa', 2),
+  ('drop-attack-battle-set', 'Compatibile Beyblade X', 'Usa tutte le trottole e parti della serie', 3),
+  ('sneak-attack-battle-set', 'Rail a scomparsa', 'Devia le trottole in una nuova direzione a sorpresa', 0),
+  ('sneak-attack-battle-set', 'Set completo', 'Stadio, due trottole e due lanciatori pronti al gioco', 1),
+  ('sneak-attack-battle-set', 'Rampart Aegis + Cutter Shinobi', 'Un assetto di stamina e uno d''attacco', 2),
+  ('sneak-attack-battle-set', 'Compatibile Beyblade X', 'Usa tutte le trottole e parti della serie', 3)
 )
 insert into public.product_features (product_id, title, description, sort_order)
 select product.id, seed.title, seed.description, seed.sort_order
@@ -182,28 +175,30 @@ on conflict (product_id, sort_order) do update set
 
 with seed(product_slug, content, sort_order) as (
   values
-  ('stadio-beystadium-x-attack-set', '1 × Stadio Beystadium X', 0),
-  ('stadio-beystadium-x-attack-set', '2 × Trottole Beyblade X', 1),
-  ('stadio-beystadium-x-attack-set', '2 × Lanciatori a corda', 2),
-  ('stadio-beystadium-x-attack-set', 'Manuale di gioco', 3),
-  ('wizard-arrow-4-80b', '1 × Trottola Wizard Arrow 4-80B', 0),
-  ('wizard-arrow-4-80b', 'Manuale', 1),
   ('cobalt-dragoon-2-60c', '1 × Trottola Cobalt Dragoon 2-60C', 0),
-  ('cobalt-dragoon-2-60c', '1 × Lanciatore a corda', 1),
+  ('cobalt-dragoon-2-60c', '1 × Lanciatore a corda left-spin', 1),
   ('cobalt-dragoon-2-60c', 'Manuale', 2),
-  ('phoenix-wing-9-60gf', '1 × Trottola Phoenix Wing 9-60GF', 0),
-  ('phoenix-wing-9-60gf', 'Manuale', 1),
-  ('shark-edge-3-60lf', '1 × Trottola Shark Edge 3-60LF', 0),
-  ('shark-edge-3-60lf', 'Manuale', 1),
-  ('dran-sword-4-80db', '1 × Trottola Dran Sword 4-80DB', 0),
-  ('dran-sword-4-80db', '1 × Lanciatore', 1),
-  ('dran-sword-4-80db', 'Manuale', 2),
-  ('dran-buster-1-60a', '1 × Trottola Dran Buster 1-60A', 0),
-  ('dran-buster-1-60a', 'Manuale', 1),
-  ('sneak-attack-battle-set', '1 × Stadio', 0),
-  ('sneak-attack-battle-set', '2 × Trottole Beyblade X', 1),
-  ('sneak-attack-battle-set', '2 × Lanciatori', 2),
-  ('sneak-attack-battle-set', 'Manuale di gioco', 3)
+  ('soar-phoenix-9-60gf', '1 × Trottola Soar Phoenix 9-60GF', 0),
+  ('soar-phoenix-9-60gf', '1 × Lanciatore a corda', 1),
+  ('soar-phoenix-9-60gf', 'Manuale', 2),
+  ('saber-samurai-2-70l', '1 × Trottola Saber Samurai 2-70L', 0),
+  ('saber-samurai-2-70l', '1 × Lanciatore con impugnatura', 1),
+  ('saber-samurai-2-70l', '1 × Winder', 2),
+  ('saber-samurai-2-70l', 'Manuale', 3),
+  ('blast-pegasus-a-tr', '1 × Trottola Blast Pegasus A Tr', 0),
+  ('blast-pegasus-a-tr', '1 × Clip & Rip Launcher', 1),
+  ('blast-pegasus-a-tr', '1 × Ripcord', 2),
+  ('blast-pegasus-a-tr', 'Manuale', 3),
+  ('drop-attack-battle-set', '1 × Beystadium Drop Attack', 0),
+  ('drop-attack-battle-set', '1 × Impact Drake 9-60LR', 1),
+  ('drop-attack-battle-set', '1 × Hover Wyvern 3-85N', 2),
+  ('drop-attack-battle-set', '2 × Lanciatori a corda', 3),
+  ('drop-attack-battle-set', 'Manuale di gioco', 4),
+  ('sneak-attack-battle-set', '1 × Beystadium Sneak Attack', 0),
+  ('sneak-attack-battle-set', '1 × Rampart Aegis GB', 1),
+  ('sneak-attack-battle-set', '1 × Cutter Shinobi LF', 2),
+  ('sneak-attack-battle-set', '2 × Lanciatori a corda', 3),
+  ('sneak-attack-battle-set', 'Manuale di gioco', 4)
 )
 insert into public.product_box_contents (product_id, content, sort_order)
 select product.id, seed.content, seed.sort_order
@@ -211,50 +206,28 @@ from seed join public.products as product on product.slug = seed.product_slug
 on conflict (product_id, sort_order) do update set
   content = excluded.content;
 
-with seed(product_slug, tag) as (
-  values
-  ('stadio-beystadium-x-attack-set', 'novita'),
-  ('sneak-attack-battle-set', 'limited')
-)
-insert into public.product_tags (product_id, tag)
-select product.id, seed.tag::public.promo_tag
-from seed join public.products as product on product.slug = seed.product_slug
-on conflict (product_id, tag) do nothing;
+
 
 with seed(product_slug, related_slug, sort_order) as (
   values
-  ('stadio-beystadium-x-attack-set', 'wizard-arrow-4-80b', 0),
-  ('stadio-beystadium-x-attack-set', 'cobalt-dragoon-2-60c', 1),
-  ('stadio-beystadium-x-attack-set', 'phoenix-wing-9-60gf', 2),
-  ('stadio-beystadium-x-attack-set', 'shark-edge-3-60lf', 3),
-  ('wizard-arrow-4-80b', 'cobalt-dragoon-2-60c', 0),
-  ('wizard-arrow-4-80b', 'dran-buster-1-60a', 1),
-  ('wizard-arrow-4-80b', 'shark-edge-3-60lf', 2),
-  ('wizard-arrow-4-80b', 'phoenix-wing-9-60gf', 3),
-  ('cobalt-dragoon-2-60c', 'wizard-arrow-4-80b', 0),
-  ('cobalt-dragoon-2-60c', 'phoenix-wing-9-60gf', 1),
-  ('cobalt-dragoon-2-60c', 'shark-edge-3-60lf', 2),
-  ('cobalt-dragoon-2-60c', 'dran-sword-4-80db', 3),
-  ('phoenix-wing-9-60gf', 'dran-sword-4-80db', 0),
-  ('phoenix-wing-9-60gf', 'shark-edge-3-60lf', 1),
-  ('phoenix-wing-9-60gf', 'wizard-arrow-4-80b', 2),
-  ('phoenix-wing-9-60gf', 'dran-buster-1-60a', 3),
-  ('shark-edge-3-60lf', 'dran-buster-1-60a', 0),
-  ('shark-edge-3-60lf', 'phoenix-wing-9-60gf', 1),
-  ('shark-edge-3-60lf', 'wizard-arrow-4-80b', 2),
-  ('shark-edge-3-60lf', 'cobalt-dragoon-2-60c', 3),
-  ('dran-sword-4-80db', 'phoenix-wing-9-60gf', 0),
-  ('dran-sword-4-80db', 'cobalt-dragoon-2-60c', 1),
-  ('dran-sword-4-80db', 'shark-edge-3-60lf', 2),
-  ('dran-sword-4-80db', 'dran-buster-1-60a', 3),
-  ('dran-buster-1-60a', 'wizard-arrow-4-80b', 0),
-  ('dran-buster-1-60a', 'shark-edge-3-60lf', 1),
-  ('dran-buster-1-60a', 'cobalt-dragoon-2-60c', 2),
-  ('dran-buster-1-60a', 'dran-sword-4-80db', 3),
-  ('sneak-attack-battle-set', 'stadio-beystadium-x-attack-set', 0),
-  ('sneak-attack-battle-set', 'wizard-arrow-4-80b', 1),
-  ('sneak-attack-battle-set', 'cobalt-dragoon-2-60c', 2),
-  ('sneak-attack-battle-set', 'dran-buster-1-60a', 3)
+  ('cobalt-dragoon-2-60c', 'blast-pegasus-a-tr', 0),
+  ('cobalt-dragoon-2-60c', 'soar-phoenix-9-60gf', 1),
+  ('cobalt-dragoon-2-60c', 'saber-samurai-2-70l', 2),
+  ('soar-phoenix-9-60gf', 'cobalt-dragoon-2-60c', 0),
+  ('soar-phoenix-9-60gf', 'blast-pegasus-a-tr', 1),
+  ('soar-phoenix-9-60gf', 'saber-samurai-2-70l', 2),
+  ('saber-samurai-2-70l', 'cobalt-dragoon-2-60c', 0),
+  ('saber-samurai-2-70l', 'soar-phoenix-9-60gf', 1),
+  ('saber-samurai-2-70l', 'blast-pegasus-a-tr', 2),
+  ('blast-pegasus-a-tr', 'cobalt-dragoon-2-60c', 0),
+  ('blast-pegasus-a-tr', 'soar-phoenix-9-60gf', 1),
+  ('blast-pegasus-a-tr', 'saber-samurai-2-70l', 2),
+  ('drop-attack-battle-set', 'sneak-attack-battle-set', 0),
+  ('drop-attack-battle-set', 'cobalt-dragoon-2-60c', 1),
+  ('drop-attack-battle-set', 'soar-phoenix-9-60gf', 2),
+  ('sneak-attack-battle-set', 'drop-attack-battle-set', 0),
+  ('sneak-attack-battle-set', 'cobalt-dragoon-2-60c', 1),
+  ('sneak-attack-battle-set', 'saber-samurai-2-70l', 2)
 )
 insert into public.product_relations (product_id, related_product_id, relation_type, sort_order)
 select product.id, related.id, 'related'::public.product_relation_type, seed.sort_order
@@ -273,13 +246,13 @@ select
   'Bundle campione',
   'Scatena il',
   'tuo potenziale.',
-  'Arena, 2 trottole ad alte prestazioni e 2 lanciatori. Tutto ciò che ti serve per dominare.',
-  7999,
-  9996,
+  'Uno stadio e le trottole ad alte prestazioni per iniziare a dominare l''arena.',
+  9900,
+  10400,
   product.id,
   true
 from public.products as product
-where product.slug = 'stadio-beystadium-x-attack-set'
+where product.slug = 'drop-attack-battle-set'
 on conflict (slug) do update set
   eyebrow = excluded.eyebrow,
   title_line_one = excluded.title_line_one,
@@ -291,9 +264,9 @@ on conflict (slug) do update set
 
 with seed(bundle_slug, product_slug, quantity, sort_order) as (
   values
-  ('bundle-campione', 'stadio-beystadium-x-attack-set', 1, 0),
-  ('bundle-campione', 'wizard-arrow-4-80b', 1, 1),
-  ('bundle-campione', 'dran-buster-1-60a', 1, 2)
+  ('bundle-campione', 'drop-attack-battle-set', 1, 0),
+  ('bundle-campione', 'cobalt-dragoon-2-60c', 1, 1),
+  ('bundle-campione', 'soar-phoenix-9-60gf', 1, 2)
 )
 insert into public.bundle_items (bundle_id, product_id, quantity, sort_order)
 select bundle.id, product.id, seed.quantity, seed.sort_order
@@ -335,29 +308,30 @@ where target.section_id = section.id
 
 with seed(section_key, product_slug, sort_order) as (
   values
-  ('featured-products', 'stadio-beystadium-x-attack-set', 0),
-  ('featured-products', 'wizard-arrow-4-80b', 1),
-  ('featured-products', 'cobalt-dragoon-2-60c', 2),
-  ('featured-products', 'phoenix-wing-9-60gf', 3),
-  ('featured-products', 'shark-edge-3-60lf', 4),
-  ('featured-products', 'dran-sword-4-80db', 5),
-  ('latest-drops', 'stadio-beystadium-x-attack-set', 0),
-  ('latest-drops', 'wizard-arrow-4-80b', 1),
-  ('latest-drops', 'cobalt-dragoon-2-60c', 2),
-  ('latest-drops', 'phoenix-wing-9-60gf', 3),
-  ('latest-drops', 'shark-edge-3-60lf', 4),
-  ('latest-drops', 'dran-sword-4-80db', 5),
-  ('bestsellers', 'wizard-arrow-4-80b', 0),
-  ('bestsellers', 'cobalt-dragoon-2-60c', 1),
-  ('bestsellers', 'phoenix-wing-9-60gf', 2),
-  ('bestsellers', 'shark-edge-3-60lf', 3),
-  ('bestsellers', 'dran-sword-4-80db', 4),
-  ('competitive-picks', 'wizard-arrow-4-80b', 0),
-  ('competitive-picks', 'cobalt-dragoon-2-60c', 1),
-  ('competitive-picks', 'shark-edge-3-60lf', 2),
-  ('competitive-picks', 'dran-sword-4-80db', 3),
-  ('competitive-picks', 'phoenix-wing-9-60gf', 4),
-  ('competitive-picks', 'dran-buster-1-60a', 5)
+  ('featured-products', 'cobalt-dragoon-2-60c', 0),
+  ('featured-products', 'soar-phoenix-9-60gf', 1),
+  ('featured-products', 'saber-samurai-2-70l', 2),
+  ('featured-products', 'blast-pegasus-a-tr', 3),
+  ('featured-products', 'drop-attack-battle-set', 4),
+  ('featured-products', 'sneak-attack-battle-set', 5),
+  ('latest-drops', 'cobalt-dragoon-2-60c', 0),
+  ('latest-drops', 'soar-phoenix-9-60gf', 1),
+  ('latest-drops', 'saber-samurai-2-70l', 2),
+  ('latest-drops', 'blast-pegasus-a-tr', 3),
+  ('latest-drops', 'drop-attack-battle-set', 4),
+  ('latest-drops', 'sneak-attack-battle-set', 5),
+  ('bestsellers', 'cobalt-dragoon-2-60c', 0),
+  ('bestsellers', 'soar-phoenix-9-60gf', 1),
+  ('bestsellers', 'saber-samurai-2-70l', 2),
+  ('bestsellers', 'blast-pegasus-a-tr', 3),
+  ('bestsellers', 'drop-attack-battle-set', 4),
+  ('bestsellers', 'sneak-attack-battle-set', 5),
+  ('competitive-picks', 'cobalt-dragoon-2-60c', 0),
+  ('competitive-picks', 'soar-phoenix-9-60gf', 1),
+  ('competitive-picks', 'saber-samurai-2-70l', 2),
+  ('competitive-picks', 'blast-pegasus-a-tr', 3),
+  ('competitive-picks', 'drop-attack-battle-set', 4),
+  ('competitive-picks', 'sneak-attack-battle-set', 5)
 )
 insert into public.homepage_section_products(section_id, product_id, sort_order)
 select section.id, product.id, seed.sort_order

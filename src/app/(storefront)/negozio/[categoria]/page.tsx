@@ -13,9 +13,9 @@ import type { CategorySlug } from "@/lib/commerce/types";
 type Params = { categoria: string };
 
 const HERO_ART: Record<CategorySlug, { src: string; width: number; height: number }> = {
-  "beyblade-x": productImages["wizard-arrow-4-80b"][0],
+  "beyblade-x": productImages["cobalt-dragoon-2-60c"][0],
   lanciatori: categoryArt.lanciatori,
-  stadi: productImages["stadio-beystadium-x-attack-set"][0],
+  stadi: productImages["drop-attack-battle-set"][0],
   accessori: categoryArt.accessori,
 };
 

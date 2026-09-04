@@ -23,7 +23,7 @@ export default async function NegozioPage({ searchParams }: { searchParams: Prom
         title="Tutti i prodotti"
         description="Scopri l'intera collezione Beyblade X: trottole, lanciatori, stadi e accessori per dominare ogni scontro."
         crumbs={[{ label: "Home", href: "/" }, { label: "Negozio" }]}
-        art={productImages["stadio-beystadium-x-attack-set"][0]}
+        art={productImages["drop-attack-battle-set"][0]}
       />
 
       <div className="py-8">
