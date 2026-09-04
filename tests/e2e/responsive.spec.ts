@@ -116,6 +116,23 @@ test.describe("mobile", () => {
       }
     }
   });
+
+  test("a populated checkout stays inside a 390px viewport", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/prodotto/cobalt-dragoon-2-60c");
+    await page.locator("#buy-panel").getByTestId("add-to-cart").click();
+    await page.goto("/checkout");
+
+    await expect(page.getByTestId("checkout-form")).toBeVisible();
+    const geometry = await page.getByRole("list", { name: "Avanzamento" }).evaluate((list) => ({
+      documentOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      rightmostStep: Math.max(...Array.from(list.querySelectorAll("li"), (item) => item.getBoundingClientRect().right)),
+      viewportWidth: window.innerWidth,
+    }));
+
+    expect(geometry.documentOverflow).toBeLessThanOrEqual(1);
+    expect(geometry.rightmostStep).toBeLessThanOrEqual(geometry.viewportWidth + 1);
+  });
 });
 
 test.describe("desktop", () => {

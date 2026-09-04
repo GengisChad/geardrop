@@ -125,11 +125,11 @@ export function CheckoutClient() {
       })}
       className="mt-8 grid items-start gap-8 lg:grid-cols-[1fr_22rem]"
     >
-      <div className="flex flex-col gap-6">
-        <ol className="flex items-center gap-3" aria-label="Avanzamento">
+      <div className="flex min-w-0 flex-col gap-6">
+        <ol className="flex min-w-0 items-center justify-between gap-2 sm:justify-start sm:gap-3" aria-label="Avanzamento">
           {STEPS.map((step, index) => (
-            <li key={step} className="flex items-center gap-3">
-              <span className="flex items-center gap-2">
+            <li key={step} className="flex min-w-0 items-center gap-2 sm:gap-3">
+              <span className="flex min-w-0 items-center gap-1.5 sm:gap-2">
                 <span
                   className={cn(
                     "tabular gd-display inline-flex size-6 items-center justify-center rounded-full text-[0.6875rem] font-bold",
@@ -138,11 +138,11 @@ export function CheckoutClient() {
                 >
                   {index + 1}
                 </span>
-                <span className={cn("gd-display text-[0.6875rem] font-bold tracking-wider", index <= 1 ? "text-graphite" : "text-grey-600")}>
+                <span className={cn("gd-display text-[0.625rem] font-bold tracking-wide sm:text-[0.6875rem] sm:tracking-wider", index <= 1 ? "text-graphite" : "text-grey-600")}>
                   {step}
                 </span>
               </span>
-              {index < STEPS.length - 1 ? <span className="h-px w-6 bg-grey-300" aria-hidden="true" /> : null}
+              {index < STEPS.length - 1 ? <span className="hidden h-px w-6 bg-grey-300 sm:block" aria-hidden="true" /> : null}
             </li>
           ))}
         </ol>
