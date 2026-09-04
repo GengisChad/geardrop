@@ -1,22 +1,22 @@
 import { Fragment } from "react";
 import Link from "next/link";
 import type { Route } from "next";
-import { ArrowRight, Circle, Lock, ShieldCheck, X, Zap } from "lucide-react";
+import { ArrowRight, Circle, Clock3, Headphones, PackageSearch, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HeroImpact } from "@/components/home/hero-impact";
 import { DEFAULT_HERO_TITLE, heroTitleLines } from "@/lib/home/hero-title";
 import type { Product } from "@/lib/commerce/types";
 
 const TRUST = [
-  { Icon: ShieldCheck, title: "Prodotti originali", sub: "100% autentici" },
-  { Icon: Zap, title: "Spedizione veloce", sub: "con tracking" },
-  { Icon: Lock, title: "Pagamenti sicuri", sub: "protetti e affidabili" },
+  { Icon: PackageSearch, title: "Catalogo Beyblade X", sub: "trottole, set e accessori" },
+  { Icon: Clock3, title: "Spedizione pre-ordini", sub: "entro 14 giorni" },
+  { Icon: Headphones, title: "Ordine assistito", sub: "nessun addebito online" },
 ] as const;
 
 const HUD = [
-  { Icon: Circle, label: "Drop esclusivi" },
-  { Icon: X, label: "Performance X" },
-  { Icon: Circle, label: "Community GEAR//DROP" },
+  { Icon: Circle, label: "Pre-ordini aperti" },
+  { Icon: X, label: "Schede prodotto" },
+  { Icon: Circle, label: "Catalogo GEAR//DROP" },
 ] as const;
 
 /**
@@ -44,7 +44,7 @@ export function Hero({ product, content }: { product: Product; content?: HeroCon
   const description =
     content?.description?.trim() ||
     content?.subtitle?.trim() ||
-    "Prodotti originali, drop esclusivi e una community di appassionati. Massima performance, ogni battaglia.";
+    "Catalogo Beyblade X in pre-ordine, con disponibilità indicate e assistenza prima della conferma.";
   const titleLines = heroTitleLines(content?.title?.trim() || DEFAULT_HERO_TITLE);
 
   return (

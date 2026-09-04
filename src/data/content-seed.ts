@@ -1,4 +1,4 @@
-import { LEGAL_PAGES, SUPPORT_PAGES, type ContentPage } from "./pages";
+import { SUPPORT_PAGES, type ContentPage } from "./pages";
 import { FOOTER_NAV, MAIN_NAV } from "../lib/navigation";
 
 export type HomepageSectionSeed = {
@@ -20,7 +20,7 @@ export const HOMEPAGE_SECTION_SEEDS: readonly HomepageSectionSeed[] = [
     type: "hero",
     eyebrow: "Beyblade X",
     title: "Pronti alla battaglia. Nati per vincere.",
-    description: "Prodotti originali, drop esclusivi e una community di appassionati. Massima performance, ogni battaglia.",
+    description: "Catalogo Beyblade X in pre-ordine, con disponibilità indicate e assistenza prima della conferma.",
     cta: { label: "Esplora il catalogo", href: "/negozio" },
   },
   {
@@ -36,53 +36,40 @@ export const HOMEPAGE_SECTION_SEEDS: readonly HomepageSectionSeed[] = [
     title: "In evidenza",
     cta: { label: "Vedi tutto", href: "/negozio" },
     productSlugs: [
-      "stadio-beystadium-x-attack-set", "wizard-arrow-4-80b", "cobalt-dragoon-2-60c",
-      "phoenix-wing-9-60gf", "shark-edge-3-60lf", "dran-sword-4-80db",
+      "cobalt-dragoon-2-60c", "soar-phoenix-9-60gf", "saber-samurai-2-70l",
+      "blast-pegasus-a-tr", "drop-attack-battle-set", "sneak-attack-battle-set",
     ],
   },
-  { key: "trust", type: "trust", title: "Prodotti originali. Spedizione veloce. Resi semplici." },
+  { key: "trust", type: "trust", title: "Pre-ordini con disponibilità indicate e spedizione entro 14 giorni dalla conferma." },
   {
     key: "latest-drops",
     type: "latest_drops",
-    title: "Ultimi drop",
-    cta: { label: "Scopri i nuovi arrivi", href: "/negozio?sort=novita" },
+    title: "Catalogo Beyblade X",
+    cta: { label: "Esplora il catalogo", href: "/negozio" },
     productSlugs: [
-      "stadio-beystadium-x-attack-set", "wizard-arrow-4-80b", "cobalt-dragoon-2-60c",
-      "phoenix-wing-9-60gf", "shark-edge-3-60lf", "dran-sword-4-80db",
+      "cobalt-dragoon-2-60c", "soar-phoenix-9-60gf", "saber-samurai-2-70l",
+      "blast-pegasus-a-tr", "drop-attack-battle-set", "sneak-attack-battle-set",
     ],
   },
   {
     key: "bestsellers",
     type: "bestsellers",
-    title: "Più venduti",
+    title: "Pre-ordini aperti",
     cta: { label: "Vedi Beyblade X", href: "/negozio/beyblade-x" },
     productSlugs: [
-      "wizard-arrow-4-80b", "cobalt-dragoon-2-60c", "phoenix-wing-9-60gf",
-      "shark-edge-3-60lf", "dran-sword-4-80db",
+      "cobalt-dragoon-2-60c", "soar-phoenix-9-60gf", "saber-samurai-2-70l",
+      "blast-pegasus-a-tr", "drop-attack-battle-set",
     ],
-  },
-  {
-    key: "champion-bundle",
-    type: "bundle",
-    title: "Bundle campione",
-    bundleSlugs: ["bundle-campione"],
   },
   {
     key: "competitive-picks",
     type: "competitive_products",
-    title: "Scelti per il competitivo",
-    cta: { label: "Guida alle combo", href: "/negozio/beyblade-x" },
+    title: "Esplora il catalogo",
+    cta: { label: "Vedi Beyblade X", href: "/negozio/beyblade-x" },
     productSlugs: [
-      "wizard-arrow-4-80b", "cobalt-dragoon-2-60c", "shark-edge-3-60lf",
-      "dran-sword-4-80db", "phoenix-wing-9-60gf", "dran-buster-1-60a",
+      "cobalt-dragoon-2-60c", "soar-phoenix-9-60gf", "saber-samurai-2-70l",
+      "blast-pegasus-a-tr", "drop-attack-battle-set", "sneak-attack-battle-set",
     ],
-  },
-  {
-    key: "club",
-    type: "club",
-    title: "GEAR//DROP Club",
-    subtitle: "Entra nel club. Sblocca vantaggi esclusivi.",
-    cta: { label: "Scopri di più", href: "/account" },
   },
 ] as const;
 
@@ -108,7 +95,6 @@ function pageToMarkdown(page: ContentPage): string {
 
 const reviewedPages = [
   ...Object.entries(SUPPORT_PAGES),
-  ...Object.entries(LEGAL_PAGES),
 ] as readonly (readonly [string, ContentPage])[];
 
 export const CONTENT_PAGE_SEEDS = [
@@ -124,32 +110,32 @@ export const CONTENT_PAGE_SEEDS = [
   {
     slug: "chi-siamo",
     title: "Chi siamo",
-    excerpt: "GEAR//DROP è uno store indipendente costruito da blader per blader.",
+    excerpt: "GEAR//DROP è un progetto indipendente dedicato al catalogo Beyblade X.",
     markdownSource: [
-      "## Nati nello stadio. Cresciuti nella community.",
+      "## Pensato per il catalogo. Costruito per scegliere.",
       "",
-      "GEAR//DROP è uno store indipendente costruito da blader per blader. Un posto dove trovare i pezzi giusti, sapere davvero cosa stai comprando e riceverlo in fretta.",
+      "GEAR//DROP è un progetto indipendente dedicato a un catalogo Beyblade X chiaro, con disponibilità indicate e assistenza prima dell'ordine.",
       "",
       "## Come lavoriamo",
       "",
-      "### Solo prodotti originali",
+      "### Catalogo leggibile",
       "",
-      "Vendiamo esclusivamente Beyblade X ufficiali. Nessuna replica: quello che compri è quello che porti in torneo.",
+      "Raccogliamo le informazioni essenziali su trottole, set e accessori Beyblade X in un catalogo chiaro.",
       "",
-      "### Drop, non scaffali",
+      "### Disponibilità esplicita",
       "",
-      "Ogni settimana entrano nuovi pezzi. Quando un drop finisce, finisce: preferiamo dirlo che fingere disponibilità.",
+      "Ogni pagina mostra la disponibilità corrente del pre-ordine, senza trasformarla in una promessa di consegna immediata.",
       "",
       "### Parliamo la lingua del gioco",
       "",
       "Attacco, difesa, stamina, bilanciato: se ci chiedi un consiglio su un assetto, sappiamo di cosa parli.",
       "",
-      "### Community prima di tutto",
+      "### Assistenza prima dell'ordine",
       "",
-      "Siamo nati dalla community italiana di Beyblade X e continuiamo a farne parte, dentro e fuori dallo stadio.",
+      "L'ordine viene gestito con assistenza e senza addebito online finché il servizio di pagamento non è attivo.",
     ].join("\n"),
     seoTitle: "Chi siamo",
-    seoDescription: "GEAR//DROP è il punto di riferimento italiano per Beyblade X: prodotti originali, spedizione veloce, community.",
+    seoDescription: "GEAR//DROP è un progetto indipendente dedicato al catalogo Beyblade X.",
     sortOrder: reviewedPages.length,
   },
 ] as const;
@@ -157,5 +143,5 @@ export const CONTENT_PAGE_SEEDS = [
 export const INITIAL_PUBLIC_SETTINGS = {
   storeName: "GEAR//DROP",
   seoTitle: "GEAR//DROP — Beyblade X per la community italiana",
-  seoDescription: "Trottole, lanciatori, stadi e accessori Beyblade X. Prodotti originali, spedizione veloce in tutta Italia, drop settimanali.",
+  seoDescription: "Catalogo Beyblade X in pre-ordine: trottole, lanciatori, stadi e accessori con disponibilità indicate.",
 } as const;

@@ -558,7 +558,8 @@ function blockedNotice(state: {
 }
 
 function deliveryEstimate(min: number, max: number): string {
-  return min === max ? `Consegna in ${max} giorni` : `Consegna in ${min}-${max} giorni`;
+  const transit = min === max ? `${max} giorni` : `${min}-${max} giorni`;
+  return `Spedizione entro 14 giorni dalla conferma; transito del corriere: ${transit} dalla spedizione`;
 }
 
 function emptyTotals(): CartTotals {

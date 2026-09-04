@@ -103,7 +103,12 @@ describe("Supabase quoteCart", () => {
     const quote = await provider.quoteCart(cart);
 
     expect(quote.shippingOptions).toEqual([
-      { code: "standard", label: "Spedizione standard", hint: "Consegna in 1-2 giorni", price: { amount: 490, currency: "EUR" } },
+      {
+        code: "standard",
+        label: "Spedizione standard",
+        hint: "Spedizione entro 14 giorni dalla conferma; transito del corriere: 1-2 giorni dalla spedizione",
+        price: { amount: 490, currency: "EUR" },
+      },
     ]);
     expect(quote.freeShippingThreshold).toBe(5900);
   });

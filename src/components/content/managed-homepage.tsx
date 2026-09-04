@@ -5,7 +5,6 @@ import { CategoryTiles } from "@/components/home/category-tiles";
 import { StatusLegend } from "@/components/home/status-legend";
 import { TrustBandDark, TrustBarLight } from "@/components/home/trust";
 import { BundleBanner } from "@/components/home/bundle-banner";
-import { CompetitivePicks } from "@/components/home/competitive-picks";
 import { ClubBand } from "@/components/home/club-band";
 import { ProductCarousel } from "@/components/product/product-carousel";
 import { Reveal } from "@/components/ui/reveal";
@@ -155,11 +154,9 @@ function renderSection(resolved: ResolvedHomepageSection, fallback: ManagedHomep
       return (
         <Reveal key={section.id}>
           <ProductCarousel
-            title={section.title || "Più venduti"}
+            title={section.title || "Pre-ordini aperti"}
             products={productsFor(products, fallback.bestSellers)}
             href="/negozio/beyblade-x"
-            ranked
-            showRating
             className="pb-4"
           />
         </Reveal>
@@ -196,7 +193,12 @@ function renderSection(resolved: ResolvedHomepageSection, fallback: ManagedHomep
     case "competitive_products":
       return (
         <Reveal key={section.id}>
-          <CompetitivePicks products={productsFor(products, fallback.all)} />
+          <ProductCarousel
+            title={section.title || "Esplora il catalogo"}
+            products={productsFor(products, fallback.all)}
+            href="/negozio/beyblade-x"
+            className="pb-12"
+          />
         </Reveal>
       );
 

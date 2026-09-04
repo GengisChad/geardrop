@@ -54,11 +54,15 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
     description: product.description,
     image: product.images.map((image) => image.src),
     category: CATEGORY_LABEL[product.category],
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: product.rating,
-      reviewCount: product.reviewCount,
-    },
+    ...(product.reviewCount > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: product.rating,
+            reviewCount: product.reviewCount,
+          },
+        }
+      : {}),
     offers: {
       "@type": "Offer",
       price: (product.price.amount / 100).toFixed(2),
@@ -113,9 +117,11 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
             </p>
           ) : null}
 
-          <div className="mt-4">
-            <Rating value={product.rating} count={product.reviewCount} size="md" showValue />
-          </div>
+          {product.reviewCount > 0 ? (
+            <div className="mt-4">
+              <Rating value={product.rating} count={product.reviewCount} size="md" showValue />
+            </div>
+          ) : null}
 
           <p className="mt-5 flex items-baseline gap-3">
             <span className="tabular gd-display text-[2rem] font-extrabold text-graphite" data-testid="pdp-price">

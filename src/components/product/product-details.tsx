@@ -46,7 +46,8 @@ export function ProductDetails({ product }: { product: Product }) {
       label: "Spedizione e resi",
       content: (
         <div className="flex flex-col gap-2 leading-relaxed">
-          <p>Spedizione veloce in 24/48h in tutta Italia. Spedizione gratuita per ordini superiori a 59€.</p>
+          <p>Per i pre-ordini, GEAR//DROP affida il pacco al corriere entro 14 giorni dalla conferma.</p>
+          <p>I tempi di transito del corriere iniziano dalla spedizione e dipendono dal servizio selezionato.</p>
           <p>Hai 30 giorni per cambiare idea: il reso è semplice e tracciato.</p>
         </div>
       ),

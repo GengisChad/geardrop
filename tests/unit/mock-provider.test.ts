@@ -162,6 +162,9 @@ describe("quoteCart", () => {
     const quote = await provider.quoteCart({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }] });
     expect(quote.shippingOptions.map((option) => option.code)).toEqual(["standard"]);
     expect(quote.shippingCode).toBe("standard");
+    expect(quote.shippingOptions[0]?.hint).toBe(
+      "Spedizione entro 14 giorni dalla conferma; transito del corriere successivo",
+    );
   });
 
   it("never claims an order can be placed against the local catalogue", async () => {
@@ -211,5 +214,15 @@ describe("catalogue integrity", () => {
   it("publishes only the reviewed preorder state", () => {
     const states = new Set(PRODUCTS.map((p) => p.stock));
     expect([...states]).toEqual(["pre-ordine"]);
+  });
+
+  it("keeps an excessive line in the quote with its availability error", async () => {
+    const quote = await provider.quoteCart({
+      lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 11 }],
+    });
+
+    expect(quote.lines[0]?.quantity).toBe(11);
+    expect(quote.lines[0]?.availableQuantity).toBe(10);
+    expect(quote.lines[0]?.issue).toBe("Disponibilità insufficiente: ne restano 10.");
   });
 });

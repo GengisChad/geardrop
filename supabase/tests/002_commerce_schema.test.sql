@@ -102,13 +102,13 @@ select results_eq(
 );
 select results_eq(
   $$select count(*)::bigint from public.products$$,
-  array[8::bigint],
-  'double seed keeps eight products'
+  array[6::bigint],
+  'double seed keeps six products'
 );
 select results_eq(
   $$select count(*)::bigint from public.product_images$$,
-  array[9::bigint],
-  'double seed keeps nine product images'
+  array[6::bigint],
+  'double seed keeps six primary product images'
 );
 select results_eq(
   $$select count(*)::bigint from public.site_settings$$,

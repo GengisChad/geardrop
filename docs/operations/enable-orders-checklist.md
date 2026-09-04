@@ -4,6 +4,9 @@
 
 - [ ] Exactly two initial owners were bootstrapped and non-staff Auth users have no staff row.
 - [ ] Production URL, email/password confirmation, redirects, SMTP, secrets, and key separation were reviewed.
+- [ ] The seller's legal identity, registered address, tax details, and customer-contact details were reviewed and published.
+- [ ] Terms and conditions were legally reviewed, approved, and published; no placeholder text remains.
+- [ ] The privacy and cookie notice was legally reviewed, approved, and published; no placeholder text remains.
 - [ ] Every sellable SKU has verified real stock loaded through the transactional inventory function.
 - [ ] Zero-stock products resolve to `esaurito` unless a reviewed explicit override exists.
 - [ ] Every `preorder` override has a positive reviewed allocation; every `incoming` product remains non-purchasable.

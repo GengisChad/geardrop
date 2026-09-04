@@ -34,7 +34,7 @@ const DEFAULT_PER_PAGE = 12;
 const MOCK_SHIPPING: ShippingOption = {
   code: "standard",
   label: "Spedizione standard",
-  hint: "Consegna in 24/48h",
+  hint: "Spedizione entro 14 giorni dalla conferma; transito del corriere successivo",
   price: { amount: SHIPPING_FLAT_RATE, currency: "EUR" },
 };
 

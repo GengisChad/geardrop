@@ -6,6 +6,7 @@ import { AddToCartButton } from "@/components/product/add-to-cart-button";
 import { QuantityStepper } from "@/components/product/quantity-stepper";
 import { Button } from "@/components/ui/button";
 import { useWishlist } from "@/lib/store/wishlist";
+import { MAX_QUANTITY_PER_LINE } from "@/lib/store/cart";
 import { STOCK_HINT, STOCK_LABEL, isPurchasable } from "@/lib/labels";
 import type { Product, StockStatus } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
@@ -39,6 +40,10 @@ export function BuyPanel({ product }: { product: Product }) {
   const saved = useWishlist((s) => s.slugs.includes(product.slug));
   const isSaved = hydrated && saved;
   const Icon = STATUS_ICON[product.stock];
+  const quantityCap = Math.min(
+    MAX_QUANTITY_PER_LINE,
+    product.availableQuantity ?? MAX_QUANTITY_PER_LINE,
+  );
 
   return (
     <div className="flex flex-col gap-5">
@@ -49,13 +54,18 @@ export function BuyPanel({ product }: { product: Product }) {
             {STOCK_LABEL[product.stock]}
           </p>
           <p className="text-[0.6875rem] text-grey-600">{STOCK_HINT[product.stock]}</p>
+          {product.stock === "pre-ordine" && product.availableQuantity !== undefined ? (
+            <p className="mt-1 tabular text-[0.6875rem] font-bold text-preorder" data-testid="preorder-remaining">
+              {product.availableQuantity} pre-ordini rimasti
+            </p>
+          ) : null}
         </div>
       </div>
 
       {isPurchasable(product.stock) ? (
         <div className="flex items-center gap-4">
           <span className="gd-display text-small font-bold tracking-wider text-grey-600">Quantità</span>
-          <QuantityStepper value={quantity} onChange={setQuantity} />
+          <QuantityStepper value={quantity} onChange={setQuantity} max={quantityCap} />
         </div>
       ) : null}
 

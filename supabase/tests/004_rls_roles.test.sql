@@ -54,8 +54,8 @@ where slug in ('category-hidden', 'draft-hidden', 'inactive-hidden');
 set local role anon;
 select results_eq(
   $$select count(*)::bigint from public.products$$,
-  array[8::bigint],
-  'anon sees only the eight published eligible seed products'
+  array[6::bigint],
+  'anon sees only the six published eligible seed products'
 );
 select results_eq(
   $$select count(*)::bigint from public.categories$$,
@@ -84,7 +84,7 @@ select results_eq(
 );
 select results_eq(
   $$select count(*)::bigint from public.product_images$$,
-  array[9::bigint],
+  array[6::bigint],
   'anon sees only images belonging to eligible published products'
 );
 reset role;

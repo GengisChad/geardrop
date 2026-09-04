@@ -1,22 +1,20 @@
-import { Headphones, Lock, RotateCcw, ShieldCheck, Truck, Users } from "lucide-react";
+import { Clock3, Headphones, PackageSearch, RotateCcw, Truck } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 type TrustItem = { Icon: typeof Truck; title: string; lines: readonly [string, string] };
 
 /** Dark band from mockup-home-upper. */
 const DARK_ITEMS: readonly TrustItem[] = [
-  { Icon: Truck, title: "Spedizione veloce", lines: ["Consegna rapida in", "tutta Italia"] },
-  { Icon: ShieldCheck, title: "Prodotti originali", lines: ["Solo prodotti ufficiali", "Beyblade X"] },
-  { Icon: Lock, title: "Checkout sicuro", lines: ["Pagamenti protetti", "al 100%"] },
-  { Icon: Users, title: "Scelti dai blader", lines: ["La community italiana", "si fida di noi"] },
+  { Icon: Clock3, title: "Spedizione pre-ordini", lines: ["Entro 14 giorni", "dalla conferma"] },
+  { Icon: PackageSearch, title: "Catalogo Beyblade X", lines: ["Trottole, set", "e accessori"] },
+  { Icon: Headphones, title: "Ordine assistito", lines: ["Nessun addebito", "online"] },
+  { Icon: Truck, title: "Transito del corriere", lines: ["Inizia dopo", "la spedizione"] },
 ];
 
 /** Light bar from mockup-home-lower / the PDP. */
 const LIGHT_ITEMS: readonly TrustItem[] = [
-  { Icon: Truck, title: "Spedizione veloce", lines: ["Consegna rapida in tutta Italia", ""] },
-  // No gateway is integrated: naming PayPal, cards or Klarna here would promise a
-  // checkout the backend cannot honour.
-  { Icon: Lock, title: "Checkout sicuro", lines: ["Connessione protetta SSL", ""] },
+  { Icon: Clock3, title: "Spedizione pre-ordini", lines: ["Entro 14 giorni dalla conferma", ""] },
+  { Icon: Truck, title: "Transito del corriere", lines: ["Calcolato dopo la spedizione", ""] },
   { Icon: RotateCcw, title: "Reso facile", lines: ["30 giorni per cambiare idea", ""] },
   { Icon: Headphones, title: "Assistenza dedicata", lines: ["Siamo qui per te", ""] },
 ];

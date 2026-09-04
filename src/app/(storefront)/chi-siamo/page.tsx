@@ -10,25 +10,25 @@ import { storefrontContent } from "@/lib/content/provider";
 export const metadata: Metadata = {
   title: "Chi siamo",
   description:
-    "GEAR//DROP è il punto di riferimento italiano per Beyblade X: prodotti originali, spedizione veloce, community.",
+    "GEAR//DROP è un progetto indipendente dedicato al catalogo Beyblade X.",
 };
 
 const PILLARS = [
   {
-    title: "Solo prodotti originali",
-    body: "Vendiamo esclusivamente Beyblade X ufficiali. Nessuna replica: quello che compri è quello che porti in torneo.",
+    title: "Catalogo leggibile",
+    body: "Raccogliamo le informazioni essenziali su trottole, set e accessori Beyblade X in un catalogo chiaro.",
   },
   {
-    title: "Drop, non scaffali",
-    body: "Ogni settimana entrano nuovi pezzi. Quando un drop finisce, finisce: preferiamo dirlo che fingere disponibilità.",
+    title: "Disponibilità esplicita",
+    body: "Ogni pagina mostra la disponibilità corrente del pre-ordine, senza trasformarla in una promessa di consegna immediata.",
   },
   {
     title: "Parliamo la lingua del gioco",
     body: "Attacco, difesa, stamina, bilanciato: se ci chiedi un consiglio su un assetto, sappiamo di cosa parli.",
   },
   {
-    title: "Community prima di tutto",
-    body: "Siamo nati dalla community italiana di Beyblade X e continuiamo a farne parte, dentro e fuori dallo stadio.",
+    title: "Assistenza prima dell'ordine",
+    body: "L'ordine viene gestito con assistenza e senza addebito online finché il servizio di pagamento non è attivo.",
   },
 ] as const;
 
@@ -42,12 +42,12 @@ export default async function ChiSiamoPage() {
         <div className="relative mx-auto max-w-3xl px-4 py-14 sm:px-6">
           <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Chi siamo" }]} className="mb-6" />
           <h1 className="gd-display-wide text-[2.25rem] font-extrabold leading-[0.98] text-graphite sm:text-[3rem]">
-            <span className="block">Nati nello stadio.</span>{" "}
-            <span className="block text-lime-ink">Cresciuti nella community.</span>
+            <span className="block">Pensato per il catalogo.</span>{" "}
+            <span className="block text-lime-ink">Costruito per scegliere.</span>
           </h1>
           <p className="mt-5 max-w-xl text-body text-grey-600">
-            GEAR//DROP è uno store indipendente costruito da blader per blader. Un posto dove trovare i pezzi giusti,
-            sapere davvero cosa stai comprando e riceverlo in fretta.
+            GEAR//DROP è un progetto indipendente dedicato a un catalogo Beyblade X chiaro, con disponibilità indicate
+            e assistenza prima dell’ordine.
           </p>
         </div>
       </section>

@@ -1,9 +1,8 @@
 /**
  * Copy for the informational routes the mockups' footer links to.
  *
- * Operational facts (free-shipping threshold, delivery window, returns window) are taken
- * from the mockups so the site never contradicts its own announcement bar. Legal pages
- * carry an explicit notice: placeholder wording is not a substitute for reviewed terms.
+ * Operational facts use the reviewed preorder dispatch window. Legal pages carry an
+ * explicit notice: placeholder wording is not a substitute for reviewed terms.
  */
 
 export type ContentSection = { heading: string; body: readonly string[] };
@@ -22,9 +21,9 @@ export const SUPPORT_PAGES = {
     lead: "Le risposte alle domande che ci arrivano più spesso.",
     sections: [
       {
-        heading: "I prodotti sono originali?",
+        heading: "Cosa include il catalogo?",
         body: [
-          "Sì. Vendiamo esclusivamente prodotti ufficiali Beyblade X. Nessuna replica, nessun articolo non autorizzato.",
+          "Il catalogo raccoglie trottole, set e accessori Beyblade X con descrizioni e disponibilità indicate per ciascun prodotto.",
         ],
       },
       {
@@ -36,13 +35,13 @@ export const SUPPORT_PAGES = {
       {
         heading: "Cosa significa “in arrivo”?",
         body: [
-          "Il prodotto è già ordinato e sta per entrare in magazzino. Puoi acquistarlo subito: lo spediamo appena disponibile.",
+          "La disponibilità è in aggiornamento. Contattaci prima dell'ordine per conoscere lo stato corrente.",
         ],
       },
       {
         heading: "Cosa significa “pre-ordine”?",
         body: [
-          "Il prodotto non è ancora uscito. Ordinandolo ora ti assicuri una unità del primo stock e lo spediamo il giorno dell'uscita.",
+          "Il prodotto è prenotabile entro l'allocazione indicata. GEAR//DROP affida il pacco al corriere entro 14 giorni dalla conferma dell'ordine.",
         ],
       },
       {
@@ -58,25 +57,25 @@ export const SUPPORT_PAGES = {
       {
         heading: "Tempi di consegna",
         body: [
-          "Gli ordini confermati entro le 14:00 nei giorni lavorativi partono in giornata.",
-          "La consegna standard avviene in 24/48h in tutta Italia. Nelle isole e nelle zone disagiate può servire un giorno in più.",
+          "Per i pre-ordini, GEAR//DROP affida il pacco al corriere entro 14 giorni dalla conferma dell'ordine.",
+          "I tempi di transito del corriere iniziano dalla spedizione e dipendono dal servizio e dalla destinazione.",
         ],
       },
       {
         heading: "Costi",
         body: [
           "Spedizione gratuita per ordini superiori a 59€.",
-          "Sotto la soglia, la spedizione standard costa 4,90€. L'opzione Express è disponibile in checkout con un supplemento di 6,90€.",
+          "Sotto la soglia, la spedizione standard costa 4,90€. Le opzioni disponibili sono mostrate prima della conferma.",
         ],
       },
       {
         heading: "Tracciamento",
-        body: ["Ricevi il codice di tracciamento via email appena il pacco lascia il magazzino."],
+        body: ["Le informazioni di tracciamento vengono comunicate quando il pacco viene affidato al corriere."],
       },
       {
         heading: "Prodotti in pre-ordine",
         body: [
-          "Se il tuo ordine contiene un pre-ordine, spediamo tutto insieme alla data di uscita. Se preferisci ricevere prima il resto, effettua due ordini separati.",
+          "Gli articoli dello stesso ordine vengono gestiti insieme. Per esigenze diverse, chiedi assistenza prima della conferma.",
         ],
       },
     ],

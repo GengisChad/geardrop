@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Route } from "next";
 import { Lock, Package } from "lucide-react";
-import { NewsletterForm } from "@/components/layout/newsletter-form";
 import { brand, brandSize } from "@/data/assets";
 import type { StorefrontChrome } from "@/lib/content/types";
 
@@ -15,28 +14,19 @@ const PAYMENTS: readonly string[] = [];
 export function Footer({ content }: { readonly content: StorefrontChrome }) {
   return (
     <footer className="on-dark bg-graphite text-white">
-      {/* Newsletter + community band */}
+      {/* Project band. Newsletter controls stay absent until a real backend exists. */}
       <div className="border-b border-white/10">
-        <div className="mx-auto grid max-w-[1400px] gap-10 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:py-14">
-          <div>
-            <h2 className="text-h3 font-bold text-white">Iscriviti alla newsletter</h2>
-            <p className="mt-2 max-w-md text-small text-grey-400">
-              Ricevi promo esclusive, novità e contenuti da campione.
-            </p>
-            <NewsletterForm className="mt-5" />
-          </div>
-
-          <div className="lg:pl-10">
-            <h2 className="text-h3 font-bold text-white">Entra nella community</h2>
-            <p className="mt-2 max-w-md text-small text-grey-400">Condividi strategie, combo e passione.</p>
-            <p className="mt-5 text-small text-grey-400">
-              Oltre <span className="tabular font-bold text-lime">45.000</span> blader già nella community.
+        <div className="mx-auto max-w-[1400px] px-4 py-10 sm:px-6 lg:py-12">
+          <div className="max-w-2xl">
+            <h2 className="text-h3 font-bold text-white">Il progetto GEAR//DROP</h2>
+            <p className="mt-2 text-small text-grey-400">
+              Un progetto indipendente dedicato al catalogo Beyblade X e alle informazioni utili per scegliere.
             </p>
             <Link
               href="/chi-siamo"
-              className="gd-display mt-2 inline-block text-small font-bold tracking-wider text-lime underline-offset-4 hover:underline"
+              className="gd-display mt-4 inline-block text-small font-bold tracking-wider text-lime underline-offset-4 hover:underline"
             >
-              Unisciti a noi
+              Scopri il progetto
             </Link>
           </div>
         </div>
@@ -63,7 +53,7 @@ export function Footer({ content }: { readonly content: StorefrontChrome }) {
             />
           </span>
           <p className="mt-4 max-w-xs text-small leading-relaxed text-grey-400">
-            Il punto di riferimento in Italia per Beyblade X e per tutti i blader. Qualità. Velocità. Passione.
+            Catalogo Beyblade X, informazioni sui prodotti e assistenza prima dell’ordine.
           </p>
         </div>
 

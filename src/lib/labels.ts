@@ -16,9 +16,9 @@ export const STOCK_LABEL: Record<StockStatus, string> = {
 
 /** Sub-line shown next to the status in the legend and on the PDP panel. */
 export const STOCK_HINT: Record<StockStatus, string> = {
-  disponibile: "Pronto per la spedizione",
-  "in-arrivo": "Nuove uscite in arrivo presto",
-  "pre-ordine": "Ordina ora, spediamo appena disponibile",
+  disponibile: "Disponibilità indicata nel catalogo",
+  "in-arrivo": "Disponibilità in aggiornamento",
+  "pre-ordine": "Spedizione entro 14 giorni dalla conferma; il transito del corriere inizia dopo la spedizione",
   esaurito: "Attualmente non disponibile",
 };
 

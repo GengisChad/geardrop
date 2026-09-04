@@ -282,16 +282,14 @@ insert into public.homepage_sections (
   publication_status, published_at, active, sort_order
 )
 values
-  ('hero', 'hero', 'Beyblade X', 'Pronti alla battaglia. Nati per vincere.', null, 'Prodotti originali, drop esclusivi e una community di appassionati. Massima performance, ogni battaglia.', 'Esplora il catalogo', '/negozio', 'published'::public.publication_status, now(), true, 0),
+  ('hero', 'hero', 'Beyblade X', 'Pronti alla battaglia. Nati per vincere.', null, 'Catalogo Beyblade X in pre-ordine, con disponibilità indicate e assistenza prima della conferma.', 'Esplora il catalogo', '/negozio', 'published'::public.publication_status, now(), true, 0),
   ('categories', 'categories', null, 'Categorie', null, null, null, null, 'published'::public.publication_status, now(), true, 1),
   ('status-legend', 'status_legend', null, 'Legenda della disponibilità', null, null, null, null, 'published'::public.publication_status, now(), true, 2),
   ('featured-products', 'featured_products', null, 'In evidenza', null, null, 'Vedi tutto', '/negozio', 'published'::public.publication_status, now(), true, 3),
-  ('trust', 'trust', null, 'Prodotti originali. Spedizione veloce. Resi semplici.', null, null, null, null, 'published'::public.publication_status, now(), true, 4),
-  ('latest-drops', 'latest_drops', null, 'Ultimi drop', null, null, 'Scopri i nuovi arrivi', '/negozio?sort=novita', 'published'::public.publication_status, now(), true, 5),
-  ('bestsellers', 'bestsellers', null, 'Più venduti', null, null, 'Vedi Beyblade X', '/negozio/beyblade-x', 'published'::public.publication_status, now(), true, 6),
-  ('champion-bundle', 'bundle', null, 'Bundle campione', null, null, null, null, 'published'::public.publication_status, now(), true, 7),
-  ('competitive-picks', 'competitive_products', null, 'Scelti per il competitivo', null, null, 'Guida alle combo', '/negozio/beyblade-x', 'published'::public.publication_status, now(), true, 8),
-  ('club', 'club', null, 'GEAR//DROP Club', 'Entra nel club. Sblocca vantaggi esclusivi.', null, 'Scopri di più', '/account', 'published'::public.publication_status, now(), true, 9)
+  ('trust', 'trust', null, 'Pre-ordini con disponibilità indicate e spedizione entro 14 giorni dalla conferma.', null, null, null, null, 'published'::public.publication_status, now(), true, 4),
+  ('latest-drops', 'latest_drops', null, 'Catalogo Beyblade X', null, null, 'Esplora il catalogo', '/negozio', 'published'::public.publication_status, now(), true, 5),
+  ('bestsellers', 'bestsellers', null, 'Pre-ordini aperti', null, null, 'Vedi Beyblade X', '/negozio/beyblade-x', 'published'::public.publication_status, now(), true, 6),
+  ('competitive-picks', 'competitive_products', null, 'Esplora il catalogo', null, null, 'Vedi Beyblade X', '/negozio/beyblade-x', 'published'::public.publication_status, now(), true, 7)
 on conflict (section_key) do update set
   section_type = excluded.section_type,
   eyebrow = excluded.eyebrow,
@@ -304,7 +302,7 @@ on conflict (section_key) do update set
 delete from public.homepage_section_products as target
 using public.homepage_sections as section
 where target.section_id = section.id
-  and section.section_key in ('hero', 'categories', 'status-legend', 'featured-products', 'trust', 'latest-drops', 'bestsellers', 'champion-bundle', 'competitive-picks', 'club');
+  and section.section_key in ('hero', 'categories', 'status-legend', 'featured-products', 'trust', 'latest-drops', 'bestsellers', 'competitive-picks');
 
 with seed(section_key, product_slug, sort_order) as (
   values
@@ -325,7 +323,6 @@ with seed(section_key, product_slug, sort_order) as (
   ('bestsellers', 'saber-samurai-2-70l', 2),
   ('bestsellers', 'blast-pegasus-a-tr', 3),
   ('bestsellers', 'drop-attack-battle-set', 4),
-  ('bestsellers', 'sneak-attack-battle-set', 5),
   ('competitive-picks', 'cobalt-dragoon-2-60c', 0),
   ('competitive-picks', 'soar-phoenix-9-60gf', 1),
   ('competitive-picks', 'saber-samurai-2-70l', 2),
@@ -343,7 +340,7 @@ on conflict (section_id, product_id) do update set sort_order = excluded.sort_or
 delete from public.homepage_section_categories as target
 using public.homepage_sections as section
 where target.section_id = section.id
-  and section.section_key in ('hero', 'categories', 'status-legend', 'featured-products', 'trust', 'latest-drops', 'bestsellers', 'champion-bundle', 'competitive-picks', 'club');
+  and section.section_key in ('hero', 'categories', 'status-legend', 'featured-products', 'trust', 'latest-drops', 'bestsellers', 'competitive-picks');
 
 with seed(section_key, category_slug, sort_order) as (
   values
@@ -362,27 +359,18 @@ on conflict (section_id, category_id) do update set sort_order = excluded.sort_o
 delete from public.homepage_section_bundles as target
 using public.homepage_sections as section
 where target.section_id = section.id
-  and section.section_key in ('hero', 'categories', 'status-legend', 'featured-products', 'trust', 'latest-drops', 'bestsellers', 'champion-bundle', 'competitive-picks', 'club');
+  and section.section_key in ('hero', 'categories', 'status-legend', 'featured-products', 'trust', 'latest-drops', 'bestsellers', 'competitive-picks');
 
-with seed(section_key, bundle_slug, sort_order) as (
-  values
-  ('champion-bundle', 'bundle-campione', 0)
-)
-insert into public.homepage_section_bundles(section_id, bundle_id, sort_order)
-select section.id, bundle.id, seed.sort_order
-from seed
-join public.homepage_sections as section on section.section_key = seed.section_key
-join public.bundles as bundle on bundle.slug = seed.bundle_slug
-on conflict (section_id, bundle_id) do update set sort_order = excluded.sort_order;
+
 
 insert into public.content_pages (
   slug, title, excerpt, markdown_source, format, seo_title, seo_description,
   publication_status, published_at, active, sort_order
 )
 values
-  ('faq', 'Domande frequenti', 'Le risposte alle domande che ci arrivano più spesso.', '## I prodotti sono originali?
+  ('faq', 'Domande frequenti', 'Le risposte alle domande che ci arrivano più spesso.', '## Cosa include il catalogo?
 
-Sì. Vendiamo esclusivamente prodotti ufficiali Beyblade X. Nessuna replica, nessun articolo non autorizzato.
+Il catalogo raccoglie trottole, set e accessori Beyblade X con descrizioni e disponibilità indicate per ciascun prodotto.
 
 ## Quanto costa la spedizione?
 
@@ -390,34 +378,34 @@ La spedizione standard è gratuita per ordini superiori a 59€. Sotto questa so
 
 ## Cosa significa “in arrivo”?
 
-Il prodotto è già ordinato e sta per entrare in magazzino. Puoi acquistarlo subito: lo spediamo appena disponibile.
+La disponibilità è in aggiornamento. Contattaci prima dell''ordine per conoscere lo stato corrente.
 
 ## Cosa significa “pre-ordine”?
 
-Il prodotto non è ancora uscito. Ordinandolo ora ti assicuri una unità del primo stock e lo spediamo il giorno dell''uscita.
+Il prodotto è prenotabile entro l''allocazione indicata. GEAR//DROP affida il pacco al corriere entro 14 giorni dalla conferma dell''ordine.
 
 ## Posso cambiare idea?
 
 Hai 30 giorni dalla consegna per richiedere il reso. Vedi la pagina Resi e rimborsi.', 'markdown'::public.content_format, 'Domande frequenti', 'Le risposte alle domande che ci arrivano più spesso.', 'published'::public.publication_status, now(), true, 0),
   ('spedizioni', 'Spedizioni', 'Come e quando arriva il tuo ordine.', '## Tempi di consegna
 
-Gli ordini confermati entro le 14:00 nei giorni lavorativi partono in giornata.
+Per i pre-ordini, GEAR//DROP affida il pacco al corriere entro 14 giorni dalla conferma dell''ordine.
 
-La consegna standard avviene in 24/48h in tutta Italia. Nelle isole e nelle zone disagiate può servire un giorno in più.
+I tempi di transito del corriere iniziano dalla spedizione e dipendono dal servizio e dalla destinazione.
 
 ## Costi
 
 Spedizione gratuita per ordini superiori a 59€.
 
-Sotto la soglia, la spedizione standard costa 4,90€. L''opzione Express è disponibile in checkout con un supplemento di 6,90€.
+Sotto la soglia, la spedizione standard costa 4,90€. Le opzioni disponibili sono mostrate prima della conferma.
 
 ## Tracciamento
 
-Ricevi il codice di tracciamento via email appena il pacco lascia il magazzino.
+Le informazioni di tracciamento vengono comunicate quando il pacco viene affidato al corriere.
 
 ## Prodotti in pre-ordine
 
-Se il tuo ordine contiene un pre-ordine, spediamo tutto insieme alla data di uscita. Se preferisci ricevere prima il resto, effettua due ordini separati.', 'markdown'::public.content_format, 'Spedizioni', 'Come e quando arriva il tuo ordine.', 'published'::public.publication_status, now(), true, 1),
+Gli articoli dello stesso ordine vengono gestiti insieme. Per esigenze diverse, chiedi assistenza prima della conferma.', 'markdown'::public.content_format, 'Spedizioni', 'Come e quando arriva il tuo ordine.', 'published'::public.publication_status, now(), true, 1),
   ('resi', 'Resi e rimborsi', 'Se qualcosa non va, si risolve.', '## Hai 30 giorni
 
 Puoi richiedere il reso entro 30 giorni dalla consegna, per qualsiasi motivo, purché il prodotto sia integro e nella confezione originale.
@@ -446,61 +434,27 @@ Per consigli su combo e assetti, la community è il posto giusto: ci trovi sui c
 ## Collaborazioni
 
 Organizzi tornei o gestisci un negozio? Scrivi a partner@geardrop.it.', 'markdown'::public.content_format, 'Contattaci', 'Siamo blader anche noi: rispondiamo da persone, non da bot.', 'published'::public.publication_status, now(), true, 3),
-  ('termini', 'Termini e condizioni', 'Le regole di utilizzo del sito e di acquisto.', '> Testo segnaposto. Questa pagina non è stata redatta né revisionata da un legale e non ha valore contrattuale: va sostituita prima della messa online.
+  ('chi-siamo', 'Chi siamo', 'GEAR//DROP è un progetto indipendente dedicato al catalogo Beyblade X.', '## Pensato per il catalogo. Costruito per scegliere.
 
-## Oggetto
-
-Questa sezione descriverà l''ambito del contratto di vendita tra GEAR//DROP e il cliente.
-
-## Ordini e prezzi
-
-Questa sezione descriverà conclusione dell''ordine, disponibilità, prezzi e IVA.
-
-## Diritto di recesso
-
-Questa sezione riporterà il recesso previsto dal Codice del Consumo.
-
-## Garanzia legale di conformità
-
-Questa sezione riporterà la garanzia legale applicabile.', 'markdown'::public.content_format, 'Termini e condizioni', 'Le regole di utilizzo del sito e di acquisto.', 'published'::public.publication_status, now(), true, 4),
-  ('privacy', 'Privacy e cookie', 'Come trattiamo i dati personali.', '> Testo segnaposto. Questa pagina non è stata redatta né revisionata da un legale e non ha valore contrattuale: va sostituita prima della messa online.
-
-## Titolare del trattamento
-
-Questa sezione indicherà il titolare e i contatti.
-
-## Dati raccolti e finalità
-
-Questa sezione elencherà dati, finalità e basi giuridiche.
-
-## Cookie
-
-Questa sezione elencherà i cookie usati e le modalità di consenso.
-
-## Diritti dell''interessato
-
-Questa sezione descriverà i diritti previsti dal GDPR.', 'markdown'::public.content_format, 'Privacy e cookie', 'Come trattiamo i dati personali.', 'published'::public.publication_status, now(), true, 5),
-  ('chi-siamo', 'Chi siamo', 'GEAR//DROP è uno store indipendente costruito da blader per blader.', '## Nati nello stadio. Cresciuti nella community.
-
-GEAR//DROP è uno store indipendente costruito da blader per blader. Un posto dove trovare i pezzi giusti, sapere davvero cosa stai comprando e riceverlo in fretta.
+GEAR//DROP è un progetto indipendente dedicato a un catalogo Beyblade X chiaro, con disponibilità indicate e assistenza prima dell''ordine.
 
 ## Come lavoriamo
 
-### Solo prodotti originali
+### Catalogo leggibile
 
-Vendiamo esclusivamente Beyblade X ufficiali. Nessuna replica: quello che compri è quello che porti in torneo.
+Raccogliamo le informazioni essenziali su trottole, set e accessori Beyblade X in un catalogo chiaro.
 
-### Drop, non scaffali
+### Disponibilità esplicita
 
-Ogni settimana entrano nuovi pezzi. Quando un drop finisce, finisce: preferiamo dirlo che fingere disponibilità.
+Ogni pagina mostra la disponibilità corrente del pre-ordine, senza trasformarla in una promessa di consegna immediata.
 
 ### Parliamo la lingua del gioco
 
 Attacco, difesa, stamina, bilanciato: se ci chiedi un consiglio su un assetto, sappiamo di cosa parli.
 
-### Community prima di tutto
+### Assistenza prima dell''ordine
 
-Siamo nati dalla community italiana di Beyblade X e continuiamo a farne parte, dentro e fuori dallo stadio.', 'markdown'::public.content_format, 'Chi siamo', 'GEAR//DROP è il punto di riferimento italiano per Beyblade X: prodotti originali, spedizione veloce, community.', 'published'::public.publication_status, now(), true, 6)
+L''ordine viene gestito con assistenza e senza addebito online finché il servizio di pagamento non è attivo.', 'markdown'::public.content_format, 'Chi siamo', 'GEAR//DROP è un progetto indipendente dedicato al catalogo Beyblade X.', 'published'::public.publication_status, now(), true, 4)
 on conflict (slug) do update set
   title = excluded.title,
   excerpt = excluded.excerpt,
@@ -573,7 +527,7 @@ from seed join public.footer_columns as column_row on column_row.column_key = se
 update public.site_settings set
   store_name = case when store_name = '' then 'GEAR//DROP' else store_name end,
   default_seo_title = case when default_seo_title = '' then 'GEAR//DROP — Beyblade X per la community italiana' else default_seo_title end,
-  default_seo_description = coalesce(default_seo_description, 'Trottole, lanciatori, stadi e accessori Beyblade X. Prodotti originali, spedizione veloce in tutta Italia, drop settimanali.')
+  default_seo_description = coalesce(default_seo_description, 'Catalogo Beyblade X in pre-ordine: trottole, lanciatori, stadi e accessori con disponibilità indicate.')
 where singleton
   and updated_by is null
   and store_name = ''

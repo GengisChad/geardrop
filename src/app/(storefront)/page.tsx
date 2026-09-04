@@ -3,9 +3,6 @@ import { Hero } from "@/components/home/hero";
 import { CategoryTiles } from "@/components/home/category-tiles";
 import { StatusLegend } from "@/components/home/status-legend";
 import { TrustBandDark, TrustBarLight } from "@/components/home/trust";
-import { BundleBanner } from "@/components/home/bundle-banner";
-import { CompetitivePicks } from "@/components/home/competitive-picks";
-import { ClubBand } from "@/components/home/club-band";
 import { ProductCarousel } from "@/components/product/product-carousel";
 import { Reveal } from "@/components/ui/reveal";
 import { ManagedHomepage, type ManagedHomepageFallback } from "@/components/content/managed-homepage";
@@ -70,31 +67,24 @@ export default async function HomePage() {
 
       <Reveal>
         <ProductCarousel
-          title="Più venduti"
+          title="Pre-ordini aperti"
           products={bestSellers.items}
           href="/negozio/beyblade-x"
-          ranked
-          showRating
           className="pb-4"
         />
       </Reveal>
-
-      {bundle ? (
-        <Reveal>
-          <BundleBanner bundle={bundle} hero={hero} />
-        </Reveal>
-      ) : null}
 
       <Reveal>
         <TrustBarLight className="pb-12" />
       </Reveal>
 
       <Reveal>
-        <CompetitivePicks products={all.items} />
-      </Reveal>
-
-      <Reveal>
-        <ClubBand />
+        <ProductCarousel
+          title="Esplora il catalogo"
+          products={all.items}
+          href="/negozio/beyblade-x"
+          className="pb-12"
+        />
       </Reveal>
     </>
   );
