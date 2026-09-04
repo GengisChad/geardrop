@@ -56,6 +56,15 @@ describe("preorder catalogue forward migration", () => {
     expect(migration).not.toMatch(/preorder_allocation\s*=\s*excluded\.preorder_allocation\s*[,;]/);
   });
 
+  it("preserves post-launch review aggregates when the campaign has already run", () => {
+    expect(migration).toMatch(
+      /rating\s*=\s*case[\s\S]+?preorder_catalog_campaigns[\s\S]+?then\s+public\.products\.rating[\s\S]+?else\s+excluded\.rating[\s\S]+?end/,
+    );
+    expect(migration).toMatch(
+      /review_count\s*=\s*case[\s\S]+?preorder_catalog_campaigns[\s\S]+?then\s+public\.products\.review_count[\s\S]+?else\s+excluded\.review_count[\s\S]+?end/,
+    );
+  });
+
   it("does not open orders or destroy product and order history", () => {
     expect(migration).not.toMatch(/accept_orders\s*=/);
     expect(migration).not.toMatch(/delete\s+from\s+public\.(products|orders|product_images|media_assets|inventory_movements)\b/);

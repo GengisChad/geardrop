@@ -9,10 +9,10 @@ const adminSetupPath = join(process.cwd(), "tests", "e2e", "admin", "global-setu
 describe("Supabase database CI workflow", () => {
   const workflow = () => readFileSync(workflowPath, "utf8");
 
-  it("runs on the approved branch, pull requests to main, and manual dispatch", () => {
+  it("runs on the approved and production branches, pull requests to main, and manual dispatch", () => {
     const yaml = workflow();
 
-    expect(yaml).toMatch(/push:\s*\n\s*branches:\s*\[codex\/admin-supabase\]/);
+    expect(yaml).toMatch(/push:\s*\n\s*branches:\s*\[codex\/admin-supabase, main\]/);
     expect(yaml).toMatch(/pull_request:\s*\n\s*branches:\s*\[main\]/);
     expect(yaml).toContain("workflow_dispatch:");
     expect(yaml).toContain("runs-on: ubuntu-latest");

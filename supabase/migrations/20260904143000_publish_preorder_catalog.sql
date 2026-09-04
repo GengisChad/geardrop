@@ -94,8 +94,20 @@ on conflict (slug) do update set
     else excluded.preorder_allocation
   end,
   blade_type = excluded.blade_type,
-  rating = 0,
-  review_count = 0,
+  rating = case
+    when exists (
+      select 1 from private.preorder_catalog_campaigns
+      where campaign_key = '2026-09-04-owner-preorder-catalog'
+    ) then public.products.rating
+    else excluded.rating
+  end,
+  review_count = case
+    when exists (
+      select 1 from private.preorder_catalog_campaigns
+      where campaign_key = '2026-09-04-owner-preorder-catalog'
+    ) then public.products.review_count
+    else excluded.review_count
+  end,
   sort_order = excluded.sort_order;
 
 update public.products

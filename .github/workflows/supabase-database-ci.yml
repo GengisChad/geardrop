@@ -2,7 +2,7 @@ name: Supabase Database CI
 
 on:
   push:
-    branches: [codex/admin-supabase]
+    branches: [codex/admin-supabase, main]
   pull_request:
     branches: [main]
   workflow_dispatch:
