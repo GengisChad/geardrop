@@ -8,13 +8,14 @@ const buyPanel = (page: Page) => page.locator("#buy-panel");
 
 
 test.describe("home", () => {
-  test("renders the hero, the brand lockup and one unique product shelf", async ({ page }) => {
+  test("renders the hero, the brand lockup, the new releases and one featured shelf", async ({ page }) => {
     await page.goto("/");
 
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Pronti alla battaglia");
     await expect(page.getByRole("link", { name: "GEAR//DROP — vai alla home" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Nuove uscite" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "In evidenza" })).toBeVisible();
-    await expect(page.getByTestId("product-carousel")).toHaveCount(1);
+    await expect(page.getByTestId("product-carousel")).toHaveCount(2);
     await expect(page.getByTestId("product-card").first()).toBeVisible();
   });
 

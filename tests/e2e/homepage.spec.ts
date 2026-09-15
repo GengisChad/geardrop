@@ -22,8 +22,15 @@ const VIEWPORTS = [
   { name: "wide", width: 1920, height: 1000 },
 ] as const;
 
-/** The first shelf carries the reviewed catalogue in listing order, up to its limit. */
-const EXPECTED_HOME_PRODUCT_SLUGS = PRODUCTS.slice(0, HOME_FEATURED_LIMIT).map((product) => product.slug);
+/** "Nuove uscite" leads with the products tagged as new; "In evidenza" carries the rest, up to its limit. */
+const NEW_RELEASE_SLUGS = PRODUCTS.filter((product) => product.tags.includes("novita")).map((product) => product.slug);
+const EXPECTED_HOME_PRODUCT_SLUGS = [
+  ...NEW_RELEASE_SLUGS,
+  ...PRODUCTS.slice(0, HOME_FEATURED_LIMIT)
+    .map((product) => product.slug)
+    .filter((slug) => !NEW_RELEASE_SLUGS.includes(slug)),
+];
+const EXPECTED_HOME_SHELVES = NEW_RELEASE_SLUGS.length > 0 ? 2 : 1;
 
 test.describe("public homepage", () => {
   test("renders the full liquid glass composition, never the placeholder scaffold", async ({ page }) => {
@@ -85,7 +92,7 @@ test.describe("public homepage", () => {
 
     const productCards = page.getByTestId("product-card");
     await expect(productCards).toHaveCount(EXPECTED_HOME_PRODUCT_SLUGS.length);
-    await expect(page.getByTestId("product-carousel")).toHaveCount(1);
+    await expect(page.getByTestId("product-carousel")).toHaveCount(EXPECTED_HOME_SHELVES);
     await expect(productCards.getByText(/^Attacco$/i)).toHaveCount(0);
 
     // A product may lead a single homepage shelf, never reappear in each subsequent

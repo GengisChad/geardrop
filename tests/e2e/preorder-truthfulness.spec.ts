@@ -15,8 +15,9 @@ test.describe("truthful preorder storefront", () => {
 
   test("omits fabricated home, footer, and zero-review presentation", async ({ page }) => {
     await page.goto("/");
+    await expect(page.getByRole("heading", { name: "Nuove uscite" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "In evidenza" })).toBeVisible();
-    await expect(page.getByTestId("product-carousel")).toHaveCount(1);
+    await expect(page.getByTestId("product-carousel")).toHaveCount(2);
     await expect(page.getByRole("heading", { name: "Pre-ordini aperti" })).toHaveCount(0);
     await expect(page.locator("body")).not.toContainText("Più venduti");
     await expect(page.locator("body")).not.toContainText("GEAR//DROP Club");
