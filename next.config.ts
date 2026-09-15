@@ -8,6 +8,12 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
   },
   typedRoutes: true,
+  // Glory Valkyrie LF was first published under a misspelled slug; keep shared links working.
+  async redirects() {
+    return [
+      { source: "/prodotto/glory-valkerion-lf", destination: "/prodotto/glory-valkyrie-lf", permanent: true },
+    ];
+  },
   experimental: {
     optimizePackageImports: ["lucide-react", "framer-motion"],
   },
