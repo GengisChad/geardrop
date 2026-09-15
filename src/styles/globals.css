@@ -797,6 +797,8 @@
     height: calc(var(--bowl) * 1.06);
     perspective: 760px;
     isolation: isolate;
+    /* Decorative: its projected 3D layers must never swallow a click meant for the page. */
+    pointer-events: none;
   }
 
   @media (min-width: 1024px) {

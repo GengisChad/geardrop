@@ -258,7 +258,7 @@ test.describe("desktop", () => {
     await page.goto("/");
 
     const heroBox = await page.getByTestId("hero").boundingBox();
-    const fanBox = await page.getByTestId("hero").locator("ul").boundingBox();
+    const fanBox = await page.getByTestId("hero").locator("ul").first().boundingBox();
     expect(heroBox).not.toBeNull();
     expect(fanBox).not.toBeNull();
     expect(fanBox!.width / heroBox!.width).toBeGreaterThanOrEqual(0.42);

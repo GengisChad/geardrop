@@ -82,6 +82,8 @@ test.describe("public homepage", () => {
   });
 
   test("a hero card flips to its product sheet and back", async ({ page }) => {
+    // The front card bobs forever; reduced motion holds it still so it can be clicked.
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
     const card = page.getByTestId("holo-card").first();
     const flip = card.locator(".gd-holo-flip");

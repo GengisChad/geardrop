@@ -20,7 +20,7 @@ export function Header({ navigation, mobileNavigation }: {
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/[0.07] bg-void/80 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-2 px-3 sm:h-[4.5rem] sm:gap-3 sm:px-6 lg:gap-6 lg:px-10">
+      <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-2 px-3 sm:h-[4.5rem] sm:gap-3 sm:px-6 lg:gap-4 xl:gap-6 xl:px-10">
         <MobileMenu navigation={mobileNavigation} />
         <Logo priority className="shrink-0" />
 
@@ -34,8 +34,8 @@ export function Header({ navigation, mobileNavigation }: {
                     href={item.href as Route}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "gd-display relative block px-3 py-3 text-small font-semibold tracking-[0.06em] transition-colors xl:px-3.5 xl:text-[0.875rem]",
-                      "after:absolute after:inset-x-3 after:bottom-1.5 after:h-0.5 after:origin-left after:scale-x-0 after:bg-lime",
+                      "gd-display relative block px-2 py-3 text-[0.75rem] font-semibold tracking-[0.04em] transition-colors xl:px-3.5 xl:text-[0.875rem] xl:tracking-[0.06em]",
+                      "after:absolute after:inset-x-2 after:bottom-1.5 xl:after:inset-x-3.5 after:h-0.5 after:origin-left after:scale-x-0 after:bg-lime",
                       "after:shadow-[0_0_12px_#c6ff00] after:transition-transform after:duration-300 hover:after:scale-x-100",
                       item.tone === "lime" && "text-lime",
                       item.tone === "violet" && "text-violet-soft",

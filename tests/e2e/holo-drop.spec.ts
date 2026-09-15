@@ -25,7 +25,8 @@ test.describe("holo drop storefront", () => {
     });
 
     expect(material.backdrop).toMatch(/blur\((?!0px)/);
-    expect(material.background).toMatch(/rgba?\(/);
+    // Tailwind mixes `bg-void/80` in oklab; either notation must carry an alpha below 1.
+    expect(material.background).toMatch(/(?:rgba\(.*,\s*0?\.\d+\)|\/\s*0?\.\d+\))$/);
     expect(material.position).toBe("sticky");
   });
 
