@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { PRODUCTS } from "../../src/data/catalog";
+import { HOME_FEATURED_LIMIT } from "../../src/lib/home/product-selection";
 
 /**
  * The public homepage, on the default (mock) gate — the composition served when no
@@ -20,14 +22,8 @@ const VIEWPORTS = [
   { name: "wide", width: 1920, height: 1000 },
 ] as const;
 
-const EXPECTED_HOME_PRODUCT_SLUGS = [
-  "cobalt-dragoon-2-60c",
-  "soar-phoenix-9-60gf",
-  "saber-samurai-2-70l",
-  "blast-pegasus-a-tr",
-  "drop-attack-battle-set",
-  "sneak-attack-battle-set",
-] as const;
+/** The first shelf carries the reviewed catalogue in listing order, up to its limit. */
+const EXPECTED_HOME_PRODUCT_SLUGS = PRODUCTS.slice(0, HOME_FEATURED_LIMIT).map((product) => product.slug);
 
 test.describe("public homepage", () => {
   test("renders the full liquid glass composition, never the placeholder scaffold", async ({ page }) => {
@@ -98,7 +94,7 @@ test.describe("public homepage", () => {
       cards.map((card) => card.getAttribute("data-slug")).filter((slug): slug is string => Boolean(slug)),
     );
     expect(homepageProductSlugs, "homepage product order or allocation changed").toEqual(EXPECTED_HOME_PRODUCT_SLUGS);
-    expect(new Set(homepageProductSlugs).size, "homepage product shelves repeat the same products").toBe(6);
+    expect(new Set(homepageProductSlugs).size, "homepage product shelves repeat the same products").toBe(EXPECTED_HOME_PRODUCT_SLUGS.length);
 
     // Glass actually composites a blur, not just a class name.
     const blurred = await page.locator('[class*="gd-glass"]').first().evaluate((element) => {
