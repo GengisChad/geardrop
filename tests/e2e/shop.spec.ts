@@ -8,22 +8,24 @@ const buyPanel = (page: Page) => page.locator("#buy-panel");
 
 
 test.describe("home", () => {
-  test("renders the hero, the brand lockup, the new releases and one featured shelf", async ({ page }) => {
+  test("renders the Holo Drop hero, the arena and the whole drop", async ({ page }) => {
     await page.goto("/");
 
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("Pronti alla battaglia");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Le nuove uscite sono atterrate");
     await expect(page.getByRole("link", { name: "GEAR//DROP — vai alla home" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Nuove uscite" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "In evidenza" })).toBeVisible();
-    await expect(page.getByTestId("product-carousel")).toHaveCount(2);
+    await expect(page.getByRole("heading", { name: "Scegli. Carica. Lancia." })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Tutto il drop" })).toBeVisible();
+    await expect(page.getByTestId("product-carousel")).toHaveCount(0);
     await expect(page.getByTestId("product-card").first()).toBeVisible();
   });
 
-  test("uses the supplied logo asset rather than redrawn type", async ({ page }) => {
+  test("pairs the supplied emblem with the approved wordmark", async ({ page }) => {
     await page.goto("/");
-    // The wordmark must stay an image: audit §7.1 forbids rebuilding it with a font.
-    const logo = page.getByRole("link", { name: "GEAR//DROP — vai alla home" }).locator("img");
-    await expect(logo).toHaveAttribute("src", /lockup/);
+    // The light lockup cannot show on the dark theme; the owner approved the emblem beside
+    // the wordmark set in the display face (Holo Drop, 2026-09-15). The emblem stays the asset.
+    const logo = page.getByRole("link", { name: "GEAR//DROP — vai alla home" });
+    await expect(logo.locator("img")).toHaveAttribute("src", /emblem/);
+    await expect(logo).toContainText(/gear\/\/drop/i);
   });
 
   test("navigates from a card to the product page", async ({ page }) => {

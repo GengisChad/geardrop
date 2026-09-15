@@ -26,7 +26,7 @@ export default async function RicercaPage({ searchParams }: { searchParams: Prom
         {term ? (
           <p className="mt-2 text-small text-grey-600">
           <span className="tabular font-bold text-graphite">{page.total}</span>{" "}
-          {page.total === 1 ? "risultato" : "risultati"} per <span className="font-semibold text-violet">“{term}”</span>
+          {page.total === 1 ? "risultato" : "risultati"} per <span className="font-semibold text-violet-soft">“{term}”</span>
           </p>
         ) : (
           <p className="mt-2 text-small text-grey-600">Cerca una trottola, un lanciatore o uno stadio.</p>

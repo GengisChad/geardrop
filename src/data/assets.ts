@@ -117,6 +117,29 @@ export const productImages = {
 
 export type ProductSlug = keyof typeof productImages;
 
+/**
+ * Transparent cut-outs of the packshots (scripts/cutout_products.py). The dark holographic
+ * cards float the product on its own art window, which a white tile would cover.
+ */
+const PRODUCT_CUTOUTS: Readonly<Record<string, string>> = Object.fromEntries(
+  Object.keys(productImages).map((slug) => [`/products/${slug}.webp`, `/products/cutout/${slug}.webp`]),
+);
+
+/** The cut-out for a packshot path, or null when that image has none. */
+export function cutoutSrc(src: string): string | null {
+  return PRODUCT_CUTOUTS[src] ?? null;
+}
+
+/** The loose spinning top cropped from each Infinity Starter tile, launched in the homepage Arena. */
+export const productTops: Readonly<Partial<Record<string, string>>> = {
+  "glory-valkyrie-lf": "/products/tops/glory-valkyrie-lf.webp",
+  "hurricane-enlil-is-7-55t": "/products/tops/hurricane-enlil-is-7-55t.webp",
+  "shatter-horus-9-65gb": "/products/tops/shatter-horus-9-65gb.webp",
+};
+
+/** Energy-impact artwork, reused as the Arena's launch burst. */
+export const impactArt = { src: "/hero/impact.png", width: 1353, height: 830 } as const;
+
 /** Tile art for categories with no sellable SKU of their own. */
 export const categoryArt = {
   lanciatori: { src: "/categories/lanciatori.png", width: 107, height: 136 },

@@ -55,7 +55,8 @@ describe("truthful public presentation", () => {
     const html = renderToStaticMarkup(<Providers>{await HomePage()}</Providers>);
 
     expect(html).toContain("Pre-ordini aperti");
-    expect(html).toContain("Esplora il catalogo");
+    expect(html).toContain("Tutto il drop");
+    expect(html).toContain("Scegli. Carica.");
     expect(html).not.toContain("Più venduti");
     expect(html).not.toContain("Scelti per il competitivo");
     expect(html).not.toContain("GEAR//DROP Club");

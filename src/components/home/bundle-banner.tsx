@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { cutoutSrc } from "@/data/assets";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -55,10 +56,10 @@ export function BundleBanner({ bundle, hero }: { bundle: Bundle; hero: Product }
             </Button>
           </div>
 
-          <div className="gd-product-plate relative rounded-[--radius-glass] bg-graphite/35 p-4">
+          <div className="gd-product-plate relative rounded-[--radius-glass] p-4">
             {image ? (
               <Image
-                src={image.src}
+                src={cutoutSrc(image.src) ?? image.src}
                 alt={image.alt}
                 width={image.width}
                 height={image.height}

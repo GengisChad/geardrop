@@ -34,7 +34,7 @@ export function QuantityStepper({
         data-testid="qty-decrease"
         className={cn(
           button,
-          "inline-flex items-center justify-center rounded-full text-graphite transition-colors hover:text-violet disabled:opacity-30",
+          "inline-flex items-center justify-center rounded-full text-graphite transition-colors hover:text-violet-soft disabled:opacity-30",
         )}
       >
         <Minus className="size-4" aria-hidden="true" />
@@ -63,7 +63,7 @@ export function QuantityStepper({
         data-testid="qty-increase"
         className={cn(
           button,
-          "inline-flex items-center justify-center rounded-full text-graphite transition-colors hover:text-violet disabled:opacity-30",
+          "inline-flex items-center justify-center rounded-full text-graphite transition-colors hover:text-violet-soft disabled:opacity-30",
         )}
       >
         <Plus className="size-4" aria-hidden="true" />

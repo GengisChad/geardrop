@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 import { motion } from "framer-motion";
 import { selectCartCount, useCart } from "@/lib/store/cart";
 import { cn } from "@/lib/cn";
@@ -17,10 +17,12 @@ export function CartIndicator({ className }: { className?: string }) {
     <Link
       href="/carrello"
       data-testid="cart-link"
-      className={cn("gd-glass-compact relative inline-flex size-11 items-center justify-center rounded-full", className)}
+      className={cn("group relative inline-flex", className)}
       aria-label={visible ? `Carrello, ${count} ${count === 1 ? "articolo" : "articoli"}` : "Carrello, vuoto"}
     >
-      <ShoppingCart className="size-5 text-graphite" strokeWidth={2} aria-hidden="true" />
+      <span className="gd-chamfer inline-flex size-11 items-center justify-center bg-white/[0.07] text-graphite transition-colors duration-200 group-hover:bg-lime group-hover:text-void">
+        <ShoppingBag className="size-5" strokeWidth={1.8} aria-hidden="true" />
+      </span>
       {visible ? (
         <motion.span
           key={count}
@@ -28,7 +30,7 @@ export function CartIndicator({ className }: { className?: string }) {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 600, damping: 22 }}
           data-testid="cart-count"
-          className="tabular gd-display absolute -right-0.5 -top-0.5 inline-flex min-w-5 items-center justify-center rounded-full bg-violet px-1 text-[0.625rem] font-bold leading-5 text-white"
+          className="tabular gd-mono absolute -right-2 -top-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-lime px-1.5 text-[0.6875rem] font-bold leading-none text-void shadow-[0_0_14px_rgba(198,255,0,0.6)]"
         >
           {count}
         </motion.span>

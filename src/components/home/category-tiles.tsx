@@ -23,7 +23,7 @@ export function CategoryTiles({ categorySlugs }: { categorySlugs?: readonly Cate
               href={`/negozio/${category.slug}`}
               className="gd-glass-card gd-glass-interactive group relative flex min-h-24 items-center justify-center overflow-hidden rounded-[--radius-glass] px-4 py-6 text-center sm:min-h-28 md:min-h-32"
             >
-              <h3 className="gd-display-wide text-[0.9375rem] font-extrabold leading-tight text-graphite transition-colors duration-300 group-hover:text-violet sm:text-[1.125rem] lg:text-h3">
+              <h3 className="gd-display-wide text-[0.9375rem] font-extrabold leading-tight text-graphite transition-colors duration-300 group-hover:text-violet-soft sm:text-[1.125rem] lg:text-h3">
                 {category.name}
               </h3>
             </Link>

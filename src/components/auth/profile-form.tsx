@@ -34,7 +34,7 @@ export function ProfileForm({ displayName }: { readonly displayName: string }) {
           role="status"
           aria-live="polite"
           className={`rounded-2xl px-4 py-2.5 text-small ${
-            state.error ? "bg-red-50 text-red-700" : "bg-lime-tint text-graphite"
+            state.error ? "bg-soldout-bg text-soldout" : "bg-lime-tint text-lime"
           }`}
         >
           {state.error ?? state.notice}

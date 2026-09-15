@@ -17,7 +17,7 @@ export function FreeShippingMeter({ totals, threshold }: { totals: CartTotals; t
   return (
     <div className="rounded-xl border border-grey-200 bg-grey-100 p-4">
       <p className="flex items-center gap-2 text-small">
-        <Truck className={cn("size-4 shrink-0", reached ? "text-available" : "text-violet")} aria-hidden="true" />
+        <Truck className={cn("size-4 shrink-0", reached ? "text-available" : "text-violet-soft")} aria-hidden="true" />
         {reached ? (
           <span className="font-semibold text-available">Spedizione gratuita sbloccata.</span>
         ) : (

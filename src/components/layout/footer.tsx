@@ -1,15 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { Route } from "next";
-import { Lock, Package } from "lucide-react";
-import { brand, brandSize } from "@/data/assets";
+import { Lock, RotateCcw, Truck } from "lucide-react";
+import { Wordmark } from "@/components/layout/logo";
 import type { StorefrontChrome } from "@/lib/content/types";
-
-/**
- * No payment gateway is integrated yet, so no card or wallet brand is advertised here.
- * Re-add the badges when the matching method is actually accepted at checkout.
- */
-const PAYMENTS: readonly string[] = [];
 
 /**
  * VAT number of the business that sells and collects payments on GEAR//DROP.
@@ -18,59 +11,37 @@ const PAYMENTS: readonly string[] = [];
 const VAT_NUMBER = "18464231002";
 const SELLER_NAME = "Alessia Brunetti";
 
+/** Standing promises. Card wallets are not named here: Stripe decides which appear at checkout. */
+const PROMISES = [
+  { Icon: Lock, text: "Pagamento sicuro con Stripe" },
+  { Icon: Truck, text: "Spedizione €4,90 · gratis da €59" },
+  { Icon: RotateCcw, text: "Reso gratuito entro 30 giorni" },
+] as const;
+
 export function Footer({ content }: { readonly content: StorefrontChrome }) {
   return (
-    <footer className="on-dark bg-graphite text-white">
-      {/* Project band. Newsletter controls stay absent until a real backend exists. */}
-      <div className="border-b border-white/10">
-        <div className="mx-auto max-w-[1400px] px-4 py-10 sm:px-6 lg:py-12">
-          <div className="max-w-2xl">
-            <h2 className="text-h3 font-bold text-white">Il progetto GEAR//DROP</h2>
-            <p className="mt-2 text-small text-grey-400">
-              Un progetto indipendente dedicato al catalogo Beyblade X e alle informazioni utili per scegliere.
-            </p>
-            <Link
-              href="/chi-siamo"
-              className="gd-display mt-4 inline-block text-small font-bold tracking-wider text-lime underline-offset-4 hover:underline"
-            >
-              Scopri il progetto
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Link columns */}
-      <div className="mx-auto grid max-w-[1400px] gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.4fr_repeat(4,1fr)]">
+    <footer className="on-dark relative border-t border-white/[0.08] bg-void/70">
+      <div className="mx-auto grid max-w-[1400px] gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.4fr_repeat(4,1fr)] lg:px-10">
         <div>
-          {/*
-            The lockup is a light-background asset: its "GEAR" is graphite, invisible on
-            this footer. The mockup's footer uses a dark-background variant of the logo
-            that was never supplied. Recolouring the supplied file (e.g. invert) would be
-            reinterpreting the logo, which the brief forbids — so it sits on a light plate
-            instead, exactly as supplied. See docs/reference-audit.md §9.5.
-          */}
-          <span className="inline-flex rounded-xl bg-white px-4 py-3">
-            <Image
-              src={brand.lockup}
-              alt="GEAR//DROP"
-              width={brandSize.lockup.width}
-              height={brandSize.lockup.height}
-              sizes="220px"
-              className="h-7 w-auto"
-            />
-          </span>
-          <p className="mt-4 max-w-xs text-small leading-relaxed text-grey-400">
-            Catalogo Beyblade X, informazioni sui prodotti e assistenza prima dell’ordine.
+          <Wordmark spin={false} />
+          <p className="mt-4 max-w-xs text-small leading-relaxed text-grey-600">
+            Un progetto indipendente dedicato al catalogo Beyblade X e alle informazioni utili per scegliere.
           </p>
+          <Link
+            href="/chi-siamo"
+            className="gd-display mt-4 inline-block text-small font-bold tracking-[0.08em] text-lime underline-offset-4 hover:underline"
+          >
+            Scopri il progetto
+          </Link>
         </div>
 
         {content.footerColumns.map((column) => (
           <div key={column.title}>
-            <h3 className="gd-display text-small font-bold tracking-wider text-white">{column.title}</h3>
+            <h2 className="gd-mono text-[0.6875rem] font-normal not-italic tracking-[0.16em] text-grey-400">{column.title}</h2>
             <ul className="mt-4 flex flex-col gap-2.5">
               {column.links.map((link) => (
                 <li key={link.label}>
-                  <Link href={link.href as Route} className="text-small text-grey-400 transition-colors hover:text-lime">
+                  <Link href={link.href as Route} className="text-small text-grey-600 transition-colors hover:text-lime">
                     {link.label}
                   </Link>
                 </li>
@@ -80,36 +51,33 @@ export function Footer({ content }: { readonly content: StorefrontChrome }) {
         ))}
       </div>
 
-      {content.socialLinks.length ? <div className="border-t border-white/10 py-5"><ul className="mx-auto flex max-w-[1400px] flex-wrap justify-center gap-5 px-4">{content.socialLinks.map((link) => <li key={link.label}><a className="text-small text-grey-400 hover:text-lime" href={link.href} rel="noopener noreferrer">{link.label}</a></li>)}</ul></div> : null}
-
-      {/* Reassurance + payments */}
-      <div className="border-t border-white/10">
-        <div className="mx-auto flex max-w-[1400px] flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-col gap-4 sm:flex-row sm:gap-8">
-            <p className="flex items-center gap-2.5 text-small text-grey-400">
-              <Package className="size-4 text-lime" aria-hidden="true" />
-              Spedizione gratuita sopra 59€
-            </p>
-            <p className="flex items-center gap-2.5 text-small text-grey-400">
-              <Lock className="size-4 text-lime" aria-hidden="true" />
-              Connessione protetta con crittografia SSL
-            </p>
-          </div>
-          <ul className="flex flex-wrap items-center gap-2">
-            {PAYMENTS.map((name) => (
-              <li
-                key={name}
-                className="gd-display rounded-md bg-white/10 px-3 py-1.5 text-[0.625rem] font-bold tracking-wider text-grey-300"
-              >
-                {name}
+      {content.socialLinks.length ? (
+        <div className="border-t border-white/[0.08] py-5">
+          <ul className="mx-auto flex max-w-[1400px] flex-wrap justify-center gap-5 px-4">
+            {content.socialLinks.map((link) => (
+              <li key={link.label}>
+                <a className="text-small text-grey-600 hover:text-lime" href={link.href} rel="noopener noreferrer">
+                  {link.label}
+                </a>
               </li>
             ))}
           </ul>
         </div>
+      ) : null}
+
+      <div className="border-t border-white/[0.08]">
+        <ul className="mx-auto flex max-w-[1400px] flex-col gap-3 px-4 py-5 sm:flex-row sm:flex-wrap sm:gap-8 sm:px-6 lg:px-10">
+          {PROMISES.map(({ Icon, text }) => (
+            <li key={text} className="flex items-center gap-2.5 text-small text-grey-600">
+              <Icon className="size-4 text-lime" aria-hidden="true" />
+              {text}
+            </li>
+          ))}
+        </ul>
       </div>
 
-      <div className="border-t border-white/10 py-5 text-center">
-        <p className="text-small text-grey-400">
+      <div className="border-t border-white/[0.08] py-5">
+        <p className="gd-mono mx-auto max-w-[1400px] px-4 text-[0.6875rem] tracking-[0.04em] text-grey-400 sm:px-6 lg:px-10">
           © {new Date().getFullYear()} GEAR//DROP di {SELLER_NAME} · P.IVA {VAT_NUMBER} · Tutti i diritti riservati.
         </p>
       </div>

@@ -1,81 +1,42 @@
-import { Clock3, Headphones, PackageSearch, RotateCcw, Truck } from "lucide-react";
+import { Lock, RotateCcw, Truck } from "lucide-react";
 import { cn } from "@/lib/cn";
 
-type TrustItem = { Icon: typeof Truck; title: string; lines: readonly [string, string] };
+type TrustItem = { readonly Icon: typeof Truck; readonly title: string; readonly sub: string };
 
-/** Dark band from mockup-home-upper. */
-const DARK_ITEMS: readonly TrustItem[] = [
-  { Icon: Clock3, title: "Spedizione pre-ordini", lines: ["Entro 14 giorni", "dalla conferma"] },
-  { Icon: PackageSearch, title: "Catalogo Beyblade X", lines: ["Trottole, set", "e accessori"] },
-  { Icon: Headphones, title: "Ordine assistito", lines: ["Nessun addebito", "online"] },
-  { Icon: Truck, title: "Transito del corriere", lines: ["Inizia dopo", "la spedizione"] },
+/** The three promises checkout actually keeps: Stripe payment, flat shipping, free returns. */
+const ITEMS: readonly TrustItem[] = [
+  { Icon: Lock, title: "Pagamento sicuro", sub: "Paghi sulla pagina protetta di Stripe con carta e i wallet disponibili." },
+  { Icon: Truck, title: "Spedizione €4,90", sub: "Gratis per ordini da €59 in su." },
+  { Icon: RotateCcw, title: "Reso gratuito", sub: "30 giorni per ripensarci: la spedizione del reso la paghiamo noi." },
 ];
 
-/** Light bar from mockup-home-lower / the PDP. */
-const LIGHT_ITEMS: readonly TrustItem[] = [
-  { Icon: Clock3, title: "Spedizione pre-ordini", lines: ["Entro 14 giorni dalla conferma", ""] },
-  { Icon: Truck, title: "Transito del corriere", lines: ["Calcolato dopo la spedizione", ""] },
-  { Icon: RotateCcw, title: "Reso facile", lines: ["30 giorni per cambiare idea", ""] },
-  { Icon: Headphones, title: "Assistenza dedicata", lines: ["Siamo qui per te", ""] },
-];
-
-export function TrustBandDark({ className }: { className?: string }) {
+function TrustHud({ className, compact = false }: { className?: string; compact?: boolean }) {
   return (
-    <section className={cn("mx-auto max-w-[1400px] px-4 sm:px-6", className)}>
+    <section className={cn("mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-10", className)}>
       <h2 className="sr-only">Perché comprare da GEAR//DROP</h2>
-      {/* Dark frosted glass floating on the light page. */}
-      <div className="gd-glass-dark relative overflow-hidden rounded-[--radius-glass-lg]">
-        <div
-          aria-hidden="true"
-          className="absolute -left-16 top-1/2 size-72 -translate-y-1/2 rounded-full bg-violet/25 blur-3xl"
-        />
-        <div
-          aria-hidden="true"
-          className="absolute -right-10 -top-10 size-52 rounded-full bg-lime/10 blur-3xl"
-        />
-        <ul className="relative grid grid-cols-2 gap-x-4 gap-y-6 p-6 sm:gap-8 sm:p-8 lg:grid-cols-4">
-          {DARK_ITEMS.map(({ Icon, title, lines }) => (
-            <li key={title} className="flex items-center gap-3.5">
-              <span className="gd-glass-dark inline-flex size-11 shrink-0 items-center justify-center rounded-2xl">
-                <Icon className="size-5 text-violet" strokeWidth={2} aria-hidden="true" />
-              </span>
-              <span>
-                <span className="gd-display block text-small font-bold tracking-wider text-white">{title}</span>
-                <span className="block text-[0.6875rem] leading-tight text-grey-400">
-                  {lines[0]}
-                  {lines[1] ? (
-                    <>
-                      <br />
-                      {lines[1]}
-                    </>
-                  ) : null}
-                </span>
-              </span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
-  );
-}
-
-export function TrustBarLight({ className }: { className?: string }) {
-  return (
-    <section className={cn("mx-auto max-w-[1400px] px-4 sm:px-6", className)}>
-      <h2 className="sr-only">Servizi GEAR//DROP</h2>
-      <ul className="gd-glass-card grid grid-cols-2 gap-x-4 gap-y-5 rounded-[--radius-glass] p-5 sm:gap-6 sm:p-6 lg:grid-cols-4">
-        {LIGHT_ITEMS.map(({ Icon, title, lines }) => (
-          <li key={title} className="flex items-center gap-3">
-            <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-2xl bg-violet-tint ring-1 ring-white/60">
-              <Icon className="size-4.5 text-violet" strokeWidth={2} aria-hidden="true" />
+      <ul className={cn("grid gap-3 sm:gap-5", compact ? "sm:grid-cols-3" : "md:grid-cols-3")}>
+        {ITEMS.map(({ Icon, title, sub }) => (
+          <li key={title} className={cn("gd-hud flex items-start gap-4", compact ? "p-4" : "p-5 sm:p-6")}>
+            <span className="grid size-12 shrink-0 place-items-center border border-lime/25 bg-lime/[0.08] text-lime">
+              <Icon className="size-5" strokeWidth={1.8} aria-hidden="true" />
             </span>
             <span>
-              <span className="gd-display block text-small font-bold tracking-wider text-graphite">{title}</span>
-              <span className="block text-[0.6875rem] leading-tight text-grey-600">{lines[0]}</span>
+              <span className="gd-display block text-[1.0625rem] font-bold tracking-[0.04em]">{title}</span>
+              <span className="mt-1 block text-small leading-snug text-grey-600">{sub}</span>
             </span>
           </li>
         ))}
       </ul>
     </section>
   );
+}
+
+/** Full HUD band for the homepage and catalogue. */
+export function TrustBandDark({ className }: { className?: string }) {
+  return <TrustHud {...(className ? { className } : {})} />;
+}
+
+/** Tighter row for the product page. */
+export function TrustBarLight({ className }: { className?: string }) {
+  return <TrustHud {...(className ? { className } : {})} compact />;
 }

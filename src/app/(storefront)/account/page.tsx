@@ -132,7 +132,7 @@ export default async function AccountPage() {
             <ul className="mt-3 flex flex-col gap-2" data-testid="address-list">
               {addresses.map((address) => (
                 <li key={address.id} className="flex items-center gap-2 text-small text-grey-600">
-                  <MapPin className="size-4 shrink-0 text-violet" aria-hidden="true" />
+                  <MapPin className="size-4 shrink-0 text-violet-soft" aria-hidden="true" />
                   <span>
                     <span className="font-bold text-graphite">{address.label}</span> · {address.line_one},{" "}
                     {address.postal_code} {address.city} ({address.province})
@@ -156,7 +156,7 @@ export default async function AccountPage() {
               className="gd-glass-card gd-glass-interactive group flex h-full items-start gap-3 rounded-[--radius-glass] p-5"
             >
               <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-violet-tint">
-                <Icon className="size-4.5 text-violet" strokeWidth={2} aria-hidden="true" />
+                <Icon className="size-4.5 text-violet-soft" strokeWidth={2} aria-hidden="true" />
               </span>
               <span>
                 <span className="gd-display block text-small font-bold tracking-wider text-graphite">{label}</span>

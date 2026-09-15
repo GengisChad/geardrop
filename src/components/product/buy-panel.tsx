@@ -94,7 +94,7 @@ export function BuyPanel({ product }: { product: Product }) {
           aria-pressed={isSaved}
           className="sm:w-auto"
         >
-          <Heart className={cn("size-4", isSaved && "text-violet")} fill={isSaved ? "currentColor" : "none"} aria-hidden="true" />
+          <Heart className={cn("size-4", isSaved && "text-violet-soft")} fill={isSaved ? "currentColor" : "none"} aria-hidden="true" />
           <span className="whitespace-nowrap">{isSaved ? "Nei preferiti" : "Aggiungi ai preferiti"}</span>
         </Button>
       </div>

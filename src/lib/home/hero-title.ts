@@ -1,8 +1,11 @@
 /** The approved default headline, newline-typed so it flows through the same renderer. */
 export const DEFAULT_HERO_TITLE = "Pronti alla\nbattaglia.\nNati per vincere.";
 
+/** Headline when the hero deals the owner's new releases. */
+export const NEW_RELEASES_HERO_TITLE = "Le nuove\nuscite sono\natterrate.";
+
 /**
- * Split a hero headline into rendered lines, with the last line carrying the lime accent.
+ * Split a hero headline into rendered lines, with the last line carrying the holographic accent.
  *
  * Newlines are honoured as explicit line breaks. A single-line title is split once at its
  * final sentence so the closing statement still lands in lime — the approved composition

@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { PromoBadge } from "@/components/ui/badge";
 import { WishlistButton } from "@/components/product/wishlist-button";
-import type { ProductImage } from "@/data/assets";
+import { cutoutSrc, type ProductImage } from "@/data/assets";
 import type { PromoTag } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
 
@@ -41,7 +41,7 @@ export function Gallery({ images, slug, name, promo }: GalleryProps) {
               className="absolute inset-0"
             >
               <Image
-                src={active.src}
+                src={cutoutSrc(active.src) ?? active.src}
                 alt={active.alt}
                 fill
                 priority
@@ -84,7 +84,7 @@ export function Gallery({ images, slug, name, promo }: GalleryProps) {
                   i === index ? "border-violet" : "border-grey-200 hover:border-grey-400",
                 )}
               >
-                <Image src={image.src} alt="" aria-hidden="true" fill sizes="80px" className="object-contain p-1.5" />
+                <Image src={cutoutSrc(image.src) ?? image.src} alt="" aria-hidden="true" fill sizes="80px" className="object-contain p-1.5" />
               </button>
             </li>
           ))}
@@ -103,7 +103,7 @@ function GalleryArrow({ direction, onClick }: { direction: "prev" | "next"; onCl
       aria-label={direction === "prev" ? "Immagine precedente" : "Immagine successiva"}
       className={cn(
         "absolute top-1/2 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full",
-        "gd-glass-compact text-graphite transition-colors hover:border-violet hover:text-violet",
+        "gd-glass-compact text-graphite transition-colors hover:border-violet hover:text-violet-soft",
         direction === "prev" ? "left-3" : "right-3",
       )}
     >

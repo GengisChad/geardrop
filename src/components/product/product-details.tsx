@@ -119,7 +119,7 @@ function AccordionItem({ label, content }: { label: string; content: React.React
       >
         <span className="gd-display text-small font-bold tracking-wider text-graphite">{label}</span>
         <ChevronDown
-          className={cn("size-5 shrink-0 text-violet transition-transform duration-300", open && "rotate-180")}
+          className={cn("size-5 shrink-0 text-violet-soft transition-transform duration-300", open && "rotate-180")}
           aria-hidden="true"
         />
       </button>

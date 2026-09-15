@@ -17,7 +17,7 @@ const Context = createContext<ToastContext | null>(null);
 
 const TONE_STYLE: Record<Tone, { icon: typeof Info; ring: string; iconColor: string }> = {
   success: { icon: CheckCircle2, ring: "border-available/40", iconColor: "text-available" },
-  info: { icon: Info, ring: "border-violet/40", iconColor: "text-violet" },
+  info: { icon: Info, ring: "border-violet/40", iconColor: "text-violet-soft" },
   error: { icon: XCircle, ring: "border-soldout/40", iconColor: "text-soldout" },
 };
 

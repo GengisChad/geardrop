@@ -1,25 +1,27 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Arena } from "@/components/home/arena";
+import { Arsenal } from "@/components/home/arsenal";
 import { Hero } from "@/components/home/hero";
-import { CategoryTiles } from "@/components/home/category-tiles";
-import { StatusLegend } from "@/components/home/status-legend";
-import { TrustBandDark, TrustBarLight } from "@/components/home/trust";
-import { ProductCarousel } from "@/components/product/product-carousel";
+import { TrustBandDark } from "@/components/home/trust";
 import { Reveal } from "@/components/ui/reveal";
 import { ManagedHomepage, type ManagedHomepageFallback } from "@/components/content/managed-homepage";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { storefrontContent } from "@/lib/content/provider";
-import { allocateUniqueProductSections, HOME_FEATURED_LIMIT, newReleases } from "@/lib/home/product-selection";
+import { HOME_FEATURED_LIMIT, newReleases } from "@/lib/home/product-selection";
 import { resolveHomepageSections } from "@/lib/storefront/homepage-resolver";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
+/** The hero deals at most three cards. */
+const HERO_CARDS = 3;
+
 export default async function HomePage() {
   const commerce = await getCommerceProvider();
 
-  const [featured, latest, bestSellers, bundle, hero, all, managed] = await Promise.all([
+  const [featured, latest, bestSellers, bundle, bundleHero, all, managed] = await Promise.all([
     commerce.listProducts({ sort: "popolari", perPage: HOME_FEATURED_LIMIT }),
     commerce.listProducts({ sort: "novita", perPage: 6 }),
     commerce.listProducts({ sort: "popolari", category: "beyblade-x", perPage: 5 }),
@@ -29,11 +31,17 @@ export default async function HomePage() {
     storefrontContent.getHomepage(),
   ]);
 
-  // The hero product is the catalogue's anchor SKU; without it the page is meaningless.
-  if (!hero) notFound();
+  // Without a catalogue the page has nothing to deal.
+  if (all.items.length === 0) notFound();
+
+  // The owner's new releases lead; without any, the hero deals the leading featured products.
+  const releases = newReleases(all.items);
+  const heroProducts = (releases.length > 0 ? releases : featured.items).slice(0, HERO_CARDS);
 
   const fallback: ManagedHomepageFallback = {
-    heroProduct: hero,
+    heroProducts,
+    heroIsNewRelease: releases.length > 0,
+    bundleHero,
     bundle,
     featured: featured.items,
     latest: latest.items,
@@ -42,63 +50,24 @@ export default async function HomePage() {
   };
 
   // Managed path: the CMS controls order, copy, visibility and product targets; the same
-  // liquid glass components render them. This is what production serves. It replaced the
-  // placeholder renderer whose "N target relazionali" graphite scaffold was the black
-  // page. When no managed content is published, the hardcoded composition below stands
-  // in — never the scaffold.
+  // Holo Drop components render them. When no managed content is published, the approved
+  // composition below stands in.
   if (managed && managed.length > 0) {
     const sections = await resolveHomepageSections(managed, commerce);
     return <ManagedHomepage sections={sections} fallback={fallback} />;
   }
 
-  // New releases claim their products first, so "In evidenza" carries everything else.
-  const [homeNew = [], homeFeatured = [], homeLatest = [], homeBestSellers = [], homeAll = []] =
-    allocateUniqueProductSections([newReleases(all.items), featured.items, latest.items, bestSellers.items, all.items]);
+  // New releases open the arsenal, then the rest of the catalogue in its own order.
+  const arsenal = [...releases, ...all.items.filter((product) => !releases.includes(product))];
 
   return (
     <>
-      {/* The hero is the LCP element and sits above the fold, so it is never revealed on
-          scroll: it must paint at once. Reveal starts below it. */}
-      <Hero product={hero} />
-      <CategoryTiles />
-      <StatusLegend />
-
+      {/* The hero holds the LCP image, so it is never revealed on scroll: it paints at once. */}
+      <Hero products={heroProducts} isNewRelease={releases.length > 0} />
+      <Arena products={heroProducts} />
+      <Arsenal products={arsenal} />
       <Reveal>
-        <ProductCarousel title="Nuove uscite" products={homeNew} href="/negozio?sort=novita" className="pb-12" />
-      </Reveal>
-
-      <Reveal>
-        <ProductCarousel title="In evidenza" products={homeFeatured} href="/negozio" dots className="pb-12" />
-      </Reveal>
-
-      <Reveal>
-        <TrustBandDark className="pb-12" />
-      </Reveal>
-
-      <Reveal>
-        <ProductCarousel title="Ultimi drop" products={homeLatest} href="/negozio?sort=novita" className="pb-12" />
-      </Reveal>
-
-      <Reveal>
-        <ProductCarousel
-          title="Pre-ordini aperti"
-          products={homeBestSellers}
-          href="/negozio/beyblade-x"
-          className="pb-4"
-        />
-      </Reveal>
-
-      <Reveal>
-        <TrustBarLight className="pb-12" />
-      </Reveal>
-
-      <Reveal>
-        <ProductCarousel
-          title="Esplora il catalogo"
-          products={homeAll}
-          href="/negozio/beyblade-x"
-          className="pb-12"
-        />
+        <TrustBandDark className="pb-20" />
       </Reveal>
     </>
   );

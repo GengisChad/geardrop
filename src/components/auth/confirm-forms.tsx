@@ -24,7 +24,7 @@ function Feedback({ state }: { readonly state: AuthFormState }) {
       aria-live="polite"
       data-testid={isError ? "auth-error" : "auth-notice"}
       className={`flex items-start gap-2 rounded-2xl px-4 py-3 text-small ${
-        isError ? "bg-red-50 text-red-700" : "bg-lime-tint text-graphite"
+        isError ? "bg-soldout-bg text-soldout" : "bg-lime-tint text-lime"
       }`}
     >
       {isError ? (
@@ -68,7 +68,7 @@ export function ConfirmSignupForm({ tokenHash }: { readonly tokenHash: string })
       <ConfirmButton label="CONFERMA ACCOUNT" pendingLabel="CONFERMA IN CORSO…" />
       {state.error ? (
         <p className="text-small text-grey-600">
-          <Link href="/login" className="underline hover:text-violet">
+          <Link href="/login" className="underline hover:text-violet-soft">
             Vai all&apos;accesso
           </Link>
         </p>
@@ -87,7 +87,7 @@ export function ConfirmRecoveryForm({ tokenHash }: { readonly tokenHash: string 
       <ConfirmButton label="CONTINUA CON LA REIMPOSTAZIONE" pendingLabel="VERIFICA IN CORSO…" />
       {state.error ? (
         <p className="text-small text-grey-600">
-          <Link href="/password-dimenticata" className="underline hover:text-violet">
+          <Link href="/password-dimenticata" className="underline hover:text-violet-soft">
             Richiedi un nuovo link
           </Link>
         </p>
@@ -124,7 +124,7 @@ export function ResendConfirmationForm() {
       data-testid="resend-form"
     >
       <p className="gd-display flex items-center gap-2 text-small font-bold tracking-wider text-graphite">
-        <MailQuestion className="size-4 text-violet" aria-hidden="true" />
+        <MailQuestion className="size-4 text-violet-soft" aria-hidden="true" />
         NON HAI RICEVUTO L&apos;EMAIL?
       </p>
       <Feedback state={state} />

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Breadcrumbs, type Crumb } from "@/components/ui/breadcrumbs";
+import { cutoutSrc } from "@/data/assets";
 import type { ProductImage } from "@/data/assets";
 
 type CatalogHeroProps = {
@@ -45,14 +46,14 @@ export function CatalogHero({ title, tagline, description, crumbs, art }: Catalo
               className="absolute left-1/2 top-1/2 size-[70%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-lime/10 blur-2xl"
             />
             <Image
-              src={art.src}
+              src={cutoutSrc(art.src) ?? art.src}
               alt=""
               aria-hidden="true"
               width={art.width}
               height={art.height}
               priority
               sizes="420px"
-              className="relative mx-auto h-auto max-h-48 w-auto object-contain drop-shadow-[0_18px_28px_rgba(18,20,23,0.2)]"
+              className="relative mx-auto h-auto max-h-56 w-auto object-contain drop-shadow-[0_22px_26px_rgba(0,0,0,0.6)]"
             />
           </div>
         ) : null}

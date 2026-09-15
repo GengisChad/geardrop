@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { cutoutSrc } from "@/data/assets";
 import Link from "next/link";
 import { useForm, useWatch } from "react-hook-form";
 import { AlertTriangle, ArrowRight, CheckCircle2, Info } from "lucide-react";
@@ -145,7 +146,7 @@ export function CheckoutClient() {
                 <span
                   className={cn(
                     "tabular gd-display inline-flex size-6 items-center justify-center rounded-full text-[0.6875rem] font-bold",
-                    index <= 1 ? "bg-lime text-graphite" : "bg-grey-200 text-grey-600",
+                    index <= 1 ? "bg-lime text-void" : "bg-grey-200 text-grey-600",
                   )}
                 >
                   {index + 1}
@@ -303,7 +304,7 @@ export function CheckoutClient() {
           {/* Payment methods are named only when Stripe actually takes the payment; anything
               else would be a promise the backend cannot keep. */}
           <p className="mt-4 flex items-start gap-2 text-small text-grey-600" data-testid="payment-notice">
-            <Info className="mt-0.5 size-4 shrink-0 text-violet" aria-hidden="true" />
+            <Info className="mt-0.5 size-4 shrink-0 text-violet-soft" aria-hidden="true" />
             {stripe ? (
               <span>
                 Paghi sulla pagina sicura di Stripe con carta, Apple Pay, Google Pay o gli altri metodi
@@ -336,8 +337,8 @@ export function CheckoutClient() {
             <li key={line.slug} className="flex items-center gap-3">
               {line.image ? (
                 <span className="relative shrink-0">
-                  <Image src={line.image.src} alt="" aria-hidden="true" width={line.image.width} height={line.image.height} sizes="48px" className="size-12 object-contain" />
-                  <span className="tabular absolute -right-1 -top-1 inline-flex min-w-4 items-center justify-center rounded-full bg-graphite px-1 text-[0.5625rem] font-bold leading-4 text-white">
+                  <Image src={cutoutSrc(line.image.src) ?? line.image.src} alt="" aria-hidden="true" width={line.image.width} height={line.image.height} sizes="48px" className="size-12 object-contain" />
+                  <span className="tabular absolute -right-1 -top-1 inline-flex min-w-4 items-center justify-center rounded-full bg-lime px-1 text-[0.5625rem] font-bold leading-4 text-void">
                     {line.quantity}
                   </span>
                 </span>
@@ -366,9 +367,9 @@ export function CheckoutClient() {
         </Button>
         <p className="text-center text-[0.6875rem] text-grey-600" data-testid="checkout-terms">
           Confermando accetti i{" "}
-          <Link href="/legale/termini" className="underline hover:text-violet">Termini e condizioni</Link>{" "}
+          <Link href="/legale/termini" className="underline hover:text-violet-soft">Termini e condizioni</Link>{" "}
           e dichiari di aver letto l&apos;
-          <Link href="/legale/privacy" className="underline hover:text-violet">informativa privacy</Link>.
+          <Link href="/legale/privacy" className="underline hover:text-violet-soft">informativa privacy</Link>.
         </p>
       </aside>
     </form>

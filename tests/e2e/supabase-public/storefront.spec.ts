@@ -75,21 +75,19 @@ test.describe("anonymous storefront on Supabase", () => {
     // runs against the real database, on the managed path, where the black page lived.
     expect(body, "the placeholder CMS scaffold is back").not.toContain("target relazionali");
 
-    // The liquid glass hero with the impact artwork, not the old stadium product shot.
-    await expect(page.getByTestId("hero-impact")).toBeVisible();
-    await expect(page.getByTestId("hero-glass")).toBeVisible();
-    await expect(page.getByTestId("hero-impact").locator("img")).toHaveAttribute("src", /impact\.(png|webp)/);
-    await expect(page.getByTestId("hero-impact").locator('img[src*="stadio"]')).toHaveCount(0);
+    // The Holo Drop hero deals the new releases as holographic cards.
+    await expect(page.getByTestId("hero")).toBeVisible();
+    expect(await page.getByTestId("holo-card").count(), "the managed hero dealt no cards").toBeGreaterThan(0);
 
     // No section paints a full graphite scaffold panel.
     expect(await page.locator("section.bg-graphite").count(), "a graphite scaffold section is rendering").toBe(0);
 
-    // Real glass with a real blur somewhere on the page.
-    const blurred = await page.locator('[class*="gd-glass"]').first().evaluate((element) => {
+    // The sticky header really composites its blur over the page.
+    const blurred = await page.locator("header").first().evaluate((element) => {
       const style = getComputedStyle(element);
       return (style.backdropFilter || style.webkitBackdropFilter || "").includes("blur");
     });
-    expect(blurred, "no element is actually compositing a glass blur").toBe(true);
+    expect(blurred, "the header is not compositing its blur").toBe(true);
 
     // Exactly one h1, from the CMS hero section. The static homepage has always had
     // one; the managed one rendered every section as h2 and so had none.
