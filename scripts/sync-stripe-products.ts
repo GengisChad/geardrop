@@ -1,7 +1,10 @@
 import { pathToFileURL } from "node:url";
 import { PRODUCTS } from "../src/data/catalog";
 import type { Money, Product } from "../src/lib/commerce/types";
+import { createStripeClient, stripeProductId, type StripeClient } from "../src/lib/payments/stripe-api";
 import { PRODUCTION_ORIGIN } from "../src/lib/site-url";
+
+export { formEncode, stripeProductId } from "../src/lib/payments/stripe-api";
 
 /**
  * Mirrors the storefront catalogue into Stripe Products and Prices.
@@ -17,11 +20,6 @@ import { PRODUCTION_ORIGIN } from "../src/lib/site-url";
  *   pnpm stripe:products            preview the changes
  *   pnpm stripe:products --apply    write them to the account behind STRIPE_SECRET_KEY
  */
-
-const STRIPE_API = "https://api.stripe.com/v1";
-
-type FormValue = string | number | boolean | readonly string[] | Readonly<Record<string, string>>;
-type FormFields = Readonly<Record<string, FormValue | undefined>>;
 
 export type StripeProductPayload = {
   readonly id: string;
@@ -70,10 +68,6 @@ type StripeAccount = {
   readonly settings?: { readonly dashboard?: { readonly display_name?: string | null } | null } | null;
 };
 
-export function stripeProductId(slug: string): string {
-  return `gd_${slug.replaceAll("-", "_")}`;
-}
-
 export function buildStripeProduct(product: Product, origin: string = PRODUCTION_ORIGIN): StripeProductPayload {
   return {
     id: stripeProductId(product.slug),
@@ -92,20 +86,6 @@ export function buildStripePrice(product: Product): DesiredPrice {
     currency: product.price.currency.toLowerCase(),
     lookupKey: stripeProductId(product.slug),
   };
-}
-
-/** Stripe's form encoding: arrays and records share the bracket syntax, images[0] and metadata[slug]. */
-export function formEncode(fields: FormFields): URLSearchParams {
-  const body = new URLSearchParams();
-  for (const [key, value] of Object.entries(fields)) {
-    if (value === undefined) continue;
-    if (typeof value === "object") {
-      for (const [name, item] of Object.entries(value)) body.append(`${key}[${name}]`, item);
-    } else {
-      body.append(key, String(value));
-    }
-  }
-  return body;
 }
 
 function sameList(left: readonly string[], right: readonly string[]): boolean {
@@ -163,37 +143,6 @@ export function describePlan(product: Product, plan: ProductSyncPlan): string {
         : `prezzo ${euro(product.price)} invariato`;
   return `- ${product.name}: ${productText} · ${priceText}`;
 }
-
-function createStripeClient(secretKey: string) {
-  async function send(method: "GET" | "POST", path: string, body?: URLSearchParams, idempotencyKey?: string) {
-    const headers: Record<string, string> = { Authorization: `Bearer ${secretKey}` };
-    if (body) headers["Content-Type"] = "application/x-www-form-urlencoded";
-    if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
-    return fetch(`${STRIPE_API}${path}`, { method, headers, body: body ?? null });
-  }
-
-  async function parse<T>(response: Response, label: string): Promise<T> {
-    const payload = (await response.json()) as T & { readonly error?: { readonly message?: string } };
-    if (!response.ok) {
-      // Stripe masks keys in its own messages, so the error text is safe to print.
-      throw new Error(`Stripe ${label} → ${response.status}: ${payload.error?.message ?? "errore sconosciuto"}`);
-    }
-    return payload;
-  }
-
-  return {
-    async get<T>(path: string): Promise<T | null> {
-      const response = await send("GET", path);
-      if (response.status === 404) return null;
-      return parse<T>(response, `GET ${path}`);
-    },
-    async post<T>(path: string, fields: FormFields, idempotencyKey?: string): Promise<T> {
-      return parse<T>(await send("POST", path, formEncode(fields), idempotencyKey), `POST ${path}`);
-    },
-  };
-}
-
-type StripeClient = ReturnType<typeof createStripeClient>;
 
 async function applyPlan(client: StripeClient, desired: StripeProductPayload, price: DesiredPrice, plan: ProductSyncPlan) {
   const { id, ...fields } = desired;

@@ -29,6 +29,7 @@ export function CheckoutClient() {
   const [placed, setPlaced] = useState<Placed | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
   // One key for the whole checkout attempt: a retry after a lost response must return
   // the order the database already created rather than creating a second one.
@@ -96,6 +97,11 @@ export function CheckoutClient() {
   }
 
   const blocked = !quote.orderable;
+  const stripe = quote.payment === "stripe";
+  const busy = pending || redirecting;
+  const submitLabel = stripe
+    ? busy ? "Apertura pagamento..." : "Vai al pagamento"
+    : busy ? "Registrazione..." : "Conferma ordine";
 
   return (
     <form
@@ -115,6 +121,12 @@ export function CheckoutClient() {
           if (!result.ok) {
             // The cart is deliberately left untouched: nothing was ordered.
             setFailure(result.message);
+            return;
+          }
+          if ("redirectUrl" in result) {
+            // Stripe owns the rest of the attempt; the cart is emptied only once it confirms.
+            setRedirecting(true);
+            window.location.assign(result.redirectUrl);
             return;
           }
           setPlaced({ orderNumber: result.orderNumber, total: result.total });
@@ -288,12 +300,21 @@ export function CheckoutClient() {
 
         <fieldset className="gd-glass-panel rounded-[--radius-glass] p-5">
           <legend className="gd-display px-1 text-small font-bold tracking-wider text-graphite">Pagamento</legend>
-          {/* No gateway is integrated. Offering card, PayPal or Klarna here would be a
-              promise the backend cannot keep. */}
+          {/* Payment methods are named only when Stripe actually takes the payment; anything
+              else would be a promise the backend cannot keep. */}
           <p className="mt-4 flex items-start gap-2 text-small text-grey-600" data-testid="payment-notice">
             <Info className="mt-0.5 size-4 shrink-0 text-violet" aria-hidden="true" />
-            Nessun pagamento online è attivo. Confermando registri l&apos;ordine: non viene
-            richiesto né addebitato alcun importo e non raccogliamo dati di pagamento.
+            {stripe ? (
+              <span>
+                Paghi sulla pagina sicura di Stripe con carta, Apple Pay, Google Pay o gli altri metodi
+                disponibili. L&apos;ordine è valido solo quando il pagamento è completato.
+              </span>
+            ) : (
+              <span>
+                Nessun pagamento online è attivo. Confermando registri l&apos;ordine: non viene
+                richiesto né addebitato alcun importo e non raccogliamo dati di pagamento.
+              </span>
+            )}
           </p>
 
           <Field label="Note per il corriere (facoltativo)" htmlFor="notes" error={errors.notes?.message} className="mt-4">
@@ -339,9 +360,9 @@ export function CheckoutClient() {
           </p>
         ) : null}
 
-        <Button type="submit" variant="primary" size="lg" fullWidth disabled={pending || blocked} data-testid="place-order">
-          {pending ? "Registrazione..." : "Conferma ordine"}
-          {!pending ? <ArrowRight className="size-4" aria-hidden="true" /> : null}
+        <Button type="submit" variant="primary" size="lg" fullWidth disabled={busy || blocked} data-testid="place-order">
+          {submitLabel}
+          {!busy ? <ArrowRight className="size-4" aria-hidden="true" /> : null}
         </Button>
       </aside>
     </form>
