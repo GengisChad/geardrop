@@ -89,6 +89,30 @@ export const productImages = {
       alt: "Beyblade X Sneak Attack Battle Set: stadio verde, due trottole e due lanciatori",
     },
   ],
+  "glory-valkerion-lf": [
+    {
+      src: "/products/glory-valkerion-lf.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Confezione Beyblade X Glory Valkerion LF bianca e oro con lanciatore e trottola",
+    },
+  ],
+  "hurricane-enlil-is-7-55t": [
+    {
+      src: "/products/hurricane-enlil-is-7-55t.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Confezione Beyblade X Hurricane Enlil IS 7-55T con lanciatore e trottola azzurra",
+    },
+  ],
+  "shatter-horus-9-65gb": [
+    {
+      src: "/products/shatter-horus-9-65gb.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Confezione Beyblade X Shatter Horus 9-65GB con lanciatore e trottola argento e rossa",
+    },
+  ],
 } as const satisfies Record<string, readonly ProductImage[]>;
 
 export type ProductSlug = keyof typeof productImages;
