@@ -132,6 +132,8 @@ export type CartQuote = {
   readonly orderable: boolean;
   /** Why the cart cannot be ordered, when it cannot. */
   readonly notice: string | null;
+  /** Set when Stripe takes the payment for this cart; checkout then hands the buyer to Stripe. */
+  readonly payment?: "stripe";
 };
 
 export type CartQuoteRequest = {

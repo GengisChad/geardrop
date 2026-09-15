@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PRODUCTS } from "@/data/catalog";
 
 describe("reviewed preorder catalogue", () => {
-  it("publishes exactly the six owner-supplied products and allocations", () => {
+  it("publishes exactly the nine owner-supplied products and allocations", () => {
     expect(
       PRODUCTS.map(({ slug, price, stock, availableQuantity, rating, reviewCount }) => ({
         slug,
@@ -19,6 +19,9 @@ describe("reviewed preorder catalogue", () => {
       { slug: "blast-pegasus-a-tr", price: 2950, stock: "pre-ordine", availableQuantity: 30, rating: 0, reviewCount: 0 },
       { slug: "drop-attack-battle-set", price: 4650, stock: "pre-ordine", availableQuantity: 30, rating: 0, reviewCount: 0 },
       { slug: "sneak-attack-battle-set", price: 4500, stock: "pre-ordine", availableQuantity: 30, rating: 0, reviewCount: 0 },
+      { slug: "glory-valkerion-lf", price: 3000, stock: "pre-ordine", availableQuantity: 8, rating: 0, reviewCount: 0 },
+      { slug: "hurricane-enlil-is-7-55t", price: 2000, stock: "pre-ordine", availableQuantity: 10, rating: 0, reviewCount: 0 },
+      { slug: "shatter-horus-9-65gb", price: 2000, stock: "pre-ordine", availableQuantity: 8, rating: 0, reviewCount: 0 },
     ]);
   });
 

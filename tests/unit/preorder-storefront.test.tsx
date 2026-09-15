@@ -78,6 +78,20 @@ describe("truthful public presentation", () => {
     expect(html).not.toContain("newsletter-success");
   });
 
+  it("publishes only the seller VAT number in the footer", () => {
+    const chrome: StorefrontChrome = {
+      desktopNavigation: [],
+      mobileNavigation: [],
+      footerColumns: [],
+      socialLinks: [],
+    };
+    const html = renderToStaticMarkup(<Footer content={chrome} />);
+
+    expect(html).toContain("P.IVA 18464231002");
+    expect(html).not.toContain("18655971002");
+    expect(html).not.toMatch(/gear sports/i);
+  });
+
   it("distinguishes preorder dispatch from carrier transit in rendered storefront copy", () => {
     const html = renderToStaticMarkup(<Providers><BuyPanel product={product} /></Providers>);
 

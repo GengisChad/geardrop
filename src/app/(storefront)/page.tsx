@@ -9,7 +9,7 @@ import { Reveal } from "@/components/ui/reveal";
 import { ManagedHomepage, type ManagedHomepageFallback } from "@/components/content/managed-homepage";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { storefrontContent } from "@/lib/content/provider";
-import { allocateUniqueProductSections } from "@/lib/home/product-selection";
+import { allocateUniqueProductSections, HOME_FEATURED_LIMIT } from "@/lib/home/product-selection";
 import { resolveHomepageSections } from "@/lib/storefront/homepage-resolver";
 
 export const metadata: Metadata = {
@@ -20,7 +20,7 @@ export default async function HomePage() {
   const commerce = await getCommerceProvider();
 
   const [featured, latest, bestSellers, bundle, hero, all, managed] = await Promise.all([
-    commerce.listProducts({ sort: "popolari", perPage: 6 }),
+    commerce.listProducts({ sort: "popolari", perPage: HOME_FEATURED_LIMIT }),
     commerce.listProducts({ sort: "novita", perPage: 6 }),
     commerce.listProducts({ sort: "popolari", category: "beyblade-x", perPage: 5 }),
     commerce.getBundle(),

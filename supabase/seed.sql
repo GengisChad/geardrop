@@ -40,7 +40,10 @@ with seed(category_slug, slug, sku, preorder_allocation, name, tagline, descript
   ('beyblade-x', 'saber-samurai-2-70l', 'SABER-SAMURAI-2-70L', 30, 'Saber Samurai 2-70L', 'Doppia lama. Colpi da katana.', 'Saber Samurai 2-70L (linea UX) è una trottola d''attacco: le due protuberanze si ritraggono a metà battaglia, passando da colpi ripetuti in stile katana a un singolo impatto "tachi" per KO improvvisi. Lo starter include il lanciatore con impugnatura (grip).', 2790, null, 'attacco', 0, 0, 2),
   ('beyblade-x', 'blast-pegasus-a-tr', 'BLAST-PEGASUS-A-TR', 30, 'Blast Pegasus A Tr', 'Attacco portatile. Clip & Rip Launcher.', 'Blast Pegasus A Tr è una trottola d''attacco a rotazione destra della linea CX, venduta con il Clip & Rip Launcher: un lanciatore portatile che si aggancia a cintura e zaino e ripone il ripcord all''interno. Richiede un Beystadium Beyblade X (venduto separatamente).', 2950, null, 'attacco', 0, 0, 3),
   ('stadi', 'drop-attack-battle-set', 'DROP-ATTACK-BATTLE-SET', 30, 'Drop Attack Battle Set', 'Stadio + 2 trottole + 2 lanciatori.', 'Il Drop Attack Battle Set include tutto per giocare: il Beystadium con X-Celerator Rail rialzato che porta le trottole in alto per farle piombare sull''avversario, due trottole (Impact Drake 9-60LR d''attacco e Hover Wyvern 3-85N di difesa) e due lanciatori a corda.', 4650, null, null, 0, 0, 4),
-  ('stadi', 'sneak-attack-battle-set', 'SNEAK-ATTACK-BATTLE-SET', 30, 'Sneak Attack Battle Set', 'Stadio verde + 2 trottole + 2 lanciatori.', 'Il Sneak Attack Battle Set mette in scatola tutto per il primo scontro: il Beystadium con rail a scomparsa che devia le trottole in una nuova direzione, due trottole (Rampart Aegis GB di stamina e Cutter Shinobi LF d''attacco) e due lanciatori a corda.', 4500, null, null, 0, 0, 5)
+  ('stadi', 'sneak-attack-battle-set', 'SNEAK-ATTACK-BATTLE-SET', 30, 'Sneak Attack Battle Set', 'Stadio verde + 2 trottole + 2 lanciatori.', 'Il Sneak Attack Battle Set mette in scatola tutto per il primo scontro: il Beystadium con rail a scomparsa che devia le trottole in una nuova direzione, due trottole (Rampart Aegis GB di stamina e Cutter Shinobi LF d''attacco) e due lanciatori a corda.', 4500, null, null, 0, 0, 5),
+  ('beyblade-x', 'glory-valkerion-lf', 'GLORY-VALKERION-LF', 8, 'Glory Valkerion LF', 'Attacco UX. Blade e ratchet in un pezzo.', 'Glory Valkerion LF (in Giappone Glory Valkyrie) è una trottola d''attacco a rotazione destra della linea UX: la blade integra il ratchet in un unico pezzo e il Bit Low Flat (LF), a punta piatta e bassa, la spinge in movimenti rapidi e aggressivi per agganciare l''Xtreme Line e scatenare l''Xtreme Dash. Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).', 3000, null, 'attacco', 0, 0, 6),
+  ('beyblade-x', 'hurricane-enlil-is-7-55t', 'HURRICANE-ENLIL-IS-7-55T', 10, 'Hurricane Enlil IS 7-55T', 'Bilanciata CX. Blade Infinity scomponibile.', 'Hurricane Enlil IS 7-55T è una trottola bilanciata a rotazione destra della linea CX: la blade Infinity si scompone in lock chip, over blade, blade metallica e assist blade per costruire l''assetto su misura, con Ratchet 7-55 e Bit T. Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).', 2000, null, 'bilanciato', 0, 0, 7),
+  ('beyblade-x', 'shatter-horus-9-65gb', 'SHATTER-HORUS-9-65GB', 8, 'Shatter Horus 9-65GB', 'Stamina BX. Metallo oltre i ganci.', 'Shatter Horus 9-65GB è una trottola stamina della linea BX: la blade dalla forma rotonda estende il metallo oltre i ganci del lanciatore e riveste di metallo anche il bordo del gear chip, che raffigura il dio egizio Horus. Monta il Ratchet 9-65 e il Bit GB. Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).', 2000, null, 'stamina', 0, 0, 8)
 )
 insert into public.products (
   category_id, slug, sku, name, tagline, description, price_cents,
@@ -87,7 +90,10 @@ with seed(product_slug, src, width, height, alt, sort_order) as (
   ('saber-samurai-2-70l', '/products/saber-samurai-2-70l.webp', 1000, 1000, 'Confezione Beyblade X Saber Samurai 2-70L viola con lanciatore a impugnatura e trottola', 0),
   ('blast-pegasus-a-tr', '/products/blast-pegasus-a-tr.webp', 1000, 1000, 'Beyblade X Blast Pegasus A Tr con Clip & Rip Launcher verde e trottola', 0),
   ('drop-attack-battle-set', '/products/drop-attack-battle-set.webp', 1000, 1000, 'Beyblade X Drop Attack Battle Set: stadio blu, due trottole e due lanciatori', 0),
-  ('sneak-attack-battle-set', '/products/sneak-attack-battle-set.webp', 1000, 1000, 'Beyblade X Sneak Attack Battle Set: stadio verde, due trottole e due lanciatori', 0)
+  ('sneak-attack-battle-set', '/products/sneak-attack-battle-set.webp', 1000, 1000, 'Beyblade X Sneak Attack Battle Set: stadio verde, due trottole e due lanciatori', 0),
+  ('glory-valkerion-lf', '/products/glory-valkerion-lf.webp', 1000, 1000, 'Confezione Beyblade X Glory Valkerion LF bianca e oro con lanciatore e trottola', 0),
+  ('hurricane-enlil-is-7-55t', '/products/hurricane-enlil-is-7-55t.webp', 1000, 1000, 'Confezione Beyblade X Hurricane Enlil IS 7-55T con lanciatore e trottola azzurra', 0),
+  ('shatter-horus-9-65gb', '/products/shatter-horus-9-65gb.webp', 1000, 1000, 'Confezione Beyblade X Shatter Horus 9-65GB con lanciatore e trottola argento e rossa', 0)
 )
 insert into public.product_images (product_id, src, width, height, alt, sort_order, published, is_primary)
 select product.id, seed.src, seed.width, seed.height, seed.alt, seed.sort_order, true, seed.sort_order = 0
@@ -130,7 +136,22 @@ with seed(product_slug, label, value, sort_order) as (
   ('sneak-attack-battle-set', 'Sistema', 'Beyblade X', 1),
   ('sneak-attack-battle-set', 'Componenti', '1 stadio, 2 trottole, 2 lanciatori', 2),
   ('sneak-attack-battle-set', 'Trottole incluse', 'Rampart Aegis GB, Cutter Shinobi LF', 3),
-  ('sneak-attack-battle-set', 'Materiale', 'Plastica e metallo', 4)
+  ('sneak-attack-battle-set', 'Materiale', 'Plastica e metallo', 4),
+  ('glory-valkerion-lf', 'Tipo', 'Attacco', 0),
+  ('glory-valkerion-lf', 'Sistema', 'Beyblade X', 1),
+  ('glory-valkerion-lf', 'Linea', 'UX (Infinity Starter Pack)', 2),
+  ('glory-valkerion-lf', 'Codice', 'LF', 3),
+  ('glory-valkerion-lf', 'Componenti', '1 trottola, 1 lanciatore', 4),
+  ('hurricane-enlil-is-7-55t', 'Tipo', 'Bilanciata', 0),
+  ('hurricane-enlil-is-7-55t', 'Sistema', 'Beyblade X', 1),
+  ('hurricane-enlil-is-7-55t', 'Linea', 'CX (Infinity Starter Pack)', 2),
+  ('hurricane-enlil-is-7-55t', 'Codice', 'IS 7-55T', 3),
+  ('hurricane-enlil-is-7-55t', 'Componenti', '1 trottola, 1 lanciatore', 4),
+  ('shatter-horus-9-65gb', 'Tipo', 'Stamina', 0),
+  ('shatter-horus-9-65gb', 'Sistema', 'Beyblade X', 1),
+  ('shatter-horus-9-65gb', 'Linea', 'BX (Infinity Starter Pack)', 2),
+  ('shatter-horus-9-65gb', 'Codice', '9-65GB', 3),
+  ('shatter-horus-9-65gb', 'Componenti', '1 trottola, 1 lanciatore', 4)
 )
 insert into public.product_specs (product_id, label, value, sort_order)
 select product.id, seed.label, seed.value, seed.sort_order
@@ -164,7 +185,19 @@ with seed(product_slug, title, description, sort_order) as (
   ('sneak-attack-battle-set', 'Rail a scomparsa', 'Devia le trottole in una nuova direzione a sorpresa', 0),
   ('sneak-attack-battle-set', 'Set completo', 'Stadio, due trottole e due lanciatori pronti al gioco', 1),
   ('sneak-attack-battle-set', 'Rampart Aegis + Cutter Shinobi', 'Un assetto di stamina e uno d''attacco', 2),
-  ('sneak-attack-battle-set', 'Compatibile Beyblade X', 'Usa tutte le trottole e parti della serie', 3)
+  ('sneak-attack-battle-set', 'Compatibile Beyblade X', 'Usa tutte le trottole e parti della serie', 3),
+  ('glory-valkerion-lf', 'Ratchet integrato', 'Blade e ratchet stampati in un unico pezzo', 0),
+  ('glory-valkerion-lf', 'Bit Low Flat', 'Punta piatta e bassa per un attacco rapido', 1),
+  ('glory-valkerion-lf', 'Xtreme Dash', 'Aggancia l''Xtreme Line dello stadio e accelera', 2),
+  ('glory-valkerion-lf', 'Starter completo', 'Include il lanciatore', 3),
+  ('hurricane-enlil-is-7-55t', 'Blade Infinity scomponibile', 'Lock chip, over blade, blade metallica e assist blade', 0),
+  ('hurricane-enlil-is-7-55t', 'Assetto bilanciato', 'Equilibrio tra attacco, difesa e resistenza', 1),
+  ('hurricane-enlil-is-7-55t', 'Starter completo', 'Include il lanciatore', 2),
+  ('hurricane-enlil-is-7-55t', 'Compatibile Beyblade X', 'Blade, Ratchet e Bit intercambiabili con la serie', 3),
+  ('shatter-horus-9-65gb', 'Metallo esteso', 'Il metallo supera i ganci del lanciatore', 0),
+  ('shatter-horus-9-65gb', 'Forma rotonda', 'Profilo tondo pensato per la resistenza', 1),
+  ('shatter-horus-9-65gb', 'Starter completo', 'Include il lanciatore', 2),
+  ('shatter-horus-9-65gb', 'Compatibile Beyblade X', 'Blade, Ratchet e Bit intercambiabili con la serie', 3)
 )
 insert into public.product_features (product_id, title, description, sort_order)
 select product.id, seed.title, seed.description, seed.sort_order
@@ -198,7 +231,16 @@ with seed(product_slug, content, sort_order) as (
   ('sneak-attack-battle-set', '1 × Rampart Aegis GB', 1),
   ('sneak-attack-battle-set', '1 × Cutter Shinobi LF', 2),
   ('sneak-attack-battle-set', '2 × Lanciatori a corda', 3),
-  ('sneak-attack-battle-set', 'Manuale di gioco', 4)
+  ('sneak-attack-battle-set', 'Manuale di gioco', 4),
+  ('glory-valkerion-lf', '1 × Trottola Glory Valkerion LF', 0),
+  ('glory-valkerion-lf', '1 × Lanciatore con ripcord', 1),
+  ('glory-valkerion-lf', 'Manuale', 2),
+  ('hurricane-enlil-is-7-55t', '1 × Trottola Hurricane Enlil IS 7-55T', 0),
+  ('hurricane-enlil-is-7-55t', '1 × Lanciatore con ripcord', 1),
+  ('hurricane-enlil-is-7-55t', 'Manuale', 2),
+  ('shatter-horus-9-65gb', '1 × Trottola Shatter Horus 9-65GB', 0),
+  ('shatter-horus-9-65gb', '1 × Lanciatore con ripcord', 1),
+  ('shatter-horus-9-65gb', 'Manuale', 2)
 )
 insert into public.product_box_contents (product_id, content, sort_order)
 select product.id, seed.content, seed.sort_order
@@ -227,7 +269,16 @@ with seed(product_slug, related_slug, sort_order) as (
   ('drop-attack-battle-set', 'soar-phoenix-9-60gf', 2),
   ('sneak-attack-battle-set', 'drop-attack-battle-set', 0),
   ('sneak-attack-battle-set', 'cobalt-dragoon-2-60c', 1),
-  ('sneak-attack-battle-set', 'saber-samurai-2-70l', 2)
+  ('sneak-attack-battle-set', 'saber-samurai-2-70l', 2),
+  ('glory-valkerion-lf', 'cobalt-dragoon-2-60c', 0),
+  ('glory-valkerion-lf', 'soar-phoenix-9-60gf', 1),
+  ('glory-valkerion-lf', 'blast-pegasus-a-tr', 2),
+  ('hurricane-enlil-is-7-55t', 'shatter-horus-9-65gb', 0),
+  ('hurricane-enlil-is-7-55t', 'glory-valkerion-lf', 1),
+  ('hurricane-enlil-is-7-55t', 'blast-pegasus-a-tr', 2),
+  ('shatter-horus-9-65gb', 'hurricane-enlil-is-7-55t', 0),
+  ('shatter-horus-9-65gb', 'glory-valkerion-lf', 1),
+  ('shatter-horus-9-65gb', 'saber-samurai-2-70l', 2)
 )
 insert into public.product_relations (product_id, related_product_id, relation_type, sort_order)
 select product.id, related.id, 'related'::public.product_relation_type, seed.sort_order
