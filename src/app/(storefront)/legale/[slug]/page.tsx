@@ -17,8 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   if (!isLegalSlug(slug)) return { title: "Pagina non trovata" };
   const page = await storefrontContent.getPage(slug);
   if (!page) return { title: "Pagina non trovata" };
-  // Placeholder legal copy must not be indexed. (see src/data/pages.ts)
-  return { title: page.title, description: page.lead, robots: { index: false, follow: true } };
+  return { title: page.title, description: page.lead };
 }
 
 export default async function LegalePage({ params }: { params: Promise<Params> }) {

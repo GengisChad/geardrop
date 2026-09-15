@@ -1,4 +1,4 @@
-import { SUPPORT_PAGES } from "@/data/pages";
+import { LEGAL_PAGES, SUPPORT_PAGES } from "@/data/pages";
 import { FOOTER_NAV, MAIN_NAV } from "@/lib/navigation";
 import type { StorefrontContentProvider } from "./types";
 
@@ -14,8 +14,8 @@ export function createMockContentProvider(): StorefrontContentProvider {
       };
     },
     async getPage(slug) {
-      const support = SUPPORT_PAGES[slug as keyof typeof SUPPORT_PAGES];
-      if (support) return { title: support.title, lead: support.lead, legacy: support };
+      const page = SUPPORT_PAGES[slug as keyof typeof SUPPORT_PAGES] ?? LEGAL_PAGES[slug as keyof typeof LEGAL_PAGES];
+      if (page) return { title: page.title, lead: page.lead, legacy: page };
       return null;
     },
     async getHomepage() { return null; },

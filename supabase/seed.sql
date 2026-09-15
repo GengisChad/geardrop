@@ -474,7 +474,7 @@ Il rimborso viene emesso entro 5 giorni lavorativi dalla ricezione del reso, sul
 Se il prodotto arriva danneggiato o difettoso, la spedizione di reso è a nostro carico e la sostituzione è prioritaria.', 'markdown'::public.content_format, 'Resi e rimborsi', 'Se qualcosa non va, si risolve.', 'published'::public.publication_status, now(), true, 2),
   ('contatti', 'Contattaci', 'Siamo blader anche noi: rispondiamo da persone, non da bot.', '## Assistenza ordini
 
-Per qualsiasi domanda su un ordine, scrivi a supporto@geardrop.it indicando il numero d''ordine.
+Per qualsiasi domanda su un ordine, scrivi a gengischad@gmail.com indicando il numero d''ordine.
 
 Rispondiamo entro un giorno lavorativo.
 
@@ -484,7 +484,7 @@ Per consigli su combo e assetti, la community è il posto giusto: ci trovi sui c
 
 ## Collaborazioni
 
-Organizzi tornei o gestisci un negozio? Scrivi a partner@geardrop.it.', 'markdown'::public.content_format, 'Contattaci', 'Siamo blader anche noi: rispondiamo da persone, non da bot.', 'published'::public.publication_status, now(), true, 3),
+Organizzi tornei o gestisci un negozio? Scrivi a gengischad@gmail.com.', 'markdown'::public.content_format, 'Contattaci', 'Siamo blader anche noi: rispondiamo da persone, non da bot.', 'published'::public.publication_status, now(), true, 3),
   ('chi-siamo', 'Chi siamo', 'GEAR//DROP è un progetto indipendente dedicato al catalogo Beyblade X.', '## Pensato per il catalogo. Costruito per scegliere.
 
 GEAR//DROP è un progetto indipendente dedicato a un catalogo Beyblade X chiaro, con disponibilità indicate e assistenza prima dell''ordine.
