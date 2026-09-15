@@ -34,7 +34,10 @@ test.describe("holo drop storefront", () => {
     test.skip(isMobile, "the pointer effects belong to hover devices; touch gets the automatic sweep");
     await page.goto("/negozio");
 
-    const surface = page.getByTestId("product-card").first().locator("xpath=..");
+    const card = page.getByTestId("product-card").first();
+    await expect(card).toBeVisible();
+    await card.scrollIntoViewIfNeeded();
+    const surface = card.locator("xpath=..");
     const shine = surface.locator(".gd-holo-shine");
     await expect(shine).toBeHidden();
 
@@ -56,7 +59,10 @@ test.describe("holo drop storefront", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/negozio");
 
-    const surface = page.getByTestId("product-card").first().locator("xpath=..");
+    const card = page.getByTestId("product-card").first();
+    await expect(card).toBeVisible();
+    await card.scrollIntoViewIfNeeded();
+    const surface = card.locator("xpath=..");
     const box = await surface.boundingBox();
     expect(box).not.toBeNull();
     await page.mouse.move(box!.x + box!.width * 0.2, box!.y + box!.height * 0.2);
