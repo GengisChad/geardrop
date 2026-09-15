@@ -7,6 +7,11 @@ type SluggedProduct = { readonly slug: string };
  */
 export const HOME_FEATURED_LIMIT = 12;
 
+/** Products the owner flags as new releases lead the homepage under "Nuove uscite". */
+export function newReleases<T extends { readonly tags: readonly string[] }>(products: readonly T[]): readonly T[] {
+  return products.filter((product) => product.tags.includes("novita"));
+}
+
 /**
  * Assign each product to its first homepage section only. Section order and the order
  * inside each section stay authoritative; later sections receive only products the

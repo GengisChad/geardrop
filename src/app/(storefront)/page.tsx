@@ -9,7 +9,7 @@ import { Reveal } from "@/components/ui/reveal";
 import { ManagedHomepage, type ManagedHomepageFallback } from "@/components/content/managed-homepage";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { storefrontContent } from "@/lib/content/provider";
-import { allocateUniqueProductSections, HOME_FEATURED_LIMIT } from "@/lib/home/product-selection";
+import { allocateUniqueProductSections, HOME_FEATURED_LIMIT, newReleases } from "@/lib/home/product-selection";
 import { resolveHomepageSections } from "@/lib/storefront/homepage-resolver";
 
 export const metadata: Metadata = {
@@ -51,8 +51,9 @@ export default async function HomePage() {
     return <ManagedHomepage sections={sections} fallback={fallback} />;
   }
 
-  const [homeFeatured = [], homeLatest = [], homeBestSellers = [], homeAll = []] =
-    allocateUniqueProductSections([featured.items, latest.items, bestSellers.items, all.items]);
+  // New releases claim their products first, so "In evidenza" carries everything else.
+  const [homeNew = [], homeFeatured = [], homeLatest = [], homeBestSellers = [], homeAll = []] =
+    allocateUniqueProductSections([newReleases(all.items), featured.items, latest.items, bestSellers.items, all.items]);
 
   return (
     <>
@@ -61,6 +62,10 @@ export default async function HomePage() {
       <Hero product={hero} />
       <CategoryTiles />
       <StatusLegend />
+
+      <Reveal>
+        <ProductCarousel title="Nuove uscite" products={homeNew} href="/negozio?sort=novita" className="pb-12" />
+      </Reveal>
 
       <Reveal>
         <ProductCarousel title="In evidenza" products={homeFeatured} href="/negozio" dots className="pb-12" />

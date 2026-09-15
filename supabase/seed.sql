@@ -248,6 +248,16 @@ from seed join public.products as product on product.slug = seed.product_slug
 on conflict (product_id, sort_order) do update set
   content = excluded.content;
 
+with seed(product_slug, tag) as (
+  values
+  ('glory-valkerion-lf', 'novita'),
+  ('hurricane-enlil-is-7-55t', 'novita'),
+  ('shatter-horus-9-65gb', 'novita')
+)
+insert into public.product_tags (product_id, tag)
+select product.id, seed.tag::public.promo_tag
+from seed join public.products as product on product.slug = seed.product_slug
+on conflict (product_id, tag) do nothing;
 
 
 with seed(product_slug, related_slug, sort_order) as (
