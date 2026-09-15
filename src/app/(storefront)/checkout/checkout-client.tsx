@@ -364,6 +364,12 @@ export function CheckoutClient() {
           {submitLabel}
           {!busy ? <ArrowRight className="size-4" aria-hidden="true" /> : null}
         </Button>
+        <p className="text-center text-[0.6875rem] text-grey-600" data-testid="checkout-terms">
+          Confermando accetti i{" "}
+          <Link href="/legale/termini" className="underline hover:text-violet">Termini e condizioni</Link>{" "}
+          e dichiari di aver letto l&apos;
+          <Link href="/legale/privacy" className="underline hover:text-violet">informativa privacy</Link>.
+        </p>
       </aside>
     </form>
   );
