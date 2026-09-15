@@ -1,4 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
+import { PRODUCTS } from "../../src/data/catalog";
+
+const ATTACK_PRODUCT_COUNT = PRODUCTS.filter((product) => product.bladeType === "attacco").length;
 
 /** A PDP also renders "Si abbina bene con" cards, which carry the same testids. */
 const buyPanel = (page: Page) => page.locator("#buy-panel");
@@ -61,14 +64,14 @@ test.describe("catalogue", () => {
 
     const panel = await openFilters();
     // No reviewed preorder is sold out; that zero-count facet is intentionally disabled.
-    // Four attack blades and two arena sets provide a real, nonempty filter subset.
+    // Attack blades and arena sets provide a real, nonempty filter subset.
     await expect(panel.getByTestId("filter-stock-esaurito")).toBeDisabled();
     await panel.getByTestId("filter-type-attacco").check();
     if (isMobile) await page.getByTestId("filters-apply").click();
 
     await expect(page.getByTestId("result-count")).not.toHaveText(String(before));
     await expect(page).toHaveURL(/type=attacco/);
-    await expect(page.getByTestId("product-card")).toHaveCount(4);
+    await expect(page.getByTestId("product-card")).toHaveCount(ATTACK_PRODUCT_COUNT);
 
     // Filter state lives in the URL, so it must survive a reload.
     await page.reload();

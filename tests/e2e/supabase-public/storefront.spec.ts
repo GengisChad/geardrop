@@ -1,4 +1,8 @@
 import { expect, test, type Page, type Response } from "@playwright/test";
+import { PRODUCTS } from "../../../src/data/catalog";
+
+/** The seed is generated from the catalogue, so it publishes every catalogue product. */
+const SEEDED_PRODUCT_COUNT = PRODUCTS.length;
 
 /**
  * The anonymous storefront, served from the real Supabase stack.
@@ -116,10 +120,9 @@ test.describe("anonymous storefront on Supabase", () => {
     await visit(page, "/negozio");
 
     await expect(page.getByTestId("product-grid")).toBeVisible();
-    // The seed ships six published products. A silent RLS regression shows up here as
-    // a smaller number rather than as an error.
-    await expect(page.getByTestId("product-card")).toHaveCount(6);
-    await expect(page.getByTestId("result-count")).toHaveText("6");
+    // A silent RLS regression shows up here as a smaller number rather than as an error.
+    await expect(page.getByTestId("product-card")).toHaveCount(SEEDED_PRODUCT_COUNT);
+    await expect(page.getByTestId("result-count")).toHaveText(String(SEEDED_PRODUCT_COUNT));
   });
 
   test("a category page filters to its own products", async ({ page }) => {
@@ -128,7 +131,7 @@ test.describe("anonymous storefront on Supabase", () => {
     const cards = page.getByTestId("product-card");
     await expect(cards.first()).toBeVisible();
     expect(await cards.count()).toBeGreaterThan(0);
-    expect(await cards.count()).toBeLessThan(6);
+    expect(await cards.count()).toBeLessThan(SEEDED_PRODUCT_COUNT);
   });
 
   test("a product page shows its gallery, which is the query that used to 42501", async ({ page }) => {
@@ -147,7 +150,7 @@ test.describe("anonymous storefront on Supabase", () => {
     const hrefs = await page.getByTestId("product-card").locator("a[href^='/prodotto/']").evaluateAll(
       (nodes) => [...new Set(nodes.map((node) => (node as HTMLAnchorElement).getAttribute("href") ?? ""))],
     );
-    expect(hrefs.length).toBe(6);
+    expect(hrefs.length).toBe(SEEDED_PRODUCT_COUNT);
 
     // One broken product is enough to break the shop; check them all rather than a sample.
     for (const href of hrefs) {
