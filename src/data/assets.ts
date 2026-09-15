@@ -89,12 +89,12 @@ export const productImages = {
       alt: "Beyblade X Sneak Attack Battle Set: stadio verde, due trottole e due lanciatori",
     },
   ],
-  "glory-valkerion-lf": [
+  "glory-valkyrie-lf": [
     {
-      src: "/products/glory-valkerion-lf.webp",
+      src: "/products/glory-valkyrie-lf.webp",
       width: 1000,
       height: 1000,
-      alt: "Confezione Beyblade X Glory Valkerion LF bianca e oro con lanciatore e trottola",
+      alt: "Confezione Beyblade X Glory Valkyrie LF bianca e oro con lanciatore e trottola",
     },
   ],
   "hurricane-enlil-is-7-55t": [
