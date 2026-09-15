@@ -13,9 +13,10 @@ const PAYMENTS: readonly string[] = [];
 
 /**
  * VAT number of the business that sells and collects payments on GEAR//DROP.
- * By the owner's choice only the number is published — no name, address or PEC.
+ * Published with the holder's name, as the law asks of an online seller; tax code and PEC stay off.
  */
 const VAT_NUMBER = "18464231002";
+const SELLER_NAME = "Alessia Brunetti";
 
 export function Footer({ content }: { readonly content: StorefrontChrome }) {
   return (
@@ -109,7 +110,7 @@ export function Footer({ content }: { readonly content: StorefrontChrome }) {
 
       <div className="border-t border-white/10 py-5 text-center">
         <p className="text-small text-grey-400">
-          © {new Date().getFullYear()} GEAR//DROP · P.IVA {VAT_NUMBER} · Tutti i diritti riservati.
+          © {new Date().getFullYear()} GEAR//DROP di {SELLER_NAME} · P.IVA {VAT_NUMBER} · Tutti i diritti riservati.
         </p>
       </div>
     </footer>

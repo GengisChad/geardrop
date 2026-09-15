@@ -88,6 +88,7 @@ describe("truthful public presentation", () => {
     const html = renderToStaticMarkup(<Footer content={chrome} />);
 
     expect(html).toContain("P.IVA 18464231002");
+    expect(html).toContain("Alessia Brunetti");
     expect(html).not.toContain("18655971002");
     expect(html).not.toMatch(/gear sports/i);
   });

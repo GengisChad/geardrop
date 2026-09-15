@@ -1,8 +1,8 @@
 /**
  * Copy for the informational routes the mockups' footer links to.
  *
- * Operational facts use the reviewed preorder dispatch window. By the owner's choice the
- * legal pages identify the seller only by VAT number, registered office and contact email.
+ * Operational facts use the reviewed preorder dispatch window. The legal pages identify the
+ * seller by holder name, registered office, VAT number and contact email.
  */
 
 export type ContentSection = { heading: string; body: readonly string[] };
@@ -133,8 +133,9 @@ export const SUPPORT_PAGES = {
   },
 } as const satisfies Record<string, ContentPage>;
 
-/** The only seller facts published on the site, by the owner's explicit choice. */
+/** Seller facts published on the site. Tax code, PEC and REA stay off it by the owner's choice. */
 const SELLER = {
+  holder: "Alessia Brunetti",
   vat: "18464231002",
   office: "Via Fratelli Cervi 2, 00065 Fiano Romano (RM)",
   email: "gengischad@gmail.com",
@@ -148,7 +149,7 @@ export const LEGAL_PAGES = {
       {
         heading: "Chi vende",
         body: [
-          `Il sito geardropshop.it ("GEAR//DROP") è gestito dall'impresa con sede legale in ${SELLER.office}, Partita IVA ${SELLER.vat}.`,
+          `Il sito geardropshop.it ("GEAR//DROP") è gestito da ${SELLER.holder}, impresa individuale con sede legale in ${SELLER.office}, Partita IVA ${SELLER.vat}.`,
           `Per assistenza, reclami e comunicazioni scrivi a ${SELLER.email}.`,
         ],
       },
@@ -220,7 +221,7 @@ export const LEGAL_PAGES = {
       {
         heading: "Modulo di recesso tipo",
         body: [
-          `Destinatario: GEAR//DROP, ${SELLER.office}, ${SELLER.email}.`,
+          `Destinatario: GEAR//DROP di ${SELLER.holder}, ${SELLER.office}, ${SELLER.email}.`,
           "Con la presente notifico il recesso dal mio contratto di vendita dei seguenti beni: … · Ordinati il / ricevuti il: … · Riferimento ordine: … · Nome e indirizzo del consumatore: … · Data e firma (solo se inviato su carta): …",
         ],
       },
@@ -233,7 +234,7 @@ export const LEGAL_PAGES = {
       {
         heading: "Titolare del trattamento",
         body: [
-          `Il titolare del trattamento è l'impresa che gestisce GEAR//DROP, con sede legale in ${SELLER.office}, Partita IVA ${SELLER.vat}.`,
+          `Il titolare del trattamento è ${SELLER.holder}, impresa individuale che gestisce GEAR//DROP, con sede legale in ${SELLER.office}, Partita IVA ${SELLER.vat}.`,
           `Per qualsiasi richiesta sui tuoi dati personali scrivi a ${SELLER.email}.`,
         ],
       },
