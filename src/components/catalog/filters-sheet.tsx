@@ -29,7 +29,7 @@ export function FiltersSheet({ facets, lockedCategory }: { facets: Facets; locke
         type="button"
         onClick={() => setOpen(true)}
         data-testid="filters-open"
-        className="gd-display gd-glass-compact inline-flex h-10 items-center gap-2 rounded-full px-4 text-small font-bold tracking-wider text-graphite transition-colors hover:border-violet lg:hidden"
+        className="gd-display gd-glass-compact inline-flex h-11 items-center justify-center gap-2 rounded-full px-4 text-small font-bold tracking-wider text-graphite transition-colors hover:border-violet max-sm:flex-1 lg:hidden"
       >
         <SlidersHorizontal className="size-4 text-violet-soft" aria-hidden="true" />
         Filtri
@@ -69,7 +69,7 @@ export function FiltersSheet({ facets, lockedCategory }: { facets: Facets; locke
               </div>
 
               <div className="flex-1 overflow-y-auto px-5 py-5">
-                <Filters facets={facets} {...(lockedCategory ? { lockedCategory } : {})} />
+                <Filters facets={facets} showTitle={false} {...(lockedCategory ? { lockedCategory } : {})} />
               </div>
 
               <div className="border-t border-grey-200 p-4">

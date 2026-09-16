@@ -13,7 +13,7 @@ export default async function StorefrontLayout({ children }: { children: React.R
     <>
       <Header navigation={chrome.desktopNavigation} mobileNavigation={chrome.mobileNavigation} />
       {settings?.maintenance_mode&&settings.maintenance_message?<aside className="bg-violet px-4 py-2 text-center text-small font-bold text-white" role="status">{settings.maintenance_message}</aside>:null}
-      <main id="contenuto" className="pb-20 lg:pb-0">
+      <main id="contenuto">
         {children}
       </main>
       <Footer content={chrome} />

@@ -11,7 +11,7 @@ export function SortSelect() {
   const current = (params.get("sort") ?? "popolari") as SortKey;
 
   return (
-    <label className="flex items-center gap-2">
+    <label className="flex items-center gap-2 max-sm:flex-1">
       <span className="gd-display hidden text-[0.6875rem] font-bold tracking-wider text-grey-600 sm:inline">
         Ordina per
       </span>
@@ -27,7 +27,7 @@ export function SortSelect() {
           const qs = next.toString();
           router.push(qs ? `?${qs}` : "?", { scroll: false });
         }}
-        className="gd-glass-compact h-10 rounded-full px-4 pr-8 text-small text-graphite transition-colors hover:border-violet focus:border-violet focus:outline-none"
+        className="gd-glass-compact h-11 rounded-full px-4 pr-8 text-small text-graphite max-sm:w-full transition-colors hover:border-violet focus:border-violet focus:outline-none"
       >
         {SORT_KEYS.map((key) => (
           <option key={key} value={key}>

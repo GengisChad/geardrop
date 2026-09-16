@@ -12,6 +12,8 @@ type FiltersProps = {
   facets: Facets;
   /** Locked when rendering inside a category route — the category is the page itself. */
   lockedCategory?: CategorySlug;
+  /** The mobile sheet already titles itself "Filtri", so it hides this one. */
+  showTitle?: boolean;
 };
 
 type Selection = {
@@ -30,7 +32,7 @@ type Selection = {
  * which reads as a broken control on a slow connection. The optimistic value snaps back
  * to the URL once the transition settles, so the URL remains the source of truth.
  */
-export function Filters({ facets, lockedCategory }: FiltersProps) {
+export function Filters({ facets, lockedCategory, showTitle = true }: FiltersProps) {
   const router = useRouter();
   const params = useSearchParams();
 
@@ -79,22 +81,28 @@ export function Filters({ facets, lockedCategory }: FiltersProps) {
 
   return (
     <div data-testid="filters" aria-busy={isPending} className={cn("flex flex-col gap-6", isPending && "opacity-70")}>
-      <div className="flex items-center justify-between">
-        <p className="gd-display flex items-center gap-2 text-small font-bold tracking-wider text-graphite">
-          <SlidersHorizontal className="size-4 text-violet-soft" aria-hidden="true" />
-          Filtri
-        </p>
-        {activeCount > 0 ? (
-          <button
-            type="button"
-            data-testid="reset-filters"
-            onClick={() => apply({ stock: [], type: [], max: null })}
-            className="gd-display text-[0.6875rem] font-bold tracking-wider text-violet-soft hover:text-white"
-          >
-            Resetta tutto
-          </button>
-        ) : null}
-      </div>
+      {showTitle || activeCount > 0 ? (
+        <div className="flex items-center justify-between">
+          {showTitle ? (
+            <p className="gd-display flex items-center gap-2 text-small font-bold tracking-wider text-graphite">
+              <SlidersHorizontal className="size-4 text-violet-soft" aria-hidden="true" />
+              Filtri
+            </p>
+          ) : (
+            <span />
+          )}
+          {activeCount > 0 ? (
+            <button
+              type="button"
+              data-testid="reset-filters"
+              onClick={() => apply({ stock: [], type: [], max: null })}
+              className="gd-display text-[0.6875rem] font-bold tracking-wider text-violet-soft hover:text-white"
+            >
+              Resetta tutto
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       {activeCount > 0 ? (
         <ul className="flex flex-wrap gap-2">

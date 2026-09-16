@@ -25,14 +25,14 @@ export function CatalogView({ page, facets, lockedCategory, emptyMessage }: Cata
         </aside>
 
         <div>
-          <div className="mb-5 flex items-center justify-between gap-3">
-            <p className="text-small text-grey-600">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <p className="whitespace-nowrap text-small text-grey-600">
               <span className="tabular font-bold text-graphite" data-testid="result-count">
                 {page.total}
               </span>{" "}
               {page.total === 1 ? "prodotto trovato" : "prodotti trovati"}
             </p>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 max-sm:w-full">
               <FiltersSheet facets={facets} {...(lockedCategory ? { lockedCategory } : {})} />
               <SortSelect />
             </div>
