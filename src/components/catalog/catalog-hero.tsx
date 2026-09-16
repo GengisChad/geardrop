@@ -1,7 +1,4 @@
-import Image from "next/image";
 import { Breadcrumbs, type Crumb } from "@/components/ui/breadcrumbs";
-import { cutoutSrc } from "@/data/assets";
-import type { ProductImage } from "@/data/assets";
 
 type CatalogHeroProps = {
   title: string;
@@ -9,11 +6,10 @@ type CatalogHeroProps = {
   tagline?: string;
   description: string;
   crumbs: readonly Crumb[];
-  art?: ProductImage | { src: string; width: number; height: number };
 };
 
-/** Category banner from mockup-catalog-desktop / mockup-catalog-mobile. */
-export function CatalogHero({ title, tagline, description, crumbs, art }: CatalogHeroProps) {
+/** Category banner: title and copy only; the right side stays clean by owner request (2026-09-16). */
+export function CatalogHero({ title, tagline, description, crumbs }: CatalogHeroProps) {
   return (
     <section
       data-testid="catalog-hero"
@@ -25,7 +21,7 @@ export function CatalogHero({ title, tagline, description, crumbs, art }: Catalo
         className="absolute -right-16 top-1/2 size-[30rem] -translate-y-1/2 rounded-full bg-violet/12 blur-3xl"
       />
 
-      <div className="relative mx-auto grid max-w-[1400px] items-center gap-6 px-5 py-8 sm:px-8 lg:grid-cols-[1.3fr_1fr] lg:py-12">
+      <div className="relative mx-auto max-w-[1400px] px-5 py-8 sm:px-8 lg:py-12">
         <div>
           <Breadcrumbs items={crumbs} className="mb-4" />
           <h1 className="gd-display-wide text-[2rem] font-extrabold leading-[0.98] text-graphite sm:text-[2.75rem]">
@@ -39,24 +35,6 @@ export function CatalogHero({ title, tagline, description, crumbs, art }: Catalo
           <p className="mt-4 max-w-lg text-small text-grey-600 sm:text-body">{description}</p>
         </div>
 
-        {art ? (
-          <div className="relative hidden lg:block">
-            <div
-              aria-hidden="true"
-              className="absolute left-1/2 top-1/2 size-[70%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-lime/10 blur-2xl"
-            />
-            <Image
-              src={cutoutSrc(art.src) ?? art.src}
-              alt=""
-              aria-hidden="true"
-              width={art.width}
-              height={art.height}
-              priority
-              sizes="420px"
-              className="relative mx-auto h-auto max-h-56 w-auto object-contain drop-shadow-[0_22px_26px_rgba(0,0,0,0.6)]"
-            />
-          </div>
-        ) : null}
       </div>
     </section>
   );

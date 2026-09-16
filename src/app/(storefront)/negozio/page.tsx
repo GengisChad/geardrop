@@ -3,7 +3,6 @@ import { Suspense } from "react";
 import { CatalogHero } from "@/components/catalog/catalog-hero";
 import { CatalogView } from "@/components/catalog/catalog-view";
 import { TrustBandDark } from "@/components/home/trust";
-import { productImages } from "@/data/assets";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { parseProductQuery, type RawSearchParams } from "@/lib/search-params";
 
@@ -24,7 +23,6 @@ export default async function NegozioPage({ searchParams }: { searchParams: Prom
         title="Tutti i prodotti"
         description="Scopri l'intera collezione Beyblade X: trottole, lanciatori, stadi e accessori per dominare ogni scontro."
         crumbs={[{ label: "Home", href: "/" }, { label: "Negozio" }]}
-        art={productImages["drop-attack-battle-set"][0]}
       />
 
       <div className="py-8">

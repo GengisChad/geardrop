@@ -4,20 +4,11 @@ import { Suspense } from "react";
 import { CatalogHero } from "@/components/catalog/catalog-hero";
 import { CatalogView } from "@/components/catalog/catalog-view";
 import { TrustBandDark } from "@/components/home/trust";
-import { categoryArt, productImages } from "@/data/assets";
 import { CATEGORIES } from "@/data/catalog";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { parseProductQuery, type RawSearchParams } from "@/lib/search-params";
-import type { CategorySlug } from "@/lib/commerce/types";
 
 type Params = { categoria: string };
-
-const HERO_ART: Record<CategorySlug, { src: string; width: number; height: number }> = {
-  "beyblade-x": productImages["cobalt-dragoon-2-60c"][0],
-  lanciatori: categoryArt.lanciatori,
-  stadi: productImages["drop-attack-battle-set"][0],
-  accessori: categoryArt.accessori,
-};
 
 export function generateStaticParams(): Params[] {
   return CATEGORIES.map((category) => ({ categoria: category.slug }));
@@ -56,7 +47,6 @@ export default async function CategoriaPage({
         tagline={category.tagline}
         description={category.description}
         crumbs={[{ label: "Home", href: "/" }, { label: "Negozio", href: "/negozio" }, { label: category.name }]}
-        art={HERO_ART[category.slug]}
       />
 
       <div className="py-8">
