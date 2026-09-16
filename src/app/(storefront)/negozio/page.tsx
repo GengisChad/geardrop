@@ -7,7 +7,7 @@ import { getCommerceProvider } from "@/lib/commerce/provider";
 import { parseProductQuery, type RawSearchParams } from "@/lib/search-params";
 
 export const metadata: Metadata = {
-  title: "Tutti i prodotti",
+  title: "Tutti i prodotti Beyblade X",
   description: "Scopri l'intera collezione Beyblade X: trottole, lanciatori, stadi e accessori per dominare ogni scontro.",
   alternates: { canonical: "/negozio" },
 };

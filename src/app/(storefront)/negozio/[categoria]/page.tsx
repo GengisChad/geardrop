@@ -7,6 +7,7 @@ import { TrustBandDark } from "@/components/home/trust";
 import { CATEGORIES } from "@/data/catalog";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { parseProductQuery, type RawSearchParams } from "@/lib/search-params";
+import { breadcrumbJsonLd, categoryTitle, jsonLd } from "@/lib/seo";
 
 type Params = { categoria: string };
 
@@ -18,10 +19,12 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const commerce=await getCommerceProvider();
   const category = await commerce.getCategory((await params).categoria);
   if (!category) return { title: "Categoria non trovata" };
+  const title = categoryTitle(category.slug);
   return {
-    title: category.name,
+    title,
     description: category.description,
     alternates: { canonical: `/negozio/${category.slug}` },
+    openGraph: { url: `/negozio/${category.slug}`, title, description: category.description },
   };
 }
 
@@ -40,8 +43,15 @@ export default async function CategoriaPage({
   const query = { ...parseProductQuery(await searchParams), category: category.slug };
   const [page, facets] = await Promise.all([commerce.listProducts(query), commerce.getFacets(query)]);
 
+  const breadcrumbData = breadcrumbJsonLd([
+    { name: "Home", path: "/" },
+    { name: "Negozio", path: "/negozio" },
+    { name: category.name, path: `/negozio/${category.slug}` },
+  ]);
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbData) }} />
       <CatalogHero
         title={category.name}
         tagline={category.tagline}

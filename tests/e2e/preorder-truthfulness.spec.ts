@@ -27,7 +27,8 @@ test.describe("truthful preorder storefront", () => {
 
     await page.goto("/prodotto/cobalt-dragoon-2-60c");
     await expect(page.locator("body")).not.toContainText("recensioni");
-    const data = JSON.parse(await page.locator('script[type="application/ld+json"]').innerText());
+    const blocks = await page.locator('script[type="application/ld+json"]').allInnerTexts();
+    const data = blocks.map((raw) => JSON.parse(raw)).find((item) => item["@type"] === "Product");
     expect(data.aggregateRating).toBeUndefined();
   });
 });

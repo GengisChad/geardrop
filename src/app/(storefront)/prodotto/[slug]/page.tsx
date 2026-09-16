@@ -13,6 +13,7 @@ import { PRODUCTS } from "@/data/catalog";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { formatPrice } from "@/lib/format";
 import { BLADE_TYPE_LABEL, CATEGORY_LABEL } from "@/lib/labels";
+import { absoluteUrl, breadcrumbJsonLd, jsonLd, productDescription, productJsonLd, productTitle } from "@/lib/seo";
 
 type Params = { slug: string };
 
@@ -26,15 +27,16 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const commerce=await getCommerceProvider();
   const product = await commerce.getProduct((await params).slug);
   if (!product) return { title: "Prodotto non trovato" };
+  const title = productTitle(product);
+  const description = productDescription(product);
+  const image = product.images[0];
+  const images = image ? [{ url: absoluteUrl(image.src), width: image.width, height: image.height, alt: image.alt }] : [];
   return {
-    title: product.name,
-    description: product.tagline,
+    title,
+    description,
     alternates: { canonical: `/prodotto/${product.slug}` },
-    openGraph: {
-      title: product.name,
-      description: product.tagline,
-      images: product.images[0] ? [{ url: product.images[0].src }] : [],
-    },
+    openGraph: { type: "website", url: `/prodotto/${product.slug}`, title, description, images },
+    twitter: { card: "summary_large_image", title, description, images: images.map((item) => item.url) },
   };
 }
 
@@ -46,40 +48,20 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
 
   const related = await commerce.getProductsBySlugs(product.relatedSlugs);
 
-  // Product structured data: this is what makes the price and availability eligible for
-  // rich results, and it must track the catalogue rather than be written by hand.
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    name: product.name,
-    description: product.description,
-    image: product.images.map((image) => image.src),
-    category: CATEGORY_LABEL[product.category],
-    ...(product.reviewCount > 0
-      ? {
-          aggregateRating: {
-            "@type": "AggregateRating",
-            ratingValue: product.rating,
-            reviewCount: product.reviewCount,
-          },
-        }
-      : {}),
-    offers: {
-      "@type": "Offer",
-      price: (product.price.amount / 100).toFixed(2),
-      priceCurrency: product.price.currency,
-      availability:
-        product.stock === "esaurito"
-          ? "https://schema.org/OutOfStock"
-          : product.stock === "pre-ordine"
-            ? "https://schema.org/PreOrder"
-            : "https://schema.org/InStock",
-    },
-  };
+  // Product structured data: price, live availability, shipping and returns make the page
+  // eligible for Google's product results, and it tracks the catalogue rather than hand-written copy.
+  const productData = productJsonLd(product);
+  const breadcrumbData = breadcrumbJsonLd([
+    { name: "Home", path: "/" },
+    { name: "Negozio", path: "/negozio" },
+    { name: CATEGORY_LABEL[product.category], path: `/negozio/${product.category}` },
+    { name: product.name, path: `/prodotto/${product.slug}` },
+  ]);
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(productData) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbData) }} />
 
       <div className="mx-auto max-w-[1400px] px-4 pt-6 sm:px-6">
         <Breadcrumbs

@@ -130,8 +130,8 @@ test.describe("product page", () => {
 
   test("publishes Product structured data matching the visible price", async ({ page }) => {
     await page.goto("/prodotto/cobalt-dragoon-2-60c");
-    const raw = await page.locator('script[type="application/ld+json"]').innerText();
-    const data = JSON.parse(raw);
+    const blocks = await page.locator('script[type="application/ld+json"]').allInnerTexts();
+    const data = blocks.map((raw) => JSON.parse(raw)).find((item) => item["@type"] === "Product");
     expect(data["@type"]).toBe("Product");
     expect(data.offers.price).toBe("25.50");
     expect(data.offers.availability).toBe("https://schema.org/InStock");
