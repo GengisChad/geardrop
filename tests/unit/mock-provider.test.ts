@@ -35,8 +35,8 @@ describe("listProducts", () => {
   });
 
   it("filters by stock status", async () => {
-    const page = await provider.listProducts({ stock: ["pre-ordine"] });
-    expect(page.items.every((p) => p.stock === "pre-ordine")).toBe(true);
+    const page = await provider.listProducts({ stock: ["disponibile"] });
+    expect(page.items.every((p) => p.stock === "disponibile")).toBe(true);
   });
 
   it("filters by blade type", async () => {
@@ -91,8 +91,8 @@ describe("getFacets", () => {
     // Ticking one availability must not drive the other availability counts to zero,
     // or the filter panel would become a dead end.
     const facets = await provider.getFacets({ stock: ["esaurito"] });
-    const preorder = facets.stock.find((f) => f.value === "pre-ordine");
-    expect(preorder?.count).toBe(PRODUCTS.length);
+    const available = facets.stock.find((f) => f.value === "disponibile");
+    expect(available?.count).toBe(PRODUCTS.length);
   });
 
   it("narrows sibling facets by the other active filters", async () => {
@@ -211,9 +211,9 @@ describe("catalogue integrity", () => {
     }
   });
 
-  it("publishes only the reviewed preorder state", () => {
+  it("publishes every reviewed product as available", () => {
     const states = new Set(PRODUCTS.map((p) => p.stock));
-    expect([...states]).toEqual(["pre-ordine"]);
+    expect([...states]).toEqual(["disponibile"]);
   });
 
   it("keeps an excessive line in the quote with its availability error", async () => {

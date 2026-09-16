@@ -29,7 +29,7 @@ export function Gallery({ images, slug, name, promo }: GalleryProps) {
   return (
     <div className="flex flex-col gap-3">
       <div data-testid="product-gallery" className="gd-glass-panel relative overflow-hidden rounded-[--radius-glass]">
-        {/* Product art on a light plate, as in every mockup. (audit §7.6) */}
+        {/* The cut-out floats in a dark art window tinted like the holographic cards. */}
         <div className="gd-product-plate relative m-2 aspect-square overflow-hidden rounded-[calc(var(--radius-glass)-0.45rem)] sm:m-3">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
@@ -45,8 +45,9 @@ export function Gallery({ images, slug, name, promo }: GalleryProps) {
                 alt={active.alt}
                 fill
                 priority
+                quality={90}
                 sizes="(min-width: 1024px) 620px, 92vw"
-                className="object-contain p-8"
+                className="object-contain p-6 drop-shadow-[0_24px_28px_rgba(0,0,0,0.55)] sm:p-10"
               />
             </motion.div>
           </AnimatePresence>

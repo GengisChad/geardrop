@@ -1,5 +1,4 @@
 import { StorefrontAnalytics } from "@/components/analytics/storefront-analytics";
-import { AnnouncementBar } from "@/components/layout/announcement-bar";
 import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
@@ -12,7 +11,6 @@ export default async function StorefrontLayout({ children }: { children: React.R
   const analyticsEnabled = process.env["VERCEL_ENV"] === "production";
   return (
     <>
-      <AnnouncementBar />
       <Header navigation={chrome.desktopNavigation} mobileNavigation={chrome.mobileNavigation} />
       {settings?.maintenance_mode&&settings.maintenance_message?<aside className="bg-violet px-4 py-2 text-center text-small font-bold text-white" role="status">{settings.maintenance_message}</aside>:null}
       <main id="contenuto" className="pb-20 lg:pb-0">

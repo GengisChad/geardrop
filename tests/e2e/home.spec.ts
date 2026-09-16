@@ -32,7 +32,8 @@ test.describe("public homepage", () => {
     await page.goto("/");
 
     await expect(page.getByTestId("site-intro")).toHaveCount(0);
-    await expect(page.getByTestId("ticker")).toBeVisible();
+    // The owner removed the scrolling lime ticker (2026-09-16): it must not come back.
+    await expect(page.getByTestId("ticker")).toHaveCount(0);
 
     // One h1 in three typed lines; the closing line wears the holographic accent.
     const h1 = page.getByRole("heading", { level: 1 });

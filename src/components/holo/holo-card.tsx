@@ -4,11 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { RefreshCw } from "lucide-react";
 import { HoloSurface } from "@/components/holo/holo-surface";
-import { TypeChip } from "@/components/holo/type-chip";
 import { AddToCartButton } from "@/components/product/add-to-cart-button";
 import { brand, brandSize, cutoutSrc } from "@/data/assets";
 import { formatPrice } from "@/lib/format";
-import { availabilityLine, displayName, holoStyle, kindLabel, productLine } from "@/lib/holo";
+import { availabilityLine, displayName, holoStyle, productLine } from "@/lib/holo";
 import { STOCK_CTA, isPurchasable } from "@/lib/labels";
 import type { Product } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
@@ -36,7 +35,7 @@ export function HoloCard({ product, position, total, flipped, onFlip, auto = fal
   const image = product.images[0];
   const cutout = image ? cutoutSrc(image.src) : null;
   const line = productLine(product);
-  const kicker = [line, kindLabel(product)].filter(Boolean).join(" · ");
+  const kicker = ["Scheda", line].filter(Boolean).join(" · ");
   const flip = (event: React.MouseEvent) => {
     event.stopPropagation();
     onFlip();
@@ -55,8 +54,7 @@ export function HoloCard({ product, position, total, flipped, onFlip, auto = fal
             <div className="gd-holo-face" inert={flipped}>
               <div aria-hidden="true" className="gd-holo-ring" />
               <div className="absolute inset-3 z-[1] flex flex-col gap-2.5">
-                <div className="flex h-[1.625rem] items-center justify-between gap-2">
-                  <TypeChip product={product} />
+                <div className="flex h-[1.625rem] items-center justify-end gap-2">
                   <span className="gd-mono text-[0.6875rem] tracking-[0.12em] text-white/50">
                     {pad(position)}/{pad(total)}
                     {line ? ` · ${line}` : ""}
@@ -131,7 +129,7 @@ export function HoloCard({ product, position, total, flipped, onFlip, auto = fal
                   sizes="288px"
                   className="pointer-events-none absolute -bottom-16 -right-20 w-72 opacity-10 animate-[gd-spin_30s_linear_infinite]"
                 />
-                <p className="gd-mono text-[0.6875rem] uppercase tracking-[0.14em] text-[var(--f2)]">Scheda · {kicker}</p>
+                <p className="gd-mono text-[0.6875rem] uppercase tracking-[0.14em] text-[var(--f2)]">{kicker}</p>
                 <p className="gd-display-wide text-[1.8rem] font-bold leading-[0.95]">{displayName(product.name)}</p>
                 <p className="line-clamp-5 text-small leading-relaxed text-grey-700">{product.description}</p>
                 {product.boxContents.length > 0 ? (

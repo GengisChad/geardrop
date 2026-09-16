@@ -21,7 +21,7 @@ describe("preorder quantity presentation", () => {
   it("renders the current allocation and caps the PDP control at the lower availability", () => {
     const html = renderToStaticMarkup(
       <Providers>
-        <BuyPanel product={{ ...product, availableQuantity: 3 }} />
+        <BuyPanel product={{ ...product, stock: "pre-ordine", availableQuantity: 3 }} />
       </Providers>,
     );
 
@@ -54,7 +54,7 @@ describe("truthful public presentation", () => {
   it("renders the neutral preorder homepage without bestseller, Club, bundle, or rating decoration", async () => {
     const html = renderToStaticMarkup(<Providers>{await HomePage()}</Providers>);
 
-    expect(html).toContain("Pre-ordini aperti");
+    expect(html).toContain("Disponibili ora");
     expect(html).toContain("Tutto il drop");
     expect(html).toContain("Scegli. Carica.");
     expect(html).not.toContain("Più venduti");
@@ -95,7 +95,7 @@ describe("truthful public presentation", () => {
   });
 
   it("distinguishes preorder dispatch from carrier transit in rendered storefront copy", () => {
-    const html = renderToStaticMarkup(<Providers><BuyPanel product={product} /></Providers>);
+    const html = renderToStaticMarkup(<Providers><BuyPanel product={{ ...product, stock: "pre-ordine" }} /></Providers>);
 
     expect(html).toContain("entro 14 giorni dalla conferma");
     expect(html).toContain("transito del corriere");

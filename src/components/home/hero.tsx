@@ -83,8 +83,9 @@ export function Hero({
 
   const counted = shown.every((product) => product.availableQuantity !== undefined);
   const lines = heroTitleLines(content?.title?.trim() || (isNewRelease ? NEW_RELEASES_HERO_TITLE : DEFAULT_HERO_TITLE));
-  const eyebrow =
-    content?.eyebrow?.trim() || (isNewRelease ? "Pre-ordini aperti · Nuove uscite" : "Pre-ordini aperti · Beyblade X");
+  // Pre-order wording only while every dealt card really is a pre-order.
+  const opening = shown.every((product) => product.stock === "pre-ordine") ? "Pre-ordini aperti" : "Disponibili ora";
+  const eyebrow = content?.eyebrow?.trim() || `${opening} · ${isNewRelease ? "Nuove uscite" : "Beyblade X"}`;
   const description =
     content?.description?.trim() ||
     content?.subtitle?.trim() ||

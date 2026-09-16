@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { HoloSurface } from "@/components/holo/holo-surface";
-import { TypeChip } from "@/components/holo/type-chip";
 import { AddToCartButton } from "@/components/product/add-to-cart-button";
 import { WishlistButton } from "@/components/product/wishlist-button";
 import { PromoBadge, RankBadge } from "@/components/ui/badge";
@@ -57,18 +56,14 @@ export function ProductCard({
                 className={cn("gd-holo-img object-contain", cutout ? "p-1.5" : "p-6")}
               />
             ) : null}
-            <div className="pointer-events-none absolute inset-x-2 top-2 z-20 flex items-start justify-between gap-1.5">
-              <span className="flex min-w-0 items-center gap-1.5">
-                {rank !== undefined ? <RankBadge rank={rank} /> : null}
-                <TypeChip
-                  product={product}
-                  className="max-sm:h-[1.375rem] max-sm:gap-1 max-sm:pl-1.5 max-sm:pr-2 max-sm:text-[0.5625rem]"
-                />
-              </span>
-              {promo ? (
-                <PromoBadge tag={promo} className="max-sm:h-[1.375rem] max-sm:px-1.5 max-sm:text-[0.5625rem]" />
-              ) : null}
-            </div>
+            {rank !== undefined || promo ? (
+              <div className="pointer-events-none absolute inset-x-2 top-2 z-20 flex items-start justify-between gap-1.5">
+                <span>{rank !== undefined ? <RankBadge rank={rank} /> : null}</span>
+                {promo ? (
+                  <PromoBadge tag={promo} className="max-sm:h-[1.375rem] max-sm:px-1.5 max-sm:text-[0.5625rem]" />
+                ) : null}
+              </div>
+            ) : null}
             <span className="absolute bottom-1.5 right-1.5 z-20">
               <WishlistButton slug={product.slug} name={product.name} />
             </span>
