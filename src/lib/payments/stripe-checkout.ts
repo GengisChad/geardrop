@@ -8,10 +8,11 @@ import { createStripeClient, stripeProductId, type StripeClient } from "./stripe
 /**
  * Stripe Checkout straight from the catalogue.
  *
- * Used while the storefront runs without an order database (COMMERCE_PROVIDER=mock): the
- * quote comes from the reviewed catalogue, the payment page is Stripe's, and Stripe is the
- * record of every paid order. Nothing here reserves stock — allocations are not decremented.
- * The Supabase order path is untouched and never combined with this one.
+ * Used while the storefront runs on the reviewed catalogue (COMMERCE_PROVIDER=mock): the quote
+ * comes from the catalogue with the database's live stock, and the payment page is Stripe's.
+ * Nothing is reserved while the buyer pays; once Stripe confirms the payment, the webhook
+ * (src/app/api/stripe/webhook) records the order and takes the stock. The Supabase order
+ * intake path is untouched and never combined with this one.
  */
 
 type Env = Readonly<Record<string, string | undefined>>;

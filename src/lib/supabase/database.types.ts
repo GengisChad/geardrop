@@ -1194,6 +1194,7 @@ export type Database = {
           idempotency_key: string
           notes: string | null
           order_number: string
+          owner_notified_at: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           phone: string | null
           refund_amount_cents: number | null
@@ -1204,6 +1205,8 @@ export type Database = {
           shipping_cents: number
           shipping_method_code: string
           status: Database["public"]["Enums"]["order_status"]
+          stripe_checkout_session_id: string | null
+          stripe_payment_intent_id: string | null
           subtotal_cents: number
           total_cents: number
           tracking_carrier: string | null
@@ -1224,6 +1227,7 @@ export type Database = {
           idempotency_key: string
           notes?: string | null
           order_number: string
+          owner_notified_at?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           phone?: string | null
           refund_amount_cents?: number | null
@@ -1234,6 +1238,8 @@ export type Database = {
           shipping_cents: number
           shipping_method_code: string
           status?: Database["public"]["Enums"]["order_status"]
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
           subtotal_cents: number
           total_cents: number
           tracking_carrier?: string | null
@@ -1254,6 +1260,7 @@ export type Database = {
           idempotency_key?: string
           notes?: string | null
           order_number?: string
+          owner_notified_at?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           phone?: string | null
           refund_amount_cents?: number | null
@@ -1264,6 +1271,8 @@ export type Database = {
           shipping_cents?: number
           shipping_method_code?: string
           status?: Database["public"]["Enums"]["order_status"]
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
           subtotal_cents?: number
           total_cents?: number
           tracking_carrier?: string | null
@@ -2086,6 +2095,24 @@ export type Database = {
         Returns: undefined
       }
       record_staff_login: { Args: never; Returns: undefined }
+      record_stripe_checkout_order: {
+        Args: {
+          p_email: string
+          p_lines: Json
+          p_notes: string
+          p_order_number: string
+          p_payment_intent_id: string
+          p_phone: string
+          p_session_id: string
+          p_shipping_address: Json
+          p_shipping_cents: number
+        }
+        Returns: {
+          created: boolean
+          order_id: number
+          order_number: string
+        }[]
+      }
       reorder_categories: {
         Args: { p_category_ids: number[] }
         Returns: undefined
