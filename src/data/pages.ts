@@ -117,7 +117,7 @@ export const SUPPORT_PAGES = {
       {
         heading: "Assistenza ordini",
         body: [
-          "Per qualsiasi domanda su un ordine, scrivi a gengischad@gmail.com indicando il numero d'ordine.",
+          "Per qualsiasi domanda su un ordine, scrivi a infogeardrop@gmail.com indicando il numero d'ordine.",
           "Rispondiamo entro un giorno lavorativo.",
         ],
       },
@@ -127,7 +127,7 @@ export const SUPPORT_PAGES = {
       },
       {
         heading: "Collaborazioni",
-        body: ["Organizzi tornei o gestisci un negozio? Scrivi a gengischad@gmail.com."],
+        body: ["Organizzi tornei o gestisci un negozio? Scrivi a infogeardrop@gmail.com."],
       },
     ],
   },
@@ -138,7 +138,7 @@ const SELLER = {
   holder: "Alessia Brunetti",
   vat: "18464231002",
   office: "Via Fratelli Cervi 2, 00065 Fiano Romano (RM)",
-  email: "gengischad@gmail.com",
+  email: "infogeardrop@gmail.com",
 } as const;
 
 export const LEGAL_PAGES = {

@@ -31,7 +31,7 @@ describe("legal pages", () => {
       expect(text, slug).toContain("Alessia Brunetti, impresa individuale");
       expect(text, slug).toContain("18464231002");
       expect(text, slug).toContain("Via Fratelli Cervi 2, 00065 Fiano Romano (RM)");
-      expect(text, slug).toContain("gengischad@gmail.com");
+      expect(text, slug).toContain("infogeardrop@gmail.com");
       // Tax code, PEC and REA stay off the site by the owner's choice.
       expect(text, slug).not.toMatch(/codice fiscale|\bPEC\b|\bREA\b/i);
     }

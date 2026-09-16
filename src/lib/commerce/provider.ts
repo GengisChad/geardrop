@@ -1,5 +1,6 @@
 import "server-only";
 
+import { loadLiveCatalogue } from "./live-stock";
 import { createMockProvider } from "./mock-provider";
 import { createSupabaseCommerceProvider } from "./supabase-provider";
 import type { CommerceProvider } from "./types";
@@ -54,7 +55,8 @@ function cachedSupabaseProvider(): CommerceProvider {
 
 export async function getCommerceProvider(): Promise<CommerceProvider> {
   const requested = resolveCommerceProviderName();
-  return requested === "mock" ? createMockProvider() : cachedSupabaseProvider();
+  // The catalogue build still sells through Stripe, but with the stock the database holds.
+  return requested === "mock" ? createMockProvider(await loadLiveCatalogue()) : cachedSupabaseProvider();
 }
 
 export const commerce: CommerceProvider = createMockProvider();
