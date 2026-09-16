@@ -21,9 +21,14 @@ select results_eq(
   'order intake starts disabled'
 );
 select results_eq(
-  $$select count(*)::bigint from public.products where stock_quantity <> 0$$,
+  $$select count(*)::bigint from public.products as product
+    where product.stock_quantity <> 0
+      and not exists (
+        select 1 from public.inventory_movements as movement
+        where movement.product_id = product.id and movement.reason = 'initial'
+      )$$,
   array[0::bigint],
-  'seed never introduces real stock'
+  'real stock only arrives with a recorded initial movement'
 );
 select results_eq(
   $$

@@ -11,7 +11,7 @@ select results_eq($$select count(*)::integer from public.navigation_menus$$, arr
 select results_eq($$select count(*)::integer from public.navigation_items$$, array[7], 'seed has the current main navigation items');
 select results_eq($$select count(*)::integer from public.footer_columns$$, array[4], 'seed has the current footer columns');
 select results_eq($$select count(*)::integer from public.footer_items$$, array[15], 'seed has the current footer links');
-select results_eq($$select count(*)::integer from public.products where stock_quantity <> 0$$, array[0], 'initial stock remains zero');
+select results_eq($$select count(*)::integer from public.products where publication_status = 'published' and (stock_quantity = 0 or availability_override is not null or preorder_allocation <> 0)$$, array[0], 'the published catalogue is sold from stock');
 select is((select accept_orders from public.site_settings where singleton), false, 'order acceptance remains disabled');
 select results_eq($$select count(*)::integer from public.orders$$, array[0], 'seed invents no orders');
 select results_eq($$select count(*)::integer from public.coupons$$, array[0], 'seed invents no coupons');

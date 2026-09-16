@@ -4,13 +4,14 @@ import { generateSupabaseSeed } from "../../scripts/generate-supabase-seed";
 describe("Supabase catalogue seed", () => {
   const sql = generateSupabaseSeed().toLowerCase();
 
-  it("is idempotent and inserts every product with zero real stock", () => {
+  it("is idempotent and inserts new products without stock; stock only arrives with a recorded movement", () => {
     expect(sql).toContain("on conflict (slug) do update");
     expect(sql).toContain("0 as stock_quantity");
+    expect(sql).toContain("0 as preorder_allocation");
     expect(sql).not.toContain("stock_quantity = excluded.stock_quantity");
   });
 
-  it("bootstraps uppercase SKUs and the reviewed preorder allocations", () => {
+  it("bootstraps uppercase SKUs next to the reviewed quantities", () => {
     for (const [sku, allocation] of [
       ["COBALT-DRAGOON-2-60C", 10],
       ["SOAR-PHOENIX-9-60GF", 60],
@@ -25,7 +26,7 @@ describe("Supabase catalogue seed", () => {
         new RegExp(`'${sku}'.{0,120}\\b${allocation}\\b`, "s"),
       );
     }
-    expect(sql).toContain("'preorder'::public.availability_override");
+    expect(sql).toContain("null::public.availability_override");
   });
 
   it("never overwrites order intake or availability overrides", () => {
