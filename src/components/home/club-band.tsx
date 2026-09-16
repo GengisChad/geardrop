@@ -25,7 +25,7 @@ export function ClubBand() {
         <div className="relative grid gap-6 p-6 lg:grid-cols-[minmax(0,18rem)_1fr] lg:items-center lg:gap-8 lg:p-8">
           <div className="flex items-start gap-4">
             <span className="gd-glass-compact inline-flex size-12 shrink-0 items-center justify-center rounded-2xl">
-              <Crown className="size-6 text-violet" strokeWidth={1.75} aria-hidden="true" />
+              <Crown className="size-6 text-violet-soft" strokeWidth={1.75} aria-hidden="true" />
             </span>
             <div>
               <h2 className="text-h3 font-bold text-graphite">GEAR//DROP Club</h2>
@@ -40,7 +40,7 @@ export function ClubBand() {
             {PERKS.map(({ Icon, title, copy }) => (
               <li key={title} className="flex items-center gap-3">
                 <span className="gd-glass-compact inline-flex size-10 shrink-0 items-center justify-center rounded-2xl">
-                  <Icon className="size-4 text-violet" strokeWidth={2} aria-hidden="true" />
+                  <Icon className="size-4 text-violet-soft" strokeWidth={2} aria-hidden="true" />
                 </span>
                 <span>
                   <span className="gd-display block text-[0.6875rem] font-bold tracking-wider text-graphite">{title}</span>

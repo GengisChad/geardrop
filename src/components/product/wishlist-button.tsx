@@ -36,7 +36,7 @@ export function WishlistButton({ slug, name, size = "sm", className }: WishlistB
         className={cn(
           size === "sm" ? "size-4" : "size-5",
           "transition-colors duration-200",
-          isSaved ? "text-violet" : "text-graphite",
+          isSaved ? "text-violet-soft" : "text-graphite",
         )}
         fill={isSaved ? "currentColor" : "none"}
         strokeWidth={2}

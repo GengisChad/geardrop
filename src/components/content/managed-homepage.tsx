@@ -1,5 +1,7 @@
 import type { Route } from "next";
 import Link from "next/link";
+import { Fragment } from "react";
+import { Arena } from "@/components/home/arena";
 import { Hero, type HeroContent } from "@/components/home/hero";
 import { CategoryTiles } from "@/components/home/category-tiles";
 import { StatusLegend } from "@/components/home/status-legend";
@@ -24,7 +26,11 @@ import type { ResolvedHomepageSection } from "@/lib/storefront/homepage-resolver
  */
 
 export type ManagedHomepageFallback = {
-  readonly heroProduct: Product;
+  /** The cards the hero deals: the new releases, or the leading featured products. */
+  readonly heroProducts: readonly Product[];
+  readonly heroIsNewRelease: boolean;
+  /** The product shown beside the default bundle. */
+  readonly bundleHero: Product | null;
   readonly bundle: Bundle | null;
   readonly featured: readonly Product[];
   readonly latest: readonly Product[];
@@ -88,7 +94,7 @@ function GenericSection({ section }: { readonly section: HomepageSection }) {
     <section className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6" data-section-type={section.section_type}>
       <div className="gd-glass-panel rounded-[--radius-glass] px-6 py-8 sm:px-10">
         {section.eyebrow ? (
-          <p className="gd-display text-[0.6875rem] font-bold uppercase tracking-[0.18em] text-violet">
+          <p className="gd-mono text-[0.6875rem] uppercase tracking-[0.18em] text-lime">
             {section.eyebrow}
           </p>
         ) : null}
@@ -102,7 +108,7 @@ function GenericSection({ section }: { readonly section: HomepageSection }) {
         {section.cta_label && section.cta_href ? (
           <Link
             href={section.cta_href as Route}
-            className="gd-display gd-glass-compact gd-glass-interactive mt-6 inline-flex h-11 items-center rounded-2xl px-5 text-small font-bold tracking-wider text-graphite"
+            className="gd-display gd-chamfer mt-6 inline-flex h-11 items-center bg-lime px-5 text-small font-bold tracking-wider text-void transition-colors hover:bg-[#d8ff4d]"
           >
             {section.cta_label}
           </Link>
@@ -122,7 +128,17 @@ function renderSection(
   switch (section.section_type) {
     case "hero":
       // Above the fold and the LCP element: never wrapped in Reveal, must paint at once.
-      return <Hero key={section.id} product={fallback.heroProduct} content={heroContentOf(section)} />;
+      // The Arena launches the same cards the hero deals, so it always follows it.
+      return (
+        <Fragment key={section.id}>
+          <Hero
+            products={fallback.heroProducts}
+            isNewRelease={fallback.heroIsNewRelease}
+            content={heroContentOf(section)}
+          />
+          <Arena products={fallback.heroProducts} />
+        </Fragment>
+      );
 
     case "categories":
       return (
@@ -208,8 +224,8 @@ function renderSection(
       // nothing rather than quietly showing a different one.
       const chosen = resolved.bundle
         ? resolved.bundle
-        : section.bundleIds.length === 0 && fallback.bundle
-          ? { bundle: fallback.bundle, hero: fallback.heroProduct }
+        : section.bundleIds.length === 0 && fallback.bundle && fallback.bundleHero
+          ? { bundle: fallback.bundle, hero: fallback.bundleHero }
           : null;
       return chosen ? (
         <Reveal key={section.id}>

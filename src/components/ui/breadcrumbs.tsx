@@ -14,11 +14,11 @@ export function Breadcrumbs({ items, className }: { items: readonly Crumb[]; cla
           return (
             <li key={item.label} className="flex items-center gap-1.5">
               {item.href && !last ? (
-                <Link href={item.href} className="text-grey-600 transition-colors hover:text-violet">
+                <Link href={item.href} className="text-grey-600 transition-colors hover:text-violet-soft">
                   {item.label}
                 </Link>
               ) : (
-                <span className={last ? "font-semibold text-violet" : "text-grey-600"} aria-current={last ? "page" : undefined}>
+                <span className={last ? "font-semibold text-violet-soft" : "text-grey-600"} aria-current={last ? "page" : undefined}>
                   {item.label}
                 </span>
               )}

@@ -1,27 +1,25 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Inter } from "next/font/google";
+import { Chakra_Petch, JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { brand } from "@/data/assets";
+import { PRODUCTION_ORIGIN } from "@/lib/site-url";
 import "@/styles/globals.css";
 
 /**
- * The design system declares DIN Next / Eurostile Extended for headings; both are
- * commercial. Archivo is the closest free grotesque with a real width axis, so the
- * extended cut is genuine rather than faked with letter-spacing. (audit §3)
+ * Holo Drop type pairing: Chakra Petch's squared, techy forms carry headlines (italic),
+ * UI labels and body copy; JetBrains Mono sets HUD data such as counters and codes.
  */
-// No `weight`: that keeps it a true variable font, which `axes` requires.
-const archivo = Archivo({
+const chakra = Chakra_Petch({
   subsets: ["latin"],
-  axes: ["wdth"],
-  variable: "--font-archivo",
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-chakra",
   display: "swap",
 });
 
-import { PRODUCTION_ORIGIN } from "@/lib/site-url";
-
-const inter = Inter({
+const jetbrains = JetBrains_Mono({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-jetbrains",
   display: "swap",
 });
 
@@ -32,7 +30,7 @@ export const metadata: Metadata = {
     template: "%s | GEAR//DROP",
   },
   description:
-    "Catalogo Beyblade X in pre-ordine: trottole, lanciatori, stadi e accessori con disponibilità indicate.",
+    "Catalogo Beyblade X: trottole, lanciatori, stadi e accessori con disponibilità indicate.",
   applicationName: "GEAR//DROP",
   icons: {
     icon: "/favicon.ico",
@@ -43,25 +41,26 @@ export const metadata: Metadata = {
     locale: "it_IT",
     siteName: "GEAR//DROP",
     title: "GEAR//DROP — Beyblade X per la community italiana",
-    description: "Catalogo Beyblade X in pre-ordine con disponibilità indicate.",
+    description: "Catalogo Beyblade X con disponibilità indicate.",
   },
   robots: { index: true, follow: true },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#121417",
+  themeColor: "#07060b",
+  colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="it" className={`${archivo.variable} ${inter.variable}`}>
+    <html lang="it" className={`${chakra.variable} ${jetbrains.variable}`}>
       <body className="min-h-dvh">
         <Providers>
           <a
             href="#contenuto"
-            className="gd-display sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-lime focus:px-5 focus:py-3 focus:text-small focus:font-bold focus:text-graphite"
+            className="gd-display sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:bg-lime focus:px-5 focus:py-3 focus:text-small focus:font-bold focus:text-void"
           >
             Salta al contenuto
           </a>

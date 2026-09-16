@@ -26,7 +26,7 @@ export function SearchBox() {
   }, [open]);
 
   return (
-    <div className="relative flex items-center">
+    <div className="relative flex items-center gap-1.5">
       <AnimatePresence initial={false}>
         {open ? (
           <motion.form
@@ -53,9 +53,9 @@ export function SearchBox() {
               ref={inputRef}
               value={value}
               onChange={(event) => setValue(event.target.value)}
-              placeholder="Cerca prodotti..."
+              placeholder="Cerca un Beyblade"
               data-testid="search-input"
-              className="gd-glass-compact h-11 w-44 rounded-full px-4 text-small text-graphite placeholder:text-grey-600 focus:border-violet focus:outline-none lg:w-60"
+              className="h-11 w-40 border border-white/10 bg-white/[0.05] px-4 text-small text-graphite placeholder:text-grey-400 focus:border-lime focus:outline-none sm:w-44 lg:w-60"
             />
           </motion.form>
         ) : null}
@@ -67,12 +67,12 @@ export function SearchBox() {
         aria-expanded={open}
         aria-label={open ? "Chiudi ricerca" : "Apri ricerca"}
         data-testid="search-toggle"
-        className="gd-glass-compact inline-flex size-11 items-center justify-center rounded-full"
+        className="gd-chamfer inline-flex size-11 items-center justify-center bg-white/[0.07] text-graphite transition-colors duration-200 hover:bg-lime hover:text-void"
       >
         {open ? (
-          <X className="size-5 text-graphite" aria-hidden="true" />
+          <X className="size-5" aria-hidden="true" />
         ) : (
-          <Search className="size-5 text-graphite" aria-hidden="true" />
+          <Search className="size-5" strokeWidth={1.8} aria-hidden="true" />
         )}
       </button>
     </div>

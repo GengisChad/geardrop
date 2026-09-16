@@ -25,6 +25,12 @@ select results_eq(
 insert into public.staff_profiles (user_id, role, display_name, active)
 values ('00000000-0000-0000-0000-000000000301', 'owner', 'Owner One', true);
 
+-- The catalogue stock migration shelves every reviewed product; this ledger test starts from an
+-- empty shelf so each assertion below sees only its own movements.
+delete from public.inventory_movements
+where product_id = (select id from public.products where sku = 'SOAR-PHOENIX-9-60GF');
+update public.products set stock_quantity = 0 where sku = 'SOAR-PHOENIX-9-60GF';
+
 select results_eq(
   $$select stock_quantity from public.products where sku = 'SOAR-PHOENIX-9-60GF'$$,
   array[0],

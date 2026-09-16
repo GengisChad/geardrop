@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PRODUCTS } from "@/data/catalog";
 
-describe("reviewed preorder catalogue", () => {
+describe("reviewed catalogue", () => {
   it("publishes exactly the nine owner-supplied products and allocations", () => {
     expect(
       PRODUCTS.map(({ slug, price, stock, availableQuantity, rating, reviewCount }) => ({
@@ -13,15 +13,15 @@ describe("reviewed preorder catalogue", () => {
         reviewCount,
       })),
     ).toEqual([
-      { slug: "cobalt-dragoon-2-60c", price: 2550, stock: "pre-ordine", availableQuantity: 10, rating: 0, reviewCount: 0 },
-      { slug: "soar-phoenix-9-60gf", price: 3200, stock: "pre-ordine", availableQuantity: 60, rating: 0, reviewCount: 0 },
-      { slug: "saber-samurai-2-70l", price: 2790, stock: "pre-ordine", availableQuantity: 30, rating: 0, reviewCount: 0 },
-      { slug: "blast-pegasus-a-tr", price: 2950, stock: "pre-ordine", availableQuantity: 30, rating: 0, reviewCount: 0 },
-      { slug: "drop-attack-battle-set", price: 4650, stock: "pre-ordine", availableQuantity: 30, rating: 0, reviewCount: 0 },
-      { slug: "sneak-attack-battle-set", price: 4500, stock: "pre-ordine", availableQuantity: 30, rating: 0, reviewCount: 0 },
-      { slug: "glory-valkerion-lf", price: 3000, stock: "pre-ordine", availableQuantity: 8, rating: 0, reviewCount: 0 },
-      { slug: "hurricane-enlil-is-7-55t", price: 2000, stock: "pre-ordine", availableQuantity: 10, rating: 0, reviewCount: 0 },
-      { slug: "shatter-horus-9-65gb", price: 2000, stock: "pre-ordine", availableQuantity: 8, rating: 0, reviewCount: 0 },
+      { slug: "cobalt-dragoon-2-60c", price: 2550, stock: "disponibile", availableQuantity: 10, rating: 0, reviewCount: 0 },
+      { slug: "soar-phoenix-9-60gf", price: 3200, stock: "disponibile", availableQuantity: 60, rating: 0, reviewCount: 0 },
+      { slug: "saber-samurai-2-70l", price: 2790, stock: "disponibile", availableQuantity: 30, rating: 0, reviewCount: 0 },
+      { slug: "blast-pegasus-a-tr", price: 2950, stock: "disponibile", availableQuantity: 30, rating: 0, reviewCount: 0 },
+      { slug: "drop-attack-battle-set", price: 4650, stock: "disponibile", availableQuantity: 30, rating: 0, reviewCount: 0 },
+      { slug: "sneak-attack-battle-set", price: 4500, stock: "disponibile", availableQuantity: 30, rating: 0, reviewCount: 0 },
+      { slug: "glory-valkyrie-lf", price: 3000, stock: "disponibile", availableQuantity: 8, rating: 0, reviewCount: 0 },
+      { slug: "hurricane-enlil-is-7-55t", price: 2000, stock: "disponibile", availableQuantity: 10, rating: 0, reviewCount: 0 },
+      { slug: "shatter-horus-9-65gb", price: 2000, stock: "disponibile", availableQuantity: 8, rating: 0, reviewCount: 0 },
     ]);
   });
 

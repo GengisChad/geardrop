@@ -1,74 +1,82 @@
 @import "tailwindcss";
 
 /* ==========================================================================
-   GEAR//DROP design tokens
-   Values come from assets-source/mockup-design-system.png ("DESIGN SYSTEM v1.0").
-   Hex values in sections 04/05 are declared as text in the sheet; status colours
-   were sampled from the rendered pills. See docs/reference-audit.md.
+   GEAR//DROP design tokens — "Holo Drop" dark theme
+   Approved by the owner on 2026-09-15 (design canvas "GEAR//DROP Home Redesign"):
+   a near-black tech ground, the logo's Acid Lime and Violet as the only brand accents,
+   holographic trading-card surfaces and HUD panels.
+
+   The neutral scale keeps its names but is set for the dark ground, so every existing
+   `text-grey-600` / `border-grey-200` keeps its role: low numbers sit close to the page,
+   high numbers carry more contrast. `graphite` is the strongest ink (near-white text);
+   `void` is the page itself and the dark label colour on lime.
    ========================================================================== */
 
 @theme {
-  /* -- Primari (sezione 04) ------------------------------------------------ */
+  /* -- Brand --------------------------------------------------------------- */
   --color-lime: #c6ff00;
   --color-violet: #7a3cff;
-  --color-graphite: #121417;
-  --color-grey-700: #2a2d34;
+  --color-cyan: #3cf0ff;
+  --color-magenta: #ff5ccf;
 
-  /* -- Neutri (sezione 04) ------------------------------------------------- */
-  --color-grey-100: #f5f6f8;
-  --color-grey-200: #e9ebee;
-  --color-grey-300: #d7dce3;
-  --color-grey-400: #b9bec7;
-  /* Secondary copy on pearl/glass: dark enough to preserve WCAG AA at body sizes. */
-  --color-grey-600: #5f646e;
+  /* -- Ground and surfaces ------------------------------------------------ */
+  --color-void: #07060b;
+  --color-surface: #0e0d16;
+  --color-surface-2: #16141f;
 
-  /* Derived: only for hairlines and scrims, never as a flat surface. */
+  /* -- Neutral scale on the dark ground ----------------------------------- */
+  --color-graphite: #f1f0f5;
+  --color-graphite-800: #16141f;
+  --color-grey-100: #0d0c14;
+  --color-grey-200: #1f1d2a;
+  --color-grey-300: #2d2b3b;
+  --color-grey-400: #75738a;
+  /* Secondary copy: 8.9:1 on the ground, so small text stays readable. */
+  --color-grey-600: #aba9b8;
+  --color-grey-700: #d9d7e3;
+
+  /* -- Derived accents ----------------------------------------------------- */
   --color-violet-ink: #5b21d6;
-  --color-violet-tint: #ede4ff;
-  /*
-   * Lime for text on light surfaces. Acid Lime is 1.10:1 on grey-100 — invisible — and
-   * even the mockups' own hero green (#A8D304) only reaches 1.62:1, under the 3:1 that
-   * large text needs. This is the closest hue-preserving darkening that clears 3:1, so
-   * the headline stays lime rather than turning olive. On graphite, use --color-lime
-   * itself: it scores 15.6:1 there.
-   */
-  --color-lime-ink: #7b9a03;
-  --color-graphite-800: #1b1e24;
+  /* Violet for text on the dark ground: brand violet itself is only 3.7:1 there. */
+  --color-violet-soft: #ac8bff;
+  --color-violet-tint: rgba(122, 60, 255, 0.16);
+  --color-lime-ink: #c6ff00;
+  --color-lime-tint: rgba(198, 255, 0, 0.1);
 
-  /* -- Stato (sezione 03) — sampled from the rendered pills ---------------- */
-  --color-available: #2e7d0a;
-  --color-available-bg: #e8f7dc;
+  /* -- Status -------------------------------------------------------------- */
+  --color-available: #9dff6a;
+  --color-available-bg: rgba(120, 218, 4, 0.14);
   --color-available-solid: #78da04;
-  --color-incoming: #121417;
-  --color-incoming-bg: #f7de1a;
+  --color-incoming: #ffe75a;
+  --color-incoming-bg: rgba(245, 216, 0, 0.14);
   --color-incoming-solid: #f5d800;
-  --color-soldout: #c21419;
-  --color-soldout-bg: #fbe3e3;
-  --color-soldout-solid: #d91419;
-  --color-preorder: #6b2be0;
-  --color-preorder-bg: #ede4ff;
-  --color-preorder-solid: #7a3cff;
+  --color-soldout: #ff7a7f;
+  --color-soldout-bg: rgba(217, 20, 25, 0.18);
+  --color-soldout-solid: #ff4b50;
+  --color-preorder: #c3a8ff;
+  --color-preorder-bg: rgba(122, 60, 255, 0.18);
+  --color-preorder-solid: #9d6bff;
 
-  /* -- Tipografia (sezione 05) -------------------------------------------- */
-  /* Titoli dichiarati "DIN Next / Eurostile Extended" (commerciali):
-     Archivo variabile con asse wdth esteso e' l'equivalente libero piu' vicino. */
-  --font-display: var(--font-archivo), "Archivo", system-ui, sans-serif;
-  --font-sans: var(--font-inter), "Inter", system-ui, sans-serif;
+  /* -- Typography ---------------------------------------------------------- */
+  --font-display: var(--font-chakra), "Chakra Petch", "Arial Narrow", system-ui, sans-serif;
+  --font-sans: var(--font-chakra), "Chakra Petch", "Arial Narrow", system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
 
-  --text-h1: 3rem; /* 48/56 Bold */
+  --text-h1: 3rem;
   --text-h1--line-height: 3.5rem;
-  --text-h2: 2rem; /* 32/40 Bold */
+  --text-h2: 2rem;
   --text-h2--line-height: 2.5rem;
-  --text-h3: 1.25rem; /* 20/28 SemiBold */
+  --text-h3: 1.25rem;
   --text-h3--line-height: 1.75rem;
-  --text-body: 1rem; /* 16/24 Regular */
+  --text-body: 1rem;
   --text-body--line-height: 1.5rem;
-  --text-small: 0.75rem; /* 12/16 Regular */
-  --text-small--line-height: 1rem;
+  --text-small: 0.8125rem;
+  --text-small--line-height: 1.125rem;
 
-  /* -- Gradienti (sezione 04) --------------------------------------------- */
+  /* -- Gradients ----------------------------------------------------------- */
   --gradient-lime-glow: linear-gradient(90deg, #c6ff00 0%, #e8ffa3 100%);
   --gradient-violet-energy: linear-gradient(90deg, #7a3cff 0%, #c9adff 100%);
+  --gradient-holo: linear-gradient(100deg, #c6ff00 0%, #3cf0ff 25%, #9d6bff 50%, #ff5ccf 75%, #c6ff00 100%);
 
   /* -- Motion -------------------------------------------------------------- */
   --ease-out-gear: cubic-bezier(0.16, 1, 0.3, 1);
@@ -79,13 +87,22 @@
   --radius-glass-lg: 1.75rem;
 }
 
+@property --gd-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
 /* ==========================================================================
    Base
    ========================================================================== */
 
 @layer base {
   html {
+    color-scheme: dark;
+    background-color: var(--color-void);
     scroll-behavior: smooth;
+    scrollbar-color: var(--color-grey-300) var(--color-void);
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -103,7 +120,7 @@
   }
 
   body {
-    background-color: var(--color-grey-100);
+    background-color: var(--color-void);
     color: var(--color-graphite);
     font-family: var(--font-sans);
     font-size: var(--text-body);
@@ -111,8 +128,7 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Ambient field the glass surfaces refract. Kept faint (<10% alpha) so text on glass
-     never drops below its contrast target. Fixed, so it stays put while content scrolls. */
+  /* Ambient field: violet and lime glows over a faint tech grid. Fixed, painted once. */
   body::before {
     content: "";
     position: fixed;
@@ -120,43 +136,41 @@
     z-index: -1;
     pointer-events: none;
     background:
-      radial-gradient(58rem 58rem at 88% -12%, color-mix(in srgb, var(--color-violet) 12%, transparent), transparent 60%),
-      radial-gradient(48rem 48rem at -8% 18%, color-mix(in srgb, var(--color-lime) 10%, transparent), transparent 55%),
-      radial-gradient(42rem 42rem at 50% 116%, color-mix(in srgb, var(--color-violet) 8%, transparent), transparent 60%),
-      linear-gradient(color-mix(in srgb, var(--color-graphite) 2.4%, transparent) 1px, transparent 1px),
-      linear-gradient(90deg, color-mix(in srgb, var(--color-graphite) 2.4%, transparent) 1px, transparent 1px);
-    background-size: auto, auto, auto, 52px 52px, 52px 52px;
+      radial-gradient(60rem 48rem at 82% -8%, rgba(122, 60, 255, 0.2), transparent 62%),
+      radial-gradient(48rem 42rem at -6% 22%, rgba(198, 255, 0, 0.06), transparent 60%),
+      radial-gradient(56rem 50rem at 50% 118%, rgba(122, 60, 255, 0.12), transparent 60%),
+      linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+    background-size: auto, auto, auto, 64px 64px, 64px 64px;
   }
 
-  /* Titles are always uppercase display; body copy never is. (audit §7) */
+  /* Titles are italic uppercase display; body copy never is. */
   h1,
   h2,
   h3,
   h4 {
     font-family: var(--font-display);
-    font-variation-settings: "wdth" 112;
+    font-style: italic;
     text-transform: uppercase;
     letter-spacing: -0.01em;
     text-wrap: balance;
   }
 
-  /* Prices and counters must not jitter while they animate. */
   :where(.tabular) {
     font-variant-numeric: tabular-nums;
   }
 
   ::selection {
     background: var(--color-lime);
-    color: var(--color-graphite);
+    color: var(--color-void);
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-violet);
+    outline: 2px solid var(--color-lime);
     outline-offset: 2px;
     border-radius: 2px;
   }
 
-  /* The announcement bar and footer sit on graphite; keep focus visible there. */
   .on-dark :focus-visible {
     outline-color: var(--color-lime);
   }
@@ -166,21 +180,33 @@
    Brand primitives
    ========================================================================== */
 
+/* Upright uppercase UI label: navigation, buttons, chips. */
 @utility gd-display {
   font-family: var(--font-display);
-  font-variation-settings: "wdth" 112;
   text-transform: uppercase;
 }
 
-/* Wide display cut used for hero + section headings. */
+/* Italic uppercase headline cut used for hero, section and product titles. */
 @utility gd-display-wide {
   font-family: var(--font-display);
-  font-variation-settings: "wdth" 125;
+  font-style: italic;
   text-transform: uppercase;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 
-/* The angled corner on dark bands (trust band, bundle banner). */
+@utility gd-mono {
+  font-family: var(--font-mono);
+}
+
+/* Chamfered HUD corners. */
+@utility gd-chamfer {
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+
+@utility gd-chamfer-lg {
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+}
+
 @utility gd-notch {
   clip-path: polygon(0 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%);
 }
@@ -189,93 +215,166 @@
   clip-path: polygon(0 0, 100% 0, 100% calc(100% - 28px), calc(100% - 28px) 100%, 0 100%);
 }
 
-/* Fine diagonal streaks behind the hero — the mockups' "speed" texture.
-   Pure CSS: the reference images are never used as site imagery. (audit §7.9) */
+/* Animated iridescent text. */
+@utility gd-holo-text {
+  background-image: var(--gradient-holo);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  padding-right: 0.08em;
+  animation: gd-holo-text 6s linear infinite;
+}
+
+/* Outlined display glyphs, e.g. the product line on a card. */
+@utility gd-outline-text {
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.45);
+}
+
+/* HUD panel: hairline frame with lime corner brackets. */
+@utility gd-hud {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    pointer-events: none;
+  }
+  &::before {
+    left: -1px;
+    top: -1px;
+    border-left: 2px solid var(--color-lime);
+    border-top: 2px solid var(--color-lime);
+  }
+  &::after {
+    right: -1px;
+    bottom: -1px;
+    border-right: 2px solid var(--color-lime);
+    border-bottom: 2px solid var(--color-lime);
+  }
+}
+
+/* Static lime glow behind a chamfered CTA (the CTA clips its own shadow). */
+@utility gd-glow {
+  position: relative;
+  isolation: isolate;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 8px 10px;
+    z-index: -1;
+    background: var(--color-lime);
+    opacity: 0.3;
+    filter: blur(18px);
+    pointer-events: none;
+  }
+}
+
+/* Periodic specular sweep across a primary CTA. */
+@utility gd-btn-sheen {
+  position: relative;
+  overflow: hidden;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 35%, rgba(255, 255, 255, 0.7) 50%, transparent 65%);
+    background-size: 250% 100%;
+    animation: gd-btn-sheen 3.4s ease-in-out infinite;
+    pointer-events: none;
+  }
+}
+
 @utility gd-streaks {
   background-image:
-    linear-gradient(104deg, transparent 38%, color-mix(in srgb, var(--color-violet) 26%, transparent) 39%, transparent 40%),
-    linear-gradient(104deg, transparent 52%, color-mix(in srgb, var(--color-violet) 16%, transparent) 53%, transparent 54.5%),
-    linear-gradient(104deg, transparent 61%, color-mix(in srgb, var(--color-lime) 22%, transparent) 62%, transparent 63%),
-    linear-gradient(104deg, transparent 70%, color-mix(in srgb, var(--color-violet) 30%, transparent) 71.5%, transparent 73%),
-    linear-gradient(104deg, transparent 79%, color-mix(in srgb, var(--color-violet) 12%, transparent) 80%, transparent 81%);
+    linear-gradient(104deg, transparent 38%, rgba(122, 60, 255, 0.22) 39%, transparent 40%),
+    linear-gradient(104deg, transparent 52%, rgba(122, 60, 255, 0.14) 53%, transparent 54.5%),
+    linear-gradient(104deg, transparent 61%, rgba(198, 255, 0, 0.16) 62%, transparent 63%),
+    linear-gradient(104deg, transparent 70%, rgba(122, 60, 255, 0.24) 71.5%, transparent 73%),
+    linear-gradient(104deg, transparent 79%, rgba(122, 60, 255, 0.1) 80%, transparent 81%);
 }
 
 /* ==========================================================================
-   Liquid glass
-   Translucent, blurred surfaces with a specular top rim and a soft float shadow.
-   Text-bearing glass uses a high white ratio so contrast holds on the ambient field.
+   Materials
+   Dark translucent tiers. Text-bearing tiers are nearly opaque so contrast never
+   depends on what scrolls underneath; the blur only softens the glows behind them.
    ========================================================================== */
 
 @utility gd-glass {
-  --gd-material-fallback: #f8f9fb;
-  --gd-material-background-color: color-mix(in srgb, white 66%, transparent);
-  --gd-material-background: linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.18) 50%, rgba(122, 60, 255, 0.07));
-  --gd-material-border: rgba(255, 255, 255, 0.78);
-  --gd-material-highlight: rgba(255, 255, 255, 0.92);
-  --gd-material-shadow: 0 28px 70px -38px rgba(18, 20, 23, 0.46);
-  --gd-material-blur: 24px;
-  --gd-material-saturation: 1.5;
-  --gd-material-hover-background: linear-gradient(135deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.24) 50%, rgba(122, 60, 255, 0.09));
-  --gd-material-hover-border: rgba(255, 255, 255, 0.92);
-  --gd-material-hover-shadow: 0 30px 74px -38px rgba(91, 33, 214, 0.34);
-  --gd-material-active-background: linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(237, 228, 255, 0.48));
-  --gd-material-active-border: rgba(122, 60, 255, 0.3);
-  --gd-material-active-shadow: 0 18px 42px -30px rgba(18, 20, 23, 0.4);
-  --gd-material-focus-ring: rgba(122, 60, 255, 0.62);
+  --gd-material-fallback: #12111b;
+  --gd-material-background-color: rgba(22, 20, 34, 0.5);
+  --gd-material-background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.012) 50%, rgba(122, 60, 255, 0.08));
+  --gd-material-border: rgba(255, 255, 255, 0.09);
+  --gd-material-highlight: rgba(255, 255, 255, 0.06);
+  --gd-material-shadow: 0 30px 80px -44px rgba(0, 0, 0, 0.9);
+  --gd-material-blur: 18px;
+  --gd-material-saturation: 1.3;
+  --gd-material-hover-background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(122, 60, 255, 0.1));
+  --gd-material-hover-border: rgba(198, 255, 0, 0.3);
+  --gd-material-hover-shadow: 0 30px 80px -40px rgba(122, 60, 255, 0.45);
+  --gd-material-active-background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(122, 60, 255, 0.14));
+  --gd-material-active-border: rgba(198, 255, 0, 0.4);
+  --gd-material-active-shadow: 0 16px 40px -28px rgba(0, 0, 0, 0.8);
+  --gd-material-focus-ring: rgba(198, 255, 0, 0.7);
 }
 
 @utility gd-glass-card {
-  --gd-material-fallback: #f8f9fb;
-  --gd-material-background-color: color-mix(in srgb, white 78%, transparent);
-  --gd-material-background: linear-gradient(145deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.12) 54%, rgba(122, 60, 255, 0.055));
-  --gd-material-border: rgba(255, 255, 255, 0.82);
-  --gd-material-highlight: rgba(255, 255, 255, 0.96);
-  --gd-material-shadow: 0 24px 58px -36px rgba(18, 20, 23, 0.4);
-  --gd-material-blur: 22px;
-  --gd-material-saturation: 1.42;
-  --gd-material-hover-background: linear-gradient(145deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.16) 54%, rgba(122, 60, 255, 0.075));
-  --gd-material-hover-border: rgba(165, 129, 255, 0.48);
-  --gd-material-hover-shadow: 0 28px 64px -36px rgba(91, 33, 214, 0.32);
-  --gd-material-active-background: linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(237, 228, 255, 0.42));
-  --gd-material-active-border: rgba(122, 60, 255, 0.38);
-  --gd-material-active-shadow: 0 16px 38px -28px rgba(18, 20, 23, 0.38);
-  --gd-material-focus-ring: rgba(122, 60, 255, 0.68);
+  --gd-material-fallback: #111019;
+  --gd-material-background-color: rgba(18, 16, 28, 0.68);
+  --gd-material-background: linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01) 55%, rgba(122, 60, 255, 0.06));
+  --gd-material-border: rgba(255, 255, 255, 0.09);
+  --gd-material-highlight: rgba(255, 255, 255, 0.06);
+  --gd-material-shadow: 0 28px 64px -40px rgba(0, 0, 0, 0.9);
+  --gd-material-blur: 16px;
+  --gd-material-saturation: 1.25;
+  --gd-material-hover-background: linear-gradient(160deg, rgba(255, 255, 255, 0.07), rgba(122, 60, 255, 0.1));
+  --gd-material-hover-border: rgba(198, 255, 0, 0.32);
+  --gd-material-hover-shadow: 0 30px 70px -40px rgba(122, 60, 255, 0.5);
+  --gd-material-active-background: linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(122, 60, 255, 0.14));
+  --gd-material-active-border: rgba(198, 255, 0, 0.42);
+  --gd-material-active-shadow: 0 16px 38px -28px rgba(0, 0, 0, 0.8);
+  --gd-material-focus-ring: rgba(198, 255, 0, 0.7);
 }
 
 @utility gd-glass-panel {
-  --gd-material-fallback: #fbfbfd;
-  --gd-material-background-color: color-mix(in srgb, white 90%, transparent);
-  --gd-material-background: linear-gradient(145deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.16) 60%, rgba(122, 60, 255, 0.035));
-  --gd-material-border: rgba(255, 255, 255, 0.88);
-  --gd-material-highlight: rgba(255, 255, 255, 0.98);
-  --gd-material-shadow: 0 22px 52px -36px rgba(18, 20, 23, 0.34);
-  --gd-material-blur: 24px;
-  --gd-material-saturation: 1.3;
-  --gd-material-hover-background: linear-gradient(145deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.2) 60%, rgba(122, 60, 255, 0.05));
-  --gd-material-hover-border: rgba(255, 255, 255, 0.96);
-  --gd-material-hover-shadow: 0 26px 56px -36px rgba(91, 33, 214, 0.24);
-  --gd-material-active-background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(237, 228, 255, 0.36));
-  --gd-material-active-border: rgba(122, 60, 255, 0.3);
-  --gd-material-active-shadow: 0 14px 34px -26px rgba(18, 20, 23, 0.34);
-  --gd-material-focus-ring: rgba(122, 60, 255, 0.62);
+  --gd-material-fallback: #0f0e17;
+  --gd-material-background-color: rgba(14, 13, 22, 0.86);
+  --gd-material-background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.012));
+  --gd-material-border: rgba(255, 255, 255, 0.09);
+  --gd-material-highlight: rgba(255, 255, 255, 0.05);
+  --gd-material-shadow: 0 24px 60px -40px rgba(0, 0, 0, 0.85);
+  --gd-material-blur: 16px;
+  --gd-material-saturation: 1.2;
+  --gd-material-hover-background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  --gd-material-hover-border: rgba(255, 255, 255, 0.16);
+  --gd-material-hover-shadow: 0 26px 60px -40px rgba(122, 60, 255, 0.35);
+  --gd-material-active-background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(122, 60, 255, 0.08));
+  --gd-material-active-border: rgba(198, 255, 0, 0.35);
+  --gd-material-active-shadow: 0 14px 34px -26px rgba(0, 0, 0, 0.8);
+  --gd-material-focus-ring: rgba(198, 255, 0, 0.7);
 }
 
 @utility gd-glass-compact {
-  --gd-material-fallback: #f9fafc;
-  --gd-material-background-color: color-mix(in srgb, white 84%, transparent);
-  --gd-material-background: linear-gradient(145deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.12) 66%);
-  --gd-material-border: rgba(255, 255, 255, 0.8);
-  --gd-material-highlight: rgba(255, 255, 255, 0.94);
-  --gd-material-shadow: 0 12px 30px -24px rgba(18, 20, 23, 0.42);
-  --gd-material-blur: 18px;
-  --gd-material-saturation: 1.36;
-  --gd-material-hover-background: linear-gradient(145deg, rgba(255, 255, 255, 0.76), rgba(237, 228, 255, 0.18));
-  --gd-material-hover-border: rgba(165, 129, 255, 0.48);
-  --gd-material-hover-shadow: 0 16px 34px -24px rgba(91, 33, 214, 0.3);
-  --gd-material-active-background: linear-gradient(145deg, rgba(255, 255, 255, 0.84), rgba(237, 228, 255, 0.32));
-  --gd-material-active-border: rgba(122, 60, 255, 0.42);
-  --gd-material-active-shadow: 0 8px 22px -18px rgba(18, 20, 23, 0.38);
-  --gd-material-focus-ring: rgba(122, 60, 255, 0.7);
+  --gd-material-fallback: #15131f;
+  --gd-material-background-color: rgba(26, 24, 38, 0.72);
+  --gd-material-background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015) 66%);
+  --gd-material-border: rgba(255, 255, 255, 0.1);
+  --gd-material-highlight: rgba(255, 255, 255, 0.06);
+  --gd-material-shadow: 0 12px 30px -24px rgba(0, 0, 0, 0.8);
+  --gd-material-blur: 14px;
+  --gd-material-saturation: 1.2;
+  --gd-material-hover-background: linear-gradient(160deg, rgba(255, 255, 255, 0.09), rgba(122, 60, 255, 0.1));
+  --gd-material-hover-border: rgba(198, 255, 0, 0.35);
+  --gd-material-hover-shadow: 0 16px 34px -24px rgba(122, 60, 255, 0.45);
+  --gd-material-active-background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(122, 60, 255, 0.14));
+  --gd-material-active-border: rgba(198, 255, 0, 0.45);
+  --gd-material-active-shadow: 0 8px 22px -18px rgba(0, 0, 0, 0.8);
+  --gd-material-focus-ring: rgba(198, 255, 0, 0.75);
 }
 
 @utility gd-glass-interactive {
@@ -284,23 +383,22 @@
   transition-timing-function: var(--ease-out-gear);
 }
 
-/* Glass over the graphite bands. */
 @utility gd-glass-dark {
-  --gd-material-fallback: #1b1e24;
-  --gd-material-background-color: rgba(18, 20, 23, 0.9);
-  --gd-material-background: linear-gradient(135deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.025) 54%, rgba(122, 60, 255, 0.12));
-  --gd-material-border: rgba(255, 255, 255, 0.14);
-  --gd-material-highlight: rgba(255, 255, 255, 0.18);
-  --gd-material-shadow: 0 24px 58px -28px rgba(0, 0, 0, 0.64);
-  --gd-material-blur: 20px;
-  --gd-material-saturation: 1.35;
-  --gd-material-hover-background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(122, 60, 255, 0.13));
-  --gd-material-hover-border: rgba(198, 255, 0, 0.28);
-  --gd-material-hover-shadow: 0 28px 62px -28px rgba(0, 0, 0, 0.72);
-  --gd-material-active-background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(122, 60, 255, 0.16));
-  --gd-material-active-border: rgba(198, 255, 0, 0.38);
-  --gd-material-active-shadow: 0 16px 38px -24px rgba(0, 0, 0, 0.72);
-  --gd-material-focus-ring: rgba(198, 255, 0, 0.72);
+  --gd-material-fallback: #0a0910;
+  --gd-material-background-color: rgba(7, 6, 11, 0.9);
+  --gd-material-background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01) 54%, rgba(122, 60, 255, 0.12));
+  --gd-material-border: rgba(255, 255, 255, 0.1);
+  --gd-material-highlight: rgba(255, 255, 255, 0.07);
+  --gd-material-shadow: 0 24px 58px -28px rgba(0, 0, 0, 0.8);
+  --gd-material-blur: 18px;
+  --gd-material-saturation: 1.3;
+  --gd-material-hover-background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(122, 60, 255, 0.14));
+  --gd-material-hover-border: rgba(198, 255, 0, 0.3);
+  --gd-material-hover-shadow: 0 28px 62px -28px rgba(0, 0, 0, 0.85);
+  --gd-material-active-background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(122, 60, 255, 0.16));
+  --gd-material-active-border: rgba(198, 255, 0, 0.4);
+  --gd-material-active-shadow: 0 16px 38px -24px rgba(0, 0, 0, 0.85);
+  --gd-material-focus-ring: rgba(198, 255, 0, 0.75);
 }
 
 @layer utilities {
@@ -366,47 +464,733 @@
   }
 }
 
+/* Dark art window a cut-out product floats in. Picks up the card's foil colour. */
 @utility gd-product-plate {
-  background: color-mix(in srgb, white 88%, var(--color-grey-100));
-  border: 1px solid color-mix(in srgb, white 82%, var(--color-grey-200));
-  box-shadow:
-    inset 0 1px 0 white,
-    inset 0 -1px 0 rgba(122, 60, 255, 0.05);
+  background:
+    radial-gradient(120% 90% at 50% 38%, color-mix(in oklab, var(--f3, #7a3cff) 40%, #0e0d16), #08070d 72%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 @utility gd-section-ambient {
   background-image:
-    radial-gradient(36rem 18rem at 12% 0%, rgba(198, 255, 0, 0.045), transparent 70%),
-    radial-gradient(34rem 20rem at 88% 100%, rgba(122, 60, 255, 0.055), transparent 72%);
+    radial-gradient(36rem 18rem at 12% 0%, rgba(198, 255, 0, 0.04), transparent 70%),
+    radial-gradient(34rem 20rem at 88% 100%, rgba(122, 60, 255, 0.08), transparent 72%);
 }
 
 @utility gd-editorial-panel {
   background-image:
-    linear-gradient(120deg, rgba(255, 255, 255, 0.18), transparent 42%),
-    radial-gradient(28rem 18rem at 82% 20%, rgba(122, 60, 255, 0.12), transparent 72%);
+    linear-gradient(120deg, rgba(255, 255, 255, 0.04), transparent 42%),
+    radial-gradient(28rem 18rem at 82% 20%, rgba(122, 60, 255, 0.14), transparent 72%);
 }
 
-/* Pearl field behind the floating hero card. */
 @utility gd-hero-field {
-  background:
-    radial-gradient(120% 95% at 72% 8%, #ffffff 0%, #eef0f4 44%, #e5e8ee 100%);
+  background: radial-gradient(120% 95% at 72% 8%, rgba(122, 60, 255, 0.18) 0%, transparent 60%);
 }
 
-/* Micro grid texture inside glass surfaces — faint, for depth not decoration. */
 @utility gd-grid {
   background-image:
-    linear-gradient(color-mix(in srgb, var(--color-graphite) 4%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--color-graphite) 4%, transparent) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
   background-size: 44px 44px;
 }
 
-/* Ambient bob for the floating hero emblem — a spinning top that never settles. */
 @utility gd-float {
   animation: gd-float 6.5s var(--ease-out-gear) infinite;
 }
 
-/* Impact bloom breathing under the hero VFX. Centring lives in the keyframe because the
-   animation owns `transform` — a Tailwind translate on the same element would be lost. */
+@utility gd-scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ==========================================================================
+   Holographic cards
+   Structure: .gd-holo (pointer target, CSS variables) > [.gd-holo-flip] > .gd-holo-rot >
+   .gd-holo-face (+ .gd-holo-back) > content + ring/shine/sparkle/glare layers.
+   The foil layers only exist while a card is hovered, or on the one card per view marked
+   .gd-holo-auto; each face isolates its blending so no layer composites against the page.
+   ========================================================================== */
+
+@layer components {
+  .gd-holo {
+    --mx: 50%;
+    --my: 50%;
+    --px: 0;
+    --py: 0;
+    --rx: 0deg;
+    --ry: 0deg;
+    --o: 0;
+    --tt: 0.7s;
+    --f1: #e9ffb0;
+    --f2: #c6ff00;
+    --f3: #7a3cff;
+    --f4: #3cf0ff;
+    --glow: rgba(122, 60, 255, 0.35);
+    position: relative;
+    perspective: 1100px;
+  }
+
+  .gd-holo-flip {
+    position: relative;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.9s cubic-bezier(0.3, 0.7, 0.2, 1);
+  }
+
+  .gd-holo-flip[data-flipped="true"] {
+    transform: rotateY(180deg);
+  }
+
+  .gd-holo-rot {
+    position: relative;
+    height: 100%;
+    transform: rotateX(var(--rx)) rotateY(var(--ry));
+    transition: transform var(--tt) var(--ease-out-gear);
+  }
+
+  .gd-holo-flip .gd-holo-rot {
+    transform-style: preserve-3d;
+  }
+
+  .gd-holo-face {
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+    isolation: isolate;
+    border-radius: 1.25rem;
+    background: linear-gradient(165deg, #16141f, #0b0a11 62%);
+    box-shadow:
+      0 40px 80px -40px rgba(0, 0, 0, 0.95),
+      0 0 70px -26px var(--glow);
+  }
+
+  .gd-holo-flip .gd-holo-face {
+    position: absolute;
+    inset: 0;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+
+  .gd-holo-flip .gd-holo-back {
+    transform: rotateY(180deg);
+  }
+
+  .gd-holo-ring {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    border-radius: inherit;
+    padding: 1.5px;
+    pointer-events: none;
+    background: conic-gradient(from var(--gd-angle), var(--f1), var(--f2), var(--f3), var(--f4), var(--f1));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    opacity: 0.5;
+    transition: opacity 0.3s;
+  }
+
+  .gd-holo:hover .gd-holo-ring,
+  .gd-holo-auto .gd-holo-ring {
+    opacity: 1;
+  }
+
+  .gd-holo-auto .gd-holo-ring {
+    animation: gd-angle 6s linear infinite;
+  }
+
+  .gd-holo-shine,
+  .gd-holo-sparkle,
+  .gd-holo-glare {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: none;
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  @media (hover: hover) {
+    .gd-holo:hover :is(.gd-holo-shine, .gd-holo-sparkle, .gd-holo-glare) {
+      display: block;
+    }
+
+    .gd-holo:not(.gd-holo-auto):hover :is(.gd-holo-shine, .gd-holo-sparkle, .gd-holo-glare) {
+      animation: gd-layer-in 0.35s ease-out;
+    }
+  }
+
+  .gd-holo-auto :is(.gd-holo-shine, .gd-holo-sparkle, .gd-holo-glare) {
+    display: block;
+  }
+
+  .gd-holo-shine {
+    background-image:
+      repeating-linear-gradient(115deg, var(--f1) 0%, var(--f2) 7%, var(--f3) 14%, var(--f4) 21%, var(--f1) 28%),
+      repeating-linear-gradient(35deg, rgba(0, 0, 0, 0.32) 0 1px, transparent 1px 4px);
+    background-size: 360% 360%, 100% 100%;
+    background-position: var(--mx) var(--my), 0 0;
+    background-blend-mode: multiply;
+    mix-blend-mode: color-dodge;
+    opacity: calc(var(--o) * 0.45);
+    transition: opacity 0.45s;
+  }
+
+  .gd-holo-sparkle {
+    background-image:
+      radial-gradient(circle, #fff 0 1px, transparent 1.7px),
+      radial-gradient(circle, rgba(255, 255, 255, 0.85) 0 0.8px, transparent 1.5px),
+      radial-gradient(circle, var(--f2) 0 1.2px, transparent 2px);
+    background-size: 31px 29px, 47px 41px, 67px 59px;
+    background-position:
+      calc(var(--px) * 80px) calc(var(--py) * 80px),
+      calc(var(--px) * -110px) calc(var(--py) * 64px),
+      calc(var(--px) * 48px) calc(var(--py) * -96px);
+    mix-blend-mode: color-dodge;
+    -webkit-mask-image: radial-gradient(240px circle at var(--mx) var(--my), #000, transparent 70%);
+    mask-image: radial-gradient(240px circle at var(--mx) var(--my), #000, transparent 70%);
+    opacity: calc(var(--o) * 0.7);
+    transition: opacity 0.45s;
+  }
+
+  .gd-holo-glare {
+    background: radial-gradient(farthest-corner circle at var(--mx) var(--my), rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.18) 22%, rgba(0, 0, 0, 0.38) 95%);
+    mix-blend-mode: overlay;
+    opacity: calc(var(--o) * 0.8);
+    transition: opacity 0.45s;
+  }
+
+  .gd-holo-auto .gd-holo-shine {
+    opacity: 0.32;
+    animation: gd-foil-sweep 7s ease-in-out infinite alternate;
+  }
+
+  .gd-holo-auto .gd-holo-glare {
+    opacity: 0.5;
+    background: radial-gradient(farthest-corner circle at 50% 50%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.12) 18%, rgba(0, 0, 0, 0.32) 60%);
+    background-size: 220% 220%;
+    animation: gd-glare-sweep 7s ease-in-out infinite alternate;
+  }
+
+  .gd-holo-auto .gd-holo-sparkle {
+    opacity: 0.4;
+    -webkit-mask-image: none;
+    mask-image: none;
+    animation: gd-sparkle-drift 7s ease-in-out infinite alternate;
+  }
+
+  @media (hover: hover) {
+    .gd-holo-auto:hover .gd-holo-shine {
+      animation: none;
+      opacity: calc(var(--o) * 0.45);
+    }
+
+    .gd-holo-auto:hover .gd-holo-glare {
+      animation: none;
+      background: radial-gradient(farthest-corner circle at var(--mx) var(--my), rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.18) 22%, rgba(0, 0, 0, 0.38) 95%);
+      background-size: auto;
+      opacity: calc(var(--o) * 0.8);
+    }
+
+    .gd-holo-auto:hover .gd-holo-sparkle {
+      animation: none;
+      -webkit-mask-image: radial-gradient(240px circle at var(--mx) var(--my), #000, transparent 70%);
+      mask-image: radial-gradient(240px circle at var(--mx) var(--my), #000, transparent 70%);
+      opacity: calc(var(--o) * 0.7);
+    }
+  }
+
+  /* Art window: grid, spinning orbit and the product cut-out with a slight parallax. */
+  .gd-holo-art {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.9rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: radial-gradient(120% 90% at 50% 38%, color-mix(in oklab, var(--f3) 44%, #0e0d16), #08070d 72%);
+  }
+
+  .gd-holo-art::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+    background-size: 20px 20px;
+    -webkit-mask-image: radial-gradient(closest-side, #000, transparent);
+    mask-image: radial-gradient(closest-side, #000, transparent);
+  }
+
+  .gd-holo-img {
+    transform: translate(calc(var(--px) * -16px), calc(var(--py) * -16px)) scale(1.02);
+    transition: transform var(--tt) var(--ease-out-gear);
+    filter: drop-shadow(0 20px 22px rgba(0, 0, 0, 0.6));
+  }
+
+  .gd-holo-orb {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 82%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 1px dashed rgba(255, 255, 255, 0.16);
+    pointer-events: none;
+    animation: gd-orb 22s linear infinite;
+  }
+
+  .gd-holo-orb::after {
+    content: "";
+    position: absolute;
+    inset: 9%;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    border-top-color: var(--f2);
+    border-right-color: var(--f2);
+    animation: gd-spin 2.8s linear infinite reverse;
+  }
+
+  /* Hero floor: a perspective grid rolling towards the visitor. */
+  .gd-floor {
+    position: absolute;
+    left: -20%;
+    right: -20%;
+    bottom: -30px;
+    height: 380px;
+    overflow: hidden;
+    pointer-events: none;
+    transform: perspective(700px) rotateX(70deg);
+    transform-origin: 50% 100%;
+  }
+
+  .gd-floor::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -72px;
+    bottom: 0;
+    background-image:
+      linear-gradient(rgba(198, 255, 0, 0.2) 1.5px, transparent 1.5px),
+      linear-gradient(90deg, rgba(122, 60, 255, 0.28) 1.5px, transparent 1.5px);
+    background-size: 72px 72px;
+    animation: gd-floor 3s linear infinite;
+  }
+
+  .gd-floor::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(0deg, rgba(7, 6, 11, 0) 5%, var(--color-void) 85%);
+  }
+
+  /* ---------------------------------------------------------------- Arena */
+  .gd-stadium {
+    --bowl: 300px;
+    --top: 96px;
+    --start: 110px;
+    --lift: 16px;
+    position: relative;
+    height: calc(var(--bowl) * 1.06);
+    perspective: 760px;
+    isolation: isolate;
+    /* Decorative: its projected 3D layers must never swallow a click meant for the page. */
+    pointer-events: none;
+  }
+
+  @media (min-width: 1024px) {
+    .gd-stadium {
+      --bowl: 560px;
+      --top: 168px;
+      --start: 200px;
+      --lift: 26px;
+      perspective: 1000px;
+    }
+  }
+
+  .gd-bowl {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: var(--bowl);
+    height: var(--bowl);
+    margin: calc(var(--bowl) / -2) 0 0 calc(var(--bowl) / -2);
+    border-radius: 50%;
+    transform: rotateX(60deg);
+    transform-style: preserve-3d;
+    background:
+      radial-gradient(circle, rgba(122, 60, 255, 0.28) 0 16%, transparent 16.5%),
+      repeating-radial-gradient(circle, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 36px),
+      radial-gradient(closest-side, #1b1927 0%, #0d0c14 86%, #07060b 100%);
+    box-shadow:
+      0 0 0 2px rgba(198, 255, 0, 0.55),
+      0 0 80px 10px rgba(198, 255, 0, 0.16),
+      inset 0 0 140px rgba(0, 0, 0, 0.85);
+  }
+
+  .gd-bowl-rim {
+    position: absolute;
+    inset: -3%;
+    border-radius: 50%;
+    background: conic-gradient(transparent 0deg, var(--color-lime) 40deg, transparent 80deg, transparent 180deg, #9d6bff 220deg, transparent 260deg);
+    -webkit-mask: radial-gradient(closest-side, transparent 92%, #000 93%, #000 99%, transparent 100%);
+    mask: radial-gradient(closest-side, transparent 92%, #000 93%, #000 99%, transparent 100%);
+    animation: gd-spin 2.2s linear infinite;
+  }
+
+  .gd-xline {
+    position: absolute;
+    inset: 8%;
+    border-radius: 50%;
+    border: 2px dashed rgba(198, 255, 0, 0.3);
+  }
+
+  .gd-orbit {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0;
+    height: 0;
+    transform-style: preserve-3d;
+    animation: gd-orbit 3.4s cubic-bezier(0.2, 0.65, 0.3, 1) both;
+  }
+
+  .gd-arm {
+    position: absolute;
+    transform-style: preserve-3d;
+    animation: gd-arm 3.4s ease-out both;
+  }
+
+  .gd-top-shadow {
+    position: absolute;
+    width: calc(var(--top) * 1.12);
+    height: calc(var(--top) * 1.12);
+    left: calc(var(--top) * -0.56);
+    top: calc(var(--top) * -0.56);
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(0, 0, 0, 0.75), transparent);
+    transform: translateZ(calc(var(--lift) * -1));
+  }
+
+  .gd-wake {
+    position: absolute;
+    width: calc(var(--top) * 1.4);
+    height: calc(var(--top) * 1.4);
+    left: calc(var(--top) * -0.7);
+    top: calc(var(--top) * -0.7);
+    border-radius: 50%;
+    border: 2px solid transparent;
+    border-top-color: rgba(198, 255, 0, 0.75);
+    border-left-color: rgba(157, 107, 255, 0.55);
+    animation: gd-spin 0.6s linear infinite;
+  }
+
+  .gd-spinner {
+    position: absolute;
+    width: var(--top);
+    height: var(--top);
+    left: calc(var(--top) / -2);
+    top: calc(var(--top) / -2);
+    border-radius: 50%;
+    animation: gd-spin 0.32s linear infinite;
+  }
+
+  .gd-spinner::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.5) 20deg, rgba(255, 255, 255, 0) 60deg, rgba(255, 255, 255, 0) 180deg, rgba(255, 255, 255, 0.35) 200deg, rgba(255, 255, 255, 0) 240deg);
+    opacity: 0.55;
+    animation: gd-spin 0.5s linear infinite reverse;
+  }
+
+  .gd-burst {
+    position: absolute;
+    left: calc(50% + var(--start));
+    top: 50%;
+    width: calc(var(--bowl) * 0.62);
+    height: auto;
+    opacity: 0;
+    pointer-events: none;
+    mix-blend-mode: screen;
+    transform: translate(-50%, -50%);
+    animation: gd-burst 1s ease-out 0.4s both;
+  }
+}
+
+/* ==========================================================================
+   Hero fan and touch sweep
+   Below lg the new-release cards are a swipeable rail; from lg they stack into a fan
+   whose centre card is chosen by the visitor.
+   ========================================================================== */
+
+@layer components {
+  .gd-fan-slot {
+    position: relative;
+    flex: 0 0 17.5rem;
+    height: 26.5rem;
+    scroll-snap-align: center;
+  }
+
+  @media (min-width: 1024px) {
+    .gd-fan-slot {
+      --spread: 8rem;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 18.75rem;
+      height: 26.5rem;
+      margin: -14rem 0 0 -9.375rem;
+      transform-style: preserve-3d;
+      transition:
+        transform 0.8s var(--ease-out-gear),
+        opacity 0.6s;
+      cursor: pointer;
+    }
+
+    .gd-fan-slot[data-pos="center"] {
+      z-index: 3;
+      cursor: default;
+      transform: translate3d(0, 0, 60px);
+    }
+
+    .gd-fan-slot[data-pos="left"] {
+      z-index: 2;
+      opacity: 0.6;
+      transform: translate3d(calc(var(--spread) * -1), 1.6rem, -80px) rotateY(22deg) rotateZ(-7deg);
+    }
+
+    .gd-fan-slot[data-pos="right"] {
+      z-index: 1;
+      opacity: 0.6;
+      transform: translate3d(var(--spread), 1.6rem, -80px) rotateY(-22deg) rotateZ(7deg);
+    }
+
+    .gd-fan-slot:not([data-pos="center"]):hover {
+      opacity: 0.92;
+    }
+
+    .gd-fan-slot:not([data-pos="center"]) .gd-holo-orb {
+      display: none;
+    }
+
+    .gd-fan-slot[data-pos="center"] .gd-holo-bob {
+      animation: gd-bob 7s ease-in-out infinite;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .gd-fan-slot {
+      --spread: 13.75rem;
+      width: 21.25rem;
+      height: 30rem;
+      margin: -16rem 0 0 -10.625rem;
+    }
+  }
+
+  .gd-holo-bob {
+    height: 100%;
+    transform-style: preserve-3d;
+  }
+
+  /* Touch screens have no hover: their cards sweep on their own. */
+  @media (hover: none) {
+    .gd-holo-touch :is(.gd-holo-shine, .gd-holo-sparkle, .gd-holo-glare) {
+      display: block;
+    }
+
+    .gd-holo-touch .gd-holo-ring {
+      opacity: 1;
+    }
+
+    .gd-holo-touch .gd-holo-shine {
+      opacity: 0.32;
+      animation: gd-foil-sweep 7s ease-in-out infinite alternate;
+    }
+
+    .gd-holo-touch .gd-holo-glare {
+      opacity: 0.5;
+      background: radial-gradient(farthest-corner circle at 50% 50%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.12) 18%, rgba(0, 0, 0, 0.32) 60%);
+      background-size: 220% 220%;
+      animation: gd-glare-sweep 7s ease-in-out infinite alternate;
+    }
+
+    .gd-holo-touch .gd-holo-sparkle {
+      opacity: 0.4;
+      -webkit-mask-image: none;
+      mask-image: none;
+      animation: gd-sparkle-drift 7s ease-in-out infinite alternate;
+    }
+  }
+}
+
+/* ==========================================================================
+   Keyframes
+   ========================================================================== */
+
+@keyframes gd-angle {
+  to {
+    --gd-angle: 360deg;
+  }
+}
+
+@keyframes gd-layer-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes gd-foil-sweep {
+  from {
+    background-position: 0% 0%, 0 0;
+  }
+  to {
+    background-position: 100% 100%, 0 0;
+  }
+}
+
+@keyframes gd-glare-sweep {
+  from {
+    background-position: 0% 0%;
+  }
+  to {
+    background-position: 100% 100%;
+  }
+}
+
+@keyframes gd-sparkle-drift {
+  from {
+    background-position: 0 0, 0 0, 0 0;
+  }
+  to {
+    background-position: 40px 30px, -50px 20px, 30px -40px;
+  }
+}
+
+@keyframes gd-orb {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes gd-floor {
+  to {
+    transform: translateY(72px);
+  }
+}
+
+@keyframes gd-holo-text {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes gd-btn-sheen {
+  0% {
+    background-position: 160% 0;
+  }
+  55%,
+  100% {
+    background-position: -60% 0;
+  }
+}
+
+@keyframes gd-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes gd-breathe {
+  50% {
+    transform: scale(1.12);
+    opacity: 0.7;
+  }
+}
+
+@keyframes gd-orbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(900deg);
+  }
+}
+
+@keyframes gd-arm {
+  0% {
+    transform: translate3d(var(--start), 0, calc(var(--lift) * 8));
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  14% {
+    transform: translate3d(var(--start), 0, var(--lift));
+  }
+  55% {
+    transform: translate3d(calc(var(--start) * 0.57), 0, var(--lift));
+  }
+  100% {
+    transform: translate3d(0, 0, var(--lift));
+  }
+}
+
+@keyframes gd-burst {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4) rotate(-8deg);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.25) rotate(4deg);
+  }
+}
+
+@keyframes gd-xline {
+  0% {
+    border-color: rgba(198, 255, 0, 1);
+    box-shadow:
+      0 0 30px rgba(198, 255, 0, 0.8),
+      inset 0 0 30px rgba(198, 255, 0, 0.5);
+  }
+  100% {
+    border-color: rgba(198, 255, 0, 0.3);
+    box-shadow: none;
+  }
+}
+
+@keyframes gd-pulse-ring {
+  to {
+    box-shadow: 0 0 0 12px rgba(198, 255, 0, 0);
+  }
+}
+
+@keyframes gd-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @keyframes gd-pulse {
   0%,
   100% {
@@ -441,10 +1225,7 @@
   }
 }
 
-/* Scroll reveal — pure CSS, scroll-driven. No JS, so it can't race hydration and can't
-   leave content hidden. It only applies where the effect is safe (motion allowed AND the
-   browser supports scroll-driven animations); everywhere else the content is simply
-   visible. See components/ui/reveal.tsx. */
+/* Scroll reveal — pure CSS, scroll-driven; see components/ui/reveal.tsx. */
 @keyframes gd-reveal {
   from {
     opacity: 0;
@@ -466,17 +1247,13 @@
   }
 }
 
-/* Screenshot mode: a full-page capture never scrolls the way a visitor does, so scroll-
-   driven reveals below the fold stay at opacity 0 and the shot shows empty bands. Setting
-   data-screenshot on <html> (the capture harness does this, never the live site) forces
-   every reveal to its finished state. It changes nothing for real visitors. */
+/* Screenshot mode: full-page captures never scroll, so reveals are forced finished. */
 :root[data-screenshot="true"] [data-reveal] {
   opacity: 1 !important;
   transform: none !important;
   animation: none !important;
 }
 
-/* One-shot specular sweep across a glass surface on load. */
 @keyframes gd-sheen {
   0% {
     transform: translateX(-140%) skewX(-16deg);
@@ -504,12 +1281,5 @@
   }
   to {
     transform: translateX(-50%);
-  }
-}
-
-@utility gd-scrollbar-none {
-  scrollbar-width: none;
-  &::-webkit-scrollbar {
-    display: none;
   }
 }

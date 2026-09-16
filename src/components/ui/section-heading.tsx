@@ -21,35 +21,24 @@ type SectionHeadingProps = {
   title: string;
   href?: AppHref;
   linkLabel?: string;
-  /** Renders for the dark bands (bundle banner, trust band). */
+  /** Kept for callers from the light theme; every surface is dark now. */
   tone?: "light" | "dark";
   className?: string;
 };
 
-export function SectionHeading({
-  title,
-  href,
-  linkLabel = "Vedi tutti",
-  tone = "light",
-  className,
-}: SectionHeadingProps) {
+export function SectionHeading({ title, href, linkLabel = "Vedi tutti", className }: SectionHeadingProps) {
   return (
-    <div className={cn("flex items-center gap-4", className)}>
-      <h2 className={cn("text-h3 font-bold sm:text-[1.75rem]", tone === "dark" ? "text-white" : "text-graphite")}>
-        {title}
-      </h2>
-      <SlashMark />
-      <span className={cn("h-px flex-1", tone === "dark" ? "bg-white/15" : "bg-grey-300")} />
+    <div className={cn("flex items-end gap-4", className)}>
+      <h2 className="gd-display-wide text-[1.75rem] font-bold leading-[0.95] sm:text-[2.5rem]">{title}</h2>
+      <SlashMark className="mb-2 hidden sm:flex" />
+      <span className="mb-3 h-px flex-1 bg-white/10" />
       {href ? (
         <Link
           href={href}
-          className={cn(
-            "gd-display group inline-flex shrink-0 items-center gap-2 text-small font-bold tracking-wider",
-            tone === "dark" ? "text-white" : "text-graphite",
-          )}
+          className="gd-display group inline-flex shrink-0 items-center gap-2.5 text-small font-bold tracking-[0.08em] text-graphite transition-colors hover:text-lime"
         >
           <span className="hidden sm:inline">{linkLabel}</span>
-          <span className="inline-flex size-7 items-center justify-center rounded-full bg-lime text-graphite transition-transform duration-200 group-hover:translate-x-0.5">
+          <span className="gd-chamfer inline-flex size-9 items-center justify-center bg-lime text-void transition-transform duration-200 group-hover:translate-x-0.5">
             <ArrowRight className="size-4" strokeWidth={2.5} aria-hidden="true" />
           </span>
         </Link>

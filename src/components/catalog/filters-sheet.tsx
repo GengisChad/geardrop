@@ -31,7 +31,7 @@ export function FiltersSheet({ facets, lockedCategory }: { facets: Facets; locke
         data-testid="filters-open"
         className="gd-display gd-glass-compact inline-flex h-10 items-center gap-2 rounded-full px-4 text-small font-bold tracking-wider text-graphite transition-colors hover:border-violet lg:hidden"
       >
-        <SlidersHorizontal className="size-4 text-violet" aria-hidden="true" />
+        <SlidersHorizontal className="size-4 text-violet-soft" aria-hidden="true" />
         Filtri
       </button>
 
@@ -43,7 +43,7 @@ export function FiltersSheet({ facets, lockedCategory }: { facets: Facets; locke
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setOpen(false)}
-              className="fixed inset-0 z-[90] bg-graphite/60 backdrop-blur-sm lg:hidden"
+              className="fixed inset-0 z-[90] bg-void/70 backdrop-blur-sm lg:hidden"
             />
             <motion.div
               role="dialog"

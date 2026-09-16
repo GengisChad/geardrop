@@ -1,23 +1,24 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("truthful preorder storefront", () => {
-  test("shows the current allocation on the product page and cart", async ({ page }) => {
+  test("shows the current stock on the product page and caps the cart", async ({ page }) => {
     await page.goto("/prodotto/cobalt-dragoon-2-60c");
     const buyPanel = page.locator("#buy-panel");
-    await expect(buyPanel.getByTestId("preorder-remaining")).toHaveText("10 pre-ordini rimasti");
+    await expect(buyPanel.getByTestId("stock-remaining")).toHaveText("10 pezzi disponibili");
+    await expect(buyPanel.getByTestId("preorder-remaining")).toHaveCount(0);
     await expect(buyPanel.getByTestId("qty-input")).toHaveAttribute("max", "10");
     await buyPanel.getByTestId("add-to-cart").click();
 
     await page.goto("/carrello");
-    await expect(page.getByTestId("preorder-remaining")).toHaveText("10 pre-ordini rimasti");
     await expect(page.getByTestId("qty-input")).toHaveAttribute("max", "10");
   });
 
   test("omits fabricated home, footer, and zero-review presentation", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { name: "Nuove uscite" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "In evidenza" })).toBeVisible();
-    await expect(page.getByTestId("product-carousel")).toHaveCount(2);
+    // The Holo Drop homepage: the new releases lead the hero, the whole catalogue follows.
+    await expect(page.getByRole("heading", { name: "Nuove uscite", exact: true })).toHaveCount(1);
+    await expect(page.getByRole("heading", { name: "Tutto il drop" })).toBeVisible();
+    await expect(page.getByTestId("product-carousel")).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Pre-ordini aperti" })).toHaveCount(0);
     await expect(page.locator("body")).not.toContainText("Più venduti");
     await expect(page.locator("body")).not.toContainText("GEAR//DROP Club");

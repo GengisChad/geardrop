@@ -62,7 +62,7 @@ export function MobileMenu({ navigation }: { readonly navigation: readonly Store
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setOpen(false)}
-            className="fixed inset-0 z-[100] bg-graphite/50 backdrop-blur-sm lg:hidden"
+            className="fixed inset-0 z-[100] bg-void/70 backdrop-blur-sm lg:hidden"
           />
           <motion.div
             role="dialog"
@@ -75,14 +75,14 @@ export function MobileMenu({ navigation }: { readonly navigation: readonly Store
             transition={{ type: "spring", stiffness: 420, damping: 40 }}
             className="gd-glass-panel fixed inset-y-0 left-0 z-[110] flex w-[86%] max-w-sm flex-col rounded-r-[--radius-glass-lg] border-y-0 border-l-0 lg:hidden"
           >
-            <div className="flex items-center justify-between border-b border-white/40 px-5 py-4">
+            <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
               {/* The emblem is the mark used in the mobile menu. (audit §7.2) */}
               <Emblem size={36} className="size-9" />
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Chiudi il menu"
-                className="inline-flex size-10 items-center justify-center rounded-full transition-colors hover:bg-white/60"
+                className="inline-flex size-10 items-center justify-center rounded-full transition-colors hover:bg-white/10"
               >
                 <X className="size-5 text-graphite" aria-hidden="true" />
               </button>
@@ -100,9 +100,9 @@ export function MobileMenu({ navigation }: { readonly navigation: readonly Store
                     <Link
                       href={item.href as Route}
                       className={cn(
-                        "gd-display flex items-center justify-between border-b border-white/30 py-4 text-h3 font-bold tracking-tight",
+                        "gd-display flex items-center justify-between border-b border-white/10 py-4 text-h3 font-bold italic tracking-tight",
                         item.tone === "lime" && "text-lime-ink",
-                        item.tone === "violet" && "text-violet",
+                        item.tone === "violet" && "text-violet-soft",
                         !item.tone && "text-graphite",
                       )}
                     >
@@ -126,9 +126,9 @@ export function MobileMenu({ navigation }: { readonly navigation: readonly Store
         aria-label="Apri il menu"
         aria-expanded={open}
         data-testid="mobile-menu-open"
-        className="inline-flex size-10 items-center justify-center rounded-full transition-colors hover:bg-white/60 lg:hidden"
+        className="inline-flex size-10 items-center justify-center rounded-full transition-colors hover:bg-white/10 lg:hidden"
       >
-        <Menu className="size-6 text-graphite" strokeWidth={2.5} aria-hidden="true" />
+        <Menu className="size-6 text-graphite" strokeWidth={2} aria-hidden="true" />
       </button>
 
       {isClient ? createPortal(overlay, document.body) : null}

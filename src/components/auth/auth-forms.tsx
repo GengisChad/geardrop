@@ -42,7 +42,7 @@ function Feedback({ state }: { readonly state: AuthFormState }) {
       aria-live="polite"
       data-testid={isError ? "auth-error" : "auth-notice"}
       className={`flex items-start gap-2 rounded-2xl px-4 py-3 text-small ${
-        isError ? "bg-red-50 text-red-700" : "bg-lime-tint text-graphite"
+        isError ? "bg-soldout-bg text-soldout" : "bg-lime-tint text-lime"
       }`}
     >
       {isError ? (
@@ -84,10 +84,10 @@ export function LoginForm() {
       <SubmitButton label="ACCEDI" pendingLabel="ACCESSO IN CORSO…" />
 
       <div className="flex flex-wrap justify-between gap-2 text-small text-grey-600">
-        <Link href="/password-dimenticata" className="underline hover:text-violet">
+        <Link href="/password-dimenticata" className="underline hover:text-violet-soft">
           Password dimenticata?
         </Link>
-        <Link href="/registrati" className="underline hover:text-violet">
+        <Link href="/registrati" className="underline hover:text-violet-soft">
           Crea un account
         </Link>
       </div>
@@ -129,7 +129,7 @@ export function RegisterForm() {
 
       <p className="text-small text-grey-600">
         Hai già un account?{" "}
-        <Link href="/login" className="underline hover:text-violet">
+        <Link href="/login" className="underline hover:text-violet-soft">
           Accedi
         </Link>
       </p>
@@ -152,7 +152,7 @@ export function RecoverForm() {
       <SubmitButton label="INVIA LINK" pendingLabel="INVIO IN CORSO…" />
 
       <p className="text-small text-grey-600">
-        <Link href="/login" className="underline hover:text-violet">
+        <Link href="/login" className="underline hover:text-violet-soft">
           Torna all&apos;accesso
         </Link>
       </p>

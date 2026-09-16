@@ -8,7 +8,11 @@ function readMigration(name: string): string {
 }
 
 const migration = readMigration("20260915120000_publish_infinity_starter_preorders.sql");
-const publishedCatalogue = readMigration("20260904143000_publish_preorder_catalog.sql") + migration;
+// The rename migration later moves glory-valkerion-lf to glory-valkyrie-lf in place.
+const publishedCatalogue = (readMigration("20260904143000_publish_preorder_catalog.sql") + migration).replaceAll(
+  "'glory-valkerion-lf'",
+  "'glory-valkyrie-lf'",
+);
 
 const added = new Map([
   ["glory-valkerion-lf", 8],

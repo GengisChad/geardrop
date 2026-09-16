@@ -37,7 +37,7 @@ export function EmptyState({
       {href ? (
         <Link
           href={href}
-          className="gd-display group mt-6 inline-flex items-center gap-2 text-small font-bold tracking-wider text-violet hover:text-violet-ink"
+          className="gd-display group mt-6 inline-flex items-center gap-2 text-small font-bold tracking-wider text-violet-soft hover:text-white"
         >
           {linkLabel}
           <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />

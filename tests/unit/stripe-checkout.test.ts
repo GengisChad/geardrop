@@ -132,8 +132,17 @@ describe("stripe checkout session", () => {
       "metadata[notes]": "Citofono Rossi",
       "metadata[lines]": "cobalt-dragoon-2-60c x2",
     });
-    expect(fields["custom_text[submit][message]"]).toContain("Pre-ordine");
+    // The catalogue is in stock, so Stripe shows no pre-order notice.
+    expect(fields["custom_text[submit][message]"]).toBeUndefined();
     expect(Object.keys(fields).some((key) => key.includes("unit_amount"))).toBe(false);
+  });
+
+  it("warns on the Stripe page when a line is a pre-order", async () => {
+    const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }]);
+    const preorder: CartQuote = { ...quote, lines: quote.lines.map((line) => ({ ...line, stock: "pre-ordine" as const })) };
+    const fields = buildCheckoutSessionFields({ quote: preorder, order, origin: ORIGIN }, matchStripePrices(preorder, catalogPrices)!);
+
+    expect(fields["custom_text[submit][message]"]).toContain("Pre-ordine");
   });
 
   it("ships free above the threshold", async () => {

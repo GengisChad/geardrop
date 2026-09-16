@@ -47,13 +47,13 @@ export function BottomTabBar() {
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "relative flex flex-col items-center gap-1 py-2.5 transition-colors",
-                  active ? "text-violet" : "text-grey-600",
+                  active ? "text-lime" : "text-grey-600",
                 )}
               >
                 <span className="relative">
                   <Icon className="size-5" strokeWidth={active ? 2.5 : 2} aria-hidden="true" />
                   {badge !== null ? (
-                    <span className="tabular absolute -right-2.5 -top-1.5 inline-flex min-w-4 items-center justify-center rounded-full bg-violet px-1 text-[0.5625rem] font-bold leading-4 text-white">
+                    <span className="tabular absolute -right-2.5 -top-1.5 inline-flex min-w-4 items-center justify-center rounded-full bg-lime px-1 text-[0.5625rem] font-bold leading-4 text-void">
                       {badge}
                     </span>
                   ) : null}

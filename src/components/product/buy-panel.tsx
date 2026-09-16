@@ -59,6 +59,11 @@ export function BuyPanel({ product }: { product: Product }) {
               {product.availableQuantity} pre-ordini rimasti
             </p>
           ) : null}
+          {product.stock === "disponibile" && product.availableQuantity !== undefined ? (
+            <p className="mt-1 tabular text-[0.6875rem] font-bold text-available" data-testid="stock-remaining">
+              {product.availableQuantity} {product.availableQuantity === 1 ? "pezzo disponibile" : "pezzi disponibili"}
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -94,7 +99,7 @@ export function BuyPanel({ product }: { product: Product }) {
           aria-pressed={isSaved}
           className="sm:w-auto"
         >
-          <Heart className={cn("size-4", isSaved && "text-violet")} fill={isSaved ? "currentColor" : "none"} aria-hidden="true" />
+          <Heart className={cn("size-4", isSaved && "text-violet-soft")} fill={isSaved ? "currentColor" : "none"} aria-hidden="true" />
           <span className="whitespace-nowrap">{isSaved ? "Nei preferiti" : "Aggiungi ai preferiti"}</span>
         </Button>
       </div>

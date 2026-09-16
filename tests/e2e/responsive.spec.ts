@@ -16,12 +16,11 @@ const PUBLIC_ROUTES = [
   "/missing-route",
 ] as const;
 
+/** The material tiers the catalogue page renders: hero, filter panel and compact controls. */
 const MATERIAL_SELECTORS = [
   ".gd-glass",
-  ".gd-glass-card",
   ".gd-glass-panel",
   ".gd-glass-compact",
-  ".gd-glass-dark",
 ] as const;
 
 const MATERIAL_TOKENS = [
@@ -138,8 +137,8 @@ test.describe("mobile", () => {
 test.describe("desktop", () => {
   test.skip(({ isMobile }) => isMobile, "desktop-only behaviour");
 
-  test("liquid glass tiers preserve hierarchy", async ({ page }) => {
-    await page.goto("/");
+  test("material tiers preserve hierarchy", async ({ page }) => {
+    await page.goto("/negozio");
 
     const styles = await page.evaluate(() => {
       const read = (selector: string) => {
@@ -163,21 +162,19 @@ test.describe("desktop", () => {
 
       return {
         display: read(".gd-glass"),
-        card: read(".gd-glass-card"),
         panel: read(".gd-glass-panel"),
       };
     });
 
     expect(styles.display.backdrop).not.toBe("none");
-    expect(styles.card.backdrop).not.toBe("none");
     expect(styles.panel.backdrop).not.toBe("none");
     expect(styles.display.border).not.toBe("0px");
-    expect(styles.display.alpha).toBeLessThan(styles.card.alpha);
-    expect(styles.card.alpha).toBeLessThan(styles.panel.alpha);
+    // Text-bearing panels stay nearly opaque; the display tier lets the glows through.
+    expect(styles.display.alpha).toBeLessThan(styles.panel.alpha);
   });
 
-  test("all five material tiers expose the shared material tokens", async ({ page }) => {
-    await page.goto("/");
+  test("the catalogue's material tiers expose the shared material tokens", async ({ page }) => {
+    await page.goto("/negozio");
 
     const materials = await page.evaluate(
       ({ selectors, tokens }) =>
@@ -208,7 +205,7 @@ test.describe("desktop", () => {
     }
   });
 
-  test("public surfaces use their assigned liquid glass tier", async ({ page }) => {
+  test("public surfaces use their assigned material tier", async ({ page }) => {
     await page.addInitScript(() => {
       window.localStorage.setItem(
         "geardrop.cart",
@@ -217,9 +214,6 @@ test.describe("desktop", () => {
     });
 
     const surfaces = [
-      ["/", "[data-testid='hero-glass']", "gd-glass"],
-      ["/", ".gd-glass-dark.relative", "gd-glass-dark"],
-      ["/", "[data-testid='status-legend']", "gd-glass-compact"],
       ["/negozio", "[data-testid='catalog-hero']", "gd-glass"],
       ["/negozio", "[data-testid='filters-panel']", "gd-glass-panel"],
       ["/prodotto/cobalt-dragoon-2-60c", "[data-testid='product-gallery']", "gd-glass-panel"],
@@ -259,15 +253,15 @@ test.describe("desktop", () => {
     expect(motion.animation).toBe("0s");
   });
 
-  test("hero artwork is dominant without horizontal overflow", async ({ page }) => {
+  test("the new-release fan dominates the hero without horizontal overflow", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.goto("/");
 
-    const heroBox = await page.getByTestId("hero-glass").boundingBox();
-    const impactBox = await page.getByTestId("hero-impact").boundingBox();
+    const heroBox = await page.getByTestId("hero").boundingBox();
+    const fanBox = await page.getByTestId("hero").locator("ul").first().boundingBox();
     expect(heroBox).not.toBeNull();
-    expect(impactBox).not.toBeNull();
-    expect(impactBox!.width / heroBox!.width).toBeGreaterThanOrEqual(0.42);
+    expect(fanBox).not.toBeNull();
+    expect(fanBox!.width / heroBox!.width).toBeGreaterThanOrEqual(0.42);
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.reload();
@@ -277,7 +271,7 @@ test.describe("desktop", () => {
     expect(overflow).toBeLessThanOrEqual(1);
   });
 
-  test("storefront routes share the liquid glass vocabulary", async ({ page }) => {
+  test("storefront routes share the material vocabulary", async ({ page }) => {
     const routes = ["/", "/negozio", "/prodotto/cobalt-dragoon-2-60c", "/carrello", "/checkout", "/account"];
 
     for (const route of routes) {

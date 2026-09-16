@@ -168,7 +168,7 @@ on conflict (slug) do update set
   description = excluded.description,
   sort_order = excluded.sort_order;
 
-with seed(category_slug, slug, sku, preorder_allocation, name, tagline, description, price_cents, compare_at_price_cents, blade_type, rating, review_count, sort_order) as (
+with seed(category_slug, slug, sku, stock_quantity, name, tagline, description, price_cents, compare_at_price_cents, blade_type, rating, review_count, sort_order) as (
   values
 ${rows(productRows)}
 )
@@ -188,9 +188,9 @@ select
   seed.compare_at_price_cents::integer,
   'published'::public.publication_status,
   true,
-  0 as stock_quantity,
-  'preorder'::public.availability_override,
-  seed.preorder_allocation,
+  seed.stock_quantity,
+  null::public.availability_override,
+  0 as preorder_allocation,
   seed.blade_type::public.blade_type,
   seed.rating,
   seed.review_count,

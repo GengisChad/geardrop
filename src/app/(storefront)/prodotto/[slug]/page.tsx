@@ -111,7 +111,7 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
 
           {product.bladeType ? (
             <p className="mt-3 flex items-center gap-2">
-              <span className="gd-display inline-flex items-center gap-1.5 rounded-full bg-violet-tint px-2.5 py-1 text-[0.6875rem] font-bold tracking-wider text-violet">
+              <span className="gd-display inline-flex items-center gap-1.5 rounded-full bg-violet-tint px-2.5 py-1 text-[0.6875rem] font-bold tracking-wider text-violet-soft">
                 <Zap className="size-3" aria-hidden="true" />
                 {BLADE_TYPE_LABEL[product.bladeType]}
               </span>
@@ -139,7 +139,7 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
               return (
                 <li key={feature.title} className="flex items-start gap-3">
                   <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-violet-tint">
-                    <Icon className="size-4 text-violet" strokeWidth={2} aria-hidden="true" />
+                    <Icon className="size-4 text-violet-soft" strokeWidth={2} aria-hidden="true" />
                   </span>
                   <span>
                     <span className="gd-display block text-[0.6875rem] font-bold tracking-wider text-graphite">

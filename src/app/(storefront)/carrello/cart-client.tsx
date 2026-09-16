@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { cutoutSrc } from "@/data/assets";
 import Link from "next/link";
 import { AlertTriangle, ArrowRight, Trash2 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -62,7 +63,7 @@ export function CartClient() {
               <Link href={`/prodotto/${line.slug}`} className="shrink-0">
                 {line.image ? (
                   <Image
-                    src={line.image.src}
+                    src={cutoutSrc(line.image.src) ?? line.image.src}
                     alt={line.image.alt}
                     width={line.image.width}
                     height={line.image.height}
@@ -76,7 +77,7 @@ export function CartClient() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h2 className="truncate text-small font-bold text-graphite">
-                      <Link href={`/prodotto/${line.slug}`} className="hover:text-violet">
+                      <Link href={`/prodotto/${line.slug}`} className="hover:text-violet-soft">
                         {line.name}
                       </Link>
                     </h2>
@@ -135,7 +136,7 @@ export function CartClient() {
           Vai al checkout
           <ArrowRight className="size-4" aria-hidden="true" />
         </Button>
-        <Link href="/negozio" className="text-center text-small text-grey-600 transition-colors hover:text-violet">
+        <Link href="/negozio" className="text-center text-small text-grey-600 transition-colors hover:text-violet-soft">
           Continua ad acquistare
         </Link>
       </aside>

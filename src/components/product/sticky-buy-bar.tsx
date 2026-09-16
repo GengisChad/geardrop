@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { cutoutSrc } from "@/data/assets";
 import { AnimatePresence, motion } from "framer-motion";
 import { AddToCartButton } from "@/components/product/add-to-cart-button";
 import { StockBadge } from "@/components/ui/badge";
@@ -40,7 +41,7 @@ export function StickyBuyBar({ product }: { product: Product }) {
           <div className="mx-auto flex max-w-[1400px] items-center gap-3 px-4 py-3 sm:px-6">
             {image ? (
               <Image
-                src={image.src}
+                src={cutoutSrc(image.src) ?? image.src}
                 alt=""
                 aria-hidden="true"
                 width={image.width}

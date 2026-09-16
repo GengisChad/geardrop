@@ -29,13 +29,13 @@ export default async function CheckoutResultPage({ searchParams }: { searchParam
     <div className="mx-auto max-w-[1400px] px-4 py-10 sm:px-6">
       <div
         data-testid="checkout-result"
-        className="mx-auto mt-10 flex max-w-lg flex-col items-center rounded-[--radius-card] border border-grey-200 bg-white px-6 py-14 text-center"
+        className="gd-hud mx-auto mt-10 flex max-w-lg flex-col items-center bg-surface/80 px-6 py-14 text-center"
       >
         {completed ? <ClearCart /> : null}
         {paid ? (
           <CheckCircle2 className="size-14 text-available" strokeWidth={1.5} aria-hidden="true" />
         ) : completed ? (
-          <Clock className="size-14 text-violet" strokeWidth={1.5} aria-hidden="true" />
+          <Clock className="size-14 text-violet-soft" strokeWidth={1.5} aria-hidden="true" />
         ) : (
           <AlertTriangle className="size-14 text-soldout" strokeWidth={1.5} aria-hidden="true" />
         )}

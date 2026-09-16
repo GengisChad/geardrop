@@ -35,7 +35,7 @@ MAPPING = {
     "pegasusblastpack.webp": "blast-pegasus-a-tr",
     "dropattack.jpg": "drop-attack-battle-set",
     "sneakattack.jpg": "sneak-attack-battle-set",
-    "gloryvalkerion.jpg": "glory-valkerion-lf",
+    "gloryvalkyrie.jpg": "glory-valkyrie-lf",
     "hurricaneenlil.jpg": "hurricane-enlil-is-7-55t",
     "shatterhorus.jpg": "shatter-horus-9-65gb",
 }

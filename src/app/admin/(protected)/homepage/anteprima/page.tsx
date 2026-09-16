@@ -4,6 +4,7 @@ import styles from "@/components/admin/homepage/homepage.module.css";
 import { requireAdminAccess } from "@/lib/admin/access";
 import { listHomepageSections } from "@/lib/content/repository";
 import { getCommerceProvider } from "@/lib/commerce/provider";
+import { newReleases } from "@/lib/home/product-selection";
 import { resolveHomepageSections } from "@/lib/storefront/homepage-resolver";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -28,10 +29,14 @@ export default async function AdminHomepagePreviewPage() {
     commerce.listProducts({ perPage: 100 }),
   ]);
 
-  const resolved = hero ? await resolveHomepageSections(sections, commerce) : [];
-  const fallback: ManagedHomepageFallback | null = hero
+  // Same card selection as the public homepage: new releases first, else the leading featured products.
+  const releases = newReleases(all.items);
+  const resolved = all.items.length > 0 ? await resolveHomepageSections(sections, commerce) : [];
+  const fallback: ManagedHomepageFallback | null = all.items.length > 0
     ? {
-        heroProduct: hero,
+        heroProducts: (releases.length > 0 ? releases : featured.items).slice(0, 3),
+        heroIsNewRelease: releases.length > 0,
+        bundleHero: hero,
         bundle,
         featured: featured.items,
         latest: latest.items,
@@ -53,7 +58,7 @@ export default async function AdminHomepagePreviewPage() {
       {sections.length === 0 || !fallback ? (
         <div className={styles.emptyState}>
           <strong>Nessuna sezione</strong>
-          <p>Il database è vuoto o manca il prodotto di riferimento. Crea la prima sezione dall’editor.</p>
+          <p>Il database è vuoto o il catalogo non ha prodotti pubblicati. Crea la prima sezione dall’editor.</p>
         </div>
       ) : (
         <main>

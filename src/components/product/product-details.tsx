@@ -46,7 +46,11 @@ export function ProductDetails({ product }: { product: Product }) {
       label: "Spedizione e resi",
       content: (
         <div className="flex flex-col gap-2 leading-relaxed">
-          <p>Per i pre-ordini, GEAR//DROP affida il pacco al corriere entro 14 giorni dalla conferma.</p>
+          {product.stock === "pre-ordine" ? (
+            <p>Per i pre-ordini, GEAR//DROP affida il pacco al corriere entro 14 giorni dalla conferma.</p>
+          ) : (
+            <p>Dopo la conferma del pagamento GEAR//DROP prepara il pacco e lo affida al corriere.</p>
+          )}
           <p>I tempi di transito del corriere iniziano dalla spedizione e dipendono dal servizio selezionato.</p>
           <p>Hai 30 giorni per cambiare idea: il reso è semplice e tracciato.</p>
         </div>
@@ -119,7 +123,7 @@ function AccordionItem({ label, content }: { label: string; content: React.React
       >
         <span className="gd-display text-small font-bold tracking-wider text-graphite">{label}</span>
         <ChevronDown
-          className={cn("size-5 shrink-0 text-violet transition-transform duration-300", open && "rotate-180")}
+          className={cn("size-5 shrink-0 text-violet-soft transition-transform duration-300", open && "rotate-180")}
           aria-hidden="true"
         />
       </button>

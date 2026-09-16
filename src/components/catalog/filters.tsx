@@ -81,7 +81,7 @@ export function Filters({ facets, lockedCategory }: FiltersProps) {
     <div data-testid="filters" aria-busy={isPending} className={cn("flex flex-col gap-6", isPending && "opacity-70")}>
       <div className="flex items-center justify-between">
         <p className="gd-display flex items-center gap-2 text-small font-bold tracking-wider text-graphite">
-          <SlidersHorizontal className="size-4 text-violet" aria-hidden="true" />
+          <SlidersHorizontal className="size-4 text-violet-soft" aria-hidden="true" />
           Filtri
         </p>
         {activeCount > 0 ? (
@@ -89,7 +89,7 @@ export function Filters({ facets, lockedCategory }: FiltersProps) {
             type="button"
             data-testid="reset-filters"
             onClick={() => apply({ stock: [], type: [], max: null })}
-            className="gd-display text-[0.6875rem] font-bold tracking-wider text-violet hover:text-violet-ink"
+            className="gd-display text-[0.6875rem] font-bold tracking-wider text-violet-soft hover:text-white"
           >
             Resetta tutto
           </button>
@@ -120,7 +120,7 @@ export function Filters({ facets, lockedCategory }: FiltersProps) {
               <li key={facet.value}>
                 <a
                   href={`/negozio/${facet.value}`}
-                  className="flex items-center justify-between py-2 text-small text-grey-600 transition-colors hover:text-violet"
+                  className="flex items-center justify-between py-2 text-small text-grey-600 transition-colors hover:text-violet-soft"
                 >
                   {CATEGORY_LABEL[facet.value]}
                   <span className="tabular text-[0.6875rem] text-grey-400">{facet.count}</span>
@@ -215,7 +215,7 @@ function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }
       <button
         type="button"
         onClick={onRemove}
-        className="inline-flex items-center gap-1.5 rounded-full border border-violet/40 bg-violet-tint px-2.5 py-1 text-[0.6875rem] font-semibold text-violet transition-colors hover:border-violet"
+        className="inline-flex items-center gap-1.5 rounded-full border border-violet/40 bg-violet-tint px-2.5 py-1 text-[0.6875rem] font-semibold text-violet-soft transition-colors hover:border-violet"
       >
         {label}
         <X className="size-3" aria-hidden="true" />

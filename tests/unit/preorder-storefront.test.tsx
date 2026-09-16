@@ -21,7 +21,7 @@ describe("preorder quantity presentation", () => {
   it("renders the current allocation and caps the PDP control at the lower availability", () => {
     const html = renderToStaticMarkup(
       <Providers>
-        <BuyPanel product={{ ...product, availableQuantity: 3 }} />
+        <BuyPanel product={{ ...product, stock: "pre-ordine", availableQuantity: 3 }} />
       </Providers>,
     );
 
@@ -54,8 +54,9 @@ describe("truthful public presentation", () => {
   it("renders the neutral preorder homepage without bestseller, Club, bundle, or rating decoration", async () => {
     const html = renderToStaticMarkup(<Providers>{await HomePage()}</Providers>);
 
-    expect(html).toContain("Pre-ordini aperti");
-    expect(html).toContain("Esplora il catalogo");
+    expect(html).toContain("Disponibili ora");
+    expect(html).toContain("Tutto il drop");
+    expect(html).toContain("Scegli. Carica.");
     expect(html).not.toContain("Più venduti");
     expect(html).not.toContain("Scelti per il competitivo");
     expect(html).not.toContain("GEAR//DROP Club");
@@ -88,12 +89,13 @@ describe("truthful public presentation", () => {
     const html = renderToStaticMarkup(<Footer content={chrome} />);
 
     expect(html).toContain("P.IVA 18464231002");
+    expect(html).toContain("Alessia Brunetti");
     expect(html).not.toContain("18655971002");
     expect(html).not.toMatch(/gear sports/i);
   });
 
   it("distinguishes preorder dispatch from carrier transit in rendered storefront copy", () => {
-    const html = renderToStaticMarkup(<Providers><BuyPanel product={product} /></Providers>);
+    const html = renderToStaticMarkup(<Providers><BuyPanel product={{ ...product, stock: "pre-ordine" }} /></Providers>);
 
     expect(html).toContain("entro 14 giorni dalla conferma");
     expect(html).toContain("transito del corriere");

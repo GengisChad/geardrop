@@ -72,7 +72,7 @@ export function Carousel({ children, arrows = true, dots = false, label, classNa
               aria-current={index === selected}
               className={cn(
                 "h-1.5 rounded-full transition-all duration-300",
-                index === selected ? "w-8 bg-lime" : "w-4 bg-grey-300 hover:bg-grey-400",
+                index === selected ? "w-8 bg-lime" : "w-4 bg-white/15 hover:bg-white/30",
               )}
             />
           ))}
@@ -102,8 +102,8 @@ function CarouselArrow({
       aria-label={direction === "prev" ? "Precedente" : "Successivo"}
       className={cn(
         "absolute top-1/2 z-10 hidden size-9 -translate-y-1/2 items-center justify-center rounded-full",
-        "gd-glass-compact text-graphite",
-        "transition-all duration-200 hover:border-violet hover:text-violet",
+        "border border-white/15 bg-void/85 text-graphite",
+        "transition-all duration-200 hover:border-lime hover:bg-lime hover:text-void",
         "disabled:pointer-events-none disabled:opacity-0",
         "sm:flex",
         className,

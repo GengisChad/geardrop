@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { cutoutSrc } from "@/data/assets";
 import Link from "next/link";
 import { Crosshair, Gauge, Shield, Sparkles } from "lucide-react";
 import { SectionHeading } from "@/components/ui/section-heading";
@@ -37,7 +38,7 @@ export function CompetitivePicks({ products }: { products: readonly Product[] })
             >
               <div className="flex items-center gap-3">
                 <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-violet-tint">
-                  <Icon className="size-4.5 text-violet" strokeWidth={2} aria-hidden="true" />
+                  <Icon className="size-4.5 text-violet-soft" strokeWidth={2} aria-hidden="true" />
                 </span>
                 <span>
                   <h3 className="text-small font-bold tracking-wider text-graphite">{BLADE_TYPE_LABEL[type]}</h3>
@@ -54,7 +55,7 @@ export function CompetitivePicks({ products }: { products: readonly Product[] })
                         <span className="gd-product-plate block overflow-hidden rounded-xl p-2">
                           {image ? (
                             <Image
-                              src={image.src}
+                              src={cutoutSrc(image.src) ?? image.src}
                               alt=""
                               aria-hidden="true"
                               width={image.width}
@@ -64,7 +65,7 @@ export function CompetitivePicks({ products }: { products: readonly Product[] })
                             />
                           ) : null}
                         </span>
-                        <span className="mt-2 block text-[0.6875rem] font-medium leading-tight text-grey-600 transition-colors group-hover:text-violet">
+                        <span className="mt-2 block text-[0.6875rem] font-medium leading-tight text-grey-600 transition-colors group-hover:text-violet-soft">
                           {product.name}
                         </span>
                       </Link>
@@ -75,7 +76,7 @@ export function CompetitivePicks({ products }: { products: readonly Product[] })
 
               <Link
                 href={`/negozio/beyblade-x?type=${type}`}
-                className="gd-display mt-4 block text-center text-[0.6875rem] font-bold tracking-wider text-violet hover:text-violet-ink"
+                className="gd-display mt-4 block text-center text-[0.6875rem] font-bold tracking-wider text-violet-soft hover:text-white"
               >
                 Scopri
               </Link>

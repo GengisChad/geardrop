@@ -25,14 +25,15 @@ describe("legal pages", () => {
     }
   });
 
-  it("identifies the seller only by VAT number, registered office and contact email", () => {
+  it("identifies the seller by holder, registered office, VAT number and contact email", () => {
     for (const slug of SLUGS) {
       const text = pageText(slug);
+      expect(text, slug).toContain("Alessia Brunetti, impresa individuale");
       expect(text, slug).toContain("18464231002");
       expect(text, slug).toContain("Via Fratelli Cervi 2, 00065 Fiano Romano (RM)");
       expect(text, slug).toContain("gengischad@gmail.com");
-      // By the owner's choice no personal registry data is published.
-      expect(text, slug).not.toMatch(/codice fiscale|\bPEC\b|\bREA\b|titolare di impresa/i);
+      // Tax code, PEC and REA stay off the site by the owner's choice.
+      expect(text, slug).not.toMatch(/codice fiscale|\bPEC\b|\bREA\b/i);
     }
   });
 

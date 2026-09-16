@@ -8,22 +8,24 @@ const buyPanel = (page: Page) => page.locator("#buy-panel");
 
 
 test.describe("home", () => {
-  test("renders the hero, the brand lockup, the new releases and one featured shelf", async ({ page }) => {
+  test("renders the Holo Drop hero, the arena and the whole drop", async ({ page }) => {
     await page.goto("/");
 
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("Pronti alla battaglia");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Le nuove uscite sono atterrate");
     await expect(page.getByRole("link", { name: "GEAR//DROP — vai alla home" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Nuove uscite" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "In evidenza" })).toBeVisible();
-    await expect(page.getByTestId("product-carousel")).toHaveCount(2);
+    await expect(page.getByRole("heading", { name: "Scegli. Carica. Lancia." })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Tutto il drop" })).toBeVisible();
+    await expect(page.getByTestId("product-carousel")).toHaveCount(0);
     await expect(page.getByTestId("product-card").first()).toBeVisible();
   });
 
-  test("uses the supplied logo asset rather than redrawn type", async ({ page }) => {
+  test("pairs the supplied emblem with the approved wordmark", async ({ page }) => {
     await page.goto("/");
-    // The wordmark must stay an image: audit §7.1 forbids rebuilding it with a font.
-    const logo = page.getByRole("link", { name: "GEAR//DROP — vai alla home" }).locator("img");
-    await expect(logo).toHaveAttribute("src", /lockup/);
+    // The light lockup cannot show on the dark theme; the owner approved the emblem beside
+    // the wordmark set in the display face (Holo Drop, 2026-09-15). The emblem stays the asset.
+    const logo = page.getByRole("link", { name: "GEAR//DROP — vai alla home" });
+    await expect(logo.locator("img")).toHaveAttribute("src", /emblem/);
+    await expect(logo).toContainText(/gear\/\/drop/i);
   });
 
   test("navigates from a card to the product page", async ({ page }) => {
@@ -64,7 +66,7 @@ test.describe("catalogue", () => {
     };
 
     const panel = await openFilters();
-    // No reviewed preorder is sold out; that zero-count facet is intentionally disabled.
+    // No reviewed product is sold out; that zero-count facet is intentionally disabled.
     // Attack blades and arena sets provide a real, nonempty filter subset.
     await expect(panel.getByTestId("filter-stock-esaurito")).toBeDisabled();
     await panel.getByTestId("filter-type-attacco").check();
@@ -113,16 +115,17 @@ test.describe("product page", () => {
   });
 
   test("a removed catalogue product cannot still be purchased", async ({ page }) => {
-    // All current products are preorders. The sold-out CTA is covered with an explicit
+    // All current products are available. The sold-out CTA is covered with an explicit
     // product fixture in preorder-storefront.test.tsx; archived routes must be real 404s.
     const response = await page.goto("/prodotto/phoenix-wing-9-60gf");
     expect(response?.status()).toBe(404);
     await expect(page.getByTestId("add-to-cart")).toHaveCount(0);
   });
 
-  test("a pre-order product offers pre-order", async ({ page }) => {
+  test("an available product adds to the cart, not a pre-order", async ({ page }) => {
     await page.goto("/prodotto/sneak-attack-battle-set");
-    await expect(buyPanel(page).getByTestId("add-to-cart")).toContainText("Pre-ordina");
+    await expect(buyPanel(page).getByTestId("add-to-cart")).toContainText("Aggiungi al carrello");
+    await expect(page.locator("body")).not.toContainText("Pre-ordina");
   });
 
   test("publishes Product structured data matching the visible price", async ({ page }) => {
@@ -131,7 +134,7 @@ test.describe("product page", () => {
     const data = JSON.parse(raw);
     expect(data["@type"]).toBe("Product");
     expect(data.offers.price).toBe("25.50");
-    expect(data.offers.availability).toBe("https://schema.org/PreOrder");
+    expect(data.offers.availability).toBe("https://schema.org/InStock");
   });
 
   test("an unknown product 404s", async ({ page }) => {
