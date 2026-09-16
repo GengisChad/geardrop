@@ -19,7 +19,7 @@ describe("reviewed catalogue", () => {
       { slug: "blast-pegasus-a-tr", price: 2950, stock: "disponibile", availableQuantity: 30, rating: 0, reviewCount: 0 },
       { slug: "drop-attack-battle-set", price: 4650, stock: "disponibile", availableQuantity: 30, rating: 0, reviewCount: 0 },
       { slug: "sneak-attack-battle-set", price: 4500, stock: "disponibile", availableQuantity: 30, rating: 0, reviewCount: 0 },
-      { slug: "glory-valkyrie-lf", price: 3000, stock: "disponibile", availableQuantity: 8, rating: 0, reviewCount: 0 },
+      { slug: "glory-valkerion-lf", price: 3000, stock: "disponibile", availableQuantity: 8, rating: 0, reviewCount: 0 },
       { slug: "hurricane-enlil-is-7-55t", price: 2000, stock: "disponibile", availableQuantity: 10, rating: 0, reviewCount: 0 },
       { slug: "shatter-horus-9-65gb", price: 2000, stock: "disponibile", availableQuantity: 8, rating: 0, reviewCount: 0 },
     ]);

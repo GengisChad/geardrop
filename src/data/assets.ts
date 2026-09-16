@@ -89,12 +89,12 @@ export const productImages = {
       alt: "Beyblade X Sneak Attack Battle Set: stadio verde, due trottole e due lanciatori",
     },
   ],
-  "glory-valkyrie-lf": [
+  "glory-valkerion-lf": [
     {
-      src: "/products/glory-valkyrie-lf.webp",
+      src: "/products/glory-valkerion-lf.webp",
       width: 1000,
       height: 1000,
-      alt: "Confezione Beyblade X Glory Valkyrie LF bianca e oro con lanciatore e trottola",
+      alt: "Confezione Beyblade X Glory Valkerion LF bianca e oro con lanciatore e trottola",
     },
   ],
   "hurricane-enlil-is-7-55t": [
@@ -132,7 +132,7 @@ export function cutoutSrc(src: string): string | null {
 
 /** The loose spinning top cropped from each Infinity Starter tile, launched in the homepage Arena. */
 export const productTops: Readonly<Partial<Record<string, string>>> = {
-  "glory-valkyrie-lf": "/products/tops/glory-valkyrie-lf.webp",
+  "glory-valkerion-lf": "/products/tops/glory-valkerion-lf.webp",
   "hurricane-enlil-is-7-55t": "/products/tops/hurricane-enlil-is-7-55t.webp",
   "shatter-horus-9-65gb": "/products/tops/shatter-horus-9-65gb.webp",
 };

@@ -23,7 +23,7 @@ select results_eq(
 select results_eq(
   $$select count(*)::bigint from public.products
     where stock_quantity <> 0
-      and slug not in ('cobalt-dragoon-2-60c', 'soar-phoenix-9-60gf', 'saber-samurai-2-70l', 'blast-pegasus-a-tr', 'drop-attack-battle-set', 'sneak-attack-battle-set', 'glory-valkyrie-lf', 'hurricane-enlil-is-7-55t', 'shatter-horus-9-65gb')$$,
+      and slug not in ('cobalt-dragoon-2-60c', 'soar-phoenix-9-60gf', 'saber-samurai-2-70l', 'blast-pegasus-a-tr', 'drop-attack-battle-set', 'sneak-attack-battle-set', 'glory-valkerion-lf', 'hurricane-enlil-is-7-55t', 'shatter-horus-9-65gb')$$,
   array[0::bigint],
   'only the owner-reviewed catalogue carries stock'
 );
