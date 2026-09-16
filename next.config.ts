@@ -10,10 +10,11 @@ const nextConfig: NextConfig = {
     qualities: [75, 90],
   },
   typedRoutes: true,
-  // Glory Valkyrie LF was first published under a misspelled slug; keep shared links working.
+  // Glory Valkerion LF was briefly renamed "Glory Valkyrie"; keep those links working. Temporary, so
+  // browsers that cached the earlier opposite redirect do not keep a permanent loop.
   async redirects() {
     return [
-      { source: "/prodotto/glory-valkerion-lf", destination: "/prodotto/glory-valkyrie-lf", permanent: true },
+      { source: "/prodotto/glory-valkyrie-lf", destination: "/prodotto/glory-valkerion-lf", permanent: false },
     ];
   },
   experimental: {

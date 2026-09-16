@@ -35,7 +35,8 @@ MAPPING = {
     "pegasusblastpack.webp": "blast-pegasus-a-tr",
     "dropattack.jpg": "drop-attack-battle-set",
     "sneakattack.jpg": "sneak-attack-battle-set",
-    "gloryvalkyrie.jpg": "glory-valkyrie-lf",
+    # glory-valkerion-lf is photographed on a real background: scripts/cutout_products.py cuts it
+    # along its outline and writes its tile too.
     "hurricaneenlil.jpg": "hurricane-enlil-is-7-55t",
     "shatterhorus.jpg": "shatter-horus-9-65gb",
 }

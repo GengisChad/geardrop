@@ -8,11 +8,8 @@ function readMigration(name: string): string {
 }
 
 const migration = readMigration("20260915120000_publish_infinity_starter_preorders.sql");
-// The rename migration later moves glory-valkerion-lf to glory-valkyrie-lf in place.
-const publishedCatalogue = (readMigration("20260904143000_publish_preorder_catalog.sql") + migration).replaceAll(
-  "'glory-valkerion-lf'",
-  "'glory-valkyrie-lf'",
-);
+// Glory was renamed to "Valkyrie" and later restored, so the published slugs match the catalogue again.
+const publishedCatalogue = readMigration("20260904143000_publish_preorder_catalog.sql") + migration;
 
 const added = new Map([
   ["glory-valkerion-lf", 8],

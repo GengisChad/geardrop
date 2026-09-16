@@ -13,7 +13,7 @@ const palette = (f1: string, f2: string, f3: string, f4: string, glow: string): 
 
 /** Foil colours taken from each pack's own artwork, so a card shimmers like its box. */
 const BY_SLUG: Readonly<Record<string, HoloPalette>> = {
-  "glory-valkyrie-lf": palette("#fff3c4", "#c6ff00", "#9d6bff", "#ffd36b", "rgba(255, 211, 107, 0.4)"),
+  "glory-valkerion-lf": palette("#fff3c4", "#c6ff00", "#9d6bff", "#ffd36b", "rgba(255, 211, 107, 0.4)"),
   "hurricane-enlil-is-7-55t": palette("#c9fbff", "#3cf0ff", "#3a5bff", "#c6ff00", "rgba(60, 240, 255, 0.4)"),
   "shatter-horus-9-65gb": palette("#ffd3db", "#ff5470", "#7a3cff", "#e8ecf5", "rgba(255, 84, 112, 0.4)"),
   "cobalt-dragoon-2-60c": palette("#d6f0ff", "#4db8ff", "#3a5bff", "#c6ff00", "rgba(77, 184, 255, 0.3)"),
@@ -77,7 +77,7 @@ export function displayName(name: string): string {
   return name.replaceAll("-", "-⁠");
 }
 
-/** A name without its trailing part code, for tight labels: "Glory Valkyrie LF" → "Glory Valkyrie". */
+/** A name without its trailing part code, for tight labels: "Glory Valkerion LF" → "Glory Valkerion". */
 export function shortName(name: string): string {
   const words = name.split(" ");
   return words.length > 2 ? words.slice(0, 2).join(" ") : name;

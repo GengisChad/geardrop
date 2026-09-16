@@ -3,6 +3,9 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { PRODUCTS } from "@/data/catalog";
 
+/** The conversion ran while Glory was briefly named "Valkyrie"; a later migration restored the slug. */
+const RENAMED: Readonly<Record<string, string>> = { "glory-valkyrie-lf": "glory-valkerion-lf" };
+
 const migration = readFileSync(
   join(process.cwd(), "supabase/migrations/20260916100000_convert_catalogue_to_stock.sql"),
   "utf8",
@@ -11,7 +14,7 @@ const migration = readFileSync(
 describe("catalogue stock conversion migration", () => {
   it("converts exactly the catalogue products, which the storefront sells as available", () => {
     const slugList = migration.match(/insert into catalogue_stock_slugs \(slug\) values([\s\S]+?);/)?.[1] ?? "";
-    const slugs = [...slugList.matchAll(/'([^']+)'/g)].map((match) => match[1]);
+    const slugs = [...slugList.matchAll(/'([^']+)'/g)].map((match) => RENAMED[match[1]!] ?? match[1]);
 
     expect([...slugs].sort()).toEqual(PRODUCTS.map((product) => product.slug).sort());
     expect(PRODUCTS.every((product) => product.stock === "disponibile")).toBe(true);
