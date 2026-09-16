@@ -17,6 +17,12 @@ export const brand = {
   emblem: "/brand/emblem.png",
   emblem192: "/brand/emblem-192.png",
   emblem512: "/brand/emblem-512.png",
+  /**
+   * The emblem for the social share card: the full emblem with only the painted checkerboard
+   * inside its central hole made transparent, so the dark card shows through. Nothing else of
+   * the mark is changed.
+   */
+  emblemOpenGraph: "/brand/emblem-open-graph.png",
   appleIcon: "/brand/emblem-180.png",
 } as const;
 

@@ -9,6 +9,7 @@ import { ManagedHomepage, type ManagedHomepageFallback } from "@/components/cont
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { storefrontContent } from "@/lib/content/provider";
 import { HOME_FEATURED_LIMIT, newReleases } from "@/lib/home/product-selection";
+import { jsonLd, siteJsonLd } from "@/lib/seo";
 import { resolveHomepageSections } from "@/lib/storefront/homepage-resolver";
 
 export const metadata: Metadata = {
@@ -49,12 +50,20 @@ export default async function HomePage() {
     all: all.items,
   };
 
+  // Tells Google who sells here and how to search the shop (sitelinks search box).
+  const structuredData = <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(siteJsonLd()) }} />;
+
   // Managed path: the CMS controls order, copy, visibility and product targets; the same
   // Holo Drop components render them. When no managed content is published, the approved
   // composition below stands in.
   if (managed && managed.length > 0) {
     const sections = await resolveHomepageSections(managed, commerce);
-    return <ManagedHomepage sections={sections} fallback={fallback} />;
+    return (
+      <>
+        {structuredData}
+        <ManagedHomepage sections={sections} fallback={fallback} />
+      </>
+    );
   }
 
   // New releases open the arsenal, then the rest of the catalogue in its own order.
@@ -62,6 +71,7 @@ export default async function HomePage() {
 
   return (
     <>
+      {structuredData}
       {/* The hero holds the LCP image, so it is never revealed on scroll: it paints at once. */}
       <Hero products={heroProducts} isNewRelease={releases.length > 0} />
       <Arena products={heroProducts} />

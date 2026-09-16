@@ -43,6 +43,7 @@ describe("legal pages", () => {
     await expect(generateMetadata({ params })).resolves.toEqual({
       title: "Termini e condizioni",
       description: LEGAL_PAGES.termini.lead,
+      alternates: { canonical: "/legale/termini" },
     });
     await expect(LegalePage({ params })).resolves.toBeTruthy();
   });

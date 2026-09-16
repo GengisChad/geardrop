@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   if (!isLegalSlug(slug)) return { title: "Pagina non trovata" };
   const page = await storefrontContent.getPage(slug);
   if (!page) return { title: "Pagina non trovata" };
-  return { title: page.title, description: page.lead };
+  return { title: page.title, description: page.lead, alternates: { canonical: `/legale/${slug}` } };
 }
 
 export default async function LegalePage({ params }: { params: Promise<Params> }) {
