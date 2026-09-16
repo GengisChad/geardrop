@@ -4,9 +4,9 @@ import { generateSupabaseSeed } from "../../scripts/generate-supabase-seed";
 describe("Supabase catalogue seed", () => {
   const sql = generateSupabaseSeed().toLowerCase();
 
-  it("is idempotent and inserts new products without stock; stock only arrives with a recorded movement", () => {
+  it("is idempotent and creates new products with the reviewed stock", () => {
     expect(sql).toContain("on conflict (slug) do update");
-    expect(sql).toContain("0 as stock_quantity");
+    expect(sql).toContain("seed.stock_quantity,");
     expect(sql).toContain("0 as preorder_allocation");
     expect(sql).not.toContain("stock_quantity = excluded.stock_quantity");
   });

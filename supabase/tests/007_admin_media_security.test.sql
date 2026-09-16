@@ -98,7 +98,7 @@ select throws_ok(
   'editor cannot adjust inventory'
 );
 select results_eq(
-  $$select count(*)::bigint from public.inventory_movements where order_id is null and reason <> 'initial'$$,
+  $$select count(*)::bigint from public.inventory_movements where order_id is null and note = 'media security fixture'$$,
   array[1::bigint],
   'editor can still read permitted movement history'
 );

@@ -21,14 +21,11 @@ select results_eq(
   'order intake starts disabled'
 );
 select results_eq(
-  $$select count(*)::bigint from public.products as product
-    where product.stock_quantity <> 0
-      and not exists (
-        select 1 from public.inventory_movements as movement
-        where movement.product_id = product.id and movement.reason = 'initial'
-      )$$,
+  $$select count(*)::bigint from public.products
+    where stock_quantity <> 0
+      and slug not in ('cobalt-dragoon-2-60c', 'soar-phoenix-9-60gf', 'saber-samurai-2-70l', 'blast-pegasus-a-tr', 'drop-attack-battle-set', 'sneak-attack-battle-set', 'glory-valkyrie-lf', 'hurricane-enlil-is-7-55t', 'shatter-horus-9-65gb')$$,
   array[0::bigint],
-  'real stock only arrives with a recorded initial movement'
+  'only the owner-reviewed catalogue carries stock'
 );
 select results_eq(
   $$

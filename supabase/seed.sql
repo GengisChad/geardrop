@@ -33,7 +33,7 @@ on conflict (slug) do update set
   description = excluded.description,
   sort_order = excluded.sort_order;
 
-with seed(category_slug, slug, sku, reviewed_quantity, name, tagline, description, price_cents, compare_at_price_cents, blade_type, rating, review_count, sort_order) as (
+with seed(category_slug, slug, sku, stock_quantity, name, tagline, description, price_cents, compare_at_price_cents, blade_type, rating, review_count, sort_order) as (
   values
   ('beyblade-x', 'cobalt-dragoon-2-60c', 'COBALT-DRAGOON-2-60C', 10, 'Cobalt Dragoon 2-60C', 'Attacco left-spin. Smash devastante.', 'Cobalt Dragoon 2-60C è una trottola d''attacco a rotazione sinistra (left-spin): quattro lame inclinate verso l''alto concentrano uno Smash Attack estremo, mentre il Ratchet 2-60 e il Bit Cyclone bilanciano velocità e stabilità. Lo starter include il lanciatore a corda left-spin dedicato.', 2550, null, 'attacco', 0, 0, 0),
   ('beyblade-x', 'soar-phoenix-9-60gf', 'SOAR-PHOENIX-9-60GF', 60, 'Soar Phoenix 9-60GF', 'Upper attack. Colpisci verso l''alto.', 'Soar Phoenix 9-60GF è una trottola d''attacco a tre lame che salgono verso l''alto per un Upper Attack capace di sollevare l''avversario, unito allo Smash che lo spinge fuori arena. Tra le blade più pesanti della serie. Lo starter include il lanciatore a corda.', 3200, null, 'attacco', 0, 0, 1),
@@ -61,7 +61,7 @@ select
   seed.compare_at_price_cents::integer,
   'published'::public.publication_status,
   true,
-  0 as stock_quantity,
+  seed.stock_quantity,
   null::public.availability_override,
   0 as preorder_allocation,
   seed.blade_type::public.blade_type,

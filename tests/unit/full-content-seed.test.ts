@@ -47,10 +47,10 @@ describe("full reviewed storefront seed", () => {
     expect(normalized).toContain("on conflict (column_key) do update");
   });
 
-  it("preserves operational state while new catalogue rows start unavailable", () => {
+  it("preserves operational state and stocks only new catalogue rows", () => {
     expect(normalized).toContain("gd_seed_operated_database");
     expect(normalized).toContain("exists(select 1 from public.audit_events)");
-    expect(normalized).toContain("0 as stock_quantity");
+    expect(normalized).toContain("seed.stock_quantity,");
     expect(normalized).toContain("values (true, false)");
     expect(normalized).not.toContain("stock_quantity = excluded.stock_quantity");
     expect(normalized).not.toContain("accept_orders = excluded.accept_orders");
