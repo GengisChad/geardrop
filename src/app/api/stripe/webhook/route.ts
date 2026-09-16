@@ -22,8 +22,15 @@ const PAID_EVENTS = new Set(["checkout.session.completed", "checkout.session.asy
 export async function POST(request: Request) {
   const webhookSecret = process.env["STRIPE_WEBHOOK_SECRET"]?.trim();
   const stripeKey = process.env["STRIPE_SECRET_KEY"]?.trim();
-  if (!webhookSecret || !stripeKey) {
-    console.error("[stripe-webhook] STRIPE_WEBHOOK_SECRET or STRIPE_SECRET_KEY is missing");
+  const missing = [
+    ["STRIPE_WEBHOOK_SECRET", webhookSecret],
+    ["STRIPE_SECRET_KEY", stripeKey],
+    ["NEXT_PUBLIC_SUPABASE_URL", process.env["NEXT_PUBLIC_SUPABASE_URL"]?.trim()],
+    ["SUPABASE_SECRET_KEY", process.env["SUPABASE_SECRET_KEY"]?.trim()],
+  ].flatMap(([name, value]) => (value ? [] : [name]));
+  if (!webhookSecret || !stripeKey || missing.length > 0) {
+    // 503 keeps Stripe retrying, so orders paid before the variables are set still arrive.
+    console.error(`[stripe-webhook] missing environment: ${missing.join(", ")}`);
     return NextResponse.json({ error: "not_configured" }, { status: 503 });
   }
 
