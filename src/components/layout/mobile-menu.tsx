@@ -126,7 +126,7 @@ export function MobileMenu({ navigation }: { readonly navigation: readonly Store
         aria-label="Apri il menu"
         aria-expanded={open}
         data-testid="mobile-menu-open"
-        className="inline-flex size-10 items-center justify-center rounded-full transition-colors hover:bg-white/10 lg:hidden"
+        className="inline-flex size-10 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-white/10 lg:hidden"
       >
         <Menu className="size-6 text-graphite" strokeWidth={2} aria-hidden="true" />
       </button>

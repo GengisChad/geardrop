@@ -8,7 +8,6 @@ import { AddToCartButton } from "@/components/product/add-to-cart-button";
 import { brand, brandSize, cutoutSrc } from "@/data/assets";
 import { formatPrice } from "@/lib/format";
 import { availabilityLine, displayName, holoStyle, productLine } from "@/lib/holo";
-import { STOCK_CTA, isPurchasable } from "@/lib/labels";
 import type { Product } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
 
@@ -149,9 +148,6 @@ export function HoloCard({ product, position, total, flipped, onFlip, auto = fal
                       name={product.name}
                       stock={product.stock}
                       emphasis="primary"
-                      {...(isPurchasable(product.stock)
-                        ? { label: `${STOCK_CTA[product.stock]} · ${formatPrice(product.price)}` }
-                        : {})}
                     />
                   </div>
                   <button

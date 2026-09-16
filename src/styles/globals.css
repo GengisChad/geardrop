@@ -923,6 +923,42 @@
 }
 
 /* ==========================================================================
+   Fixed bottom bars
+   Below lg the tab bar is fixed to the bottom edge, and product pages add the sticky buy
+   bar above it. The end of every page and the toast stack clear whatever is showing, so
+   the footer and a fresh notification are never painted underneath.
+   ========================================================================== */
+
+@layer components {
+  .gd-page-end,
+  .gd-toast-stack {
+    --gd-bottom-bars: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  body:has([data-testid="sticky-buy-bar"]) :is(.gd-page-end, .gd-toast-stack) {
+    --gd-bottom-bars: calc(9rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .gd-page-end {
+    padding-bottom: var(--gd-bottom-bars);
+  }
+
+  .gd-toast-stack {
+    bottom: calc(var(--gd-bottom-bars) + 0.75rem);
+  }
+
+  @media (min-width: 1024px) {
+    .gd-page-end {
+      padding-bottom: 0;
+    }
+
+    body:has([data-testid="sticky-buy-bar"]) .gd-page-end {
+      padding-bottom: 5rem;
+    }
+  }
+}
+
+/* ==========================================================================
    Hero fan and touch sweep
    Below lg the new-release cards are a swipeable rail; from lg they stack into a fan
    whose centre card is chosen by the visitor.

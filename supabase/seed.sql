@@ -507,7 +507,7 @@ Raccogliamo le informazioni essenziali su trottole, set e accessori Beyblade X i
 
 ### Disponibilità esplicita
 
-Ogni pagina mostra la disponibilità corrente del pre-ordine, senza trasformarla in una promessa di consegna immediata.
+Ogni scheda indica la disponibilità e i pezzi rimasti, senza promesse che non possiamo mantenere.
 
 ### Parliamo la lingua del gioco
 
@@ -515,7 +515,7 @@ Attacco, difesa, stamina, bilanciato: se ci chiedi un consiglio su un assetto, s
 
 ### Assistenza prima dell''ordine
 
-L''ordine viene gestito con assistenza e senza addebito online finché il servizio di pagamento non è attivo.', 'markdown'::public.content_format, 'Chi siamo', 'GEAR//DROP è un progetto indipendente dedicato al catalogo Beyblade X.', 'published'::public.publication_status, now(), true, 4)
+Hai un dubbio su un pezzo prima di ordinare? Scrivici e ti rispondiamo noi. Il pagamento avviene in sicurezza su Stripe.', 'markdown'::public.content_format, 'Chi siamo', 'GEAR//DROP è un progetto indipendente dedicato al catalogo Beyblade X.', 'published'::public.publication_status, now(), true, 4)
 on conflict (slug) do update set
   title = excluded.title,
   excerpt = excluded.excerpt,

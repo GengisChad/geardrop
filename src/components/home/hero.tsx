@@ -89,7 +89,7 @@ export function Hero({
   const description =
     content?.description?.trim() ||
     content?.subtitle?.trim() ||
-    `${listNames(shown)}. ${counted ? "Pezzi contati: prenota il tuo prima che finiscano." : "Disponibilità indicata su ogni carta."}`;
+    `${listNames(shown)}. ${counted ? "Pezzi contati: prendi il tuo prima che finiscano." : "Disponibilità indicata su ogni carta."}`;
   const cmsHref = content?.ctaHref?.trim();
   const cmsLabel = content?.ctaLabel?.trim();
   const secondaryHref = (cmsHref && cmsLabel ? cmsHref : "/negozio") as Route;
@@ -173,7 +173,7 @@ export function Hero({
                 <Button
                   variant="primary"
                   size="lg"
-                  className="w-full sm:w-auto"
+                  className="w-full max-sm:justify-start max-sm:px-5 sm:w-auto"
                   onClick={addCurrent}
                   onPointerMove={magnet}
                   onPointerLeave={release}
@@ -184,9 +184,19 @@ export function Hero({
                   ) : (
                     <ShoppingCart className="size-5" aria-hidden="true" />
                   )}
-                  <span>{justAdded ? "Aggiunto al carrello" : `${STOCK_CTA[current.stock]} ${shortName(current.name)}`}</span>
+                  {justAdded ? (
+                    <span>Aggiunto al carrello</span>
+                  ) : (
+                    // Phones stack the product name under the action so the label never wraps mid-name.
+                    <span className="flex flex-col items-start text-left leading-none sm:flex-row sm:items-baseline sm:gap-[0.35em]">
+                      <span>{STOCK_CTA[current.stock]}</span>{" "}
+                      <span className="mt-1.5 text-[0.75rem] tracking-[0.1em] text-void/70 sm:mt-0 sm:text-[0.9375rem] sm:tracking-[0.08em] sm:text-void">
+                        {shortName(current.name)}
+                      </span>
+                    </span>
+                  )}
                   {justAdded ? null : (
-                    <span className="tabular border-l border-void/25 pl-3">{formatPrice(current.price)}</span>
+                    <span className="tabular border-l border-void/25 pl-3 max-sm:ml-auto">{formatPrice(current.price)}</span>
                   )}
                 </Button>
               </div>
@@ -258,7 +268,7 @@ export function Hero({
           </ul>
 
           <p className="gd-mono text-center text-[0.6875rem] uppercase tracking-[0.14em] text-grey-400 lg:absolute lg:inset-x-0 lg:bottom-2">
-            <span className="lg:hidden">Scorri le carte · tocca la freccia per girarle</span>
+            <span className="lg:hidden">Scorri · tocca ↻ per girare</span>
             <span className="hidden lg:inline">Passa il mouse sulle carte · clicca per portarle davanti</span>
           </p>
         </div>

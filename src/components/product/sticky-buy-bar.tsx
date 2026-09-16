@@ -11,8 +11,8 @@ import { BLADE_TYPE_LABEL } from "@/lib/labels";
 import type { Product } from "@/lib/commerce/types";
 
 /**
- * Sticky buy bar from mockup-pdp-cobalt-mobile. Appears once the main CTA scrolls out,
- * so it never duplicates a visible button.
+ * Sticky buy bar from mockup-pdp-cobalt-mobile. Appears once the main CTA has scrolled up
+ * out of view, so it never duplicates a visible button nor covers the price on arrival.
  */
 export function StickyBuyBar({ product }: { product: Product }) {
   const [visible, setVisible] = useState(false);
@@ -21,7 +21,10 @@ export function StickyBuyBar({ product }: { product: Product }) {
   useEffect(() => {
     const anchor = document.getElementById("buy-panel");
     if (!anchor) return;
-    const observer = new IntersectionObserver(([entry]) => setVisible(!entry?.isIntersecting), { threshold: 0 });
+    const observer = new IntersectionObserver(
+      ([entry]) => setVisible(!!entry && !entry.isIntersecting && entry.boundingClientRect.top < 0),
+      { threshold: 0 },
+    );
     observer.observe(anchor);
     return () => observer.disconnect();
   }, []);
@@ -35,8 +38,8 @@ export function StickyBuyBar({ product }: { product: Product }) {
           exit={{ y: "110%" }}
           transition={{ type: "spring", stiffness: 380, damping: 38 }}
           data-testid="sticky-buy-bar"
-          // Sits above the mobile tab bar.
-          className="gd-glass-compact fixed inset-x-0 bottom-[4.25rem] z-40 border-x-0 border-b-0 lg:bottom-0"
+          // Sits above the mobile tab bar, which grows by the home-indicator inset.
+          className="gd-glass-compact fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom,0px))] z-40 border-x-0 border-b-0 lg:bottom-0"
         >
           <div className="mx-auto flex max-w-[1400px] items-center gap-3 px-4 py-3 sm:px-6">
             {image ? (

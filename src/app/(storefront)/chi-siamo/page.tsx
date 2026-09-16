@@ -21,7 +21,7 @@ const PILLARS = [
   },
   {
     title: "Disponibilità esplicita",
-    body: "Ogni pagina mostra la disponibilità corrente del pre-ordine, senza trasformarla in una promessa di consegna immediata.",
+    body: "Ogni scheda indica la disponibilità e i pezzi rimasti, senza promesse che non possiamo mantenere.",
   },
   {
     title: "Parliamo la lingua del gioco",
@@ -29,7 +29,7 @@ const PILLARS = [
   },
   {
     title: "Assistenza prima dell'ordine",
-    body: "L'ordine viene gestito con assistenza e senza addebito online finché il servizio di pagamento non è attivo.",
+    body: "Hai un dubbio su un pezzo prima di ordinare? Scrivici e ti rispondiamo noi. Il pagamento avviene in sicurezza su Stripe.",
   },
 ] as const;
 

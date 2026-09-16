@@ -49,7 +49,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         // Announced politely: adding to cart shouldn't interrupt a screen reader mid-sentence.
         aria-live="polite"
         aria-atomic="false"
-        className="pointer-events-none fixed inset-x-0 bottom-4 z-[70] flex flex-col items-center gap-2 px-4 sm:bottom-auto sm:left-auto sm:right-6 sm:top-24 sm:items-end"
+        className="gd-toast-stack pointer-events-none fixed inset-x-0 z-[70] flex flex-col items-center gap-2 px-4 sm:bottom-auto sm:left-auto sm:right-6 sm:top-24 sm:items-end"
       >
         <AnimatePresence initial={false}>
           {toasts.map((toast) => {

@@ -20,9 +20,9 @@ const PROMISES = [
 
 export function Footer({ content }: { readonly content: StorefrontChrome }) {
   return (
-    <footer className="on-dark relative border-t border-white/[0.08] bg-void/70">
-      <div className="mx-auto grid max-w-[1400px] gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.4fr_repeat(4,1fr)] lg:px-10">
-        <div>
+    <footer className="gd-page-end on-dark relative border-t border-white/[0.08] bg-void/70">
+      <div className="mx-auto grid max-w-[1400px] grid-cols-2 gap-x-6 gap-y-10 px-4 py-12 sm:px-6 md:grid-cols-4 lg:grid-cols-[1.4fr_repeat(4,1fr)] lg:px-10">
+        <div className="col-span-2 md:col-span-4 lg:col-span-1">
           <Wordmark spin={false} />
           <p className="mt-4 max-w-xs text-small leading-relaxed text-grey-600">
             Un progetto indipendente dedicato al catalogo Beyblade X e alle informazioni utili per scegliere.

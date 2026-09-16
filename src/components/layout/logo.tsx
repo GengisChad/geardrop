@@ -19,7 +19,7 @@ export function Wordmark({
   spin?: boolean;
 }) {
   return (
-    <span className={cn("inline-flex items-center gap-2.5", className)}>
+    <span className={cn("inline-flex items-center gap-2 min-[360px]:gap-2.5", className)}>
       <Image
         src={brand.emblem}
         alt=""
@@ -28,9 +28,9 @@ export function Wordmark({
         height={brandSize.emblem.height}
         priority={priority}
         sizes="40px"
-        className={cn("h-8 w-auto sm:h-9", spin && "animate-[gd-spin_14s_linear_infinite]")}
+        className={cn("h-7 w-auto min-[360px]:h-8 sm:h-9", spin && "animate-[gd-spin_14s_linear_infinite]")}
       />
-      <span className="gd-display-wide text-[1.2rem] font-bold leading-none text-graphite sm:text-[1.45rem] lg:text-[1.2rem] xl:text-[1.45rem]">
+      <span className="gd-display-wide text-[1.05rem] font-bold leading-none text-graphite min-[360px]:text-[1.2rem] sm:text-[1.45rem] lg:text-[1.2rem] xl:text-[1.45rem]">
         Gear<span className="text-lime">{"//"}</span>
         <span className="text-violet-soft">Drop</span>
       </span>
