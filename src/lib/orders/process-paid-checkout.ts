@@ -18,10 +18,20 @@ export type StoredOrder = {
   readonly preorderQuantities?: readonly number[];
 };
 
+/** A product whose current stock is at or below its low-stock threshold. */
+export type LowStockProduct = {
+  readonly name: string;
+  readonly slug: string;
+  readonly stockQuantity: number;
+  readonly stockStatus: string;
+};
+
 export type OrderStore = {
   record(checkout: PaidCheckout): Promise<StoredOrder>;
   ownerNotified(orderId: number): Promise<boolean>;
   markOwnerNotified(orderId: number): Promise<void>;
+  /** Returns products from this order whose stock is now at or below their low-stock threshold. */
+  lowStock?(orderId: number): Promise<readonly LowStockProduct[]>;
 };
 
 export type ProcessDependencies = {
@@ -61,12 +71,22 @@ export async function processPaidCheckout(sessionId: string, deps: ProcessDepend
     return { status: "failed", step: "record", detail: message(error) };
   }
 
+  // Low-stock check: failures must never block the owner notification.
+  let lowStockItems: readonly LowStockProduct[] = [];
+  if (deps.store.lowStock) {
+    try {
+      lowStockItems = await deps.store.lowStock(order.id);
+    } catch (error) {
+      console.error("[orders] low-stock check failed:", message(error));
+    }
+  }
+
   let ownerEmail: "sent" | "already_sent" | "not_configured";
   try {
     if (await deps.store.ownerNotified(order.id)) {
       ownerEmail = "already_sent";
     } else {
-      const content = ownerOrderEmail(checkout, order);
+      const content = ownerOrderEmail(checkout, order, lowStockItems);
       const sent = await deps.sendEmail({
         to: orderNotificationRecipient(env),
         replyTo: checkout.email,
