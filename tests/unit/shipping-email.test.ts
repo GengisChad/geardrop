@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { shipOrderSchema } from "@/lib/admin/orders";
-import { CARRIERS, carrierById, carrierByLabel, trackingLink } from "@/lib/orders/carriers";
+import { CARRIERS, carrierById, carrierByLabel, normalizeTrackingCode, trackingLink } from "@/lib/orders/carriers";
 import { shippingNotificationEmail } from "@/lib/orders/shipping-email";
 
 const order = {
@@ -27,6 +27,15 @@ describe("couriers", () => {
     }
     expect(carrierById("altro")?.trackingUrl).toBeNull();
     expect(carrierByLabel("poste italiane")?.id).toBe("poste");
+  });
+
+  it("drops the receipt's check digit so poste.it accepts the code", () => {
+    expect(normalizeTrackingCode("poste", "018207900244-2")).toBe("018207900244");
+    expect(normalizeTrackingCode("poste", " 0182079002442 ")).toBe("018207900244");
+    expect(normalizeTrackingCode("sda", "018207900244")).toBe("018207900244");
+    expect(normalizeTrackingCode("poste", "rr123456789it")).toBe("RR123456789IT");
+    expect(normalizeTrackingCode("brt", " 0182079002442 ")).toBe("0182079002442");
+    expect(carrierById("sda")?.trackingUrl!("1")).toContain("poste.it");
   });
 
   it("prefers a pasted link and has none without a code", () => {

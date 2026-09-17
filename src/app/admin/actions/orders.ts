@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { requireStaffRole, requireUser } from "@/lib/auth/guards";
 import { sendEmail, SHOP_EMAIL } from "@/lib/email/resend";
-import { carrierById } from "@/lib/orders/carriers";
+import { carrierById, normalizeTrackingCode } from "@/lib/orders/carriers";
 import { shippingNotificationEmail } from "@/lib/orders/shipping-email";
 import type { Database } from "@/lib/supabase/database.types";
 import {
@@ -163,12 +163,13 @@ export async function shipOrderAction(_previous: OrderActionState, formData: For
   });
   const carrier = parsed.success ? carrierById(parsed.data.carrierId) : undefined;
   if (!parsed.success || !carrier) return { ok: false, message: "Scegli il corriere e controlla codice e link (solo HTTPS)." };
+  const code = normalizeTrackingCode(carrier.id, parsed.data.code);
   try {
     const client = await clientFor(MANAGERS);
     const { error } = await client.rpc("ship_order", {
       p_order_id: parsed.data.orderId,
       p_carrier: carrier.label,
-      ...(parsed.data.code ? { p_code: parsed.data.code } : {}),
+      ...(code ? { p_code: code } : {}),
       ...(parsed.data.url ? { p_url: parsed.data.url } : {}),
     });
     if (error) return failure(error);

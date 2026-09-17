@@ -1203,8 +1203,8 @@ export type Database = {
           shipped_at: string | null
           shipping_address_snapshot: Json
           shipping_cents: number
-          shipping_notified_at: string | null
           shipping_method_code: string
+          shipping_notified_at: string | null
           status: Database["public"]["Enums"]["order_status"]
           stripe_checkout_session_id: string | null
           stripe_payment_intent_id: string | null
@@ -1237,8 +1237,8 @@ export type Database = {
           shipped_at?: string | null
           shipping_address_snapshot: Json
           shipping_cents: number
-          shipping_notified_at?: string | null
           shipping_method_code: string
+          shipping_notified_at?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           stripe_checkout_session_id?: string | null
           stripe_payment_intent_id?: string | null
@@ -1271,8 +1271,8 @@ export type Database = {
           shipped_at?: string | null
           shipping_address_snapshot?: Json
           shipping_cents?: number
-          shipping_notified_at?: string | null
           shipping_method_code?: string
+          shipping_notified_at?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           stripe_checkout_session_id?: string | null
           stripe_payment_intent_id?: string | null
