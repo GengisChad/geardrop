@@ -14,7 +14,7 @@ import { CartTotalsPanel } from "@/components/cart/cart-summary";
 import { useCartQuote } from "@/lib/use-cart-quote";
 import { useCart } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/format";
-import { preorderNote } from "@/lib/labels";
+import { cartDelivery, preorderNote } from "@/lib/labels";
 import { checkoutSchema, type CheckoutValues } from "@/lib/checkout-schema";
 import { trackEvent } from "@/lib/funnel";
 import { submitOrder } from "./actions";
@@ -429,7 +429,7 @@ export function CheckoutClient() {
         </ul>
 
         <div className="border-t border-grey-200 pt-4">
-          <CartTotalsPanel totals={quote.totals} />
+          <CartTotalsPanel totals={quote.totals} deliveryHint={cartDelivery(quote.lines.filter((line) => !line.issue))} />
         </div>
 
         {failure ? (

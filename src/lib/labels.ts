@@ -108,6 +108,15 @@ export function preorderUnits(line: { readonly quantity: number; readonly stock:
   return line.preorderQuantity ?? (line.stock === "pre-ordine" ? line.quantity : 0);
 }
 
+/** The delivery line for a cart: in-stock time, pre-order time, or both when the cart mixes them. */
+export function cartDelivery(lines: readonly { readonly quantity: number; readonly stock: StockStatus; readonly preorderQuantity?: number }[]): string {
+  const waiting = lines.reduce((sum, line) => sum + preorderUnits(line), 0);
+  const total = lines.reduce((sum, line) => sum + line.quantity, 0);
+  if (waiting === 0) return STANDARD_DELIVERY;
+  if (waiting >= total) return PREORDER_DELIVERY;
+  return `${STANDARD_DELIVERY}; i pre-ordini potrebbero arrivare tra 10/15 giorni lavorativi`;
+}
+
 /** "1 in pre-ordine" or "In pre-ordine" when the whole line waits, followed by the delivery time. */
 export function preorderNote(line: { readonly quantity: number; readonly stock: StockStatus; readonly preorderQuantity?: number }): string | null {
   const units = preorderUnits(line);
