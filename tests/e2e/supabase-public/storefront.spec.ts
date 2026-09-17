@@ -143,6 +143,26 @@ test.describe("anonymous storefront on Supabase", () => {
     await expect(gallery).toHaveAttribute("alt", /.+/);
   });
 
+  test("the product photo opens full screen and zooms in on tap", async ({ page }) => {
+    await visit(page, "/prodotto/cobalt-dragoon-2-60c");
+
+    await page.getByTestId("product-zoom-open").click();
+    const zoom = page.getByTestId("product-zoom");
+    await expect(zoom).toBeVisible();
+    const toggle = zoom.getByTestId("product-zoom-toggle");
+    await expect(toggle).toHaveAttribute("aria-pressed", "false");
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-pressed", "true");
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-pressed", "false");
+
+    await page.keyboard.press("Escape");
+    await expect(zoom).toBeHidden();
+    await page.getByTestId("product-zoom-open").click();
+    await zoom.getByTestId("product-zoom-close").click();
+    await expect(zoom).toBeHidden();
+  });
+
   test("every published product page renders", async ({ page }) => {
     await visit(page, "/negozio");
     const hrefs = await page.getByTestId("product-card").locator("a[href^='/prodotto/']").evaluateAll(
