@@ -17,3 +17,14 @@ describe("sold-out call to action", () => {
     }
   });
 });
+
+describe("delivery promise on a pre-order page", () => {
+  it("shows the pre-order time instead of the in-stock one", async () => {
+    const { TrustBarLight } = await import("@/components/home/trust");
+    const { PREORDER_DELIVERY, STANDARD_DELIVERY } = await import("@/lib/labels");
+    const preorder = renderToStaticMarkup(<TrustBarLight delivery={PREORDER_DELIVERY} />);
+    expect(preorder).toContain(PREORDER_DELIVERY);
+    expect(preorder).not.toContain(STANDARD_DELIVERY);
+    expect(renderToStaticMarkup(<TrustBarLight />)).toContain(STANDARD_DELIVERY);
+  });
+});

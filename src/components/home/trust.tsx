@@ -4,19 +4,24 @@ import { STANDARD_DELIVERY } from "@/lib/labels";
 
 type TrustItem = { readonly Icon: typeof Truck; readonly title: string; readonly sub: string };
 
-/** The three promises checkout actually keeps: Stripe payment, flat shipping, free returns. */
-const ITEMS: readonly TrustItem[] = [
-  { Icon: Lock, title: "Pagamento sicuro", sub: "Paghi sulla pagina protetta di Stripe con carta e i wallet disponibili." },
-  { Icon: Truck, title: "Spedizione €4,90", sub: `${STANDARD_DELIVERY}. Gratis da €59. Solo in Italia.` },
-  { Icon: RotateCcw, title: "Reso gratuito", sub: "30 giorni per ripensarci: la spedizione del reso la paghiamo noi." },
-];
+/**
+ * The three promises checkout actually keeps: Stripe payment, flat shipping, free returns. The
+ * delivery time is the in-stock one unless the page sells a pre-order.
+ */
+function trustItems(delivery: string): readonly TrustItem[] {
+  return [
+    { Icon: Lock, title: "Pagamento sicuro", sub: "Paghi sulla pagina protetta di Stripe." },
+    { Icon: Truck, title: "Spedizione €4,90", sub: `${delivery}. Gratis da €59. Solo in Italia.` },
+    { Icon: RotateCcw, title: "Reso gratuito", sub: "30 giorni per ripensarci: la spedizione del reso la paghiamo noi." },
+  ];
+}
 
-function TrustHud({ className, compact = false }: { className?: string; compact?: boolean }) {
+function TrustHud({ className, compact = false, delivery = STANDARD_DELIVERY }: { className?: string; compact?: boolean; delivery?: string }) {
   return (
     <section className={cn("mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-10", className)}>
       <h2 className="sr-only">Perché comprare da GEAR//DROP</h2>
       <ul className={cn("grid gap-3 sm:gap-5", compact ? "sm:grid-cols-3" : "md:grid-cols-3")}>
-        {ITEMS.map(({ Icon, title, sub }) => (
+        {trustItems(delivery).map(({ Icon, title, sub }) => (
           <li key={title} className={cn("gd-hud flex items-start gap-4", compact ? "p-4" : "p-5 sm:p-6")}>
             <span className="grid size-12 shrink-0 place-items-center border border-lime/25 bg-lime/[0.08] text-lime">
               <Icon className="size-5" strokeWidth={1.8} aria-hidden="true" />
@@ -37,7 +42,7 @@ export function TrustBandDark({ className }: { className?: string }) {
   return <TrustHud {...(className ? { className } : {})} />;
 }
 
-/** Tighter row for the product page. */
-export function TrustBarLight({ className }: { className?: string }) {
-  return <TrustHud {...(className ? { className } : {})} compact />;
+/** Tighter row for the product page; a pre-order page passes its own delivery time. */
+export function TrustBarLight({ className, delivery }: { className?: string; delivery?: string }) {
+  return <TrustHud {...(className ? { className } : {})} {...(delivery ? { delivery } : {})} compact />;
 }
