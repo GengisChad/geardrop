@@ -35,7 +35,8 @@ describe("full reviewed storefront seed", () => {
     }
     expect(sql).not.toContain("('champion-bundle', 'bundle'");
     expect(sql).toContain("Pre-ordini aperti");
-    expect(sql).toContain("entro 14 giorni dalla conferma");
+    expect(sql).not.toContain("entro 14 giorni dalla conferma");
+    expect(sql).toContain("1-5 giorni lavorativi");
     expect(normalized).not.toMatch(/with seed\(section_key, bundle_slug, sort_order\)[\s\S]+?values\s*\)/);
   });
 

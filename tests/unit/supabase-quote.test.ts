@@ -106,7 +106,7 @@ describe("Supabase quoteCart", () => {
       {
         code: "standard",
         label: "Spedizione standard",
-        hint: "Spedizione entro 14 giorni dalla conferma; transito del corriere: 1-2 giorni dalla spedizione",
+        hint: "Consegna in 1-5 giorni lavorativi, a seconda del corriere",
         price: { amount: 490, currency: "EUR" },
       },
     ]);

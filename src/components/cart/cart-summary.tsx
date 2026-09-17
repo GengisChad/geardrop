@@ -1,6 +1,7 @@
 import { Truck } from "lucide-react";
 import { formatPrice, formatShipping } from "@/lib/format";
 import type { CartTotals } from "@/lib/commerce/types";
+import { STANDARD_DELIVERY } from "@/lib/labels";
 import { cn } from "@/lib/cn";
 
 /**
@@ -40,7 +41,16 @@ export function FreeShippingMeter({ totals, threshold }: { totals: CartTotals; t
   );
 }
 
-export function CartTotalsPanel({ totals, className }: { totals: CartTotals; className?: string }) {
+export function CartTotalsPanel({
+  totals,
+  deliveryHint = STANDARD_DELIVERY,
+  className,
+}: {
+  totals: CartTotals;
+  /** Delivery time shown under the shipping row. Defaults to the in-stock estimate. */
+  deliveryHint?: string;
+  className?: string;
+}) {
   return (
     <dl className={cn("flex flex-col gap-3", className)}>
       <div className="flex justify-between text-small">
@@ -57,14 +67,17 @@ export function CartTotalsPanel({ totals, className }: { totals: CartTotals; cla
           </dd>
         </div>
       ) : null}
-      <div className="flex justify-between text-small">
-        <dt className="text-grey-600">Spedizione</dt>
-        <dd
-          className={cn("tabular font-semibold", totals.shipping.amount === 0 ? "text-available" : "text-graphite")}
-          data-testid="cart-shipping"
-        >
-          {formatShipping(totals.shipping)}
-        </dd>
+      <div className="flex flex-col gap-1">
+        <div className="flex justify-between text-small">
+          <dt className="text-grey-600">Spedizione</dt>
+          <dd
+            className={cn("tabular font-semibold", totals.shipping.amount === 0 ? "text-available" : "text-graphite")}
+            data-testid="cart-shipping"
+          >
+            {formatShipping(totals.shipping)}
+          </dd>
+        </div>
+        <p className="text-[0.6875rem] text-grey-600">{deliveryHint}</p>
       </div>
       <div className="flex items-baseline justify-between border-t border-grey-200 pt-3">
         <dt className="gd-display text-small font-bold tracking-wider text-graphite">Totale</dt>
