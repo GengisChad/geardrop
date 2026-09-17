@@ -62,6 +62,14 @@ export const orderTransitionSchema = z.object({ orderId, toStatus: z.enum(["conf
 export const orderCancellationSchema = z.object({ orderId, note: z.string().trim().min(1).max(1000), confirmed: z.literal(true) });
 export const orderNoteSchema = z.object({ orderId, note: z.string().trim().min(1).max(4000) });
 export const trackingSchema = z.object({ orderId, carrier: z.string().trim().min(1).max(120), code: z.string().trim().min(1).max(240), url: z.union([z.url({ protocol: /^https$/ }), z.literal("")]).transform((value) => value || null) });
+/** "Spedisci e avvisa": a courier from the list, the tracking code if there is one, an optional pasted link. */
+export const shipOrderSchema = z.object({
+  orderId,
+  carrierId: z.string().trim().min(1).max(40),
+  code: z.string().trim().max(240),
+  url: z.union([z.url({ protocol: /^https$/ }), z.literal("")]).transform((value) => value || null),
+  notify: z.boolean(),
+});
 export const refundPreparationSchema = z.object({ orderId, amountCents: z.coerce.number().int().positive(), reason: z.string().trim().min(3).max(1000) });
 
 export function allowedOrderTransitions(status: OrderStatus): readonly OrderStatus[] {

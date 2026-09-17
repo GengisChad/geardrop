@@ -62,7 +62,8 @@ function linesTable(checkout: PaidCheckout): string {
   </table>`;
 }
 
-function shell(title: string, content: string): string {
+/** The branded frame every GEAR//DROP email shares. */
+export function emailShell(title: string, content: string): string {
   return `<!doctype html><html lang="it"><body style="margin:0;background:#f4f4f6;font-family:Arial,Helvetica,sans-serif;color:#111">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:12px;padding:24px">
@@ -80,7 +81,7 @@ export function ownerOrderEmail(checkout: PaidCheckout, order: RecordedOrder) {
   const when = dateFormatter.format(new Date(checkout.createdAt));
   const subject = `Nuovo ordine ${order.orderNumber} · ${euro(checkout.totalCents)} · ${checkout.shipping.name || checkout.email}`;
 
-  const html = shell(
+  const html = emailShell(
     `Nuovo ordine ${order.orderNumber}`,
     `<p style="margin:0 0 16px;color:#555">Pagato su Stripe il ${escapeHtml(when)}. Da spedire a:</p>
     <div style="background:#f6f2ff;border-radius:8px;padding:16px;font-size:16px;line-height:1.5">
@@ -127,7 +128,7 @@ export function ownerOrderEmail(checkout: PaidCheckout, order: RecordedOrder) {
 export function customerOrderEmail(checkout: PaidCheckout, order: RecordedOrder) {
   const address = addressBlock(checkout);
   const subject = `Ordine ${order.orderNumber} confermato · GEAR//DROP`;
-  const html = shell(
+  const html = emailShell(
     "Grazie, il tuo ordine è confermato",
     `<p style="margin:0 0 16px;color:#555">Abbiamo ricevuto il pagamento dell'ordine <strong>${escapeHtml(order.orderNumber)}</strong>. Ti scriviamo appena parte il pacco.</p>
     ${linesTable(checkout)}

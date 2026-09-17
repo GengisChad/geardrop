@@ -29,6 +29,6 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
       <section className={styles.panel}><h2>Storico stato</h2>{data.statusEvents.length?<ul className={styles.timeline}>{data.statusEvents.map(event=><li key={event.id}><strong>{event.from_status?`${statusLabels[event.from_status]} → `:""}{statusLabels[event.to_status]}</strong>{event.note?<span>{event.note}</span>:null}<time>{new Intl.DateTimeFormat("it-IT",{dateStyle:"medium",timeStyle:"short"}).format(new Date(event.created_at))}</time></li>)}</ul>:<p>Nessun evento.</p>}</section>
       <section className={`${styles.panel} ${styles.wide}`}><h2>Azioni auditate</h2>{data.auditEvents.length?<ul className={styles.timeline}>{data.auditEvents.map(event=><li key={event.id}><strong>{event.action}</strong><time>{new Intl.DateTimeFormat("it-IT",{dateStyle:"medium",timeStyle:"short"}).format(new Date(event.created_at))}</time></li>)}</ul>:<p>Nessuna azione registrata.</p>}</section>
     </div>
-    <OrderActions orderId={order.id} paymentStatus={order.payment_status} role={principal.role} status={order.status} tracking={{carrier:order.tracking_carrier,code:order.tracking_code,url:order.tracking_url}}/>
+    <OrderActions orderId={order.id} paymentStatus={order.payment_status} role={principal.role} status={order.status} tracking={{carrier:order.tracking_carrier,code:order.tracking_code,url:order.tracking_url}} shippingNotifiedAt={order.shipping_notified_at}/>
   </div>;
 }

@@ -6,10 +6,12 @@ import {
   cancelOrderAction,
   prepareOrderRefundAction,
   setOrderTrackingAction,
+  shipOrderAction,
   transitionOrderAction,
   type OrderActionState,
 } from "@/app/admin/actions/orders";
 import { allowedOrderTransitions, type OrderStatus, type PaymentStatus } from "@/lib/admin/orders";
+import { CARRIERS, carrierByLabel } from "@/lib/orders/carriers";
 import type { StaffRole } from "@/lib/auth/roles";
 import styles from "./orders.module.css";
 
@@ -20,14 +22,17 @@ function Feedback({ state }: { readonly state: OrderActionState }) {
   return state.message ? <p className={state.ok ? styles.success : styles.error} role="status">{state.message}</p> : null;
 }
 
-export function OrderActions({ orderId, status, paymentStatus, role, tracking }: {
+export function OrderActions({ orderId, status, paymentStatus, role, tracking, shippingNotifiedAt }: {
   readonly orderId: number; readonly status: OrderStatus; readonly paymentStatus: PaymentStatus; readonly role: StaffRole;
   readonly tracking: { readonly carrier: string | null; readonly code: string | null; readonly url: string | null };
+  readonly shippingNotifiedAt: string | null;
 }) {
   const manager = role === "owner" || role === "admin";
   const transitions = allowedOrderTransitions(status).filter((value) => value !== "cancelled") as readonly ("confirmed" | "processing" | "shipped" | "completed")[];
   const cancellable = manager && ["pending", "confirmed", "processing"].includes(status);
   const refundable = manager && ["authorized", "paid"].includes(paymentStatus);
+  const shippable = manager && ["confirmed", "processing", "shipped"].includes(status);
+  const [shipState, shipAction, shipPending] = useActionState(shipOrderAction, initial);
   const [transitionState, transitionAction, transitionPending] = useActionState(transitionOrderAction, initial);
   const [trackingState, trackingAction, trackingPending] = useActionState(setOrderTrackingAction, initial);
   const [noteState, noteAction, notePending] = useActionState(addOrderNoteAction, initial);
@@ -35,6 +40,19 @@ export function OrderActions({ orderId, status, paymentStatus, role, tracking }:
   const [refundState, refundAction, refundPending] = useActionState(prepareOrderRefundAction, initial);
 
   return <div className={styles.actionGrid}>
+    {shippable ? <form action={shipAction} className={`${styles.actionCard} ${styles.shipCard}`}>
+      <h3>{status === "shipped" ? "Spedizione e email al cliente" : "Spedisci e avvisa il cliente"}</h3>
+      <p>{shippingNotifiedAt
+        ? `Email di spedizione già inviata il ${new Intl.DateTimeFormat("it-IT", { dateStyle: "medium", timeStyle: "short" }).format(new Date(shippingNotifiedAt))}.`
+        : "Segna l'ordine come spedito e manda al cliente corriere, codice e link per seguire il pacco."}</p>
+      <input name="orderId" type="hidden" value={orderId}/>
+      <label>Corriere<select defaultValue={carrierByLabel(tracking.carrier)?.id ?? "poste"} name="carrierId" required>{CARRIERS.map((carrier) => <option key={carrier.id} value={carrier.id}>{carrier.label}</option>)}</select></label>
+      <label>Codice di tracciamento<input autoComplete="off" defaultValue={tracking.code ?? ""} inputMode="text" maxLength={240} name="code" placeholder="Facoltativo"/></label>
+      <label>Link di tracciamento (solo se il corriere è “Altro”)<input defaultValue={carrierByLabel(tracking.carrier)?.trackingUrl ? "" : tracking.url ?? ""} name="url" placeholder="https://" type="url"/></label>
+      <label className={styles.confirm}><input defaultChecked={!shippingNotifiedAt} name="notify" type="checkbox"/> Invia l’email al cliente</label>
+      <button disabled={shipPending} type="submit">{shipPending ? "Invio…" : status === "shipped" ? "Aggiorna" : "Spedisci"}</button><Feedback state={shipState}/>
+    </form> : null}
+
     {manager && transitions.length > 0 ? <form action={transitionAction} className={styles.actionCard}>
       <h3>Avanza stato</h3><input name="orderId" type="hidden" value={orderId}/>
       <label>Nuovo stato<select name="toStatus" required>{transitions.map((value) => <option key={value} value={value}>{labels[value]}</option>)}</select></label>

@@ -1,12 +1,18 @@
 "use server";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { requireStaffRole, requireUser } from "@/lib/auth/guards";
+import { sendEmail, SHOP_EMAIL } from "@/lib/email/resend";
+import { carrierById } from "@/lib/orders/carriers";
+import { shippingNotificationEmail } from "@/lib/orders/shipping-email";
+import type { Database } from "@/lib/supabase/database.types";
 import {
   orderCancellationSchema,
   orderNoteSchema,
   orderTransitionSchema,
   refundPreparationSchema,
+  shipOrderSchema,
   trackingSchema,
 } from "@/lib/admin/orders";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -100,4 +106,110 @@ export async function prepareOrderRefundAction(_previous: OrderActionState, form
     refresh(parsed.data.orderId);
     return { ok: true, message: "Rimborso preparato. Nessun pagamento esterno eseguito." };
   } catch (error) { return failure(error); }
+}
+
+type ShipmentEmailResult = { readonly ok: true } | { readonly ok: false; readonly message: string };
+
+/** Why Resend refused, in words the owner can act on. */
+function emailFailure(reason: "not_configured" | "rejected", detail?: string): string {
+  if (reason === "not_configured") return "l'invio email non è configurato (manca RESEND_API_KEY).";
+  if (detail && /testing emails|verify a domain|domain is not verified|not verified/i.test(detail)) {
+    return "il dominio geardropshop.it non è ancora verificato su Resend, quindi l'email può arrivare solo a te.";
+  }
+  return `Resend ha rifiutato l'invio (${detail ?? "errore sconosciuto"}).`;
+}
+
+/** Emails the buyer that the order has shipped and stamps the order, so it is not sent twice. */
+async function sendShipmentEmail(client: SupabaseClient<Database>, orderId: number): Promise<ShipmentEmailResult> {
+  const [order, items] = await Promise.all([
+    client
+      .from("orders")
+      .select("order_number,email,status,tracking_carrier,tracking_code,tracking_url,shipping_address_snapshot")
+      .eq("id", orderId)
+      .single(),
+    client.from("order_items").select("product_name_snapshot,quantity").eq("order_id", orderId).order("id"),
+  ]);
+  if (order.error || items.error) return { ok: false, message: "non riesco a leggere l'ordine." };
+  if (order.data.status !== "shipped" && order.data.status !== "completed") return { ok: false, message: "l'ordine non risulta spedito." };
+
+  const content = shippingNotificationEmail({
+    orderNumber: order.data.order_number,
+    email: order.data.email,
+    carrier: order.data.tracking_carrier,
+    trackingCode: order.data.tracking_code,
+    trackingUrl: order.data.tracking_url,
+    shippingAddress: order.data.shipping_address_snapshot,
+    items: (items.data ?? []).map((item) => ({ name: item.product_name_snapshot, quantity: item.quantity })),
+  });
+  const sent = await sendEmail({
+    ...content,
+    replyTo: SHOP_EMAIL,
+    idempotencyKey: `gd-order-shipped-${orderId}-${order.data.tracking_code ?? "senza-codice"}`,
+  });
+  if (!sent.ok) return { ok: false, message: emailFailure(sent.reason, sent.detail) };
+
+  const { error } = await client.rpc("mark_order_shipping_notified", { p_order_id: orderId });
+  if (error) return { ok: false, message: "email inviata, ma non sono riuscito a segnarla sull'ordine." };
+  return { ok: true };
+}
+
+export async function shipOrderAction(_previous: OrderActionState, formData: FormData): Promise<OrderActionState> {
+  const parsed = shipOrderSchema.safeParse({
+    orderId: text(formData, "orderId"),
+    carrierId: text(formData, "carrierId"),
+    code: text(formData, "code"),
+    url: text(formData, "url"),
+    notify: formData.get("notify") === "on",
+  });
+  const carrier = parsed.success ? carrierById(parsed.data.carrierId) : undefined;
+  if (!parsed.success || !carrier) return { ok: false, message: "Scegli il corriere e controlla codice e link (solo HTTPS)." };
+  try {
+    const client = await clientFor(MANAGERS);
+    const { error } = await client.rpc("ship_order", {
+      p_order_id: parsed.data.orderId,
+      p_carrier: carrier.label,
+      ...(parsed.data.code ? { p_code: parsed.data.code } : {}),
+      ...(parsed.data.url ? { p_url: parsed.data.url } : {}),
+    });
+    if (error) return failure(error);
+    refresh(parsed.data.orderId);
+    if (!parsed.data.notify) return { ok: true, message: "Ordine segnato come spedito. Nessuna email inviata." };
+
+    const email = await sendShipmentEmail(client, parsed.data.orderId);
+    refresh(parsed.data.orderId);
+    return email.ok
+      ? { ok: true, message: "Ordine spedito ed email inviata al cliente." }
+      : { ok: false, message: `Ordine segnato come spedito, ma l'email non è partita: ${email.message}` };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
+/** Sends the shipping email to every shipped order still waiting for one. */
+export async function notifyShippedOrdersAction(_previous: OrderActionState, _formData: FormData): Promise<OrderActionState> {
+  try {
+    const client = await clientFor(MANAGERS);
+    const pending = await client
+      .from("orders")
+      .select("id,order_number")
+      .in("status", ["shipped", "completed"])
+      .is("shipping_notified_at", null)
+      .order("shipped_at", { ascending: true })
+      .limit(50);
+    if (pending.error) return { ok: false, message: "Non riesco a leggere gli ordini spediti." };
+    if (!pending.data.length) return { ok: true, message: "Tutti gli ordini spediti hanno già ricevuto l'email." };
+
+    const failed: string[] = [];
+    for (const order of pending.data) {
+      const result = await sendShipmentEmail(client, order.id);
+      if (!result.ok) failed.push(`${order.order_number}: ${result.message}`);
+    }
+    revalidatePath("/admin/ordini");
+    const sent = pending.data.length - failed.length;
+    return failed.length === 0
+      ? { ok: true, message: `Email di spedizione inviate: ${sent}.` }
+      : { ok: sent > 0, message: `Inviate ${sent} di ${pending.data.length}. ${failed.join(" · ")}` };
+  } catch (error) {
+    return failure(error);
+  }
 }

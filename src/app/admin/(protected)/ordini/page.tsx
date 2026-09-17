@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { NotifyShippedOrders } from "@/components/admin/orders/notify-shipped";
 import styles from "@/components/admin/orders/orders.module.css";
 import { requireAdminAccess } from "@/lib/admin/access";
 import { listAdminOrders } from "@/lib/admin/order-repository";
@@ -19,12 +20,19 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
   const principal = await requireAdminAccess(client);
   if (principal.role === "editor") redirect("/admin");
   const result = await listAdminOrders(client, query, principal.role);
+  // Shipped orders whose buyer has not had the shipping email yet.
+  const unnotified = await client
+    .from("orders")
+    .select("id", { count: "exact", head: true })
+    .in("status", ["shipped", "completed"])
+    .is("shipping_notified_at", null);
   const hrefFor = (page: number) => ({ pathname: "/admin/ordini", query: { ...params, page: String(page) } });
   const exportParams = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) if (typeof value === "string" && key !== "page") exportParams.set(key, value);
 
   return <div className={styles.page}>
     <header className={styles.heading}><div><p>Commerce / Operazioni</p><h1>Ordini</h1><span>{result.total} ordini reali · nessun dato dimostrativo</span></div>{orderPiiVisibility(principal.role).export ? <Link href={`/admin/ordini/export?${exportParams}`}>Esporta CSV</Link> : null}</header>
+    <NotifyShippedOrders count={unnotified.count ?? 0}/>
     <form className={styles.filters} method="get">
       <label>Numero o email<input defaultValue={query.q} name="q" placeholder="GD-00000001"/></label>
       <label>Dal<input defaultValue={query.from ?? ""} name="from" type="date"/></label><label>Al<input defaultValue={query.to ?? ""} name="to" type="date"/></label>
