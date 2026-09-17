@@ -3,6 +3,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import type { PlaceOrderInput } from "@/lib/checkout-schema";
 import type { CartQuote } from "@/lib/commerce/types";
+import { PREORDER_DELIVERY, preorderUnits } from "@/lib/labels";
 import { createStripeClient, stripeProductId, type StripeClient } from "./stripe-api";
 
 /**
@@ -23,9 +24,9 @@ export const STRIPE_UNAVAILABLE_MESSAGE =
 export const STRIPE_PRICE_MISMATCH_MESSAGE =
   "I prezzi sono in aggiornamento. Il carrello resta salvato: riprova tra qualche minuto.";
 
-const PREORDER_SUBMIT_MESSAGE = "Pre-ordine: spedizione entro 14 giorni dalla conferma del pagamento.";
 const REFERENCE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const METADATA_LIMIT = 500;
+const CUSTOM_TEXT_LIMIT = 1200;
 
 export function stripeCheckoutEnabled(env: Env = process.env): boolean {
   return (
@@ -141,7 +142,20 @@ export function buildCheckoutSessionFields(
 
   const notes = contact.notes?.trim();
   if (notes) fields["metadata[notes]"] = truncate(notes, METADATA_LIMIT);
-  if (quote.lines.some((line) => line.stock === "pre-ordine")) fields["custom_text[submit][message]"] = PREORDER_SUBMIT_MESSAGE;
+
+  // Pieces beyond the shelf are pre-ordered: the buyer reads it next to the pay button, and the
+  // webhook compares what was announced here with what the stock allowed at payment time.
+  const preorders = quote.lines.flatMap((line) => {
+    const units = preorderUnits(line);
+    return units > 0 ? [{ line, units }] : [];
+  });
+  if (preorders.length > 0) {
+    fields["metadata[preorder]"] = truncate(preorders.map(({ line, units }) => `${line.slug} x${units}`).join(", "), METADATA_LIMIT);
+    fields["custom_text[submit][message]"] = truncate(
+      `In pre-ordine: ${preorders.map(({ line, units }) => `${units} × ${line.name}`).join(", ")}. ${PREORDER_DELIVERY}.`,
+      CUSTOM_TEXT_LIMIT,
+    );
+  }
 
   return fields;
 }

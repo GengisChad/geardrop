@@ -10,7 +10,13 @@ import type { PaidCheckout } from "./stripe-order";
 
 type Env = Readonly<Record<string, string | undefined>>;
 
-export type StoredOrder = { readonly id: number; readonly orderNumber: string; readonly created: boolean };
+export type StoredOrder = {
+  readonly id: number;
+  readonly orderNumber: string;
+  readonly created: boolean;
+  /** Pre-ordered units of each checkout line, in line order, as the stock allowed at payment time. */
+  readonly preorderQuantities?: readonly number[];
+};
 
 export type OrderStore = {
   record(checkout: PaidCheckout): Promise<StoredOrder>;

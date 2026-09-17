@@ -36,6 +36,8 @@ export type PaidCheckout = {
   readonly shipping: ShippingSnapshot;
   readonly notes: string | null;
   readonly lines: readonly PaidCheckoutLine[];
+  /** Units per slug the buyer was told are pre-ordered before paying (checkout metadata). */
+  readonly announcedPreorder?: Readonly<Record<string, number>>;
   readonly shippingCents: number;
   readonly totalCents: number;
   readonly createdAt: string;
@@ -108,6 +110,16 @@ export function slugFromStripeId(id: string | null | undefined): string | null {
 
 const clean = (value: string | null | undefined) => value?.trim() ?? "";
 
+/** "glory-valkerion-lf x1, duo-horus-enlil x2" → { "glory-valkerion-lf": 1, "duo-horus-enlil": 2 }. */
+export function parsePreorderMetadata(value: string | null | undefined): Readonly<Record<string, number>> {
+  const units: Record<string, number> = {};
+  for (const entry of clean(value).split(",")) {
+    const match = /^([a-z0-9-]+) x(\d+)$/.exec(entry.trim());
+    if (match) units[match[1]!] = (units[match[1]!] ?? 0) + Number(match[2]);
+  }
+  return units;
+}
+
 /** Maps a paid session and its line items; null when the session is not (yet) paid. */
 export function paidCheckoutFromStripe(
   session: StripeSessionForOrder,
@@ -151,6 +163,7 @@ export function paidCheckoutFromStripe(
     },
     notes: clean(session.metadata?.["notes"]) || null,
     lines,
+    announcedPreorder: parsePreorderMetadata(session.metadata?.["preorder"]),
     shippingCents,
     totalCents: session.amount_total ?? subtotal + shippingCents,
     createdAt: new Date(session.created * 1000).toISOString(),

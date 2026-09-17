@@ -47,7 +47,7 @@ export function ProductDetails({ product }: { product: Product }) {
       content: (
         <div className="flex flex-col gap-2 leading-relaxed">
           {product.stock === "pre-ordine" ? (
-            <p>Per i pre-ordini, GEAR//DROP affida il pacco al corriere entro 14 giorni dalla conferma.</p>
+            <p>Questo prodotto è in pre-ordine: potrebbe arrivare tra 10/15 giorni lavorativi dalla conferma.</p>
           ) : (
             <p>Dopo la conferma del pagamento GEAR//DROP prepara il pacco e lo affida al corriere.</p>
           )}

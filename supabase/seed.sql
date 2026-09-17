@@ -48,7 +48,7 @@ with seed(category_slug, slug, sku, stock_quantity, name, tagline, description, 
 insert into public.products (
   category_id, slug, sku, name, tagline, description, price_cents,
   compare_at_price_cents, publication_status, active, stock_quantity,
-  availability_override, preorder_allocation, blade_type, rating, review_count, sort_order
+  availability_override, preorder_allocation, allow_backorder, blade_type, rating, review_count, sort_order
 )
 select
   category.id,
@@ -64,6 +64,8 @@ select
   seed.stock_quantity,
   null::public.availability_override,
   0 as preorder_allocation,
+  -- Sold out means pre-order, never a closed sale (migration 20260917140000).
+  true as allow_backorder,
   seed.blade_type::public.blade_type,
   seed.rating,
   seed.review_count,
@@ -442,14 +444,14 @@ La disponibilità è in aggiornamento. Contattaci prima dell''ordine per conosce
 
 ## Cosa significa “pre-ordine”?
 
-Il prodotto è prenotabile entro l''allocazione indicata. GEAR//DROP affida il pacco al corriere entro 14 giorni dalla conferma dell''ordine.
+Quando i pezzi a magazzino finiscono puoi comunque ordinare il prodotto: il pre-ordine potrebbe arrivare tra 10/15 giorni lavorativi dalla conferma dell''ordine. Il carrello e la pagina di pagamento ti indicano quali pezzi sono in pre-ordine prima di pagare.
 
 ## Posso cambiare idea?
 
 Hai 30 giorni dalla consegna per richiedere il reso. Vedi la pagina Resi e rimborsi.', 'markdown'::public.content_format, 'Domande frequenti', 'Le risposte alle domande che ci arrivano più spesso.', 'published'::public.publication_status, now(), true, 0),
   ('spedizioni', 'Spedizioni', 'Come e quando arriva il tuo ordine.', '## Tempi di consegna
 
-Per i pre-ordini, GEAR//DROP affida il pacco al corriere entro 14 giorni dalla conferma dell''ordine.
+I prodotti disponibili partono dopo la conferma del pagamento. I pre-ordini potrebbero arrivare tra 10/15 giorni lavorativi dalla conferma dell''ordine.
 
 I tempi di transito del corriere iniziano dalla spedizione e dipendono dal servizio e dalla destinazione.
 

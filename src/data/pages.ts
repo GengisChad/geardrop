@@ -41,7 +41,7 @@ export const SUPPORT_PAGES = {
       {
         heading: "Cosa significa “pre-ordine”?",
         body: [
-          "Il prodotto è prenotabile entro l'allocazione indicata. GEAR//DROP affida il pacco al corriere entro 14 giorni dalla conferma dell'ordine.",
+          "Quando i pezzi a magazzino finiscono puoi comunque ordinare il prodotto: il pre-ordine potrebbe arrivare tra 10/15 giorni lavorativi dalla conferma dell'ordine. Il carrello e la pagina di pagamento ti indicano quali pezzi sono in pre-ordine prima di pagare.",
         ],
       },
       {
@@ -57,7 +57,7 @@ export const SUPPORT_PAGES = {
       {
         heading: "Tempi di consegna",
         body: [
-          "Per i pre-ordini, GEAR//DROP affida il pacco al corriere entro 14 giorni dalla conferma dell'ordine.",
+          "I prodotti disponibili partono dopo la conferma del pagamento. I pre-ordini potrebbero arrivare tra 10/15 giorni lavorativi dalla conferma dell'ordine.",
           "I tempi di transito del corriere iniziano dalla spedizione e dipendono dal servizio e dalla destinazione.",
         ],
       },
@@ -164,7 +164,7 @@ export const LEGAL_PAGES = {
         heading: "Prodotti e pre-ordini",
         body: [
           "Le caratteristiche essenziali di ogni prodotto sono indicate nella sua scheda; le immagini rappresentano la confezione.",
-          "I prodotti in pre-ordine sono acquistabili entro la quantità indicata e vengono affidati al corriere entro 14 giorni dalla conferma del pagamento.",
+          "Quando i pezzi a magazzino finiscono il prodotto resta acquistabile in pre-ordine: il carrello e la pagina di pagamento indicano quali pezzi sono in pre-ordine, che potrebbero arrivare tra 10/15 giorni lavorativi dalla conferma del pagamento.",
           "Se dopo il pagamento un prodotto non può essere spedito nei tempi indicati ti avvisiamo via email e, a tua scelta, concordiamo una nuova data oppure ti rimborsiamo l'intero importo pagato, spedizione compresa, entro 14 giorni.",
         ],
       },

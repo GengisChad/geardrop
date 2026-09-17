@@ -11,7 +11,8 @@ import type { Product } from "./types";
  * The reviewed catalogue with today's stock.
  *
  * Product copy, prices and images stay in src/data/catalog.ts, but availability lives in the
- * database, where every paid Stripe order takes the pieces it sold. The read is cached under
+ * database, where every paid Stripe order takes the pieces it sold. A product the owner lets run
+ * past its stock comes back as "pre-ordine" at zero and keeps selling. The read is cached under
  * the products tag, which the webhook expires after each order. Without a Supabase project, or
  * if the read fails, the catalogue's own numbers are served rather than an error page.
  */
@@ -21,7 +22,7 @@ export async function loadLiveCatalogue(): Promise<readonly Product[]> {
     const rows = await cacheStorefrontRead(["commerce", "live-stock"], [STOREFRONT_CACHE_TAGS.products], async () => {
       const result = await createSupabasePublicClient()
         .from("products")
-        .select("slug,stock_status,stock_quantity,preorder_allocation,availability_override")
+        .select("slug,stock_status,stock_quantity,preorder_allocation,availability_override,allow_backorder")
         .in(
           "slug",
           PRODUCTS.map((product) => product.slug),

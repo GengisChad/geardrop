@@ -14,6 +14,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useCartQuote } from "@/lib/use-cart-quote";
 import { MAX_QUANTITY_PER_LINE, useCart } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/format";
+import { preorderNote } from "@/lib/labels";
 
 export function CartClient() {
   const { quote, hydrated } = useCartQuote();
@@ -95,9 +96,14 @@ export function CartClient() {
                           {line.issue}
                         </p>
                       ) : null}
-                      {line.stock === "pre-ordine" && line.availableQuantity !== undefined ? (
+                      {line.stock === "pre-ordine" && !line.autoPreorder && line.availableQuantity !== undefined ? (
                         <p className="mt-1 tabular text-[0.6875rem] font-bold text-preorder" data-testid="preorder-remaining">
                           {line.availableQuantity} pre-ordini rimasti
+                        </p>
+                      ) : null}
+                      {!line.issue && preorderNote(line) ? (
+                        <p className="mt-1 text-[0.6875rem] font-bold text-preorder" data-testid="preorder-split">
+                          {preorderNote(line)}
                         </p>
                       ) : null}
                     </div>
@@ -115,7 +121,11 @@ export function CartClient() {
                   <div className="mt-auto flex items-center justify-between gap-3">
                     <QuantityStepper
                       value={line.quantity}
-                      max={Math.min(MAX_QUANTITY_PER_LINE, line.availableQuantity ?? MAX_QUANTITY_PER_LINE)}
+                      max={
+                        line.autoPreorder
+                          ? MAX_QUANTITY_PER_LINE
+                          : Math.min(MAX_QUANTITY_PER_LINE, line.availableQuantity ?? MAX_QUANTITY_PER_LINE)
+                      }
                       size="sm"
                       onChange={(next) => setQuantity(line.slug, next)}
                       label={`Quantità di ${line.name}`}

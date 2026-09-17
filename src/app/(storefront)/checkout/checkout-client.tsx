@@ -14,6 +14,7 @@ import { CartTotalsPanel } from "@/components/cart/cart-summary";
 import { useCartQuote } from "@/lib/use-cart-quote";
 import { useCart } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/format";
+import { preorderNote } from "@/lib/labels";
 import { checkoutSchema, type CheckoutValues } from "@/lib/checkout-schema";
 import { submitOrder } from "./actions";
 import type { Money } from "@/lib/commerce/types";
@@ -343,7 +344,14 @@ export function CheckoutClient() {
                   </span>
                 </span>
               ) : null}
-              <span className="min-w-0 flex-1 truncate text-small text-grey-600">{line.name}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-small text-grey-600">{line.name}</span>
+                {preorderNote(line) ? (
+                  <span className="block text-[0.625rem] font-bold leading-snug text-preorder" data-testid="checkout-preorder">
+                    {preorderNote(line)}
+                  </span>
+                ) : null}
+              </span>
               <span className="tabular shrink-0 text-small font-semibold text-graphite">
                 {formatPrice(line.lineTotal)}
               </span>

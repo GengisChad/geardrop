@@ -187,11 +187,28 @@ export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CA
         for (const piece of piecesOf(product, quantity)) {
           const source = bySlug.get(piece.slug);
           const available = source?.availableQuantity;
-          if (source && available !== undefined && (demand.get(piece.slug) ?? 0) > available) {
+          if (source && !source.autoPreorder && available !== undefined && (demand.get(piece.slug) ?? 0) > available) {
             return `Disponibilità insufficiente: restano ${available} ${source.name}, contando anche il duo.`;
           }
         }
         return null;
+      };
+
+      // The shelf is handed out in cart order, as the webhook will take it once Stripe confirms
+      // the payment: whatever a line asks beyond what is left ships as a pre-order.
+      const shelf = new Map<string, number>();
+      const preorderQuantity = (product: Product, quantity: number): number => {
+        if (product.stock === "pre-ordine" && !product.autoPreorder) return quantity;
+        let ready = quantity;
+        for (const part of product.bundleOf ?? [{ slug: product.slug, quantity: 1 }]) {
+          const available = bySlug.get(part.slug)?.availableQuantity;
+          if (available === undefined) continue;
+          const left = shelf.get(part.slug) ?? Math.max(available, 0);
+          const taken = Math.min(left, part.quantity * quantity);
+          shelf.set(part.slug, left - taken);
+          ready = Math.min(ready, Math.floor(taken / part.quantity));
+        }
+        return quantity - ready;
       };
 
       for (const line of request.lines) {
@@ -200,6 +217,13 @@ export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CA
           missingSlugs.push(line.slug);
           continue;
         }
+        const issue =
+          product.stock === "esaurito"
+            ? "Non disponibile: rimuovilo per procedere."
+            : !product.autoPreorder && product.availableQuantity !== undefined && line.quantity > product.availableQuantity
+              ? `Disponibilità insufficiente: ne restano ${product.availableQuantity}.`
+              : sharedShortage(product, line.quantity);
+        const preordered = issue === null ? preorderQuantity(product, line.quantity) : 0;
         quoteLines.push({
           slug: product.slug,
           name: product.name,
@@ -211,12 +235,9 @@ export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CA
           ...(product.availableQuantity === undefined
             ? {}
             : { availableQuantity: product.availableQuantity }),
-          issue:
-            product.stock === "esaurito"
-              ? "Non disponibile: rimuovilo per procedere."
-              : product.availableQuantity !== undefined && line.quantity > product.availableQuantity
-                ? `Disponibilità insufficiente: ne restano ${product.availableQuantity}.`
-                : sharedShortage(product, line.quantity),
+          ...(product.autoPreorder ? { autoPreorder: true } : {}),
+          ...(preordered > 0 ? { preorderQuantity: preordered } : {}),
+          issue,
         });
       }
 
