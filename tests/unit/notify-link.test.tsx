@@ -28,3 +28,14 @@ describe("delivery promise on a pre-order page", () => {
     expect(renderToStaticMarkup(<TrustBarLight />)).toContain(STANDARD_DELIVERY);
   });
 });
+
+describe("cart delivery line", () => {
+  it("names the in-stock time, the pre-order time, or both", async () => {
+    const { cartDelivery, PREORDER_DELIVERY, STANDARD_DELIVERY } = await import("@/lib/labels");
+    expect(cartDelivery([{ quantity: 2, stock: "disponibile" }])).toBe(STANDARD_DELIVERY);
+    expect(cartDelivery([{ quantity: 1, stock: "pre-ordine", preorderQuantity: 1 }])).toBe(PREORDER_DELIVERY);
+    expect(cartDelivery([{ quantity: 1, stock: "pre-ordine" }, { quantity: 1, stock: "disponibile" }])).toBe(
+      "Consegna in 1-5 giorni lavorativi, a seconda del corriere; i pre-ordini potrebbero arrivare tra 10/15 giorni lavorativi",
+    );
+  });
+});

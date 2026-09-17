@@ -15,7 +15,7 @@ import { ProductCard } from "@/components/product/product-card";
 import { useCartQuote } from "@/lib/use-cart-quote";
 import { MAX_QUANTITY_PER_LINE, useCart } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/format";
-import { preorderNote } from "@/lib/labels";
+import { cartDelivery, preorderNote } from "@/lib/labels";
 import type { Product } from "@/lib/commerce/types";
 
 type CartClientProps = {
@@ -172,7 +172,7 @@ export function CartClient({ shelfProducts }: CartClientProps) {
         <aside data-testid="cart-summary" className="gd-glass-panel sticky top-28 flex flex-col gap-4 rounded-[--radius-glass] p-5">
           <h2 className="gd-display text-small font-bold tracking-wider text-graphite">Riepilogo</h2>
           <FreeShippingMeter totals={quote.totals} threshold={quote.freeShippingThreshold} />
-          <CartTotalsPanel totals={quote.totals} />
+          <CartTotalsPanel totals={quote.totals} deliveryHint={cartDelivery(quote.lines.filter((line) => !line.issue))} />
           <Button as={Link} href="/checkout" variant="primary" size="lg" fullWidth data-testid="go-to-checkout" aria-disabled={blocked}>
             Vai al checkout
             <ArrowRight className="size-4" aria-hidden="true" />
