@@ -15,6 +15,9 @@ describe("product photo zoom", () => {
     expect(html).toContain('aria-haspopup="dialog"');
     expect(html).toMatch(/<dialog[^>]*data-testid="product-zoom"/);
     expect(html).not.toMatch(/<dialog[^>]*\sopen/);
+    expect(html).toContain('aria-modal="true"');
+    // next.config.ts only serves the qualities 75 and 90; anything else answers 400.
+    expect(html).not.toContain("q=95");
   });
 });
 

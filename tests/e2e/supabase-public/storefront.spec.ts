@@ -153,6 +153,10 @@ test.describe("anonymous storefront on Supabase", () => {
     await expect(toggle).toHaveAttribute("aria-pressed", "false");
     await toggle.click();
     await expect(toggle).toHaveAttribute("aria-pressed", "true");
+    // The optimiser only serves allowed qualities: a rejected one would leave an empty photo.
+    await expect
+      .poll(async () => zoom.locator("img").first().evaluate((node: HTMLImageElement) => node.naturalWidth))
+      .toBeGreaterThan(0);
     await toggle.click();
     await expect(toggle).toHaveAttribute("aria-pressed", "false");
 

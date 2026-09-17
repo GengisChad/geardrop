@@ -45,17 +45,23 @@ export function ProductZoom({ images, index, name, open, onClose, onIndexChange 
     return undefined;
   }, [open]);
 
-  // Esc and the browser's own close both end in the native close event; the page state follows it,
-  // otherwise the photo could not be opened a second time.
+  // Esc, the close button and the browser's own dismissal all close the dialog on their own, and
+  // the page state has to follow or the photo could not be opened a second time. Engines disagree
+  // on which event says so — some send "close", newer ones only "toggle" — so both are read.
   useEffect(() => {
     const element = dialog.current;
     if (!element) return undefined;
-    const closed = () => {
+    const sync = (event: Event) => {
+      if (event.type === "toggle" && (event as ToggleEvent).newState !== "closed") return;
       setZoomed(false);
       onClose();
     };
-    element.addEventListener("close", closed);
-    return () => element.removeEventListener("close", closed);
+    element.addEventListener("close", sync);
+    element.addEventListener("toggle", sync);
+    return () => {
+      element.removeEventListener("close", sync);
+      element.removeEventListener("toggle", sync);
+    };
   }, [onClose]);
 
   useLayoutEffect(() => {
@@ -91,6 +97,7 @@ export function ProductZoom({ images, index, name, open, onClose, onIndexChange 
     <dialog
       ref={dialog}
       aria-label={`${name}: foto ingrandita`}
+      aria-modal="true"
       data-testid="product-zoom"
       onClick={(event) => {
         // A click on the dark surround, not on the photo or the controls, closes the view.
@@ -99,7 +106,8 @@ export function ProductZoom({ images, index, name, open, onClose, onIndexChange 
       onKeyDown={(event) => {
         // Browsers close a modal on Esc themselves; this also covers keyboards they do not see.
         if (event.key === "Escape") event.currentTarget.close();
-        if (!many) return;
+        // While enlarged the arrows pan the photo; they change photo only in the fitted view.
+        if (zoomed || !many) return;
         if (event.key === "ArrowLeft") show(index - 1);
         if (event.key === "ArrowRight") show(index + 1);
       }}
@@ -122,7 +130,11 @@ export function ProductZoom({ images, index, name, open, onClose, onIndexChange 
           </button>
         </div>
 
-        <div ref={viewport} className={cn("relative min-h-0 flex-1", zoomed ? "overflow-auto" : "overflow-hidden")}>
+        <div
+          ref={viewport}
+          tabIndex={zoomed ? 0 : -1}
+          className={cn("relative min-h-0 flex-1 focus:outline-none", zoomed ? "overflow-auto" : "overflow-hidden")}
+        >
           <button
             type="button"
             onClick={toggleZoom}
@@ -136,7 +148,7 @@ export function ProductZoom({ images, index, name, open, onClose, onIndexChange 
               src={cutoutSrc(active.src) ?? active.src}
               alt={active.alt}
               fill
-              quality={95}
+              quality={90}
               sizes={zoomed ? "200vw" : "100vw"}
               className="object-contain p-4 sm:p-10"
             />
