@@ -12,10 +12,12 @@ import {
   orderNoteSchema,
   orderTransitionSchema,
   refundPreparationSchema,
+  refundStripeSchema,
   shipOrderSchema,
   trackingSchema,
 } from "@/lib/admin/orders";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createStripeClient } from "@/lib/payments/stripe-api";
 
 export type OrderActionState = { readonly ok: boolean; readonly message: string };
 const MANAGERS = ["owner", "admin"] as const;
@@ -183,6 +185,90 @@ export async function shipOrderAction(_previous: OrderActionState, formData: For
       : { ok: false, message: `Ordine segnato come spedito, ma l'email non è partita: ${email.message}` };
   } catch (error) {
     return failure(error);
+  }
+}
+
+function stripeRefundFailure(error: unknown): OrderActionState {
+  const message = error instanceof Error ? error.message : "";
+  // Stripe error messages mention permission issues in specific ways
+  if (/insufficient_permissions|api_key.*permission|RefundPermission|refunds.*not.*allowed/i.test(message)) {
+    return { ok: false, message: "La chiave Stripe non ha il permesso per i rimborsi: abilitalo nella chiave limitata su Stripe." };
+  }
+  if (/no such charge|no such payment_intent/i.test(message)) {
+    return { ok: false, message: "Il pagamento Stripe non esiste o non è associato a questo ordine." };
+  }
+  if (/charge_already_refunded|already been fully refunded/i.test(message)) {
+    return { ok: false, message: "Il pagamento risulta già rimborsato su Stripe." };
+  }
+  if (/invalid_request/i.test(message)) {
+    return { ok: false, message: `Richiesta non valida: ${message.replace(/^Stripe [A-Z]+ .* → \d+: /, "").slice(0, 120)}` };
+  }
+  return { ok: false, message: "Il rimborso su Stripe non è andato a buon fine. Verifica la chiave e riprova." };
+}
+
+export async function refundStripeAction(_previous: OrderActionState, formData: FormData): Promise<OrderActionState> {
+  const parsed = refundStripeSchema.safeParse({
+    orderId: text(formData, "orderId"),
+    amountCents: cents(text(formData, "amount")),
+    reason: text(formData, "reason"),
+    confirmed: formData.get("confirmed") === "on",
+    restoreStock: formData.get("restoreStock") === "on",
+  });
+  if (!parsed.success) return { ok: false, message: "Importo, motivazione e conferma sono obbligatori." };
+
+  try {
+    const client = await clientFor(MANAGERS);
+
+    // Read the order to get the payment intent id and current state.
+    const { data: order, error: orderError } = await client
+      .from("orders")
+      .select("id,order_number,stripe_payment_intent_id,payment_status,total_cents,status")
+      .eq("id", parsed.data.orderId)
+      .single();
+
+    if (orderError || !order) return { ok: false, message: "Ordine non trovato." };
+    if (!order.stripe_payment_intent_id) return { ok: false, message: "Questo ordine non ha un pagamento Stripe collegato." };
+    if (!["authorized", "paid"].includes(order.payment_status)) return { ok: false, message: "Il pagamento non è in uno stato rimborsabile." };
+
+    const secretKey = process.env["STRIPE_SECRET_KEY"]?.trim();
+    if (!secretKey) return { ok: false, message: "La configurazione Stripe non è disponibile." };
+
+    // Call Stripe to create the refund
+    const stripe = createStripeClient(secretKey);
+    const idempotencyKey = `gd-refund-${order.order_number}-${parsed.data.amountCents}`;
+    type StripeRefund = { readonly id: string; readonly status: string };
+    const refund = await stripe.post<StripeRefund>("/refunds", {
+      payment_intent: order.stripe_payment_intent_id,
+      amount: parsed.data.amountCents,
+      reason: "requested_by_customer",
+      "metadata[order_number]": order.order_number,
+    }, idempotencyKey);
+
+    // Record the refund in the database
+    const { error: recordError } = await client.rpc("record_order_refund", {
+      p_order_id: parsed.data.orderId,
+      p_amount_cents: parsed.data.amountCents,
+      p_reason: parsed.data.reason,
+      p_stripe_refund_id: refund.id,
+    });
+    if (recordError) return failure(recordError);
+
+    // Optionally restore stock (only when the order has not shipped yet)
+    if (parsed.data.restoreStock && ["pending", "confirmed", "processing"].includes(order.status)) {
+      const { error: cancelError } = await client.rpc("cancel_order_and_restore_stock", {
+        p_order_id: parsed.data.orderId,
+        p_note: `Rimborso Stripe ${refund.id}: ${parsed.data.reason}`,
+      });
+      if (cancelError) {
+        refresh(parsed.data.orderId);
+        return { ok: false, message: "Rimborso Stripe eseguito, ma il ripristino stock non è riuscito." };
+      }
+    }
+
+    refresh(parsed.data.orderId);
+    return { ok: true, message: `Rimborso ${refund.id} eseguito su Stripe.` };
+  } catch (error) {
+    return stripeRefundFailure(error);
   }
 }
 

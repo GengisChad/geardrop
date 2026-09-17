@@ -1,7 +1,7 @@
-import { ArrowUpRight, Boxes, ImagePlus, PackagePlus, RefreshCcw } from "lucide-react";
+import { ArrowUpRight, Boxes, ImagePlus, PackagePlus, RefreshCcw, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { requireAdminAccess } from "@/lib/admin/access";
-import { loadAdminDashboard } from "@/lib/admin/dashboard";
+import { buildFunnelSummary, loadAdminDashboard, loadFunnelStats } from "@/lib/admin/dashboard";
 import { formatPrice } from "@/lib/format";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import styles from "@/components/admin/admin.module.css";
@@ -20,6 +20,13 @@ export default async function AdminDashboardPage() {
   const client = await createSupabaseServerClient();
   const principal=await requireAdminAccess(client);
   const dashboard = await loadAdminDashboard(client);
+  const [funnel7, funnel30] = await Promise.all([
+    loadFunnelStats(client, 7),
+    loadFunnelStats(client, 30),
+  ]);
+  const isManager = principal.role === "owner" || principal.role === "admin";
+  const funnelSummary7 = buildFunnelSummary(funnel7);
+  const funnelSummary30 = buildFunnelSummary(funnel30);
   const metrics = [
     { label: "Prodotti totali", value: dashboard.metrics.total, tone: "violet" },
     { label: "Pubblicati", value: dashboard.metrics.published, tone: "lime" },
@@ -107,6 +114,36 @@ export default async function AdminDashboardPage() {
           </div>
         )}
       </section>
+
+      {isManager ? <section aria-labelledby="funnel-title">
+        <div className={styles.sectionTitle}>
+          <div>
+            <p className={styles.eyebrow}>Senza dati personali</p>
+            <h2 id="funnel-title">Funnel storefront</h2>
+          </div>
+          <TrendingUp aria-hidden="true" className="text-lime" />
+        </div>
+        <div className={styles.dashboardColumns}>
+          <div className={styles.movementsPanel}>
+            <div className={styles.sectionTitle}><h3>Ultimi 7 giorni</h3></div>
+            <div className={styles.movementList} role="list">
+              {funnelSummary7.map((step) => <article className={styles.movementRow} key={step.event} role="listitem">
+                <div><strong>{step.label}</strong>{step.conversionFromPrev !== null ? <span className={styles.mono}>→ {step.conversionFromPrev}%</span> : null}</div>
+                <div className={styles.stockDelta}><strong>{numberFormat.format(step.count)}</strong></div>
+              </article>)}
+            </div>
+          </div>
+          <div className={styles.movementsPanel}>
+            <div className={styles.sectionTitle}><h3>Ultimi 30 giorni</h3></div>
+            <div className={styles.movementList} role="list">
+              {funnelSummary30.map((step) => <article className={styles.movementRow} key={step.event} role="listitem">
+                <div><strong>{step.label}</strong>{step.conversionFromPrev !== null ? <span className={styles.mono}>→ {step.conversionFromPrev}%</span> : null}</div>
+                <div className={styles.stockDelta}><strong>{numberFormat.format(step.count)}</strong></div>
+              </article>)}
+            </div>
+          </div>
+        </div>
+      </section> : null}
 
       {dashboard.commerce?<section className={styles.dashboardColumns}><div className={styles.movementsPanel}><div className={styles.sectionTitle}><h2>Ultimi ordini</h2><Link href="/admin/ordini">Apri ordini</Link></div>{dashboard.commerce.latestOrders.length?<div className={styles.movementList}>{dashboard.commerce.latestOrders.map(order=><article className={styles.movementRow} key={order.id}><div><strong>{order.orderNumber}</strong><span>{order.status} · {order.paymentStatus}</span></div><div className={styles.stockDelta}><strong>{formatPrice({amount:order.totalCents,currency:"EUR"})}</strong><time>{dateFormat.format(new Date(order.createdAt))}</time></div></article>)}</div>:<div className={styles.emptyMovements}><strong>Nessun ordine</strong><p>Il database ordini è vuoto.</p></div>}</div>{dashboard.staffActivity?<div className={styles.movementsPanel}><div className={styles.sectionTitle}><h2>Attività staff</h2><Link href="/admin/attivita">Apri attività</Link></div>{dashboard.staffActivity.length?<div className={styles.movementList}>{dashboard.staffActivity.map(event=><article className={styles.movementRow} key={event.id}><div><strong>{event.action}</strong><span>{event.entityType} · {event.actorName}</span></div><time>{dateFormat.format(new Date(event.createdAt))}</time></article>)}</div>:<div className={styles.emptyMovements}><strong>Nessuna attività</strong><p>Non risultano eventi staff.</p></div>}</div>:null}</section>:null}
     </div>

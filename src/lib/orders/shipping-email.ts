@@ -42,7 +42,8 @@ export function shippingNotificationEmail(order: ShippedOrder) {
     <h2 style="font-size:16px;margin:24px 0 8px">Nel pacco</h2>
     <ul style="margin:0;padding-left:18px;line-height:1.6">${order.items.map((item) => `<li>${item.quantity} × ${escapeHtml(item.name)}</li>`).join("")}</ul>
     ${address.length ? `<h2 style="font-size:16px;margin:24px 0 8px">Indirizzo di consegna</h2><div style="line-height:1.5">${address.map((line) => `<div>${escapeHtml(line)}</div>`).join("")}</div>` : ""}
-    <p style="margin:24px 0 0;font-size:14px;line-height:1.5">Qualcosa non torna? Rispondi a questa email o scrivi a <a href="mailto:${SHOP_EMAIL}">${SHOP_EMAIL}</a> indicando il numero d'ordine.</p>
+    <p style="margin:24px 0 0;font-size:14px;line-height:1.5">Puoi ricontrollare lo stato dell&rsquo;ordine in qualsiasi momento su <a href="https://geardropshop.it/ordine" style="color:#c6ff00">geardropshop.it/ordine</a> usando il numero ordine e questa email.</p>
+    <p style="margin:16px 0 0;font-size:14px;line-height:1.5">Qualcosa non torna? Rispondi a questa email o scrivi a <a href="mailto:${SHOP_EMAIL}">${SHOP_EMAIL}</a> indicando il numero d'ordine.</p>
     <p style="margin:16px 0 0;font-size:14px">Grazie e buone battaglie!<br>GEAR//DROP</p>`,
   );
 
@@ -57,6 +58,7 @@ export function shippingNotificationEmail(order: ShippedOrder) {
     ...order.items.map((item) => `- ${item.quantity} × ${item.name}`),
     ...(address.length ? ["", "Indirizzo di consegna:", ...address] : []),
     "",
+    `Puoi ricontrollare lo stato dell'ordine su https://geardropshop.it/ordine (numero ordine + questa email).`,
     `Qualcosa non torna? Rispondi a questa email o scrivi a ${SHOP_EMAIL} indicando il numero d'ordine.`,
     "",
     "Grazie e buone battaglie!",
