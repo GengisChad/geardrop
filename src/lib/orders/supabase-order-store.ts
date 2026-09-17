@@ -35,9 +35,13 @@ export function createSupabaseOrderStore(client = createPrivilegedSupabaseClient
       });
       const row = result.data?.[0];
       if (result.error || !row) throw new Error(`record_stripe_checkout_order: ${result.error?.message ?? "no row"}`);
-      // One order line per checkout line, written in the same order.
+      // One order line per checkout line, written in the same order. The order is already safe,
+      // so an unreadable split only costs the email its pre-order flags, never the notification.
       const items = await client.from("order_items").select("preorder_quantity").eq("order_id", row.order_id).order("id");
-      if (items.error) throw new Error(`order_items.preorder_quantity: ${items.error.message}`);
+      if (items.error) {
+        console.error("[orders] pre-order split not readable:", items.error.message);
+        return { id: row.order_id, orderNumber: row.order_number, created: row.created };
+      }
       return {
         id: row.order_id,
         orderNumber: row.order_number,

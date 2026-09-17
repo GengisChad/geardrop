@@ -1,5 +1,5 @@
 begin;
-select plan(16);
+select plan(18);
 
 -- Fixtures ------------------------------------------------------------------
 insert into auth.users(instance_id,id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at,confirmation_token,email_change,email_change_token_new,recovery_token) values
@@ -56,6 +56,10 @@ select * from public.record_stripe_checkout_order(
   0, null);
 select is((select count(*)::int from public.order_notes where order_id = (select order_id from bundle_oversold) and note like 'Attenzione%Bundle pack B%'),
   1, 'selling a bundle whose pack ran out leaves a note for the owner');
+select is((select preorder_quantity from public.order_items where order_id = (select order_id from bundle_oversold)),
+  0, 'a bundle whose pack does not pre-order is never recorded as pre-ordered');
+select is((select count(*)::int from public.order_notes where order_id = (select order_id from bundle_oversold) and note like 'Pre-ordine%'),
+  0, 'an oversold bundle promises no pre-order delivery');
 
 -- 12. Malformed components are refused -------------------------------------------------
 select throws_ok(

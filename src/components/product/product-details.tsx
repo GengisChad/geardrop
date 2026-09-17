@@ -51,6 +51,9 @@ export function ProductDetails({ product }: { product: Product }) {
           ) : (
             <p>Dopo la conferma del pagamento GEAR//DROP prepara il pacco e lo affida al corriere.</p>
           )}
+          {product.stock === "disponibile" && product.autoPreorder ? (
+            <p>Se ordini più pezzi di quelli disponibili, quelli in più sono in pre-ordine e potrebbero arrivare tra 10/15 giorni lavorativi.</p>
+          ) : null}
           <p>I tempi di transito del corriere iniziano dalla spedizione e dipendono dal servizio selezionato.</p>
           <p>Hai 30 giorni per cambiare idea: il reso è semplice e tracciato.</p>
         </div>

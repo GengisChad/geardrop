@@ -514,6 +514,8 @@ function priceCart(
  */
 function lineIssue(row: QuotableProduct, quantity: number): string | null {
   if (!row.is_purchasable) return "Non disponibile: rimuovilo per procedere.";
+  // The site's own order intake reserves real pieces and cannot record a pre-order beyond them,
+  // so here a product past its stock stays blocked; automatic pre-orders sell through Stripe Checkout.
   const stock = projectedAvailability(row);
   if (quantity > stock) {
     return stock > 0

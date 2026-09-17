@@ -228,13 +228,14 @@ begin
           end if;
         end if;
 
+        -- Only a pack that sells as a pre-order holds sets back as pre-ordered; any other pack
+        -- short of pieces is an oversell for the owner to sort out, not a pre-order promise.
         if kind = 'preorder' then
           ready_sets := 0;
-        elsif short > 0 then
+        elsif short > 0 and backorder then
           ready_sets := least(ready_sets, taken / part.per_set);
-          if not backorder then
-            oversold := oversold || (target.name || ' (nel ' || line.name || '): pagati ' || part.pieces || ', disponibili ' || on_hand);
-          end if;
+        elsif short > 0 then
+          oversold := oversold || (target.name || ' (nel ' || line.name || '): pagati ' || part.pieces || ', disponibili ' || on_hand);
         end if;
       end loop;
 
