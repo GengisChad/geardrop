@@ -41,6 +41,12 @@ export type ProductFeature = {
   readonly description: string;
 };
 
+/** One product inside a bundle sold as a single item. */
+export type BundleComponent = {
+  readonly slug: ProductSlug;
+  readonly quantity: number;
+};
+
 export type Product = {
   readonly slug: ProductSlug;
   readonly name: string;
@@ -62,6 +68,11 @@ export type Product = {
   readonly features: readonly ProductFeature[];
   readonly boxContents: readonly string[];
   readonly relatedSlugs: readonly ProductSlug[];
+  /**
+   * Set when this item is a bundle: the products in the box. It has no stock of its own; each
+   * sale takes these pieces, and its availability is what they can still make up.
+   */
+  readonly bundleOf?: readonly BundleComponent[];
 };
 
 export type CartLine = {

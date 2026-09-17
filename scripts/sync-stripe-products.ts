@@ -1,5 +1,5 @@
 import { pathToFileURL } from "node:url";
-import { PRODUCTS } from "../src/data/catalog";
+import { BUNDLES, PRODUCTS } from "../src/data/catalog";
 import type { Money, Product } from "../src/lib/commerce/types";
 import { createStripeClient, stripeProductId, type StripeClient } from "../src/lib/payments/stripe-api";
 import { PRODUCTION_ORIGIN } from "../src/lib/site-url";
@@ -76,9 +76,18 @@ export function buildStripeProduct(product: Product, origin: string = PRODUCTION
     // Stripe accepts at most 8 images and only absolute URLs it can fetch.
     images: product.images.slice(0, 8).map((image) => new URL(image.src, origin).toString()),
     url: new URL(`/prodotto/${product.slug}`, origin).toString(),
-    metadata: { slug: product.slug, sku: product.slug.toUpperCase(), category: product.category },
+    metadata: {
+      slug: product.slug,
+      sku: product.slug.toUpperCase(),
+      category: product.category,
+      // A bundle's Stripe product names what it ships, so a payment read in Stripe says so too.
+      ...(product.bundleOf ? { bundle_of: product.bundleOf.map((part) => `${part.slug} x${part.quantity}`).join(", ") } : {}),
+    },
   };
 }
+
+/** Everything sold on Stripe: the catalogue and the bundles sold as one item. */
+export const STRIPE_CATALOGUE: readonly Product[] = [...PRODUCTS, ...BUNDLES];
 
 export function buildStripePrice(product: Product): DesiredPrice {
   return {
@@ -204,7 +213,7 @@ export async function syncStripeProducts(argv: readonly string[]): Promise<void>
   console.log(apply ? "Scrittura attiva.\n" : "Anteprima: nessuna modifica. Rilancia con --apply per scrivere.\n");
 
   let pending = 0;
-  for (const product of PRODUCTS) {
+  for (const product of STRIPE_CATALOGUE) {
     const desired = buildStripeProduct(product);
     const price = buildStripePrice(product);
     const existing = await client.get<StripeProduct>(`/products/${desired.id}?expand%5B%5D=default_price`);

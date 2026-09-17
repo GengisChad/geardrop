@@ -13,6 +13,8 @@ const palette = (f1: string, f2: string, f3: string, f4: string, glow: string): 
 
 /** Foil colours taken from each pack's own artwork, so a card shimmers like its box. */
 const BY_SLUG: Readonly<Record<string, HoloPalette>> = {
+  // Horus's red against Enlil's cyan: the two packs of the duo meeting on one card.
+  "duo-horus-enlil": palette("#ffd3db", "#ff5470", "#3cf0ff", "#c9fbff", "rgba(255, 84, 112, 0.35)"),
   "glory-valkerion-lf": palette("#fff3c4", "#c6ff00", "#9d6bff", "#ffd36b", "rgba(255, 211, 107, 0.4)"),
   "hurricane-enlil-is-7-55t": palette("#c9fbff", "#3cf0ff", "#3a5bff", "#c6ff00", "rgba(60, 240, 255, 0.4)"),
   "shatter-horus-9-65gb": palette("#ffd3db", "#ff5470", "#7a3cff", "#e8ecf5", "rgba(255, 84, 112, 0.4)"),
@@ -62,10 +64,12 @@ export function productLine(product: Pick<Product, "specs">): string | null {
 }
 
 /** Scarcity line: the remaining allocation when it is small, the plain status otherwise. */
-export function availabilityLine(product: Pick<Product, "stock" | "availableQuantity">): string {
+export function availabilityLine(product: Pick<Product, "stock" | "availableQuantity" | "bundleOf">): string {
   if (product.stock === "esaurito") return STOCK_LABEL.esaurito;
   const left = product.availableQuantity;
-  if (left !== undefined && left > 0 && left <= 10) return `Solo ${left} ${left === 1 ? "pezzo" : "pezzi"}`;
+  if (left !== undefined && left > 0 && left <= 10) {
+    return product.bundleOf ? `Solo ${left} duo` : `Solo ${left} ${left === 1 ? "pezzo" : "pezzi"}`;
+  }
   return STOCK_LABEL[product.stock];
 }
 

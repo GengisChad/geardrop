@@ -119,6 +119,26 @@ export const productImages = {
       alt: "Confezione Beyblade X Shatter Horus 9-65GB con lanciatore e trottola argento e rossa",
     },
   ],
+  "duo-horus-enlil": [
+    {
+      src: "/products/duo-horus-enlil.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Duo Beyblade X: confezioni Hurricane Enlil IS 7-55T e Shatter Horus 9-65GB con le due trottole",
+    },
+    {
+      src: "/products/hurricane-enlil-is-7-55t.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Confezione Beyblade X Hurricane Enlil IS 7-55T con lanciatore e trottola azzurra",
+    },
+    {
+      src: "/products/shatter-horus-9-65gb.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Confezione Beyblade X Shatter Horus 9-65GB con lanciatore e trottola argento e rossa",
+    },
+  ],
 } as const satisfies Record<string, readonly ProductImage[]>;
 
 export type ProductSlug = keyof typeof productImages;
@@ -141,6 +161,12 @@ export const productTops: Readonly<Partial<Record<string, string>>> = {
   "glory-valkerion-lf": "/products/tops/glory-valkerion-lf.webp",
   "hurricane-enlil-is-7-55t": "/products/tops/hurricane-enlil-is-7-55t.webp",
   "shatter-horus-9-65gb": "/products/tops/shatter-horus-9-65gb.webp",
+};
+
+/** Each duo pack's box without its loose top and launcher, cropped by scripts/cutout_products.py. */
+export const packBoxes: Readonly<Partial<Record<string, { readonly src: string; readonly width: number; readonly height: number }>>> = {
+  "hurricane-enlil-is-7-55t": { src: "/products/boxes/hurricane-enlil-is-7-55t.webp", width: 450, height: 740 },
+  "shatter-horus-9-65gb": { src: "/products/boxes/shatter-horus-9-65gb.webp", width: 450, height: 740 },
 };
 
 /** Energy-impact artwork, reused as the Arena's launch burst. */

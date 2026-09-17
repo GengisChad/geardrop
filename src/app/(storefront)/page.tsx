@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Arena } from "@/components/home/arena";
 import { Arsenal } from "@/components/home/arsenal";
+import { DuoDrop } from "@/components/home/duo-drop";
 import { Hero } from "@/components/home/hero";
 import { TrustBandDark } from "@/components/home/trust";
 import { Reveal } from "@/components/ui/reveal";
@@ -16,6 +17,9 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
+/** The bundle the homepage spotlights right under the hero. */
+const DUO_SLUG = "duo-horus-enlil";
+
 /** The hero deals at most three cards. */
 const HERO_CARDS = 3;
 
@@ -27,10 +31,13 @@ export default async function HomePage() {
     commerce.listProducts({ sort: "novita", perPage: 6 }),
     commerce.listProducts({ sort: "popolari", category: "beyblade-x", perPage: 5 }),
     commerce.getBundle(),
-    commerce.getProduct("drop-attack-battle-set"),
+    commerce.getProduct(DUO_SLUG),
     commerce.listProducts({ perPage: 100 }),
     storefrontContent.getHomepage(),
   ]);
+
+  // The duo offer is sold as one item; its packs come in the bundle's own order.
+  const duoPacks = bundleHero?.bundleOf ? await commerce.getProductsBySlugs(bundleHero.bundleOf.map((part) => part.slug)) : [];
 
   // Without a catalogue the page has nothing to deal.
   if (all.items.length === 0) notFound();
@@ -74,6 +81,7 @@ export default async function HomePage() {
       {structuredData}
       {/* The hero holds the LCP image, so it is never revealed on scroll: it paints at once. */}
       <Hero products={heroProducts} isNewRelease={releases.length > 0} />
+      {bundleHero?.bundleOf ? <DuoDrop bundle={bundleHero} packs={duoPacks} /> : null}
       <Arena products={heroProducts} />
       <Arsenal products={arsenal} />
       <Reveal>

@@ -19,6 +19,11 @@ type CartState = {
   add: (slug: string, quantity?: number) => void;
   remove: (slug: string) => void;
   setQuantity: (slug: string, quantity: number) => void;
+  /**
+   * Turns one set of a bundle's components already in the cart into the bundle itself: each
+   * component present loses its bundle quantity (dropping out at zero), then the bundle is added.
+   */
+  swapIntoBundle: (bundleSlug: string, components: readonly { readonly slug: string; readonly quantity: number }[]) => void;
   clear: () => void;
 };
 
@@ -54,6 +59,22 @@ export const useCart = create<CartState>()(
               ? state.lines.filter((line) => line.slug !== slug)
               : state.lines.map((line) => (line.slug === slug ? { ...line, quantity: clamp(quantity) } : line)),
         })),
+
+      swapIntoBundle: (bundleSlug, components) =>
+        set((state) => {
+          const reduced = state.lines.flatMap((line) => {
+            const part = components.find((component) => component.slug === line.slug);
+            if (!part) return [line];
+            const left = line.quantity - part.quantity;
+            return left > 0 ? [{ ...line, quantity: left }] : [];
+          });
+          const existing = reduced.find((line) => line.slug === bundleSlug);
+          return {
+            lines: existing
+              ? reduced.map((line) => (line.slug === bundleSlug ? { ...line, quantity: clamp(line.quantity + 1) } : line))
+              : [...reduced, { slug: bundleSlug as CartLine["slug"], quantity: 1 }],
+          };
+        }),
 
       clear: () => set({ lines: [] }),
     }),

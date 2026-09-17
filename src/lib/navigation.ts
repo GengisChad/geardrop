@@ -15,7 +15,7 @@ export const MAIN_NAV: readonly NavItem[] = [
   { label: "Stadi", href: "/negozio/stadi" },
   { label: "Accessori", href: "/negozio/accessori" },
   { label: "Nuovi arrivi", href: "/negozio?sort=novita", tone: "violet" },
-  { label: "Offerte", href: "/negozio?stock=disponibile", tone: "lime" },
+  { label: "Offerte", href: "/prodotto/duo-horus-enlil", tone: "lime" },
 ];
 
 export const ANNOUNCEMENTS = [

@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { productTops } from "../../src/data/assets";
 import { PRODUCTS } from "../../src/data/catalog";
+import { STOREFRONT_CATALOGUE } from "../../src/lib/commerce/mock-provider";
 
 /**
  * The public homepage on the default (mock) gate — the Holo Drop composition served when no
@@ -20,10 +21,10 @@ const VIEWPORTS = [
 const NEW_RELEASE_SLUGS = PRODUCTS.filter((product) => product.tags.includes("novita")).map((product) => product.slug);
 /** The hero deals up to three new releases. */
 const HERO_SLUGS = NEW_RELEASE_SLUGS.slice(0, 3);
-/** New releases open the arsenal, then the rest of the catalogue in its own order. */
+/** New releases open the arsenal, then the rest of the storefront catalogue (bundles first) in its own order. */
 const ARSENAL_SLUGS = [
   ...NEW_RELEASE_SLUGS,
-  ...PRODUCTS.map((product) => product.slug).filter((slug) => !NEW_RELEASE_SLUGS.includes(slug)),
+  ...STOREFRONT_CATALOGUE.map((product) => product.slug).filter((slug) => !NEW_RELEASE_SLUGS.includes(slug)),
 ];
 const ATTACK_COUNT = PRODUCTS.filter((product) => product.bladeType === "attacco").length;
 
@@ -79,7 +80,7 @@ test.describe("public homepage", () => {
     await expect(visibleCards).toHaveCount(ATTACK_COUNT);
 
     await page.getByTestId("arsenal").getByRole("button", { name: /^Tutti/ }).click();
-    await expect(visibleCards).toHaveCount(PRODUCTS.length);
+    await expect(visibleCards).toHaveCount(STOREFRONT_CATALOGUE.length);
   });
 
   test("a hero card flips to its product sheet and back", async ({ page }) => {

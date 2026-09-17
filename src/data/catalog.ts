@@ -109,10 +109,31 @@ export const PRODUCTS: readonly Product[] = [
   },
 ];
 
+/**
+ * Bundles sold as a single item, with their own price and Stripe product. They are not rows of
+ * the product database: a bundle has no stock of its own, and every sale takes its components'
+ * pieces (see lib/commerce/bundles.ts and the Stripe order webhook). `availableQuantity` here is
+ * only the fallback when live stock cannot be read.
+ */
+export const BUNDLES: readonly Product[] = [
+  {
+    slug: "duo-horus-enlil", name: "Duo Shatter Horus + Hurricane Enlil", tagline: "Stamina contro bilanciata. Due starter, €3 in meno.",
+    description: "Il duo mette insieme due Infinity Starter Beyblade X: Shatter Horus 9-65GB, trottola stamina della linea BX con il metallo esteso oltre i ganci, e Hurricane Enlil IS 7-55T, bilanciata CX con la blade Infinity scomponibile. Ogni starter include il proprio lanciatore: due assetti opposti, pronti a sfidarsi. Richiede un Beystadium Beyblade X (venduto separatamente).",
+    price: eur(3700), compareAtPrice: eur(4000), category: "beyblade-x", stock: "disponibile", availableQuantity: 8, tags: ["offerta"], rating: 0, reviewCount: 0,
+    images: productImages["duo-horus-enlil"],
+    specs: [{ label: "Tipo", value: "Stamina + Bilanciata" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "BX + CX (Infinity Starter Pack)" }, { label: "Codice", value: "9-65GB · IS 7-55T" }, { label: "Componenti", value: "2 trottole, 2 lanciatori" }],
+    features: [{ title: "Due starter completi", description: "Due trottole e due lanciatori, pronti a sfidarsi" }, { title: "Stili opposti", description: "Stamina BX contro bilanciata CX" }, { title: "Risparmi €3", description: "€37 invece di €40 comprandoli separati" }, { title: "Compatibile Beyblade X", description: "Blade, Ratchet e Bit intercambiabili con la serie" }],
+    boxContents: ["1 × Starter Shatter Horus 9-65GB (trottola e lanciatore)", "1 × Starter Hurricane Enlil IS 7-55T (trottola e lanciatore)", "2 × Manuale"],
+    relatedSlugs: ["shatter-horus-9-65gb", "hurricane-enlil-is-7-55t", "glory-valkerion-lf"],
+    bundleOf: [{ slug: "shatter-horus-9-65gb", quantity: 1 }, { slug: "hurricane-enlil-is-7-55t", quantity: 1 }],
+  },
+];
+
+/** The duo, as the managed homepage bundle banner presents it; its hero must be a product row in the database. */
 export const BUNDLE: Bundle = {
-  slug: "bundle-campione", eyebrow: "Bundle campione", title: ["Scatena il", "tuo potenziale."],
-  description: "Uno stadio e le trottole ad alte prestazioni per iniziare a dominare l'arena.", price: eur(9900), compareAtPrice: eur(10400),
-  heroSlug: "drop-attack-battle-set", includes: ["drop-attack-battle-set", "cobalt-dragoon-2-60c", "soar-phoenix-9-60gf"],
+  slug: "duo-horus-enlil", eyebrow: "Offerta duo", title: ["Horus ×", "Enlil."],
+  description: "Due Infinity Starter Beyblade X, stamina contro bilanciata, a €37 invece di €40.", price: eur(3700), compareAtPrice: eur(4000),
+  heroSlug: "shatter-horus-9-65gb", includes: ["shatter-horus-9-65gb", "hurricane-enlil-is-7-55t"],
 };
 
 export const FREE_SHIPPING_THRESHOLD = 5900;

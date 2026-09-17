@@ -1,3 +1,4 @@
+import { PRODUCTS } from "@/data/catalog";
 import { formatPrice } from "@/lib/format";
 import { SHOP_EMAIL } from "@/lib/email/resend";
 import { PRODUCTION_ORIGIN } from "@/lib/site-url";
@@ -12,6 +13,14 @@ import type { PaidCheckout } from "./stripe-order";
 export type RecordedOrder = { readonly id: number; readonly orderNumber: string };
 
 const euro = (cents: number) => formatPrice({ amount: cents, currency: "EUR" });
+
+const PRODUCT_NAME = new Map(PRODUCTS.map((product) => [product.slug as string, product.name]));
+
+/** What to pack for a bundle line: every pack it ships, times the bundle quantity. */
+function packingList(line: PaidCheckout["lines"][number]): string | null {
+  if (!line.components?.length) return null;
+  return line.components.map((part) => `${part.quantity * line.quantity} × ${PRODUCT_NAME.get(part.slug) ?? part.slug}`).join(" + ");
+}
 
 export function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (character) => `&#${character.charCodeAt(0)};`);
@@ -37,7 +46,9 @@ function linesTable(checkout: PaidCheckout): string {
   const rows = checkout.lines
     .map(
       (line) => `<tr>
-        <td style="padding:8px 0;border-bottom:1px solid #eee">${escapeHtml(line.name)}</td>
+        <td style="padding:8px 0;border-bottom:1px solid #eee">${escapeHtml(line.name)}${
+          packingList(line) ? `<div style="font-size:13px;color:#555;margin-top:2px">Da spedire: ${escapeHtml(packingList(line)!)}</div>` : ""
+        }</td>
         <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:center">× ${line.quantity}</td>
         <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right">${euro(line.quantity * line.unitPriceCents)}</td>
       </tr>`,
@@ -97,7 +108,10 @@ export function ownerOrderEmail(checkout: PaidCheckout, order: RecordedOrder) {
     checkout.notes ? `Note del cliente: ${checkout.notes}` : null,
     "",
     "ARTICOLI",
-    ...checkout.lines.map((line) => `${line.quantity} × ${line.name} — ${euro(line.quantity * line.unitPriceCents)}`),
+    ...checkout.lines.flatMap((line) => [
+      `${line.quantity} × ${line.name} — ${euro(line.quantity * line.unitPriceCents)}`,
+      ...(packingList(line) ? [`   Da spedire: ${packingList(line)}`] : []),
+    ]),
     `Spedizione: ${checkout.shippingCents === 0 ? "gratuita" : euro(checkout.shippingCents)}`,
     `Totale pagato: ${euro(checkout.totalCents)}`,
     "",

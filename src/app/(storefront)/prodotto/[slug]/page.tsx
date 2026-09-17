@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { BadgeCheck, Boxes, Crosshair, Target, Zap } from "lucide-react";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { BundleContents } from "@/components/product/bundle-contents";
+import { BundleOffer } from "@/components/product/bundle-offer";
 import { Gallery } from "@/components/product/gallery";
 import { BuyPanel } from "@/components/product/buy-panel";
 import { ProductDetails } from "@/components/product/product-details";
@@ -9,7 +11,8 @@ import { StickyBuyBar } from "@/components/product/sticky-buy-bar";
 import { ProductCarousel } from "@/components/product/product-carousel";
 import { Rating } from "@/components/ui/rating";
 import { TrustBarLight } from "@/components/home/trust";
-import { PRODUCTS } from "@/data/catalog";
+import { BUNDLES, PRODUCTS } from "@/data/catalog";
+import { bundlesContaining } from "@/lib/commerce/bundles";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { formatPrice } from "@/lib/format";
 import { BLADE_TYPE_LABEL, CATEGORY_LABEL } from "@/lib/labels";
@@ -20,7 +23,7 @@ type Params = { slug: string };
 const FEATURE_ICONS = [Target, Boxes, Zap, BadgeCheck, Crosshair] as const;
 
 export function generateStaticParams(): Params[] {
-  return PRODUCTS.map((product) => ({ slug: product.slug }));
+  return [...BUNDLES, ...PRODUCTS].map((product) => ({ slug: product.slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
@@ -47,6 +50,16 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
   if (!product) notFound();
 
   const related = await commerce.getProductsBySlugs(product.relatedSlugs);
+
+  // A bundle lists its packs; a pack offers the bundle it belongs to, priced on live stock.
+  const components = product.bundleOf ? await commerce.getProductsBySlugs(product.bundleOf.map((part) => part.slug)) : [];
+  const [offer] = product.bundleOf
+    ? []
+    : await commerce.getProductsBySlugs(bundlesContaining(product.slug, BUNDLES).map((bundle) => bundle.slug));
+  const partners =
+    offer?.bundleOf
+      ? await commerce.getProductsBySlugs(offer.bundleOf.map((part) => part.slug).filter((partSlug) => partSlug !== product.slug))
+      : [];
 
   // Product structured data: price, live availability, shipping and returns make the page
   // eligible for Google's product results, and it tracks the catalogue rather than hand-written copy.
@@ -91,6 +104,15 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
             {product.name}
           </h1>
 
+          {product.bundleOf ? (
+            <p className="mt-3 flex items-center gap-2">
+              <span className="gd-chamfer gd-display inline-flex items-center gap-1.5 bg-lime px-2.5 py-1 text-[0.6875rem] font-bold tracking-wider text-void">
+                <Boxes className="size-3" aria-hidden="true" />
+                Offerta duo · {product.bundleOf.length} starter
+              </span>
+            </p>
+          ) : null}
+
           {product.bladeType ? (
             <p className="mt-3 flex items-center gap-2">
               <span className="gd-display inline-flex items-center gap-1.5 rounded-full bg-violet-tint px-2.5 py-1 text-[0.6875rem] font-bold tracking-wider text-violet-soft">
@@ -106,10 +128,20 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
             </div>
           ) : null}
 
-          <p className="mt-5 flex items-baseline gap-3">
+          <p className="mt-5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <span className="tabular gd-display text-[2rem] font-extrabold text-graphite" data-testid="pdp-price">
               {formatPrice(product.price)}
             </span>
+            {product.compareAtPrice ? (
+              <>
+                <span className="tabular text-body text-grey-400 line-through" data-testid="pdp-compare-price">
+                  {formatPrice(product.compareAtPrice)}
+                </span>
+                <span className="gd-display rounded-full bg-lime/15 px-2.5 py-0.5 text-[0.6875rem] font-bold tracking-wider text-lime">
+                  Risparmi {formatPrice({ amount: product.compareAtPrice.amount - product.price.amount, currency: "EUR" })}
+                </span>
+              </>
+            ) : null}
             <span className="text-small text-grey-600">IVA inclusa</span>
           </p>
 
@@ -134,11 +166,15 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
             })}
           </ul>
 
+          {product.bundleOf ? <BundleContents bundle={product} components={components} /> : null}
+
           <div id="buy-panel" className="mt-8">
             <BuyPanel product={product} />
           </div>
         </div>
       </div>
+
+      {offer ? <BundleOffer bundle={offer} current={product} partners={partners} /> : null}
 
       <TrustBarLight className="pb-4" />
 
