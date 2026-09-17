@@ -21,6 +21,8 @@ create unique index restock_requests_slug_email_unique
   on public.restock_requests (product_slug, lower(email));
 
 alter table public.restock_requests enable row level security;
+-- Supabase's default privileges would still grant the API roles table access; take it back.
+revoke all on table public.restock_requests from anon, authenticated;
 
 -- Staff (owner/admin) can read all requests; no direct-table grants to anon/authenticated.
 create policy "staff can read restock requests"

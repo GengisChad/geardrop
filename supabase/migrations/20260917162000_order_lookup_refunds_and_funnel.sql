@@ -191,6 +191,8 @@ comment on table public.storefront_daily_events is
 
 -- RLS on, no direct grants — only the security-definer functions may touch this table.
 alter table public.storefront_daily_events enable row level security;
+-- Supabase's default privileges would still grant the API roles table access; take it back.
+revoke all on table public.storefront_daily_events from anon, authenticated;
 
 -- No policies: anon and authenticated can never read or write directly.
 -- service_role always bypasses RLS, so the track function (security definer) can upsert.

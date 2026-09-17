@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { Bell, Check, ShoppingCart } from "lucide-react";
 import { Button, type ButtonSize } from "@/components/ui/button";
 import { useCart } from "@/lib/store/cart";
@@ -51,22 +52,22 @@ export function AddToCartButton({
   const text = label ?? STOCK_CTA[stock];
 
   if (!isPurchasable(stock)) {
-    const notify = () => toast.push({ tone: "info", message: `Ti avviseremo quando ${name} torna disponibile.` });
+    // The availability notice is a real form on the product page; every other surface leads there.
+    const notice = `/prodotto/${slug}#restock-form` as const;
     if (compact) {
       return (
-        <button
-          type="button"
-          onClick={notify}
+        <Link
+          href={notice}
           data-testid="notify-me"
           aria-label={`${text}: ${name}`}
           className={cn(COMPACT, "border border-white/15 text-grey-600 hover:border-violet-soft hover:text-violet-soft")}
         >
           <Bell className="size-4" aria-hidden="true" />
-        </button>
+        </Link>
       );
     }
     return (
-      <Button variant="card-notify" size={size} fullWidth={fullWidth} data-testid="notify-me" onClick={notify}>
+      <Button as={Link} href={notice} variant="card-notify" size={size} fullWidth={fullWidth} data-testid="notify-me">
         <Bell className="size-4" aria-hidden="true" />
         {text}
       </Button>
