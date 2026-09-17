@@ -1,8 +1,8 @@
-/** The approved default headline, newline-typed so it flows through the same renderer. */
-export const DEFAULT_HERO_TITLE = "Pronti alla\nbattaglia.\nNati per vincere.";
+/** The approved default headline. Includes the SEO keyword "Beyblade X originali" naturally. */
+export const DEFAULT_HERO_TITLE = "Beyblade X\noriginali,\ndisponibili in Italia.";
 
 /** Headline when the hero deals the owner's new releases. */
-export const NEW_RELEASES_HERO_TITLE = "Le nuove\nuscite sono\natterrate.";
+export const NEW_RELEASES_HERO_TITLE = "Beyblade X\noriginali,\ndisponibili in Italia.";
 
 /**
  * Split a hero headline into rendered lines, with the last line carrying the holographic accent.

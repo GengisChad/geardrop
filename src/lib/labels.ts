@@ -14,6 +14,9 @@ export const STOCK_LABEL: Record<StockStatus, string> = {
   esaurito: "Esaurito",
 };
 
+/** Standard in-stock delivery promise shown across checkout, cart and the PDP trust bar. */
+export const STANDARD_DELIVERY = "Consegna in 1-5 giorni lavorativi, a seconda del corriere";
+
 /** How long a pre-ordered piece may take, wherever a pre-order is sold or confirmed. */
 export const PREORDER_DELIVERY = "Potrebbe arrivare tra 10/15 giorni lavorativi";
 

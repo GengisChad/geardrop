@@ -127,7 +127,7 @@ export function productJsonLd(product: Product) {
     sku: product.slug.toUpperCase(),
     image: product.images.map((image) => absoluteUrl(image.src)),
     category: CATEGORY_LABEL[product.category],
-    brand: { "@type": "Brand", name: "Beyblade X" },
+    brand: { "@type": "Brand", name: "Hasbro" },
     ...(product.reviewCount > 0
       ? {
           aggregateRating: {
@@ -149,6 +149,15 @@ export function productJsonLd(product: Product) {
         "@type": "OfferShippingDetails",
         shippingRate: { "@type": "MonetaryAmount", value: (shippingCents / 100).toFixed(2), currency: "EUR" },
         shippingDestination: { "@type": "DefinedRegion", addressCountry: "IT" },
+        deliveryTime: {
+          "@type": "ShippingDeliveryTime",
+          businessDays: {
+            "@type": "OpeningHoursSpecification",
+            dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+          },
+          handlingTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 1, unitCode: "DAY" },
+          transitTime: { "@type": "QuantitativeValue", minValue: 1, maxValue: 4, unitCode: "DAY" },
+        },
       },
       hasMerchantReturnPolicy: {
         "@type": "MerchantReturnPolicy",

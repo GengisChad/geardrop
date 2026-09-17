@@ -7,6 +7,7 @@
  */
 
 import { BUNDLE, BUNDLES, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_FLAT_RATE } from "@/data/catalog";
+import { STANDARD_DELIVERY } from "@/lib/labels";
 import { piecesOf, withBundles } from "./bundles";
 import type {
   BladeType,
@@ -35,7 +36,7 @@ const DEFAULT_PER_PAGE = 12;
 const MOCK_SHIPPING: ShippingOption = {
   code: "standard",
   label: "Spedizione standard",
-  hint: "Spedizione entro 14 giorni dalla conferma; transito del corriere successivo",
+  hint: STANDARD_DELIVERY,
   price: { amount: SHIPPING_FLAT_RATE, currency: "EUR" },
 };
 

@@ -24,7 +24,13 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
     title,
     description: category.description,
     alternates: { canonical: `/negozio/${category.slug}` },
-    openGraph: { url: `/negozio/${category.slug}`, title, description: category.description },
+    openGraph: {
+      type: "website",
+      url: `/negozio/${category.slug}`,
+      title,
+      description: category.description,
+    },
+    twitter: { card: "summary_large_image" },
   };
 }
 

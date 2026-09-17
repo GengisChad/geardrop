@@ -110,50 +110,59 @@ on conflict (product_id, sort_order) do update set
 with seed(product_slug, label, value, sort_order) as (
   values
   ('cobalt-dragoon-2-60c', 'Tipo', 'Attacco (left-spin)', 0),
-  ('cobalt-dragoon-2-60c', 'Sistema', 'Beyblade X', 1),
-  ('cobalt-dragoon-2-60c', 'Codice', '2-60C', 2),
-  ('cobalt-dragoon-2-60c', 'Componenti', '1 trottola, 1 lanciatore a corda', 3),
-  ('cobalt-dragoon-2-60c', 'Materiale', 'Plastica e metallo', 4),
+  ('cobalt-dragoon-2-60c', 'Produttore', 'Hasbro (prodotto originale)', 1),
+  ('cobalt-dragoon-2-60c', 'Sistema', 'Beyblade X', 2),
+  ('cobalt-dragoon-2-60c', 'Codice', '2-60C', 3),
+  ('cobalt-dragoon-2-60c', 'Componenti', '1 trottola, 1 lanciatore a corda', 4),
+  ('cobalt-dragoon-2-60c', 'Materiale', 'Plastica e metallo', 5),
   ('soar-phoenix-9-60gf', 'Tipo', 'Attacco', 0),
-  ('soar-phoenix-9-60gf', 'Sistema', 'Beyblade X', 1),
-  ('soar-phoenix-9-60gf', 'Codice', '9-60GF', 2),
-  ('soar-phoenix-9-60gf', 'Componenti', '1 trottola, 1 lanciatore a corda', 3),
-  ('soar-phoenix-9-60gf', 'Materiale', 'Plastica e metallo', 4),
+  ('soar-phoenix-9-60gf', 'Produttore', 'Hasbro (prodotto originale)', 1),
+  ('soar-phoenix-9-60gf', 'Sistema', 'Beyblade X', 2),
+  ('soar-phoenix-9-60gf', 'Codice', '9-60GF', 3),
+  ('soar-phoenix-9-60gf', 'Componenti', '1 trottola, 1 lanciatore a corda', 4),
+  ('soar-phoenix-9-60gf', 'Materiale', 'Plastica e metallo', 5),
   ('saber-samurai-2-70l', 'Tipo', 'Attacco', 0),
-  ('saber-samurai-2-70l', 'Sistema', 'Beyblade X', 1),
-  ('saber-samurai-2-70l', 'Linea', 'UX (UX-09)', 2),
-  ('saber-samurai-2-70l', 'Codice', '2-70L', 3),
-  ('saber-samurai-2-70l', 'Componenti', '1 trottola, 1 lanciatore con impugnatura', 4),
+  ('saber-samurai-2-70l', 'Produttore', 'Hasbro (prodotto originale)', 1),
+  ('saber-samurai-2-70l', 'Sistema', 'Beyblade X', 2),
+  ('saber-samurai-2-70l', 'Linea', 'UX (UX-09)', 3),
+  ('saber-samurai-2-70l', 'Codice', '2-70L', 4),
+  ('saber-samurai-2-70l', 'Componenti', '1 trottola, 1 lanciatore con impugnatura', 5),
   ('blast-pegasus-a-tr', 'Tipo', 'Attacco', 0),
-  ('blast-pegasus-a-tr', 'Sistema', 'Beyblade X', 1),
-  ('blast-pegasus-a-tr', 'Linea', 'CX', 2),
-  ('blast-pegasus-a-tr', 'Componenti', '1 trottola, 1 Clip & Rip Launcher', 3),
-  ('blast-pegasus-a-tr', 'Nota', 'Richiede un Beystadium (venduto a parte)', 4),
+  ('blast-pegasus-a-tr', 'Produttore', 'Hasbro (prodotto originale)', 1),
+  ('blast-pegasus-a-tr', 'Sistema', 'Beyblade X', 2),
+  ('blast-pegasus-a-tr', 'Linea', 'CX', 3),
+  ('blast-pegasus-a-tr', 'Componenti', '1 trottola, 1 Clip & Rip Launcher', 4),
+  ('blast-pegasus-a-tr', 'Nota', 'Richiede un Beystadium (venduto a parte)', 5),
   ('drop-attack-battle-set', 'Tipo', 'Kit arena', 0),
-  ('drop-attack-battle-set', 'Sistema', 'Beyblade X', 1),
-  ('drop-attack-battle-set', 'Componenti', '1 stadio, 2 trottole, 2 lanciatori', 2),
-  ('drop-attack-battle-set', 'Trottole incluse', 'Impact Drake 9-60LR, Hover Wyvern 3-85N', 3),
-  ('drop-attack-battle-set', 'Materiale', 'Plastica e metallo', 4),
+  ('drop-attack-battle-set', 'Produttore', 'Hasbro (prodotto originale)', 1),
+  ('drop-attack-battle-set', 'Sistema', 'Beyblade X', 2),
+  ('drop-attack-battle-set', 'Componenti', '1 stadio, 2 trottole, 2 lanciatori', 3),
+  ('drop-attack-battle-set', 'Trottole incluse', 'Impact Drake 9-60LR, Hover Wyvern 3-85N', 4),
+  ('drop-attack-battle-set', 'Materiale', 'Plastica e metallo', 5),
   ('sneak-attack-battle-set', 'Tipo', 'Kit arena', 0),
-  ('sneak-attack-battle-set', 'Sistema', 'Beyblade X', 1),
-  ('sneak-attack-battle-set', 'Componenti', '1 stadio, 2 trottole, 2 lanciatori', 2),
-  ('sneak-attack-battle-set', 'Trottole incluse', 'Rampart Aegis GB, Cutter Shinobi LF', 3),
-  ('sneak-attack-battle-set', 'Materiale', 'Plastica e metallo', 4),
+  ('sneak-attack-battle-set', 'Produttore', 'Hasbro (prodotto originale)', 1),
+  ('sneak-attack-battle-set', 'Sistema', 'Beyblade X', 2),
+  ('sneak-attack-battle-set', 'Componenti', '1 stadio, 2 trottole, 2 lanciatori', 3),
+  ('sneak-attack-battle-set', 'Trottole incluse', 'Rampart Aegis GB, Cutter Shinobi LF', 4),
+  ('sneak-attack-battle-set', 'Materiale', 'Plastica e metallo', 5),
   ('glory-valkerion-lf', 'Tipo', 'Attacco', 0),
-  ('glory-valkerion-lf', 'Sistema', 'Beyblade X', 1),
-  ('glory-valkerion-lf', 'Linea', 'UX (Infinity Starter Pack)', 2),
-  ('glory-valkerion-lf', 'Codice', 'LF', 3),
-  ('glory-valkerion-lf', 'Componenti', '1 trottola, 1 lanciatore', 4),
+  ('glory-valkerion-lf', 'Produttore', 'Hasbro (prodotto originale)', 1),
+  ('glory-valkerion-lf', 'Sistema', 'Beyblade X', 2),
+  ('glory-valkerion-lf', 'Linea', 'UX (Infinity Starter Pack)', 3),
+  ('glory-valkerion-lf', 'Codice', 'LF', 4),
+  ('glory-valkerion-lf', 'Componenti', '1 trottola, 1 lanciatore', 5),
   ('hurricane-enlil-is-7-55t', 'Tipo', 'Bilanciata', 0),
-  ('hurricane-enlil-is-7-55t', 'Sistema', 'Beyblade X', 1),
-  ('hurricane-enlil-is-7-55t', 'Linea', 'CX (Infinity Starter Pack)', 2),
-  ('hurricane-enlil-is-7-55t', 'Codice', 'IS 7-55T', 3),
-  ('hurricane-enlil-is-7-55t', 'Componenti', '1 trottola, 1 lanciatore', 4),
+  ('hurricane-enlil-is-7-55t', 'Produttore', 'Hasbro (prodotto originale)', 1),
+  ('hurricane-enlil-is-7-55t', 'Sistema', 'Beyblade X', 2),
+  ('hurricane-enlil-is-7-55t', 'Linea', 'CX (Infinity Starter Pack)', 3),
+  ('hurricane-enlil-is-7-55t', 'Codice', 'IS 7-55T', 4),
+  ('hurricane-enlil-is-7-55t', 'Componenti', '1 trottola, 1 lanciatore', 5),
   ('shatter-horus-9-65gb', 'Tipo', 'Stamina', 0),
-  ('shatter-horus-9-65gb', 'Sistema', 'Beyblade X', 1),
-  ('shatter-horus-9-65gb', 'Linea', 'BX (Infinity Starter Pack)', 2),
-  ('shatter-horus-9-65gb', 'Codice', '9-65GB', 3),
-  ('shatter-horus-9-65gb', 'Componenti', '1 trottola, 1 lanciatore', 4)
+  ('shatter-horus-9-65gb', 'Produttore', 'Hasbro (prodotto originale)', 1),
+  ('shatter-horus-9-65gb', 'Sistema', 'Beyblade X', 2),
+  ('shatter-horus-9-65gb', 'Linea', 'BX (Infinity Starter Pack)', 3),
+  ('shatter-horus-9-65gb', 'Codice', '9-65GB', 4),
+  ('shatter-horus-9-65gb', 'Componenti', '1 trottola, 1 lanciatore', 5)
 )
 insert into public.product_specs (product_id, label, value, sort_order)
 select product.id, seed.label, seed.value, seed.sort_order
@@ -344,11 +353,11 @@ insert into public.homepage_sections (
   publication_status, published_at, active, sort_order
 )
 values
-  ('hero', 'hero', 'Beyblade X', 'Pronti alla battaglia. Nati per vincere.', null, 'Catalogo Beyblade X in pre-ordine, con disponibilità indicate e assistenza prima della conferma.', 'Esplora il catalogo', '/negozio', 'published'::public.publication_status, now(), true, 0),
+  ('hero', 'hero', 'Beyblade X · Prodotti originali Hasbro', 'Beyblade X originali, disponibili in Italia.', null, 'Trottole, starter, lanciatori e stadi Beyblade X originali Hasbro, con disponibilità indicate e spedizione in Italia.', 'Esplora il catalogo', '/negozio', 'published'::public.publication_status, now(), true, 0),
   ('categories', 'categories', null, 'Categorie', null, null, null, null, 'published'::public.publication_status, now(), true, 1),
   ('status-legend', 'status_legend', null, 'Legenda della disponibilità', null, null, null, null, 'published'::public.publication_status, now(), true, 2),
   ('featured-products', 'featured_products', null, 'In evidenza', null, null, 'Vedi tutto', '/negozio', 'published'::public.publication_status, now(), true, 3),
-  ('trust', 'trust', null, 'Pre-ordini con disponibilità indicate e spedizione entro 14 giorni dalla conferma.', null, null, null, null, 'published'::public.publication_status, now(), true, 4),
+  ('trust', 'trust', null, 'Prodotti Hasbro originali. Consegna in 1-5 giorni lavorativi, spedizione solo in Italia.', null, null, null, null, 'published'::public.publication_status, now(), true, 4),
   ('latest-drops', 'latest_drops', null, 'Catalogo Beyblade X', null, null, 'Esplora il catalogo', '/negozio', 'published'::public.publication_status, now(), true, 5),
   ('bestsellers', 'bestsellers', null, 'Pre-ordini aperti', null, null, 'Vedi Beyblade X', '/negozio/beyblade-x', 'published'::public.publication_status, now(), true, 6),
   ('competitive-picks', 'competitive_products', null, 'Esplora il catalogo', null, null, 'Vedi Beyblade X', '/negozio/beyblade-x', 'published'::public.publication_status, now(), true, 7)
@@ -434,9 +443,15 @@ values
 
 Il catalogo raccoglie trottole, set e accessori Beyblade X con descrizioni e disponibilità indicate per ciascun prodotto.
 
+## I prodotti sono originali?
+
+Sì, tutti i prodotti in vendita su GEAR//DROP sono Beyblade X originali certificati Hasbro.
+
 ## Quanto costa la spedizione?
 
 La spedizione standard è gratuita per ordini superiori a 59€. Sotto questa soglia si applica una tariffa fissa di 4,90€.
+
+Spediamo solo in Italia.
 
 ## Cosa significa “in arrivo”?
 
@@ -451,9 +466,13 @@ Quando i pezzi a magazzino finiscono puoi comunque ordinare il prodotto: il pre-
 Hai 30 giorni dalla consegna per richiedere il reso. Vedi la pagina Resi e rimborsi.', 'markdown'::public.content_format, 'Domande frequenti', 'Le risposte alle domande che ci arrivano più spesso.', 'published'::public.publication_status, now(), true, 0),
   ('spedizioni', 'Spedizioni', 'Come e quando arriva il tuo ordine.', '## Tempi di consegna
 
-I prodotti disponibili partono dopo la conferma del pagamento. I pre-ordini potrebbero arrivare tra 10/15 giorni lavorativi dalla conferma dell''ordine.
+I prodotti disponibili vengono consegnati in 1-5 giorni lavorativi a seconda del corriere, dalla conferma del pagamento.
 
-I tempi di transito del corriere iniziano dalla spedizione e dipendono dal servizio e dalla destinazione.
+I pre-ordini potrebbero arrivare tra 10/15 giorni lavorativi dalla conferma dell''ordine.
+
+## Destinazioni
+
+Spediamo solo in Italia.
 
 ## Costi
 
@@ -491,7 +510,7 @@ Rispondiamo entro un giorno lavorativo.
 
 ## Community
 
-Per consigli su combo e assetti, la community è il posto giusto: ci trovi sui canali social.
+Per consigli su combo e assetti scrivici a infogeardrop@gmail.com: rispondiamo volentieri.
 
 ## Collaborazioni
 

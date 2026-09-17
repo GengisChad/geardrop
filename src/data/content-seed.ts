@@ -18,9 +18,9 @@ export const HOMEPAGE_SECTION_SEEDS: readonly HomepageSectionSeed[] = [
   {
     key: "hero",
     type: "hero",
-    eyebrow: "Beyblade X",
-    title: "Pronti alla battaglia. Nati per vincere.",
-    description: "Catalogo Beyblade X in pre-ordine, con disponibilità indicate e assistenza prima della conferma.",
+    eyebrow: "Beyblade X · Prodotti originali Hasbro",
+    title: "Beyblade X originali, disponibili in Italia.",
+    description: "Trottole, starter, lanciatori e stadi Beyblade X originali Hasbro, con disponibilità indicate e spedizione in Italia.",
     cta: { label: "Esplora il catalogo", href: "/negozio" },
   },
   {
@@ -40,7 +40,7 @@ export const HOMEPAGE_SECTION_SEEDS: readonly HomepageSectionSeed[] = [
       "blast-pegasus-a-tr", "drop-attack-battle-set", "sneak-attack-battle-set",
     ],
   },
-  { key: "trust", type: "trust", title: "Pre-ordini con disponibilità indicate e spedizione entro 14 giorni dalla conferma." },
+  { key: "trust", type: "trust", title: "Prodotti Hasbro originali. Consegna in 1-5 giorni lavorativi, spedizione solo in Italia." },
   {
     key: "latest-drops",
     type: "latest_drops",
