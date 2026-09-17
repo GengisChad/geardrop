@@ -54,7 +54,6 @@ export const homepageSectionSchema = z.discriminatedUnion("sectionType", [
   section("club", noTargets),
   section("status_legend", noTargets),
   section("trust", noTargets),
-  section("newsletter", noTargets),
   section("promo_banner", noTargets),
   section("rich_text", noTargets),
   section("cta", noTargets),

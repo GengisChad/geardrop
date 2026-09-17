@@ -11,8 +11,10 @@ describe("admin homepage editor contract", () => {
     for (const type of [
       "hero", "announcement", "featured_products", "latest_drops", "categories",
       "competitive_products", "bestsellers", "new_arrivals", "offers", "bundle",
-      "club", "status_legend", "trust", "newsletter", "promo_banner", "rich_text", "cta",
+      "club", "status_legend", "trust", "promo_banner", "rich_text", "cta",
     ]) expect(editor).toContain(`value="${type}"`);
+    // The shop has no newsletter: the editor must not offer a section that collects nothing.
+    expect(editor).not.toContain('value="newsletter"');
     expect(editor).not.toContain("dangerouslySetInnerHTML");
   });
 

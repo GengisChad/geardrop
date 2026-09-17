@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { PromoBadge } from "@/components/ui/badge";
+import { ProductZoom } from "@/components/product/product-zoom";
 import { WishlistButton } from "@/components/product/wishlist-button";
 import { cutoutSrc, type ProductImage } from "@/data/assets";
 import type { PromoTag } from "@/lib/commerce/types";
@@ -19,6 +20,7 @@ type GalleryProps = {
 
 export function Gallery({ images, slug, name, promo }: GalleryProps) {
   const [index, setIndex] = useState(0);
+  const [zoomOpen, setZoomOpen] = useState(false);
   const active = images[index];
   const many = images.length > 1;
 
@@ -51,6 +53,18 @@ export function Gallery({ images, slug, name, promo }: GalleryProps) {
               />
             </motion.div>
           </AnimatePresence>
+          <button
+            type="button"
+            onClick={() => setZoomOpen(true)}
+            aria-label={`Ingrandisci la foto di ${name}`}
+            aria-haspopup="dialog"
+            data-testid="product-zoom-open"
+            className="group absolute inset-0 cursor-zoom-in"
+          >
+            <span className="gd-glass-compact absolute bottom-3 right-3 inline-flex size-10 items-center justify-center rounded-full text-graphite transition-colors group-hover:text-violet-soft">
+              <ZoomIn className="size-4" aria-hidden="true" />
+            </span>
+          </button>
         </div>
 
         {promo ? (
@@ -70,6 +84,15 @@ export function Gallery({ images, slug, name, promo }: GalleryProps) {
           </>
         ) : null}
       </div>
+
+      <ProductZoom
+        images={images}
+        index={index}
+        name={name}
+        open={zoomOpen}
+        onClose={() => setZoomOpen(false)}
+        onIndexChange={setIndex}
+      />
 
       {many ? (
         <ul className="flex gap-2.5">
