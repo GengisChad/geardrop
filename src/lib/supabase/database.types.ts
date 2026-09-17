@@ -1204,6 +1204,7 @@ export type Database = {
           shipping_address_snapshot: Json
           shipping_cents: number
           shipping_method_code: string
+          shipping_notified_at: string | null
           status: Database["public"]["Enums"]["order_status"]
           stripe_checkout_session_id: string | null
           stripe_payment_intent_id: string | null
@@ -1237,6 +1238,7 @@ export type Database = {
           shipping_address_snapshot: Json
           shipping_cents: number
           shipping_method_code: string
+          shipping_notified_at?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           stripe_checkout_session_id?: string | null
           stripe_payment_intent_id?: string | null
@@ -1270,6 +1272,7 @@ export type Database = {
           shipping_address_snapshot?: Json
           shipping_cents?: number
           shipping_method_code?: string
+          shipping_notified_at?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           stripe_checkout_session_id?: string | null
           stripe_payment_intent_id?: string | null
@@ -2072,6 +2075,10 @@ export type Database = {
         Returns: undefined
       }
       get_admin_dashboard_metrics: { Args: never; Returns: Json }
+      mark_order_shipping_notified: {
+        Args: { p_order_id: number }
+        Returns: undefined
+      }
       prepare_order_refund: {
         Args: { p_amount_cents: number; p_order_id: number; p_reason: string }
         Returns: undefined
@@ -2193,6 +2200,16 @@ export type Database = {
       }
       set_staff_active: {
         Args: { p_active: boolean; p_user_id: string }
+        Returns: undefined
+      }
+      ship_order: {
+        Args: {
+          p_carrier: string
+          p_code?: string
+          p_note?: string
+          p_order_id: number
+          p_url?: string
+        }
         Returns: undefined
       }
       swap_media_asset_associations: {
