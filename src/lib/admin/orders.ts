@@ -77,6 +77,8 @@ export const refundStripeSchema = z.object({
   reason: z.string().trim().min(3).max(1000),
   confirmed: z.literal(true),
   restoreStock: z.boolean(),
+  /** One id per form attempt: a double click reuses it, a new refund gets a new one. */
+  attempt: z.uuid(),
 });
 
 export function allowedOrderTransitions(status: OrderStatus): readonly OrderStatus[] {

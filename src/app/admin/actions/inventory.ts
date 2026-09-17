@@ -111,6 +111,13 @@ export async function sendRestockNoticesAction(
     const client = await supabaseServer.createSupabaseServerClient();
     await verifiedStaff(client, ["owner", "admin"]);
 
+    // Never tell anyone a product is back before the shop can actually sell it.
+    const product = await client.from("products").select("is_purchasable").eq("slug", productSlug).maybeSingle();
+    if (product.error) return { ok: false, message: "Impossibile verificare la disponibilità del prodotto." };
+    if (!product.data?.is_purchasable) {
+      return { ok: false, message: "Il prodotto non è ancora acquistabile: ricarica lo stock prima di inviare gli avvisi." };
+    }
+
     const requests = await listPendingRestockRequests(client, productSlug);
     if (requests.length === 0) {
       return { ok: true, message: "Nessun avviso in attesa per questo prodotto.", sent: 0 };

@@ -1,5 +1,5 @@
 begin;
-select plan(24);
+select plan(27);
 
 -- Fixtures -----------------------------------------------------------------------
 insert into auth.users(instance_id,id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at,confirmation_token,email_change,email_change_token_new,recovery_token) values
@@ -36,9 +36,10 @@ reset role;
 -- 3. authenticated cannot read restock_requests without staff role ---------------
 set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000099',true);
-select throws_ok(
-  $$select * from public.restock_requests$$,
-  '42501', null, 'authenticated without staff role cannot read restock_requests');
+select is(
+  (select count(*)::int from public.restock_requests),
+  0,
+  'a signed-in shopper without a staff role sees no restock requests');
 reset role;
 
 -- 4. RPC is idempotent: duplicate insert is silently ignored --------------------
@@ -119,9 +120,10 @@ reset role;
 -- 12. Editor cannot read restock_requests (policy is manager-only) ---------------
 set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000003102',true);
-select throws_ok(
-  $$select * from public.restock_requests$$,
-  '42501', null, 'editor is blocked from reading restock_requests');
+select is(
+  (select count(*)::int from public.restock_requests),
+  0,
+  'an editor sees no restock requests');
 reset role;
 
 -- 13-15. get_inventory_restock_demand returns correct counts ---------------------
@@ -151,22 +153,21 @@ select is(
   'editor gets no rows from get_inventory_restock_demand (guard returns empty)');
 reset role;
 
--- 17-19. mark_restock_notices_sent marks and cleans up ---------------------------
+-- 17-19. mark_restock_notices_sent deletes delivered requests ---------------------
+-- The staff call reads the id from a setting: a temporary table would belong to another role.
+select set_config('test.restock_id',
+  (select id::text from public.restock_requests where product_slug = 'restock-pub' order by id limit 1), true);
 set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000003101',true);
 
--- Capture ids before marking.
-create temporary table _ids on commit drop as
-  select id from public.restock_requests where product_slug = 'restock-pub' order by id limit 1;
-
 select lives_ok(
-  $$select public.mark_restock_notices_sent((select array_agg(id) from _ids))$$,
+  $$select public.mark_restock_notices_sent(array[current_setting('test.restock_id')::bigint])$$,
   'manager can call mark_restock_notices_sent');
 
 select is(
-  (select count(*)::int from public.restock_requests where product_slug = 'restock-pub' and notified_at is not null),
-  1,
-  'one request is marked notified');
+  (select count(*)::int from public.restock_requests where id = current_setting('test.restock_id')::bigint),
+  0,
+  'a delivered request is deleted');
 
 select is(
   (select pending_notices::int from public.get_inventory_restock_demand(array['restock-pub'])),
@@ -184,12 +185,12 @@ select throws_ok(
 reset role;
 
 -- 21-22. 6-month cleanup on mark_restock_notices_sent ---------------------------
-set local role authenticated;
-select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000003101',true);
-
--- Insert a stale row.
+-- Insert a stale row as the test owner: shoppers and staff never write the table directly.
 insert into public.restock_requests(product_slug, email, created_at)
 values ('restock-pub', 'stale@example.com', now() - interval '7 months');
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000003101',true);
 
 select is(
   (select count(*)::int from public.restock_requests where email = 'stale@example.com'),
@@ -214,10 +215,7 @@ select throws_ok(
 reset role;
 
 -- 24. preorder_demand is populated when active orders exist ---------------------
--- Build a minimal paid order with a preorder_quantity for restock-pub.
-set local role authenticated;
-select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000003101',true);
-
+-- Build a minimal paid order with a preorder_quantity for restock-pub, as the test owner.
 insert into public.orders(order_number,email,status,payment_status,subtotal_cents,discount_cents,shipping_cents,total_cents,shipping_method_code,shipping_address_snapshot,billing_address_snapshot,idempotency_key)
 values ('GD-RESTOCK-TEST','demand@example.com','confirmed','paid',2000,0,0,2000,'standard','{}','{}',md5('restock-demand-test')::uuid);
 insert into public.order_items(order_id,product_id,quantity,unit_price_cents,line_total_cents,product_name_snapshot,sku_snapshot,image_src_snapshot,preorder_quantity)
@@ -225,6 +223,8 @@ select (select id from public.orders where order_number='GD-RESTOCK-TEST'),
        (select id from public.products where slug='restock-pub'),
        2,2000,4000,'Restock Pub','RESTOCK-PUB','',2;
 
+set local role authenticated;
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000003101',true);
 select is(
   (select preorder_demand::int from public.get_inventory_restock_demand(array['restock-pub'])),
   2,

@@ -49,8 +49,21 @@ describe("refundStripeSchema", () => {
         reason: "Richiesta del cliente",
         confirmed: true,
         restoreStock: false,
+        attempt: "3f1a2b4c-5d6e-4f70-8a91-b2c3d4e5f607",
       }).success,
     ).toBe(true);
+  });
+
+  it("needs a per-attempt id so separate partial refunds never collapse into one", () => {
+    const base = { orderId: "42", amountCents: 500, reason: "Reso parziale", confirmed: true, restoreStock: false };
+    expect(refundStripeSchema.safeParse(base).success).toBe(false);
+    expect(refundStripeSchema.safeParse({ ...base, attempt: "not-a-uuid" }).success).toBe(false);
+  });
+
+  it("adds partial refunds up and refuses more than the order took", () => {
+    const migration = readFileSync(join(process.cwd(), "supabase/migrations/20260917162000_order_lookup_refunds_and_funnel.sql"), "utf8");
+    expect(migration).toContain("refunded_cents       = refunded_cents + p_amount_cents");
+    expect(migration).toContain("GD_ORDER_REFUND_EXCEEDS_TOTAL");
   });
 
   it("rejects without confirmation", () => {

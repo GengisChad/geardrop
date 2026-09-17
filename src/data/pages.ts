@@ -189,7 +189,7 @@ export const LEGAL_PAGES = {
       {
         heading: "Ordine e pagamento",
         body: [
-          "Dopo aver inserito i dati di spedizione vieni indirizzato alla pagina di pagamento sicura di Stripe, dove puoi pagare con carta, Apple Pay, Google Pay o gli altri metodi mostrati. I dati della carta sono trattati solo da Stripe: GEAR//DROP non li riceve né li conserva.",
+          "Dopo aver inserito i dati di spedizione vieni indirizzato alla pagina di pagamento sicura di Stripe, dove paghi in modo sicuro. I dati della carta sono trattati solo da Stripe: GEAR//DROP non li riceve né li conserva.",
           "Il contratto si conclude quando il pagamento è completato. Ricevi la conferma con il riferimento dell'ordine (GD-XXXXXXXX) e la ricevuta via email.",
           "In caso di errore evidente di prezzo, di quantità non più disponibile o di sospetto di frode, GEAR//DROP può annullare l'ordine rimborsandolo integralmente.",
         ],

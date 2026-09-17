@@ -1203,6 +1203,7 @@ export type Database = {
           refund_amount_cents: number | null
           refund_prepared_at: string | null
           refund_reason: string | null
+          refunded_cents: number
           shipped_at: string | null
           shipping_address_snapshot: Json
           shipping_cents: number
@@ -1238,6 +1239,7 @@ export type Database = {
           refund_amount_cents?: number | null
           refund_prepared_at?: string | null
           refund_reason?: string | null
+          refunded_cents?: number
           shipped_at?: string | null
           shipping_address_snapshot: Json
           shipping_cents: number
@@ -1273,6 +1275,7 @@ export type Database = {
           refund_amount_cents?: number | null
           refund_prepared_at?: string | null
           refund_reason?: string | null
+          refunded_cents?: number
           shipped_at?: string | null
           shipping_address_snapshot?: Json
           shipping_cents?: number

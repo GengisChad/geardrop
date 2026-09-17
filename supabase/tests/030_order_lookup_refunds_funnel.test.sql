@@ -1,5 +1,5 @@
 begin;
-select plan(23);
+select plan(24);
 
 -- Fixtures ------------------------------------------------------------------
 insert into auth.users(instance_id,id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at,confirmation_token,email_change,email_change_token_new,recovery_token) values
@@ -128,10 +128,17 @@ select lives_ok(
   'manager can call record_order_refund');
 reset role;
 select results_eq(
-  $$select refund_amount_cents, stripe_refund_id, payment_status::text
+  $$select refunded_cents, stripe_refund_id, payment_status::text
     from public.orders where order_number='GD-LOOKUP-1'$$,
   $$values (1000, 're_test_partial_001'::text, 'paid'::text)$$,
   'partial refund sets amount and refund id, payment_status stays paid');
+
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000003001',true);
+set local role authenticated;
+select throws_ok(
+  $$select public.record_order_refund(current_setting('test.lookup_order')::bigint, 3000, 'Troppo', 're_test_too_much')$$,
+  '22023', 'GD_ORDER_REFUND_EXCEEDS_TOTAL', 'refunds never add up to more than the order total');
+reset role;
 
 -- 15. Full refund sets payment_status to refunded ------------------------------------
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000003001',true);
@@ -139,15 +146,15 @@ set local role authenticated;
 select lives_ok(
   $$select public.record_order_refund(
       current_setting('test.lookup_order')::bigint,
-      3490,
-      'Rimborso totale di test',
+      2490,
+      'Rimborso del resto di test',
       're_test_full_001')$$,
-  'manager records a full refund');
+  'manager records the rest of the refund');
 reset role;
 select results_eq(
-  $$select payment_status::text from public.orders where order_number='GD-LOOKUP-1'$$,
-  $$values ('refunded'::text)$$,
-  'full refund sets payment_status to refunded');
+  $$select payment_status::text, refunded_cents from public.orders where order_number='GD-LOOKUP-1'$$,
+  $$values ('refunded'::text, 3490)$$,
+  'partial refunds add up to the total and mark the payment refunded');
 
 -- 16. record_order_refund writes an audit event -------------------------------------
 select is(

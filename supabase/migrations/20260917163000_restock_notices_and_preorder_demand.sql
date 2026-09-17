@@ -21,10 +21,12 @@ create unique index restock_requests_slug_email_unique
   on public.restock_requests (product_slug, lower(email));
 
 alter table public.restock_requests enable row level security;
--- Supabase's default privileges would still grant the API roles table access; take it back.
+-- Supabase's default privileges grant the API roles everything; guests get nothing, signed-in
+-- users may only read, and the policy below narrows that to owners and admins. Writes go
+-- through the security definer functions.
 revoke all on table public.restock_requests from anon, authenticated;
+grant select on table public.restock_requests to authenticated;
 
--- Staff (owner/admin) can read all requests; no direct-table grants to anon/authenticated.
 create policy "staff can read restock requests"
   on public.restock_requests
   for select
@@ -34,7 +36,7 @@ create policy "staff can read restock requests"
 
 comment on table public.restock_requests is
   'One row per (product_slug, email) pair while a buyer is waiting for a restock notice. '
-  'notified_at is set by mark_restock_notices_sent once the email is successfully delivered.';
+  'mark_restock_notices_sent deletes a request once its email is delivered.';
 
 -- === Anon/authenticated RPC: request a notice ==============================
 
@@ -69,6 +71,12 @@ begin
     or length(clean_email) > 320
   then
     raise exception using errcode = '22023', message = 'GD_RESTOCK_INVALID_EMAIL';
+  end if;
+
+  -- A cap per product keeps a flood of made-up addresses from filling the table and the
+  -- owner's email quota; real demand for one pack never gets near it.
+  if (select count(*) from public.restock_requests where product_slug = clean_slug) >= 2000 then
+    return;
   end if;
 
   -- Idempotent: a duplicate is silently ignored.
@@ -162,12 +170,10 @@ begin
     raise exception using errcode = '42501', message = 'GD_RESTOCK_MANAGER_REQUIRED';
   end if;
 
-  -- Mark the successfully notified requests.
+  -- A delivered notice has served its purpose: the address is deleted, as the privacy page says.
   if cardinality(p_request_ids) > 0 then
-    update public.restock_requests
-    set notified_at = now()
-    where id = any(p_request_ids)
-      and notified_at is null;
+    delete from public.restock_requests
+    where id = any(p_request_ids);
   end if;
 
   -- Privacy retention: delete requests older than 6 months (notified or not).

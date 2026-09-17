@@ -213,6 +213,7 @@ export async function refundStripeAction(_previous: OrderActionState, formData: 
     reason: text(formData, "reason"),
     confirmed: formData.get("confirmed") === "on",
     restoreStock: formData.get("restoreStock") === "on",
+    attempt: text(formData, "attempt"),
   });
   if (!parsed.success) return { ok: false, message: "Importo, motivazione e conferma sono obbligatori." };
 
@@ -222,20 +223,24 @@ export async function refundStripeAction(_previous: OrderActionState, formData: 
     // Read the order to get the payment intent id and current state.
     const { data: order, error: orderError } = await client
       .from("orders")
-      .select("id,order_number,stripe_payment_intent_id,payment_status,total_cents,status")
+      .select("id,order_number,stripe_payment_intent_id,payment_status,total_cents,refunded_cents,status")
       .eq("id", parsed.data.orderId)
       .single();
 
     if (orderError || !order) return { ok: false, message: "Ordine non trovato." };
     if (!order.stripe_payment_intent_id) return { ok: false, message: "Questo ordine non ha un pagamento Stripe collegato." };
     if (!["authorized", "paid"].includes(order.payment_status)) return { ok: false, message: "Il pagamento non è in uno stato rimborsabile." };
+    const remaining = order.total_cents - order.refunded_cents;
+    if (parsed.data.amountCents > remaining) {
+      return { ok: false, message: `Puoi rimborsare al massimo ${(remaining / 100).toFixed(2).replace(".", ",")} €.` };
+    }
 
     const secretKey = process.env["STRIPE_SECRET_KEY"]?.trim();
     if (!secretKey) return { ok: false, message: "La configurazione Stripe non è disponibile." };
 
     // Call Stripe to create the refund
     const stripe = createStripeClient(secretKey);
-    const idempotencyKey = `gd-refund-${order.order_number}-${parsed.data.amountCents}`;
+    const idempotencyKey = `gd-refund-${order.order_number}-${parsed.data.attempt}`;
     type StripeRefund = { readonly id: string; readonly status: string };
     const refund = await stripe.post<StripeRefund>("/refunds", {
       payment_intent: order.stripe_payment_intent_id,

@@ -84,7 +84,10 @@ comment on function public.lookup_order_status(text, text) is
 -- ── 2. STRIPE REFUND ID ON ORDERS ────────────────────────────────────────────────────────
 
 alter table public.orders
-  add column if not exists stripe_refund_id text;
+  add column if not exists stripe_refund_id text,
+  -- Money actually returned on Stripe, summed over partial refunds. refund_amount_cents stays the
+  -- amount prepared in the panel before any refund is issued.
+  add column if not exists refunded_cents integer not null default 0 check (refunded_cents >= 0);
 
 comment on column public.orders.stripe_refund_id is
   'Stripe refund object id (re_…) written by record_order_refund once the API call succeeds.';
@@ -118,7 +121,8 @@ begin
 
   select * into v_order
     from public.orders
-   where id = p_order_id;
+   where id = p_order_id
+   for update;
 
   if not found then
     raise exception using errcode = '22023', message = 'GD_ORDER_NOT_FOUND';
@@ -136,12 +140,15 @@ begin
     raise exception using errcode = '22023', message = 'GD_ORDER_REFUND_INVALID';
   end if;
 
-  -- A full refund is when the refund equals or exceeds the total paid.
-  fully_paid := p_amount_cents >= v_order.total_cents;
+  -- Partial refunds add up and can never return more than the order took.
+  if v_order.refunded_cents + p_amount_cents > v_order.total_cents then
+    raise exception using errcode = '22023', message = 'GD_ORDER_REFUND_EXCEEDS_TOTAL';
+  end if;
+  fully_paid := v_order.refunded_cents + p_amount_cents >= v_order.total_cents;
 
   update public.orders
      set refund_prepared_at  = coalesce(refund_prepared_at, now()),
-         refund_amount_cents  = p_amount_cents,
+         refunded_cents       = refunded_cents + p_amount_cents,
          refund_reason        = btrim(p_reason),
          stripe_refund_id     = btrim(p_stripe_refund_id),
          payment_status       = case when fully_paid
@@ -160,6 +167,7 @@ begin
     p_order_id::text,
     jsonb_build_object(
       'amount_cents',       p_amount_cents,
+      'refunded_cents',     v_order.refunded_cents + p_amount_cents,
       'reason',             btrim(p_reason),
       'stripe_refund_id',   btrim(p_stripe_refund_id),
       'fully_refunded',     fully_paid
