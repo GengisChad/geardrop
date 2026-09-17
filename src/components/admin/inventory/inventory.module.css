@@ -38,4 +38,7 @@
 .pagination { display: flex; align-items: center; justify-content: space-between; color: #656a72; font-size: 11px; font-weight: 750; }
 .pagination a { color: #30343a; }
 .page :focus-visible { outline: 3px solid #7a3cff; outline-offset: 2px; }
+.notifyButton { display: inline-flex; min-height: 34px; align-items: center; justify-content: center; border: 0; border-radius: 8px; padding: 0 14px; background: #7a3cff; color: #fff; cursor: pointer; font-size: 10px; font-weight: 850; }
+.notifyButton:disabled { cursor: wait; opacity: .65; }
+.notifyDisabled { font-size: 10px; color: #888; font-weight: 750; }
 @media (max-width:760px) { .filters,.adjustmentForm { grid-template-columns: 1fr; } .adjustmentForm header,.note,.confirm,.adjustmentForm > button,.adjustmentForm > p { grid-column: auto; } .filters > a { justify-self: start; } }

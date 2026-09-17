@@ -1751,6 +1751,30 @@ export type Database = {
         }
         Relationships: []
       }
+      restock_requests: {
+        Row: {
+          created_at: string
+          email: string
+          id: number
+          notified_at: string | null
+          product_slug: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: never
+          notified_at?: string | null
+          product_slug: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: never
+          notified_at?: string | null
+          product_slug?: string
+        }
+        Relationships: []
+      }
       shipping_methods: {
         Row: {
           active: boolean
@@ -2078,8 +2102,20 @@ export type Database = {
         Returns: undefined
       }
       get_admin_dashboard_metrics: { Args: never; Returns: Json }
+      get_inventory_restock_demand: {
+        Args: { p_slugs: string[] }
+        Returns: {
+          pending_notices: number
+          preorder_demand: number
+          product_slug: string
+        }[]
+      }
       mark_order_shipping_notified: {
         Args: { p_order_id: number }
+        Returns: undefined
+      }
+      mark_restock_notices_sent: {
+        Args: { p_request_ids: number[] }
         Returns: undefined
       }
       prepare_order_refund: {
@@ -2142,6 +2178,10 @@ export type Database = {
           p_product_id: number
           p_specs: Json
         }
+        Returns: undefined
+      }
+      request_restock_notice: {
+        Args: { p_email: string; p_slug: string }
         Returns: undefined
       }
       revoke_staff_access: { Args: { p_user_id: string }; Returns: undefined }
