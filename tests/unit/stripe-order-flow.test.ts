@@ -5,7 +5,7 @@ import { applyLiveStock } from "@/lib/commerce/live-stock-overlay";
 import { PRODUCTS } from "@/data/catalog";
 import { sendEmail, orderNotificationRecipient } from "@/lib/email/resend";
 import { customerOrderEmail, ownerOrderEmail } from "@/lib/orders/order-email";
-import { processPaidCheckout, type OrderStore } from "@/lib/orders/process-paid-checkout";
+import { processPaidCheckout, type LowStockProduct, type OrderStore } from "@/lib/orders/process-paid-checkout";
 import {
   paidCheckoutFromStripe,
   slugFromStripeId,
@@ -92,6 +92,58 @@ describe("paid checkout mapping", () => {
     expect(paidCheckoutFromStripe({ ...paidSession, payment_status: "unpaid" }, lineItems)).toBeNull();
   });
 
+  it("maps discount and promotion code from total_details", () => {
+    const sessionWithDiscount: StripeSessionForOrder = {
+      ...paidSession,
+      amount_total: 2990,
+      total_details: {
+        amount_shipping: 490,
+        amount_discount: 500,
+        breakdown: {
+          discounts: [{ discount: { promotion_code: { code: "SUMMER10" } } }],
+        },
+      },
+    };
+    const checkout = paidCheckoutFromStripe(sessionWithDiscount, lineItems);
+    expect(checkout?.discountCents).toBe(500);
+    expect(checkout?.couponCode).toBe("SUMMER10");
+    expect(checkout?.totalCents).toBe(2990);
+  });
+
+  it("defaults discount to 0 and couponCode to null when no promo code was applied", () => {
+    const checkout = paidCheckoutFromStripe(paidSession, lineItems);
+    expect(checkout?.discountCents).toBe(0);
+    expect(checkout?.couponCode).toBeNull();
+  });
+
+  it("expands promotion code only when total_details.breakdown is present", () => {
+    const sessionNoBreakdown: StripeSessionForOrder = {
+      ...paidSession,
+      total_details: { amount_shipping: 490, amount_discount: 0 },
+    };
+    const checkout = paidCheckoutFromStripe(sessionNoBreakdown, lineItems);
+    expect(checkout?.couponCode).toBeNull();
+  });
+
+  it("falls back to customer_details when payment_intent shipping is absent (recovery session)", () => {
+    const recoverySession: StripeSessionForOrder = {
+      ...paidSession,
+      payment_intent: null,
+      customer_details: {
+        email: "buyer@example.com",
+        phone: "3331234567",
+        name: "Mario Rossi",
+        address: null,
+      },
+    };
+    const checkout = paidCheckoutFromStripe(recoverySession, lineItems);
+    expect(checkout).not.toBeNull();
+    expect(checkout?.shipping.name).toBe("Mario Rossi");
+    // Address is empty — the owner email will warn
+    expect(checkout?.shipping.address).toBe("");
+    expect(checkout?.shipping.city).toBe("");
+  });
+
   it("resolves every catalogue product from its Stripe id", () => {
     for (const product of PRODUCTS) {
       expect(slugFromStripeId(`gd_${product.slug.replaceAll("-", "_")}`)).toBe(product.slug);
@@ -170,6 +222,36 @@ describe("processing a paid checkout", () => {
     expect(send).toHaveBeenCalledTimes(2);
     expect(send.mock.calls[1]?.[0]).toMatchObject({ to: "buyer@example.com", replyTo: "infogeardrop@gmail.com" });
   });
+
+  it("passes low-stock items to the owner email when the store provides them", async () => {
+    const lowItems: readonly LowStockProduct[] = [
+      { name: "Glory Valkerion LF", slug: "glory-valkerion-lf", stockQuantity: 0, stockStatus: "pre-ordine" },
+    ];
+    const store: OrderStore = {
+      ...memoryStore(),
+      async lowStock() { return lowItems; },
+    };
+    const captured: string[] = [];
+    const send = vi.fn().mockImplementation(async (msg: Record<string, unknown>) => {
+      captured.push(String(msg["html"] ?? ""));
+      return { ok: true as const, id: "email" };
+    });
+    await processPaidCheckout(checkout.sessionId, { loadCheckout: async () => checkout, store, sendEmail: send as never, env: {} });
+    expect(captured[0]).toContain("Scorte basse");
+    expect(captured[0]).toContain("Glory Valkerion LF — finito, ora in pre-ordine");
+  });
+
+  it("proceeds normally when the low-stock check throws", async () => {
+    const store: OrderStore = {
+      ...memoryStore(),
+      async lowStock() { throw new Error("db unreachable"); },
+    };
+    const send = vi.fn().mockResolvedValue({ ok: true, id: "email" });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const result = await processPaidCheckout(checkout.sessionId, { loadCheckout: async () => checkout, store, sendEmail: send, env: {} });
+    expect(result).toMatchObject({ status: "recorded", ownerEmail: "sent" });
+    expect(send).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("order emails", () => {
@@ -180,6 +262,49 @@ describe("order emails", () => {
       expect(email.html).toContain(part);
       expect(email.text).toContain(part);
     }
+  });
+
+  it("shows the discount and promotion code in the totals", () => {
+    const discountCheckout: PaidCheckout = { ...checkout, discountCents: 500, couponCode: "SUMMER10", totalCents: 2990 };
+    const email = ownerOrderEmail(discountCheckout, { id: 42, orderNumber: "GD-DISC" });
+    expect(email.html).toContain("Sconto (SUMMER10)");
+    expect(email.html).toContain("-€5,00");
+    expect(email.text).toContain("Sconto (SUMMER10): -€5,00");
+    expect(email.html).toContain("€29,90");
+    // Buyer email also shows discount
+    const buyer = customerOrderEmail(discountCheckout, { id: 42, orderNumber: "GD-DISC" });
+    expect(buyer.html).toContain("Sconto (SUMMER10)");
+    expect(buyer.html).toContain("-€5,00");
+  });
+
+  it("shows a clear warning when the shipping address is missing", () => {
+    const noAddress: PaidCheckout = {
+      ...checkout,
+      shipping: { name: "Mario Rossi", address: "", postalCode: "", city: "", province: "", country: "IT" },
+    };
+    const email = ownerOrderEmail(noAddress, { id: 43, orderNumber: "GD-NOAD" });
+    expect(email.html).toContain("Indirizzo di spedizione mancante: contatta il cliente");
+    expect(email.text).toContain("Indirizzo di spedizione mancante");
+  });
+
+  it("includes a low-stock alert box when products are running low", () => {
+    const lowStock = [
+      { name: "Glory Valkerion LF", slug: "glory-valkerion-lf", stockQuantity: 1, stockStatus: "disponibile" },
+      { name: "Cobalt Dragoon", slug: "cobalt-dragoon", stockQuantity: 0, stockStatus: "pre-ordine" },
+    ];
+    const email = ownerOrderEmail(checkout, { id: 44, orderNumber: "GD-LOWST" }, lowStock);
+    expect(email.html).toContain("Scorte basse");
+    expect(email.html).toContain("Glory Valkerion LF — ne resta 1");
+    expect(email.html).toContain("Cobalt Dragoon — finito, ora in pre-ordine");
+    expect(email.text).toContain("SCORTE BASSE");
+    expect(email.text).toContain("Glory Valkerion LF: ne resta 1");
+    expect(email.text).toContain("Cobalt Dragoon: finito, ora in pre-ordine");
+  });
+
+  it("does not show low-stock box when all products have enough stock", () => {
+    const email = ownerOrderEmail(checkout, { id: 45, orderNumber: "GD-OK" }, []);
+    expect(email.html).not.toContain("Scorte basse");
+    expect(email.text).not.toContain("SCORTE BASSE");
   });
 
   it("escapes buyer-written text", () => {
@@ -241,5 +366,33 @@ describe("record_stripe_checkout_order migration", () => {
     expect(migration).toContain("pg_advisory_xact_lock");
     expect(migration).toContain("where orders.stripe_checkout_session_id = p_session_id");
     expect(migration).toContain("greatest(on_hand - line.quantity, 0)");
+  });
+});
+
+describe("discount migration (20260917161000)", () => {
+  const migration = readFileSync(join(process.cwd(), "supabase/migrations/20260917161000_record_stripe_discounts.sql"), "utf8");
+
+  it("drops the old 9-arg function and creates the new 11-arg version", () => {
+    expect(migration).toContain("drop function if exists public.record_stripe_checkout_order(");
+    expect(migration).toContain("p_discount_cents integer default 0");
+    expect(migration).toContain("p_coupon_code text default null");
+  });
+
+  it("clamps the discount so total_cents is never negative", () => {
+    expect(migration).toContain("least(greatest(p_discount_cents, 0), subtotal)");
+    expect(migration).toContain("subtotal - discount_clamped + p_shipping_cents");
+  });
+
+  it("records the coupon code and includes discount in the audit after_state", () => {
+    expect(migration).toContain("coupon_code, notes");
+    expect(migration).toContain("'coupon_code'");
+    expect(migration).toContain("'discount_cents'");
+  });
+
+  it("is callable by the server's secret key only and runs as security definer", () => {
+    expect(migration).toContain("security definer");
+    expect(migration).toContain("set search_path = ''");
+    expect(migration).toMatch(/revoke all on function public\.record_stripe_checkout_order\(text, text, text, text, text, jsonb, jsonb, integer, text, integer, text\)\s+from public, anon, authenticated;/);
+    expect(migration).toMatch(/grant execute on function public\.record_stripe_checkout_order\(text, text, text, text, text, jsonb, jsonb, integer, text, integer, text\)\s+to service_role;/);
   });
 });

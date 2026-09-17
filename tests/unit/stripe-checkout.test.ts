@@ -138,6 +138,16 @@ describe("stripe checkout session", () => {
     expect(Object.keys(fields).some((key) => key.includes("unit_amount"))).toBe(false);
   });
 
+  it("enables abandoned-cart recovery, consent collection and promotion codes", async () => {
+    const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }]);
+    const fields = buildCheckoutSessionFields({ quote, order, origin: ORIGIN }, matchStripePrices(quote, catalogPrices)!);
+
+    expect(fields["after_expiration[recovery][enabled]"]).toBe("true");
+    expect(fields["after_expiration[recovery][allow_promotion_codes]"]).toBe("true");
+    expect(fields["consent_collection[promotions]"]).toBe("auto");
+    expect(fields["allow_promotion_codes"]).toBe("true");
+  });
+
   it("warns on the Stripe page when a line is a pre-order", async () => {
     const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }]);
     const preorder: CartQuote = { ...quote, lines: quote.lines.map((line) => ({ ...line, stock: "pre-ordine" as const })) };

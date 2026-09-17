@@ -62,6 +62,9 @@ export default async function CheckoutResultPage({ searchParams }: { searchParam
             <Button as={Link} href="/negozio" variant="primary" size="lg" className="mt-7">
               Continua ad acquistare
             </Button>
+            <Link href="/ordine" className="mt-3 text-small text-grey-600 underline-offset-2 hover:underline hover:text-lime">
+              Segui il tuo ordine
+            </Link>
           </>
         ) : (
           <>

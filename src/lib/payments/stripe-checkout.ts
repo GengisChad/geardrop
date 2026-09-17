@@ -114,6 +114,14 @@ export function buildCheckoutSessionFields(
     // Stripe substitutes the literal placeholder; it must not be URL-encoded.
     success_url: `${origin}/checkout/successo?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/checkout`,
+    // When the session expires, Stripe can email the buyer a recovery link and let them
+    // pay again, optionally with a promotion code.
+    "after_expiration[recovery][enabled]": "true",
+    "after_expiration[recovery][allow_promotion_codes]": "true",
+    // Stripe requires promotions consent when recovery emails are enabled.
+    "consent_collection[promotions]": "auto",
+    // Allow manual promotion codes entered at checkout.
+    "allow_promotion_codes": "true",
     "metadata[order_ref]": reference,
     "metadata[lines]": truncate(quote.lines.map((line) => `${line.slug} x${line.quantity}`).join(", "), METADATA_LIMIT),
     "payment_intent_data[description]": `Ordine ${reference} · GEAR//DROP`,

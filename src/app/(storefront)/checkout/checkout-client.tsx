@@ -5,7 +5,7 @@ import Image from "next/image";
 import { cutoutSrc } from "@/data/assets";
 import Link from "next/link";
 import { useForm, useWatch } from "react-hook-form";
-import { AlertTriangle, ArrowRight, CheckCircle2, Info } from "lucide-react";
+import { AlertTriangle, ArrowRight, CheckCircle2, Info, Lock } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -16,11 +16,14 @@ import { useCart } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/format";
 import { preorderNote } from "@/lib/labels";
 import { checkoutSchema, type CheckoutValues } from "@/lib/checkout-schema";
+import { trackEvent } from "@/lib/funnel";
 import { submitOrder } from "./actions";
 import type { Money } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
+import { PROVINCES } from "@/data/provinces";
 
-const STEPS = ["Carrello", "Spedizione", "Conferma"] as const;
+// Updated step labels to reflect the real flow.
+const STEPS = ["I tuoi dati", "Pagamento su Stripe"] as const;
 
 type Placed = { readonly orderNumber: string; readonly total: Money | null };
 
@@ -105,6 +108,8 @@ export function CheckoutClient() {
     ? busy ? "Apertura pagamento..." : "Vai al pagamento"
     : busy ? "Registrazione..." : "Conferma ordine";
 
+  const totalItemCount = quote.lines.reduce((sum, l) => sum + l.quantity, 0);
+
   return (
     <form
       noValidate
@@ -112,6 +117,7 @@ export function CheckoutClient() {
       onSubmit={handleSubmit(async (values) => {
         setFailure(null);
         setPending(true);
+        trackEvent("checkout_submit");
         try {
           const result = await submitOrder({
             // The shipping code the quote was priced with wins if the customer never
@@ -140,6 +146,7 @@ export function CheckoutClient() {
       className="mt-8 grid items-start gap-8 lg:grid-cols-[1fr_22rem]"
     >
       <div className="flex min-w-0 flex-col gap-6">
+        {/* Step indicator */}
         <ol className="flex min-w-0 items-center justify-between gap-2 sm:justify-start sm:gap-3" aria-label="Avanzamento">
           {STEPS.map((step, index) => (
             <li key={step} className="flex min-w-0 items-center gap-2 sm:gap-3">
@@ -147,12 +154,18 @@ export function CheckoutClient() {
                 <span
                   className={cn(
                     "tabular gd-display inline-flex size-6 items-center justify-center rounded-full text-[0.6875rem] font-bold",
-                    index <= 1 ? "bg-lime text-void" : "bg-grey-200 text-grey-600",
+                    // Current checkout page is always on step 1 ("I tuoi dati").
+                    index === 0 ? "bg-lime text-void" : "bg-grey-200 text-grey-600",
                   )}
                 >
                   {index + 1}
                 </span>
-                <span className={cn("gd-display text-[0.625rem] font-bold tracking-wide sm:text-[0.6875rem] sm:tracking-wider", index <= 1 ? "text-graphite" : "text-grey-600")}>
+                <span
+                  className={cn(
+                    "gd-display text-[0.625rem] font-bold tracking-wide sm:text-[0.6875rem] sm:tracking-wider",
+                    index === 0 ? "text-graphite" : "text-grey-600",
+                  )}
+                >
                   {step}
                 </span>
               </span>
@@ -160,6 +173,54 @@ export function CheckoutClient() {
             </li>
           ))}
         </ol>
+
+        {/* Mobile-only compact order summary — expandable via <details> */}
+        <details
+          className="lg:hidden gd-glass-panel rounded-[--radius-glass] p-4"
+          data-testid="mobile-order-summary"
+        >
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+            <span className="gd-display text-small font-bold text-graphite">
+              {totalItemCount === 1 ? "1 articolo" : `${totalItemCount} articoli`}
+            </span>
+            <span className="tabular gd-display text-body font-extrabold text-graphite">
+              {formatPrice(quote.totals.total)}
+            </span>
+          </summary>
+          <ul className="mt-4 flex flex-col gap-3">
+            {quote.lines.map((line) => (
+              <li key={line.slug} className="flex items-center gap-3">
+                {line.image ? (
+                  <span className="relative shrink-0">
+                    <Image
+                      src={cutoutSrc(line.image.src) ?? line.image.src}
+                      alt=""
+                      aria-hidden="true"
+                      width={line.image.width}
+                      height={line.image.height}
+                      sizes="40px"
+                      className="size-10 object-contain"
+                    />
+                    <span className="tabular absolute -right-1 -top-1 inline-flex min-w-4 items-center justify-center rounded-full bg-lime px-1 text-[0.5625rem] font-bold leading-4 text-void">
+                      {line.quantity}
+                    </span>
+                  </span>
+                ) : null}
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-small text-grey-600">{line.name}</span>
+                  {preorderNote(line) ? (
+                    <span className="block text-[0.625rem] font-bold leading-snug text-preorder" data-testid="mobile-checkout-preorder">
+                      {preorderNote(line)}
+                    </span>
+                  ) : null}
+                </span>
+                <span className="tabular shrink-0 text-small font-semibold text-graphite">
+                  {formatPrice(line.lineTotal)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </details>
 
         {quote.notice ? (
           <p
@@ -251,16 +312,24 @@ export function CheckoutClient() {
                 />
               </Field>
               <Field label="Provincia" htmlFor="province" error={errors.province?.message}>
-                <TextInput
+                {/* Native <select> of all 107 Italian provinces; same field name/validation as before. */}
+                <select
                   id="province"
-                  maxLength={2}
-                  placeholder="MI"
-                  hasError={Boolean(errors.province)}
-                  className="uppercase"
+                  autoComplete="address-level1"
+                  data-testid="province-select"
+                  className={cn(inputClass(Boolean(errors.province)), "cursor-pointer")}
+                  defaultValue=""
                   {...register("province", {
-                    validate: (v) => checkoutSchema.shape.province.safeParse(v).success || "Usa la sigla di 2 lettere (es. MI).",
+                    validate: (v) => checkoutSchema.shape.province.safeParse(v).success || "Seleziona la provincia.",
                   })}
-                />
+                >
+                  <option value="" disabled>Seleziona…</option>
+                  {PROVINCES.map((p) => (
+                    <option key={p.sigla} value={p.sigla}>
+                      {p.name} ({p.sigla})
+                    </option>
+                  ))}
+                </select>
               </Field>
             </div>
           </div>
@@ -308,8 +377,8 @@ export function CheckoutClient() {
             <Info className="mt-0.5 size-4 shrink-0 text-violet-soft" aria-hidden="true" />
             {stripe ? (
               <span>
-                Paghi sulla pagina sicura di Stripe con carta, Apple Pay, Google Pay o gli altri metodi
-                disponibili. L&apos;ordine è valido solo quando il pagamento è completato.
+                Paghi sulla pagina sicura di Stripe. L&apos;ordine è valido solo quando il
+                pagamento è completato.
               </span>
             ) : (
               <span>
@@ -373,6 +442,15 @@ export function CheckoutClient() {
           {submitLabel}
           {!busy ? <ArrowRight className="size-4" aria-hidden="true" /> : null}
         </Button>
+
+        {/* Payment trust badge — Stripe only, no card brand logos */}
+        {stripe ? (
+          <p className="flex items-center justify-center gap-1.5 text-[0.6875rem] text-grey-600" data-testid="payment-trust">
+            <Lock className="size-3.5 shrink-0 text-available" aria-hidden="true" />
+            Pagamento sicuro su Stripe
+          </p>
+        ) : null}
+
         <p className="text-center text-[0.6875rem] text-grey-600" data-testid="checkout-terms">
           Confermando accetti i{" "}
           <Link href="/legale/termini" className="underline hover:text-violet-soft">Termini e condizioni</Link>{" "}

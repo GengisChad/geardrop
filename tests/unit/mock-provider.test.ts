@@ -162,9 +162,7 @@ describe("quoteCart", () => {
     const quote = await provider.quoteCart({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }] });
     expect(quote.shippingOptions.map((option) => option.code)).toEqual(["standard"]);
     expect(quote.shippingCode).toBe("standard");
-    expect(quote.shippingOptions[0]?.hint).toBe(
-      "Spedizione entro 14 giorni dalla conferma; transito del corriere successivo",
-    );
+    expect(quote.shippingOptions[0]?.hint).toBe("Consegna in 1-5 giorni lavorativi, a seconda del corriere");
   });
 
   it("never claims an order can be placed against the local catalogue", async () => {

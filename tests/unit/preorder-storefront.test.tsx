@@ -12,10 +12,14 @@ import type { StorefrontChrome } from "@/lib/content/types";
 const product = PRODUCTS[0]!;
 
 describe("preorder quantity presentation", () => {
-  it("offers notify instead of purchase for an explicitly sold-out product", () => {
+  it("offers an inline restock form instead of a cart button for a sold-out product", () => {
     const html = renderToStaticMarkup(<Providers><BuyPanel product={{ ...product, stock: "esaurito", availableQuantity: 0 }} /></Providers>);
-    expect(html).toContain('data-testid="notify-me"');
+    // The restock form replaces the AddToCartButton on the PDP.
+    expect(html).toContain('id="restock-form"');
+    expect(html).toContain('type="email"');
+    expect(html).toContain("Avvisami");
     expect(html).not.toContain('data-testid="add-to-cart"');
+    expect(html).not.toContain('data-testid="notify-me"');
     expect(html).not.toContain('data-testid="qty-input"');
   });
   it("renders the current allocation and caps the PDP control at the lower availability", () => {

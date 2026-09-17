@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import {
   addOrderNoteAction,
   cancelOrderAction,
   prepareOrderRefundAction,
+  refundStripeAction,
   setOrderTrackingAction,
   shipOrderAction,
   transitionOrderAction,
@@ -22,15 +23,19 @@ function Feedback({ state }: { readonly state: OrderActionState }) {
   return state.message ? <p className={state.ok ? styles.success : styles.error} role="status">{state.message}</p> : null;
 }
 
-export function OrderActions({ orderId, status, paymentStatus, role, tracking, shippingNotifiedAt }: {
+export function OrderActions({ orderId, status, paymentStatus, role, tracking, shippingNotifiedAt, stripePaymentIntentId, totalCents, refundedCents = 0 }: {
   readonly orderId: number; readonly status: OrderStatus; readonly paymentStatus: PaymentStatus; readonly role: StaffRole;
   readonly tracking: { readonly carrier: string | null; readonly code: string | null; readonly url: string | null };
   readonly shippingNotifiedAt: string | null;
+  readonly stripePaymentIntentId: string | null;
+  readonly totalCents: number;
+  readonly refundedCents?: number;
 }) {
   const manager = role === "owner" || role === "admin";
   const transitions = allowedOrderTransitions(status).filter((value) => value !== "cancelled") as readonly ("confirmed" | "processing" | "shipped" | "completed")[];
   const cancellable = manager && ["pending", "confirmed", "processing"].includes(status);
   const refundable = manager && ["authorized", "paid"].includes(paymentStatus);
+  const stripeRefundable = refundable && Boolean(stripePaymentIntentId) && totalCents - refundedCents > 0;
   const shippable = manager && ["confirmed", "processing", "shipped"].includes(status);
   const [shipState, shipAction, shipPending] = useActionState(shipOrderAction, initial);
   const [transitionState, transitionAction, transitionPending] = useActionState(transitionOrderAction, initial);
@@ -38,6 +43,15 @@ export function OrderActions({ orderId, status, paymentStatus, role, tracking, s
   const [noteState, noteAction, notePending] = useActionState(addOrderNoteAction, initial);
   const [cancelState, cancelAction, cancelPending] = useActionState(cancelOrderAction, initial);
   const [refundState, refundAction, refundPending] = useActionState(prepareOrderRefundAction, initial);
+  const [stripeRefundState, stripeRefundAction, stripeRefundPending] = useActionState(refundStripeAction, initial);
+  // A new id after each completed refund, so a second partial refund is never mistaken for a retry.
+  const [refundAttempt, setRefundAttempt] = useState(() => crypto.randomUUID());
+  const [seenRefundState, setSeenRefundState] = useState(stripeRefundState);
+  if (seenRefundState !== stripeRefundState) {
+    setSeenRefundState(stripeRefundState);
+    if (stripeRefundState.ok) setRefundAttempt(crypto.randomUUID());
+  }
+  const refundable_cents = Math.max(totalCents - refundedCents, 0);
 
   return <div className={styles.actionGrid}>
     {shippable ? <form action={shipAction} className={`${styles.actionCard} ${styles.shipCard}`}>
@@ -79,6 +93,18 @@ export function OrderActions({ orderId, status, paymentStatus, role, tracking, s
       <label>Importo EUR<input min="0.01" name="amount" required step="0.01" type="number"/></label>
       <label>Motivazione<textarea maxLength={1000} minLength={3} name="reason" required rows={3}/></label>
       <button disabled={refundPending} type="submit">{refundPending ? "Preparazione…" : "Prepara rimborso"}</button><Feedback state={refundState}/>
+    </form> : null}
+
+    {stripeRefundable ? <form action={stripeRefundAction} className={`${styles.actionCard} ${styles.dangerCard}`}>
+      <h3>Rimborsa su Stripe</h3>
+      <p>Esegue il rimborso direttamente su Stripe. Operazione irreversibile.</p>
+      <input name="orderId" type="hidden" value={orderId}/>
+      <input name="attempt" type="hidden" value={refundAttempt}/>
+      <label>Importo EUR (max {(refundable_cents / 100).toFixed(2)})<input defaultValue={(refundable_cents / 100).toFixed(2)} key={refundAttempt} max={(refundable_cents / 100).toFixed(2)} min="0.01" name="amount" required step="0.01" type="number"/></label>
+      <label>Motivazione<textarea maxLength={1000} minLength={3} name="reason" required rows={3}/></label>
+      {["pending","confirmed","processing"].includes(status) ? <label className={styles.confirm}><input name="restoreStock" type="checkbox"/> Rimetti i pezzi a magazzino</label> : null}
+      <label className={styles.confirm}><input name="confirmed" required type="checkbox"/> Confermo il rimborso su Stripe</label>
+      <button disabled={stripeRefundPending} type="submit">{stripeRefundPending ? "Rimborso…" : "Rimborsa su Stripe"}</button><Feedback state={stripeRefundState}/>
     </form> : null}
 
     {cancellable ? <form action={cancelAction} className={`${styles.actionCard} ${styles.dangerCard}`}>

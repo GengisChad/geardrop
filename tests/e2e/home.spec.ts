@@ -41,7 +41,7 @@ test.describe("public homepage", () => {
     await expect(h1).toHaveCount(1);
     const lines = h1.locator("span.block");
     await expect(lines).toHaveCount(3);
-    await expect(lines.last()).toHaveText("atterrate.");
+    await expect(lines.last()).toHaveText("disponibili in Italia.");
     await expect(lines.last()).toHaveClass(/gd-holo-text/);
 
     // The hero deals the owner's new releases as holographic cards.

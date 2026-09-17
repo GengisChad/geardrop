@@ -1203,6 +1203,7 @@ export type Database = {
           refund_amount_cents: number | null
           refund_prepared_at: string | null
           refund_reason: string | null
+          refunded_cents: number
           shipped_at: string | null
           shipping_address_snapshot: Json
           shipping_cents: number
@@ -1211,6 +1212,7 @@ export type Database = {
           status: Database["public"]["Enums"]["order_status"]
           stripe_checkout_session_id: string | null
           stripe_payment_intent_id: string | null
+          stripe_refund_id: string | null
           subtotal_cents: number
           total_cents: number
           tracking_carrier: string | null
@@ -1237,6 +1239,7 @@ export type Database = {
           refund_amount_cents?: number | null
           refund_prepared_at?: string | null
           refund_reason?: string | null
+          refunded_cents?: number
           shipped_at?: string | null
           shipping_address_snapshot: Json
           shipping_cents: number
@@ -1245,6 +1248,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["order_status"]
           stripe_checkout_session_id?: string | null
           stripe_payment_intent_id?: string | null
+          stripe_refund_id?: string | null
           subtotal_cents: number
           total_cents: number
           tracking_carrier?: string | null
@@ -1271,6 +1275,7 @@ export type Database = {
           refund_amount_cents?: number | null
           refund_prepared_at?: string | null
           refund_reason?: string | null
+          refunded_cents?: number
           shipped_at?: string | null
           shipping_address_snapshot?: Json
           shipping_cents?: number
@@ -1279,6 +1284,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["order_status"]
           stripe_checkout_session_id?: string | null
           stripe_payment_intent_id?: string | null
+          stripe_refund_id?: string | null
           subtotal_cents?: number
           total_cents?: number
           tracking_carrier?: string | null
@@ -1751,6 +1757,30 @@ export type Database = {
         }
         Relationships: []
       }
+      restock_requests: {
+        Row: {
+          created_at: string
+          email: string
+          id: number
+          notified_at: string | null
+          product_slug: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: never
+          notified_at?: string | null
+          product_slug: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: never
+          notified_at?: string | null
+          product_slug?: string
+        }
+        Relationships: []
+      }
       shipping_methods: {
         Row: {
           active: boolean
@@ -1979,6 +2009,24 @@ export type Database = {
         }
         Relationships: []
       }
+      storefront_daily_events: {
+        Row: {
+          count: number
+          day: string
+          event: string
+        }
+        Insert: {
+          count?: number
+          day: string
+          event: string
+        }
+        Update: {
+          count?: number
+          day?: string
+          event?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -2078,8 +2126,33 @@ export type Database = {
         Returns: undefined
       }
       get_admin_dashboard_metrics: { Args: never; Returns: Json }
+      get_inventory_restock_demand: {
+        Args: { p_slugs: string[] }
+        Returns: {
+          pending_notices: number
+          preorder_demand: number
+          product_slug: string
+        }[]
+      }
+      lookup_order_status: {
+        Args: { p_email: string; p_order_number: string }
+        Returns: {
+          created_at: string
+          items: Json
+          order_number: string
+          shipped_at: string
+          status: string
+          tracking_carrier: string
+          tracking_code: string
+          tracking_url: string
+        }[]
+      }
       mark_order_shipping_notified: {
         Args: { p_order_id: number }
+        Returns: undefined
+      }
+      mark_restock_notices_sent: {
+        Args: { p_request_ids: number[] }
         Returns: undefined
       }
       prepare_order_refund: {
@@ -2091,9 +2164,26 @@ export type Database = {
         Args: { p_section_id: number }
         Returns: undefined
       }
+      read_funnel_stats: {
+        Args: { p_days?: number }
+        Returns: {
+          count: number
+          day: string
+          event: string
+        }[]
+      }
       record_completed_media_storage_mutation: {
         Args: { p_object_path: string; p_operation: string }
         Returns: number
+      }
+      record_order_refund: {
+        Args: {
+          p_amount_cents: number
+          p_order_id: number
+          p_reason: string
+          p_stripe_refund_id: string
+        }
+        Returns: undefined
       }
       record_staff_invite: {
         Args: {
@@ -2107,6 +2197,8 @@ export type Database = {
       record_staff_login: { Args: never; Returns: undefined }
       record_stripe_checkout_order: {
         Args: {
+          p_coupon_code?: string
+          p_discount_cents?: number
           p_email: string
           p_lines: Json
           p_notes: string
@@ -2142,6 +2234,10 @@ export type Database = {
           p_product_id: number
           p_specs: Json
         }
+        Returns: undefined
+      }
+      request_restock_notice: {
+        Args: { p_email: string; p_slug: string }
         Returns: undefined
       }
       revoke_staff_access: { Args: { p_user_id: string }; Returns: undefined }
@@ -2219,6 +2315,7 @@ export type Database = {
         Args: { p_new_media_asset_id: number; p_old_media_asset_id: number }
         Returns: Json
       }
+      track_storefront_event: { Args: { p_event: string }; Returns: undefined }
       transition_order_status: {
         Args: {
           p_note?: string

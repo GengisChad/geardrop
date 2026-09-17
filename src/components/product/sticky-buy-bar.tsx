@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
+import { Bell } from "lucide-react";
 import { cutoutSrc } from "@/data/assets";
 import { AnimatePresence, motion } from "framer-motion";
 import { AddToCartButton } from "@/components/product/add-to-cart-button";
@@ -9,6 +10,7 @@ import { StockBadge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/format";
 import { BLADE_TYPE_LABEL } from "@/lib/labels";
 import type { Product } from "@/lib/commerce/types";
+import { cn } from "@/lib/cn";
 
 /**
  * Sticky buy bar from mockup-pdp-cobalt-mobile. Appears once the main CTA has scrolled up
@@ -17,6 +19,15 @@ import type { Product } from "@/lib/commerce/types";
 export function StickyBuyBar({ product }: { product: Product }) {
   const [visible, setVisible] = useState(false);
   const image = product.images[0];
+
+  const scrollToRestockForm = useCallback(() => {
+    const form = document.getElementById("restock-form");
+    if (!form) return;
+    form.scrollIntoView({ behavior: "smooth", block: "center" });
+    // Focus the email input inside the form so the keyboard opens on mobile.
+    const emailInput = form.querySelector<HTMLInputElement>('input[type="email"]');
+    emailInput?.focus({ preventScroll: true });
+  }, []);
 
   useEffect(() => {
     const anchor = document.getElementById("buy-panel");
@@ -67,14 +78,31 @@ export function StickyBuyBar({ product }: { product: Product }) {
             </p>
 
             <div className="w-36 shrink-0 sm:w-52">
-              <AddToCartButton
-                slug={product.slug}
-                name={product.name}
-                stock={product.stock}
-                size="md"
-                emphasis="primary"
-                label={product.stock === "esaurito" ? "Avvisami" : product.stock === "pre-ordine" ? "Pre-ordina" : "Aggiungi"}
-              />
+              {product.stock === "esaurito" ? (
+                <button
+                  type="button"
+                  onClick={scrollToRestockForm}
+                  className={cn(
+                    "gd-chamfer inline-flex h-12 w-full items-center justify-center gap-2",
+                    "gd-display text-small font-bold tracking-[0.08em]",
+                    "border border-white/15 text-grey-600",
+                    "transition-[background-color,color,border-color] duration-200",
+                    "hover:border-violet-soft hover:text-violet-soft",
+                  )}
+                >
+                  <Bell className="size-4" aria-hidden="true" />
+                  Avvisami
+                </button>
+              ) : (
+                <AddToCartButton
+                  slug={product.slug}
+                  name={product.name}
+                  stock={product.stock}
+                  size="md"
+                  emphasis="primary"
+                  label={product.stock === "pre-ordine" ? "Pre-ordina" : "Aggiungi"}
+                />
+              )}
             </div>
           </div>
         </motion.div>

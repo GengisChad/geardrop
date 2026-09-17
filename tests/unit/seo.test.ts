@@ -72,7 +72,7 @@ describe("structured data", () => {
       "@type": "Product",
       url: "https://geardropshop.it/prodotto/glory-valkerion-lf",
       image: ["https://geardropshop.it/products/glory-valkerion-lf.webp"],
-      brand: { name: "Beyblade X" },
+      brand: { name: "Hasbro" },
       offers: {
         price: "30.00",
         priceCurrency: "EUR",

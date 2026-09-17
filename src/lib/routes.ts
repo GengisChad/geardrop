@@ -20,5 +20,7 @@ export type AppHref =
   | `/negozio/${CategorySlug}`
   | `/negozio/${CategorySlug}?${string}`
   | `/prodotto/${ProductSlug}`
+  // Sold-out product cards lead to the availability-notice form on the product page.
+  | `/prodotto/${string}#restock-form`
   | `/assistenza/${SupportSlug}`
   | `/legale/${LegalSlug}`;

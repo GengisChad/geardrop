@@ -1,7 +1,7 @@
 /**
  * Copy for the informational routes the mockups' footer links to.
  *
- * Operational facts use the reviewed preorder dispatch window. The legal pages identify the
+ * Operational facts use the owner-reviewed delivery window. The legal pages identify the
  * seller by holder name, registered office, VAT number and contact email.
  */
 
@@ -27,9 +27,16 @@ export const SUPPORT_PAGES = {
         ],
       },
       {
+        heading: "I prodotti sono originali?",
+        body: [
+          "Sì, tutti i prodotti in vendita su GEAR//DROP sono Beyblade X originali certificati Hasbro.",
+        ],
+      },
+      {
         heading: "Quanto costa la spedizione?",
         body: [
           "La spedizione standard è gratuita per ordini superiori a 59€. Sotto questa soglia si applica una tariffa fissa di 4,90€.",
+          "Spediamo solo in Italia.",
         ],
       },
       {
@@ -57,9 +64,13 @@ export const SUPPORT_PAGES = {
       {
         heading: "Tempi di consegna",
         body: [
-          "I prodotti disponibili partono dopo la conferma del pagamento. I pre-ordini potrebbero arrivare tra 10/15 giorni lavorativi dalla conferma dell'ordine.",
-          "I tempi di transito del corriere iniziano dalla spedizione e dipendono dal servizio e dalla destinazione.",
+          "I prodotti disponibili vengono consegnati in 1-5 giorni lavorativi a seconda del corriere, dalla conferma del pagamento.",
+          "I pre-ordini potrebbero arrivare tra 10/15 giorni lavorativi dalla conferma dell'ordine.",
         ],
+      },
+      {
+        heading: "Destinazioni",
+        body: ["Spediamo solo in Italia."],
       },
       {
         heading: "Costi",
@@ -123,7 +134,7 @@ export const SUPPORT_PAGES = {
       },
       {
         heading: "Community",
-        body: ["Per consigli su combo e assetti, la community è il posto giusto: ci trovi sui canali social."],
+        body: ["Per consigli su combo e assetti scrivici a infogeardrop@gmail.com: rispondiamo volentieri."],
       },
       {
         heading: "Collaborazioni",
@@ -178,7 +189,7 @@ export const LEGAL_PAGES = {
       {
         heading: "Ordine e pagamento",
         body: [
-          "Dopo aver inserito i dati di spedizione vieni indirizzato alla pagina di pagamento sicura di Stripe, dove puoi pagare con carta, Apple Pay, Google Pay o gli altri metodi mostrati. I dati della carta sono trattati solo da Stripe: GEAR//DROP non li riceve né li conserva.",
+          "Dopo aver inserito i dati di spedizione vieni indirizzato alla pagina di pagamento sicura di Stripe, dove paghi in modo sicuro. I dati della carta sono trattati solo da Stripe: GEAR//DROP non li riceve né li conserva.",
           "Il contratto si conclude quando il pagamento è completato. Ricevi la conferma con il riferimento dell'ordine (GD-XXXXXXXX) e la ricevuta via email.",
           "In caso di errore evidente di prezzo, di quantità non più disponibile o di sospetto di frode, GEAR//DROP può annullare l'ordine rimborsandolo integralmente.",
         ],
@@ -186,7 +197,7 @@ export const LEGAL_PAGES = {
       {
         heading: "Spedizione e consegna",
         body: [
-          "Spediamo in Italia tramite corrieri nazionali. Il numero di tracciamento, quando disponibile, ti viene comunicato via email; i tempi di transito dipendono dal corriere.",
+          "Spediamo solo in Italia tramite corrieri nazionali. La consegna avviene in 1-5 giorni lavorativi dalla conferma del pagamento, a seconda del corriere. Il numero di tracciamento, quando disponibile, ti viene comunicato via email.",
           "Il rischio di perdita o danneggiamento passa a te al momento della consegna. Segnalaci subito eventuali danni visibili al pacco, conservando imballo e prodotto.",
         ],
       },
@@ -268,7 +279,10 @@ export const LEGAL_PAGES = {
         heading: "A chi li comunichiamo",
         body: [
           "Stripe Payments Europe Ltd. (Irlanda), per l'elaborazione dei pagamenti.",
-          "Vercel Inc. (Stati Uniti), per l'hosting del sito e le statistiche anonime di visita; Supabase, per gli account utente.",
+          "Vercel Inc. (Stati Uniti), per l'hosting del sito e le statistiche aggregate e anonime di visita.",
+          "Supabase, Inc. (Stati Uniti), per la gestione degli ordini, degli account, delle giacenze e delle richieste di notifica disponibilità.",
+          "Resend Inc. (Stati Uniti), per l'invio delle email relative ad ordini, spedizioni e notifiche di disponibilità.",
+          "L'email lasciata per ricevere una notifica di disponibilità è usata esclusivamente per quella notifica e viene eliminata dopo l'invio o entro sei mesi dalla registrazione. Il tracciamento di un ordine tramite numero d'ordine ed email mostra unicamente lo stato dell'ordine e il numero di spedizione.",
           "Corrieri, per la consegna, e consulenti fiscali, per gli adempimenti contabili.",
           "I fornitori che trattano dati per nostro conto agiscono come responsabili del trattamento ai sensi dell'art. 28 GDPR.",
         ],
@@ -276,7 +290,7 @@ export const LEGAL_PAGES = {
       {
         heading: "Trasferimenti fuori dall'Unione europea",
         body: [
-          "Alcuni fornitori, come Vercel, hanno sede negli Stati Uniti: i trasferimenti avvengono sulla base dell'EU-US Data Privacy Framework o delle clausole contrattuali standard approvate dalla Commissione europea.",
+          "Alcuni fornitori, come Vercel, Supabase e Resend, hanno sede negli Stati Uniti: i trasferimenti avvengono sulla base dell'EU-US Data Privacy Framework o delle clausole contrattuali standard approvate dalla Commissione europea.",
         ],
       },
       {

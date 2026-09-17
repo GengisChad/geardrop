@@ -11,7 +11,7 @@ test.describe("home", () => {
   test("renders the Holo Drop hero, the arena and the whole drop", async ({ page }) => {
     await page.goto("/");
 
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("Le nuove uscite sono atterrate");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Beyblade X originali");
     await expect(page.getByRole("link", { name: "GEAR//DROP — vai alla home" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Scegli. Carica. Lancia." })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Tutto il drop" })).toBeVisible();

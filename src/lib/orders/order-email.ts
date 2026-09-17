@@ -3,6 +3,7 @@ import { formatPrice } from "@/lib/format";
 import { SHOP_EMAIL } from "@/lib/email/resend";
 import { PREORDER_DELIVERY } from "@/lib/labels";
 import { PRODUCTION_ORIGIN } from "@/lib/site-url";
+import type { LowStockProduct } from "./process-paid-checkout";
 import type { PaidCheckout } from "./stripe-order";
 
 /**
@@ -89,9 +90,17 @@ function linesTable(checkout: PaidCheckout, order: RecordedOrder, audience: Audi
       </tr>`,
     )
     .join("");
+  const discountLabel = checkout.couponCode
+    ? `Sconto (${checkout.couponCode})`
+    : "Sconto";
+  const discountRow =
+    checkout.discountCents > 0
+      ? `<tr><td style="padding:4px 0;color:#555">${escapeHtml(discountLabel)}</td><td></td><td style="padding:4px 0;text-align:right;color:#059669">-${euro(checkout.discountCents)}</td></tr>`
+      : "";
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:15px">
     ${rows}
     <tr><td style="padding:8px 0;color:#555">Subtotale</td><td></td><td style="padding:8px 0;text-align:right">${euro(subtotalCents(checkout))}</td></tr>
+    ${discountRow}
     <tr><td style="padding:4px 0;color:#555">Spedizione</td><td></td><td style="padding:4px 0;text-align:right">${checkout.shippingCents === 0 ? "Gratuita" : euro(checkout.shippingCents)}</td></tr>
     <tr><td style="padding:8px 0;font-weight:bold">Totale pagato</td><td></td><td style="padding:8px 0;text-align:right;font-weight:bold">${euro(checkout.totalCents)}</td></tr>
   </table>`;
@@ -109,7 +118,18 @@ export function emailShell(title: string, content: string): string {
   </td></tr></table></body></html>`;
 }
 
-export function ownerOrderEmail(checkout: PaidCheckout, order: RecordedOrder) {
+/** Returns true when the shipping address looks empty (e.g. a recovery-link session). */
+function isAddressMissing(checkout: PaidCheckout): boolean {
+  return !checkout.shipping.address && !checkout.shipping.city && !checkout.shipping.postalCode;
+}
+
+/** One line per low-stock product for the owner alert box. */
+function lowStockLine(item: LowStockProduct): string {
+  if (item.stockQuantity === 0) return `${escapeHtml(item.name)} — finito, ora in pre-ordine`;
+  return `${escapeHtml(item.name)} — ne resta ${item.stockQuantity}`;
+}
+
+export function ownerOrderEmail(checkout: PaidCheckout, order: RecordedOrder, lowStockItems: readonly LowStockProduct[] = []) {
   const address = addressBlock(checkout);
   const adminUrl = `${PRODUCTION_ORIGIN}/admin/ordini/${order.id}`;
   const stripeUrl = checkout.paymentIntentId ? `https://dashboard.stripe.com/payments/${checkout.paymentIntentId}` : null;
@@ -117,11 +137,17 @@ export function ownerOrderEmail(checkout: PaidCheckout, order: RecordedOrder) {
   const preordered = preorderSummary(checkout, order);
   const subject = `${preordered.length ? "[PRE-ORDINE] " : ""}Nuovo ordine ${order.orderNumber} · ${euro(checkout.totalCents)} · ${checkout.shipping.name || checkout.email}`;
 
+  const missingAddress = isAddressMissing(checkout);
   const html = emailShell(
     `Nuovo ordine ${order.orderNumber}`,
     `<p style="margin:0 0 16px;color:#555">Pagato su Stripe il ${escapeHtml(when)}. Da spedire a:</p>
+    ${
+      missingAddress
+        ? `<div style="background:#fef2f2;border:1px solid #f87171;border-radius:8px;padding:12px;margin-bottom:12px;font-size:15px;font-weight:bold;color:#b91c1c">Indirizzo di spedizione mancante: contatta il cliente</div>`
+        : ""
+    }
     <div style="background:#f6f2ff;border-radius:8px;padding:16px;font-size:16px;line-height:1.5">
-      ${address.map((line) => `<div>${escapeHtml(line)}</div>`).join("")}
+      ${address.length ? address.map((line) => `<div>${escapeHtml(line)}</div>`).join("") : `<div style="color:#888">(indirizzo non pervenuto)</div>`}
       ${checkout.phone ? `<div style="margin-top:8px">Tel: <a href="tel:${escapeHtml(checkout.phone)}">${escapeHtml(checkout.phone)}</a></div>` : ""}
       <div>Email: <a href="mailto:${escapeHtml(checkout.email)}">${escapeHtml(checkout.email)}</a></div>
     </div>
@@ -133,6 +159,11 @@ export function ownerOrderEmail(checkout: PaidCheckout, order: RecordedOrder) {
     }
     <h2 style="font-size:16px;margin:24px 0 8px">Articoli</h2>
     ${linesTable(checkout, order, "owner")}
+    ${
+      lowStockItems.length
+        ? `<div style="margin:16px 0 0;background:#fef9c3;border:1px solid #fbbf24;border-radius:8px;padding:12px;font-size:15px"><strong>Scorte basse:</strong><ul style="margin:4px 0 0;padding-left:20px">${lowStockItems.map((item) => `<li>${lowStockLine(item)}</li>`).join("")}</ul></div>`
+        : ""
+    }
     <p style="margin:24px 0 0">
       <a href="${adminUrl}" style="display:inline-block;background:#c6ff00;color:#07060b;font-weight:bold;text-decoration:none;padding:12px 18px;border-radius:6px">Apri l'ordine nel pannello</a>
     </p>
@@ -145,8 +176,9 @@ export function ownerOrderEmail(checkout: PaidCheckout, order: RecordedOrder) {
   const text = [
     `Nuovo ordine ${order.orderNumber} — pagato su Stripe il ${when}`,
     "",
+    missingAddress ? "ATTENZIONE: Indirizzo di spedizione mancante: contatta il cliente" : null,
     "SPEDIRE A",
-    ...address,
+    ...(address.length ? address : ["(indirizzo non pervenuto)"]),
     checkout.phone ? `Tel: ${checkout.phone}` : null,
     `Email: ${checkout.email}`,
     checkout.notes ? `Note del cliente: ${checkout.notes}` : null,
@@ -159,8 +191,14 @@ CONTIENE UN PRE-ORDINE: ${preordered.join(", ")}` : null,
       ...(packingList(line) ? [`   Da spedire: ${packingList(line)}`] : []),
       ...(preorderLine(checkout, order, index, "owner") ? [`   ${preorderLine(checkout, order, index, "owner")}`] : []),
     ]),
+    checkout.discountCents > 0
+      ? `Sconto${checkout.couponCode ? ` (${checkout.couponCode})` : ""}: -${euro(checkout.discountCents)}`
+      : null,
     `Spedizione: ${checkout.shippingCents === 0 ? "gratuita" : euro(checkout.shippingCents)}`,
     `Totale pagato: ${euro(checkout.totalCents)}`,
+    ...(lowStockItems.length
+      ? ["", "SCORTE BASSE:", ...lowStockItems.map((item) => `  ${item.name}: ${item.stockQuantity === 0 ? "finito, ora in pre-ordine" : `ne resta ${item.stockQuantity}`}`)]
+      : []),
     "",
     `Pannello: ${adminUrl}`,
     stripeUrl ? `Stripe: ${stripeUrl}` : null,

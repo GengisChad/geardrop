@@ -9,9 +9,9 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 describe("hero headline lines", () => {
   it("renders the default as three lines with the last one carrying the accent", () => {
     const lines = heroTitleLines(DEFAULT_HERO_TITLE);
-    expect(lines).toEqual(["Pronti alla", "battaglia.", "Nati per vincere."]);
+    expect(lines).toEqual(["Beyblade X", "originali,", "disponibili in Italia."]);
     // The renderer paints the last line lime; here we pin that it is the closing statement.
-    expect(lines.at(-1)).toBe("Nati per vincere.");
+    expect(lines.at(-1)).toBe("disponibili in Italia.");
   });
 
   it("splits a single-line CMS title at its final sentence so the accent survives", () => {

@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/database.types";
 import type { ProductImage } from "@/data/assets";
 import { checkoutErrorCode, checkoutErrorMessage } from "./checkout-errors";
+import { STANDARD_DELIVERY } from "@/lib/labels";
 import type {
   BladeType,
   Bundle,
@@ -559,9 +560,8 @@ function blockedNotice(state: {
   return null;
 }
 
-function deliveryEstimate(min: number, max: number): string {
-  const transit = min === max ? `${max} giorni` : `${min}-${max} giorni`;
-  return `Spedizione entro 14 giorni dalla conferma; transito del corriere: ${transit} dalla spedizione`;
+function deliveryEstimate(_min: number, _max: number): string {
+  return STANDARD_DELIVERY;
 }
 
 function emptyTotals(): CartTotals {

@@ -39,6 +39,10 @@ export type PaidCheckout = {
   /** Units per slug the buyer was told are pre-ordered before paying (checkout metadata). */
   readonly announcedPreorder?: Readonly<Record<string, number>>;
   readonly shippingCents: number;
+  /** Discount applied at checkout (promotion code, coupon). Always >= 0. */
+  readonly discountCents: number;
+  /** Promotion code text (e.g. "SUMMER10") when a code was applied, else null. */
+  readonly couponCode: string | null;
   readonly totalCents: number;
   readonly createdAt: string;
 };
@@ -66,7 +70,19 @@ export type StripeSessionForOrder = {
     readonly name?: string | null;
     readonly address?: StripeAddress | null;
   } | null;
-  readonly total_details?: { readonly amount_shipping?: number | null } | null;
+  readonly total_details?: {
+    readonly amount_shipping?: number | null;
+    /** Total discount applied at checkout (promotion code + coupon). */
+    readonly amount_discount?: number | null;
+    /** Present when expanded with total_details.breakdown.discounts.discount.promotion_code. */
+    readonly breakdown?: {
+      readonly discounts?: readonly {
+        readonly discount?: {
+          readonly promotion_code?: string | { readonly code?: string | null } | null;
+        } | null;
+      }[] | null;
+    } | null;
+  } | null;
   readonly shipping_cost?: { readonly amount_total?: number | null } | null;
   readonly payment_intent?:
     | string
@@ -146,6 +162,16 @@ export function paidCheckoutFromStripe(
 
   const subtotal = lines.reduce((sum, line) => sum + line.quantity * line.unitPriceCents, 0);
   const shippingCents = session.total_details?.amount_shipping ?? session.shipping_cost?.amount_total ?? 0;
+  const discountCents = session.total_details?.amount_discount ?? 0;
+
+  // Promotion code text: available when the session is expanded with
+  // total_details.breakdown.discounts.discount.promotion_code.
+  const firstDiscount = session.total_details?.breakdown?.discounts?.[0];
+  const promoCodeValue = firstDiscount?.discount?.promotion_code;
+  const couponCode =
+    typeof promoCodeValue === "object" && promoCodeValue !== null
+      ? (promoCodeValue.code?.trim() || null)
+      : null;
 
   return {
     sessionId: session.id,
@@ -165,7 +191,9 @@ export function paidCheckoutFromStripe(
     lines,
     announcedPreorder: parsePreorderMetadata(session.metadata?.["preorder"]),
     shippingCents,
-    totalCents: session.amount_total ?? subtotal + shippingCents,
+    discountCents,
+    couponCode,
+    totalCents: session.amount_total ?? Math.max(0, subtotal - discountCents + shippingCents),
     createdAt: new Date(session.created * 1000).toISOString(),
   };
 }
@@ -173,7 +201,10 @@ export function paidCheckoutFromStripe(
 /** Reads a session back from Stripe with everything the order needs. */
 export async function loadPaidCheckout(sessionId: string, stripe: StripeClient): Promise<PaidCheckout | null> {
   if (!/^cs_(live|test)_[A-Za-z0-9]{10,200}$/.test(sessionId)) return null;
-  const session = await stripe.get<StripeSessionForOrder>(`/checkout/sessions/${sessionId}?expand[]=payment_intent`);
+  // Expand payment_intent for the shipping address and promotion_code for the discount code text.
+  const session = await stripe.get<StripeSessionForOrder>(
+    `/checkout/sessions/${sessionId}?expand[]=payment_intent&expand[]=total_details.breakdown.discounts.discount.promotion_code`,
+  );
   if (!session) return null;
   const items = await stripe.get<{ readonly data: readonly StripeLineItemForOrder[] }>(
     `/checkout/sessions/${sessionId}/line_items?limit=100&expand[]=data.price`,

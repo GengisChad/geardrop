@@ -42,6 +42,7 @@ export const FOOTER_NAV: readonly { title: string; links: readonly NavItem[] }[]
       { label: "FAQ", href: "/assistenza/faq" },
       { label: "Spedizioni", href: "/assistenza/spedizioni" },
       { label: "Resi e rimborsi", href: "/assistenza/resi" },
+      { label: "Traccia il tuo ordine", href: "/ordine" },
       { label: "Contattaci", href: "/assistenza/contatti" },
     ],
   },
