@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CheckCircle2, Heart, Hourglass, Truck, XCircle } from "lucide-react";
 import { AddToCartButton } from "@/components/product/add-to-cart-button";
 import { QuantityStepper } from "@/components/product/quantity-stepper";
+import { RestockForm } from "@/components/product/restock-form";
 import { Button } from "@/components/ui/button";
 import { useWishlist } from "@/lib/store/wishlist";
 import { MAX_QUANTITY_PER_LINE } from "@/lib/store/cart";
@@ -90,35 +91,33 @@ export function BuyPanel({ product }: { product: Product }) {
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <div className="flex-1">
-          <AddToCartButton
-            slug={product.slug}
-            name={product.name}
-            stock={product.stock}
-            quantity={quantity}
+      {product.stock === "esaurito" ? (
+        <RestockForm slug={product.slug} name={product.name} />
+      ) : (
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex-1">
+            <AddToCartButton
+              slug={product.slug}
+              name={product.name}
+              stock={product.stock}
+              quantity={quantity}
+              size="lg"
+              emphasis="primary"
+              label={product.stock === "pre-ordine" ? "Pre-ordina" : "Aggiungi al carrello"}
+            />
+          </div>
+          <Button
+            variant="tertiary"
             size="lg"
-            emphasis="primary"
-            label={
-              product.stock === "esaurito"
-                ? "Avvisami"
-                : product.stock === "pre-ordine"
-                  ? "Pre-ordina"
-                  : "Aggiungi al carrello"
-            }
-          />
+            onClick={() => toggle(product.slug)}
+            aria-pressed={isSaved}
+            className="sm:w-auto"
+          >
+            <Heart className={cn("size-4", isSaved && "text-violet-soft")} fill={isSaved ? "currentColor" : "none"} aria-hidden="true" />
+            <span className="whitespace-nowrap">{isSaved ? "Nei preferiti" : "Aggiungi ai preferiti"}</span>
+          </Button>
         </div>
-        <Button
-          variant="tertiary"
-          size="lg"
-          onClick={() => toggle(product.slug)}
-          aria-pressed={isSaved}
-          className="sm:w-auto"
-        >
-          <Heart className={cn("size-4", isSaved && "text-violet-soft")} fill={isSaved ? "currentColor" : "none"} aria-hidden="true" />
-          <span className="whitespace-nowrap">{isSaved ? "Nei preferiti" : "Aggiungi ai preferiti"}</span>
-        </Button>
-      </div>
+      )}
     </div>
   );
 }

@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { InventoryAdjustmentForm } from "@/components/admin/inventory/inventory-adjustment-form";
+import { RestockDemandPanel } from "@/components/admin/inventory/restock-demand-panel";
 import styles from "@/components/admin/inventory/inventory.module.css";
 import { requireAdminAccess } from "@/lib/admin/access";
 import { listAdminInventory, normalizeAdminInventoryQuery } from "@/lib/admin/inventory-repository";
+import { getRestockDemand } from "@/lib/admin/inventory-restock";
+import { BUNDLES } from "@/data/catalog";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +33,29 @@ export default async function AdminInventoryPage({
   const page = await listAdminInventory(client, query);
   const hrefFor = (nextPage: number) => ({ pathname: "/admin/inventario", query: { ...params, page: String(nextPage) } });
   const canAdjust = principal.role === "owner" || principal.role === "admin";
+  const isManager = canAdjust;
+
+  // Load restock demand only for managers; editors see the table but not the demand panel.
+  const productSlugs = page.items.map((p) => p.slug);
+  const bundleSlugs = BUNDLES.map((b) => b.slug);
+  const allDemandSlugs = [...productSlugs, ...bundleSlugs];
+  const demandRows = isManager && allDemandSlugs.length > 0
+    ? await getRestockDemand(client, allDemandSlugs).catch(() => [])
+    : [];
+
+  // Build name map for demand panel display.
+  const nameBySlug = new Map<string, string>([
+    ...page.items.map((p) => [p.slug, p.name] as [string, string]),
+    ...BUNDLES.map((b) => [b.slug, b.name] as [string, string]),
+  ]);
+  const purchasableBySlug = new Map<string, boolean>(
+    page.items.map((p) => [p.slug, p.is_purchasable] as [string, boolean]),
+  );
+  const demandPanelRows = demandRows.map((row) => ({
+    ...row,
+    productName: nameBySlug.get(row.productSlug) ?? row.productSlug,
+    isPurchasable: purchasableBySlug.get(row.productSlug) ?? false,
+  }));
 
   return <div className={styles.page}>
     <header className={styles.heading}><div><p>Catalogo / Operazioni</p><h1>Inventario</h1><span>{page.total} prodotti reali · ultimi {page.movements.length} movimenti visibili</span></div></header>
@@ -40,6 +66,8 @@ export default async function AdminInventoryPage({
     </form>
 
     {canAdjust ? <InventoryAdjustmentForm /> : <section className={styles.readOnly}><h2>Consultazione inventario</h2><p>Il ruolo editor può leggere stock e movimenti. Le rettifiche richiedono owner o admin.</p></section>}
+
+    {isManager ? <RestockDemandPanel rows={demandPanelRows} /> : null}
 
     <section className={styles.panel}>
       <header><h2>Stock prodotti</h2><span>Valori generati dal database, non ricalcolati nella UI.</span></header>

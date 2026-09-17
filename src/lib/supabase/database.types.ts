@@ -1754,6 +1754,30 @@ export type Database = {
         }
         Relationships: []
       }
+      restock_requests: {
+        Row: {
+          created_at: string
+          email: string
+          id: number
+          notified_at: string | null
+          product_slug: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: never
+          notified_at?: string | null
+          product_slug: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: never
+          notified_at?: string | null
+          product_slug?: string
+        }
+        Relationships: []
+      }
       shipping_methods: {
         Row: {
           active: boolean
@@ -2099,6 +2123,14 @@ export type Database = {
         Returns: undefined
       }
       get_admin_dashboard_metrics: { Args: never; Returns: Json }
+      get_inventory_restock_demand: {
+        Args: { p_slugs: string[] }
+        Returns: {
+          pending_notices: number
+          preorder_demand: number
+          product_slug: string
+        }[]
+      }
       lookup_order_status: {
         Args: { p_email: string; p_order_number: string }
         Returns: {
@@ -2116,6 +2148,10 @@ export type Database = {
         Args: { p_order_id: number }
         Returns: undefined
       }
+      mark_restock_notices_sent: {
+        Args: { p_request_ids: number[] }
+        Returns: undefined
+      }
       prepare_order_refund: {
         Args: { p_amount_cents: number; p_order_id: number; p_reason: string }
         Returns: undefined
@@ -2125,9 +2161,26 @@ export type Database = {
         Args: { p_section_id: number }
         Returns: undefined
       }
+      read_funnel_stats: {
+        Args: { p_days?: number }
+        Returns: {
+          count: number
+          day: string
+          event: string
+        }[]
+      }
       record_completed_media_storage_mutation: {
         Args: { p_object_path: string; p_operation: string }
         Returns: number
+      }
+      record_order_refund: {
+        Args: {
+          p_amount_cents: number
+          p_order_id: number
+          p_reason: string
+          p_stripe_refund_id: string
+        }
+        Returns: undefined
       }
       record_staff_invite: {
         Args: {
@@ -2139,15 +2192,6 @@ export type Database = {
         Returns: undefined
       }
       record_staff_login: { Args: never; Returns: undefined }
-      record_order_refund: {
-        Args: {
-          p_amount_cents: number
-          p_order_id: number
-          p_reason: string
-          p_stripe_refund_id: string
-        }
-        Returns: undefined
-      }
       record_stripe_checkout_order: {
         Args: {
           p_coupon_code?: string
@@ -2166,14 +2210,6 @@ export type Database = {
           created: boolean
           order_id: number
           order_number: string
-        }[]
-      }
-      read_funnel_stats: {
-        Args: { p_days?: number }
-        Returns: {
-          count: number
-          day: string
-          event: string
         }[]
       }
       reorder_categories: {
@@ -2195,6 +2231,10 @@ export type Database = {
           p_product_id: number
           p_specs: Json
         }
+        Returns: undefined
+      }
+      request_restock_notice: {
+        Args: { p_email: string; p_slug: string }
         Returns: undefined
       }
       revoke_staff_access: { Args: { p_user_id: string }; Returns: undefined }
