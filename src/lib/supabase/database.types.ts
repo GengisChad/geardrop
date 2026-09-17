@@ -2140,11 +2140,11 @@ export type Database = {
           created_at: string
           items: Json
           order_number: string
-          shipped_at: string | null
+          shipped_at: string
           status: string
-          tracking_carrier: string | null
-          tracking_code: string | null
-          tracking_url: string | null
+          tracking_carrier: string
+          tracking_code: string
+          tracking_url: string
         }[]
       }
       mark_order_shipping_notified: {
@@ -2315,10 +2315,7 @@ export type Database = {
         Args: { p_new_media_asset_id: number; p_old_media_asset_id: number }
         Returns: Json
       }
-      track_storefront_event: {
-        Args: { p_event: string }
-        Returns: undefined
-      }
+      track_storefront_event: { Args: { p_event: string }; Returns: undefined }
       transition_order_status: {
         Args: {
           p_note?: string
