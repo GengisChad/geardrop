@@ -71,6 +71,13 @@ export const shipOrderSchema = z.object({
   notify: z.boolean(),
 });
 export const refundPreparationSchema = z.object({ orderId, amountCents: z.coerce.number().int().positive(), reason: z.string().trim().min(3).max(1000) });
+export const refundStripeSchema = z.object({
+  orderId,
+  amountCents: z.coerce.number().int().positive(),
+  reason: z.string().trim().min(3).max(1000),
+  confirmed: z.literal(true),
+  restoreStock: z.boolean(),
+});
 
 export function allowedOrderTransitions(status: OrderStatus): readonly OrderStatus[] {
   const transitions: Record<OrderStatus, readonly OrderStatus[]> = {

@@ -11,6 +11,7 @@ import { StickyBuyBar } from "@/components/product/sticky-buy-bar";
 import { ProductCarousel } from "@/components/product/product-carousel";
 import { Rating } from "@/components/ui/rating";
 import { TrustBarLight } from "@/components/home/trust";
+import { TrackPageView } from "@/components/funnel/track-page-view";
 import { BUNDLES, PRODUCTS } from "@/data/catalog";
 import { bundlesContaining } from "@/lib/commerce/bundles";
 import { getCommerceProvider } from "@/lib/commerce/provider";
@@ -73,6 +74,7 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
 
   return (
     <>
+      <TrackPageView event="product_view" />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(productData) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbData) }} />
 

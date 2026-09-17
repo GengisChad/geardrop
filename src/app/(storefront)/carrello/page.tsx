@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { TrackPageView } from "@/components/funnel/track-page-view";
 import { CartClient } from "./cart-client";
 
 export const metadata: Metadata = {
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
 export default function CarrelloPage() {
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-10 sm:px-6">
+      <TrackPageView event="cart_view" />
       <h1 className="gd-display-wide text-[2rem] font-extrabold text-graphite sm:text-[2.5rem]">Carrello</h1>
       <CartClient />
     </div>

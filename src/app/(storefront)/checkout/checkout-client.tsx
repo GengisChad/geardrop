@@ -16,6 +16,7 @@ import { useCart } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/format";
 import { preorderNote } from "@/lib/labels";
 import { checkoutSchema, type CheckoutValues } from "@/lib/checkout-schema";
+import { trackEvent } from "@/lib/funnel";
 import { submitOrder } from "./actions";
 import type { Money } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
@@ -112,6 +113,7 @@ export function CheckoutClient() {
       onSubmit={handleSubmit(async (values) => {
         setFailure(null);
         setPending(true);
+        trackEvent("checkout_submit");
         try {
           const result = await submitOrder({
             // The shipping code the quote was priced with wins if the customer never

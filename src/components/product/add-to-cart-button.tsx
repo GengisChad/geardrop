@@ -8,6 +8,7 @@ import { useToast } from "@/components/ui/toast";
 import { STOCK_CTA, isPurchasable } from "@/lib/labels";
 import type { StockStatus } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
+import { trackEvent } from "@/lib/funnel";
 
 type AddToCartButtonProps = {
   slug: string;
@@ -74,6 +75,7 @@ export function AddToCartButton({
 
   const onAdd = () => {
     add(slug, quantity);
+    trackEvent("add_to_cart");
     setJustAdded(true);
     clearTimeout(timer.current);
     timer.current = setTimeout(() => setJustAdded(false), 1400);
