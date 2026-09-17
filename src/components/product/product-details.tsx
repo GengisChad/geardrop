@@ -47,10 +47,13 @@ export function ProductDetails({ product }: { product: Product }) {
       content: (
         <div className="flex flex-col gap-2 leading-relaxed">
           {product.stock === "pre-ordine" ? (
-            <p>Per i pre-ordini, GEAR//DROP affida il pacco al corriere entro 14 giorni dalla conferma.</p>
+            <p>Questo prodotto è in pre-ordine: potrebbe arrivare tra 10/15 giorni lavorativi dalla conferma.</p>
           ) : (
             <p>Dopo la conferma del pagamento GEAR//DROP prepara il pacco e lo affida al corriere.</p>
           )}
+          {product.stock === "disponibile" && product.autoPreorder ? (
+            <p>Se ordini più pezzi di quelli disponibili, quelli in più sono in pre-ordine e potrebbero arrivare tra 10/15 giorni lavorativi.</p>
+          ) : null}
           <p>I tempi di transito del corriere iniziano dalla spedizione e dipendono dal servizio selezionato.</p>
           <p>Hai 30 giorni per cambiare idea: il reso è semplice e tracciato.</p>
         </div>

@@ -60,6 +60,11 @@ export type Product = {
   readonly stock: StockStatus;
   /** Current backend allocation/stock projection; final validation remains server-side. */
   readonly availableQuantity?: number;
+  /**
+   * Keeps selling once the stock runs out: pieces beyond `availableQuantity` are sold as a
+   * pre-order, and at zero the product reads "pre-ordine" instead of sold out.
+   */
+  readonly autoPreorder?: boolean;
   readonly tags: readonly PromoTag[];
   readonly rating: number;
   readonly reviewCount: number;
@@ -108,6 +113,10 @@ export type CartQuoteLine = {
   readonly stock: StockStatus;
   /** Availability from the authoritative row used to validate this quote line. */
   readonly availableQuantity?: number;
+  /** The product sells beyond its stock as a pre-order (see Product.autoPreorder). */
+  readonly autoPreorder?: boolean;
+  /** Units of this line that are not on the shelf and ship as a pre-order. */
+  readonly preorderQuantity?: number;
   /** Italian sentence when this line cannot be ordered as requested, else null. */
   readonly issue: string | null;
 };

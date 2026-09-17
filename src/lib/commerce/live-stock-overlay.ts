@@ -6,6 +6,8 @@ export type LiveStockRow = {
   readonly stock_quantity: number;
   readonly preorder_allocation: number;
   readonly availability_override: string | null;
+  /** Sell as a pre-order once the stock runs out. Absent on rows read before the column was selected. */
+  readonly allow_backorder?: boolean;
 };
 
 /**
@@ -18,10 +20,13 @@ export function applyLiveStock(products: readonly Product[], rows: readonly Live
   return products.map((product) => {
     const row = bySlug.get(product.slug);
     if (!row) return product;
+    const autoPreorder = row.availability_override === null && row.allow_backorder === true;
     return {
       ...product,
-      stock: row.stock_status,
+      // The database already reads "pre-ordine" at zero; this also holds while that change is deploying.
+      stock: autoPreorder && row.stock_quantity <= 0 && row.stock_status === "esaurito" ? "pre-ordine" : row.stock_status,
       availableQuantity: row.availability_override === "preorder" ? row.preorder_allocation : row.stock_quantity,
+      ...(autoPreorder ? { autoPreorder: true } : {}),
     };
   });
 }

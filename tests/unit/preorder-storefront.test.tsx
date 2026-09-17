@@ -94,11 +94,11 @@ describe("truthful public presentation", () => {
     expect(html).not.toMatch(/gear sports/i);
   });
 
-  it("distinguishes preorder dispatch from carrier transit in rendered storefront copy", () => {
+  it("tells how long a pre-order may take without promising a dispatch date", () => {
     const html = renderToStaticMarkup(<Providers><BuyPanel product={{ ...product, stock: "pre-ordine" }} /></Providers>);
 
-    expect(html).toContain("entro 14 giorni dalla conferma");
-    expect(html).toContain("transito del corriere");
+    expect(html).toContain("Potrebbe arrivare tra 10/15 giorni lavorativi");
+    expect(html).not.toContain("entro 14 giorni");
     expect(html).not.toContain("24/48h");
   });
 });

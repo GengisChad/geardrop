@@ -73,7 +73,7 @@ export function StickyBuyBar({ product }: { product: Product }) {
                 stock={product.stock}
                 size="md"
                 emphasis="primary"
-                label={product.stock === "esaurito" ? "Avvisami" : "Aggiungi"}
+                label={product.stock === "esaurito" ? "Avvisami" : product.stock === "pre-ordine" ? "Pre-ordina" : "Aggiungi"}
               />
             </div>
           </div>

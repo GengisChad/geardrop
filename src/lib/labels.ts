@@ -14,11 +14,14 @@ export const STOCK_LABEL: Record<StockStatus, string> = {
   esaurito: "Esaurito",
 };
 
+/** How long a pre-ordered piece may take, wherever a pre-order is sold or confirmed. */
+export const PREORDER_DELIVERY = "Potrebbe arrivare tra 10/15 giorni lavorativi";
+
 /** Sub-line shown next to the status in the legend and on the PDP panel. */
 export const STOCK_HINT: Record<StockStatus, string> = {
   disponibile: "Disponibilità indicata nel catalogo",
   "in-arrivo": "Disponibilità in aggiornamento",
-  "pre-ordine": "Spedizione entro 14 giorni dalla conferma; il transito del corriere inizia dopo la spedizione",
+  "pre-ordine": PREORDER_DELIVERY,
   esaurito: "Attualmente non disponibile",
 };
 
@@ -95,4 +98,16 @@ export const SORT_KEYS = Object.keys(SORT_LABEL) as SortKey[];
 /** Availability that allows a normal add-to-cart. */
 export function isPurchasable(stock: StockStatus): boolean {
   return stock !== "esaurito";
+}
+
+/** Units of a quote line that ship as a pre-order; a pre-order line without a split waits whole. */
+export function preorderUnits(line: { readonly quantity: number; readonly stock: StockStatus; readonly preorderQuantity?: number }): number {
+  return line.preorderQuantity ?? (line.stock === "pre-ordine" ? line.quantity : 0);
+}
+
+/** "1 in pre-ordine" or "In pre-ordine" when the whole line waits, followed by the delivery time. */
+export function preorderNote(line: { readonly quantity: number; readonly stock: StockStatus; readonly preorderQuantity?: number }): string | null {
+  const units = preorderUnits(line);
+  if (units <= 0) return null;
+  return `${units >= line.quantity ? "In pre-ordine" : `${units} in pre-ordine`} · ${PREORDER_DELIVERY.toLowerCase()}`;
 }

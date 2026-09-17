@@ -134,6 +134,7 @@ describe("stripe checkout session", () => {
     });
     // The catalogue is in stock, so Stripe shows no pre-order notice.
     expect(fields["custom_text[submit][message]"]).toBeUndefined();
+    expect(fields["metadata[preorder]"]).toBeUndefined();
     expect(Object.keys(fields).some((key) => key.includes("unit_amount"))).toBe(false);
   });
 
@@ -142,7 +143,8 @@ describe("stripe checkout session", () => {
     const preorder: CartQuote = { ...quote, lines: quote.lines.map((line) => ({ ...line, stock: "pre-ordine" as const })) };
     const fields = buildCheckoutSessionFields({ quote: preorder, order, origin: ORIGIN }, matchStripePrices(preorder, catalogPrices)!);
 
-    expect(fields["custom_text[submit][message]"]).toContain("Pre-ordine");
+    expect(fields["custom_text[submit][message]"]).toBe("In pre-ordine: 1 × Cobalt Dragoon 2-60C. Potrebbe arrivare tra 10/15 giorni lavorativi.");
+    expect(fields["metadata[preorder]"]).toBe("cobalt-dragoon-2-60c x1");
   });
 
   it("ships free above the threshold", async () => {

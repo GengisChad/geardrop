@@ -1,6 +1,7 @@
 import { PRODUCTS } from "@/data/catalog";
 import { formatPrice } from "@/lib/format";
 import { SHOP_EMAIL } from "@/lib/email/resend";
+import { PREORDER_DELIVERY } from "@/lib/labels";
 import { PRODUCTION_ORIGIN } from "@/lib/site-url";
 import type { PaidCheckout } from "./stripe-order";
 
@@ -10,7 +11,12 @@ import type { PaidCheckout } from "./stripe-order";
  * Plain HTML tables with inline styles, which every mail client renders.
  */
 
-export type RecordedOrder = { readonly id: number; readonly orderNumber: string };
+export type RecordedOrder = {
+  readonly id: number;
+  readonly orderNumber: string;
+  /** Pre-ordered units per checkout line, in line order; absent when unknown. */
+  readonly preorderQuantities?: readonly number[];
+};
 
 const euro = (cents: number) => formatPrice({ amount: cents, currency: "EUR" });
 
@@ -38,16 +44,45 @@ function addressBlock(checkout: PaidCheckout): readonly string[] {
   return [shipping.name, shipping.address, place, shipping.country].filter(Boolean);
 }
 
+type Audience = "owner" | "buyer";
+
+/** What a line says about pieces that were not on the shelf, or null when it ships in full. */
+function preorderLine(checkout: PaidCheckout, order: RecordedOrder, index: number, audience: Audience): string | null {
+  const line = checkout.lines[index]!;
+  const units = order.preorderQuantities?.[index] ?? 0;
+  if (units <= 0) return null;
+  const which = units >= line.quantity ? "PRE-ORDINE" : `PRE-ORDINE: ${units} di ${line.quantity}`;
+  if (audience === "buyer") return `${which} · ${PREORDER_DELIVERY.toLowerCase()}`;
+  const announced = checkout.announcedPreorder?.[line.slug] ?? 0;
+  const surprise =
+    units > announced
+      ? " Il cliente non ha visto l'avviso di pre-ordine: il pezzo è finito mentre pagava, avvisalo tu."
+      : "";
+  return `${which} · non era a magazzino, da riordinare.${surprise}`;
+}
+
+/** The lines that wait for stock, as "1 × Glory Valkerion LF", for the owner's summary box. */
+export function preorderSummary(checkout: PaidCheckout, order: RecordedOrder): readonly string[] {
+  return checkout.lines.flatMap((line, index) => {
+    const units = order.preorderQuantities?.[index] ?? 0;
+    return units > 0 ? [`${units} × ${line.name}`] : [];
+  });
+}
+
 function subtotalCents(checkout: PaidCheckout): number {
   return checkout.lines.reduce((sum, line) => sum + line.quantity * line.unitPriceCents, 0);
 }
 
-function linesTable(checkout: PaidCheckout): string {
+function linesTable(checkout: PaidCheckout, order: RecordedOrder, audience: Audience): string {
   const rows = checkout.lines
     .map(
-      (line) => `<tr>
+      (line, index) => `<tr>
         <td style="padding:8px 0;border-bottom:1px solid #eee">${escapeHtml(line.name)}${
           packingList(line) ? `<div style="font-size:13px;color:#555;margin-top:2px">Da spedire: ${escapeHtml(packingList(line)!)}</div>` : ""
+        }${
+          preorderLine(checkout, order, index, audience)
+            ? `<div style="font-size:13px;color:#b45309;font-weight:bold;margin-top:2px">${escapeHtml(preorderLine(checkout, order, index, audience)!)}</div>`
+            : ""
         }</td>
         <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:center">× ${line.quantity}</td>
         <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right">${euro(line.quantity * line.unitPriceCents)}</td>
@@ -79,7 +114,8 @@ export function ownerOrderEmail(checkout: PaidCheckout, order: RecordedOrder) {
   const adminUrl = `${PRODUCTION_ORIGIN}/admin/ordini/${order.id}`;
   const stripeUrl = checkout.paymentIntentId ? `https://dashboard.stripe.com/payments/${checkout.paymentIntentId}` : null;
   const when = dateFormatter.format(new Date(checkout.createdAt));
-  const subject = `Nuovo ordine ${order.orderNumber} · ${euro(checkout.totalCents)} · ${checkout.shipping.name || checkout.email}`;
+  const preordered = preorderSummary(checkout, order);
+  const subject = `${preordered.length ? "[PRE-ORDINE] " : ""}Nuovo ordine ${order.orderNumber} · ${euro(checkout.totalCents)} · ${checkout.shipping.name || checkout.email}`;
 
   const html = emailShell(
     `Nuovo ordine ${order.orderNumber}`,
@@ -90,13 +126,20 @@ export function ownerOrderEmail(checkout: PaidCheckout, order: RecordedOrder) {
       <div>Email: <a href="mailto:${escapeHtml(checkout.email)}">${escapeHtml(checkout.email)}</a></div>
     </div>
     ${checkout.notes ? `<p style="margin:16px 0 0"><strong>Note del cliente:</strong> ${escapeHtml(checkout.notes)}</p>` : ""}
+    ${
+      preordered.length
+        ? `<div style="margin:16px 0 0;background:#fff7ed;border:1px solid #fdba74;border-radius:8px;padding:12px;font-size:15px"><strong>Contiene un pre-ordine:</strong> ${escapeHtml(preordered.join(", "))}. Questi pezzi non erano a magazzino; al cliente è indicato che potrebbero arrivare tra 10/15 giorni lavorativi.</div>`
+        : ""
+    }
     <h2 style="font-size:16px;margin:24px 0 8px">Articoli</h2>
-    ${linesTable(checkout)}
+    ${linesTable(checkout, order, "owner")}
     <p style="margin:24px 0 0">
       <a href="${adminUrl}" style="display:inline-block;background:#c6ff00;color:#07060b;font-weight:bold;text-decoration:none;padding:12px 18px;border-radius:6px">Apri l'ordine nel pannello</a>
     </p>
     ${stripeUrl ? `<p style="margin:12px 0 0;font-size:13px"><a href="${stripeUrl}">Vedi il pagamento su Stripe</a></p>` : ""}
-    <p style="margin:24px 0 0;font-size:12px;color:#888">Lo stock dei pezzi venduti è già stato scalato sul sito.</p>`,
+    <p style="margin:24px 0 0;font-size:12px;color:#888">Lo stock dei pezzi venduti è già stato scalato sul sito${
+      preordered.length ? "; i pezzi in pre-ordine non lo toccano finché non ricarichi il magazzino" : ""
+    }.</p>`,
   );
 
   const text = [
@@ -107,11 +150,14 @@ export function ownerOrderEmail(checkout: PaidCheckout, order: RecordedOrder) {
     checkout.phone ? `Tel: ${checkout.phone}` : null,
     `Email: ${checkout.email}`,
     checkout.notes ? `Note del cliente: ${checkout.notes}` : null,
+    preordered.length ? `
+CONTIENE UN PRE-ORDINE: ${preordered.join(", ")}` : null,
     "",
     "ARTICOLI",
-    ...checkout.lines.flatMap((line) => [
+    ...checkout.lines.flatMap((line, index) => [
       `${line.quantity} × ${line.name} — ${euro(line.quantity * line.unitPriceCents)}`,
       ...(packingList(line) ? [`   Da spedire: ${packingList(line)}`] : []),
+      ...(preorderLine(checkout, order, index, "owner") ? [`   ${preorderLine(checkout, order, index, "owner")}`] : []),
     ]),
     `Spedizione: ${checkout.shippingCents === 0 ? "gratuita" : euro(checkout.shippingCents)}`,
     `Totale pagato: ${euro(checkout.totalCents)}`,
@@ -131,7 +177,7 @@ export function customerOrderEmail(checkout: PaidCheckout, order: RecordedOrder)
   const html = emailShell(
     "Grazie, il tuo ordine è confermato",
     `<p style="margin:0 0 16px;color:#555">Abbiamo ricevuto il pagamento dell'ordine <strong>${escapeHtml(order.orderNumber)}</strong>. Ti scriviamo appena parte il pacco.</p>
-    ${linesTable(checkout)}
+    ${linesTable(checkout, order, "buyer")}
     <h2 style="font-size:16px;margin:24px 0 8px">Spedizione a</h2>
     <div style="line-height:1.5">${address.map((line) => `<div>${escapeHtml(line)}</div>`).join("")}</div>
     <p style="margin:24px 0 0;font-size:14px">Domande? Rispondi a questa email o scrivi a <a href="mailto:${SHOP_EMAIL}">${SHOP_EMAIL}</a> indicando il numero d'ordine.</p>`,
@@ -139,7 +185,10 @@ export function customerOrderEmail(checkout: PaidCheckout, order: RecordedOrder)
   const text = [
     `Grazie, il tuo ordine ${order.orderNumber} è confermato.`,
     "",
-    ...checkout.lines.map((line) => `${line.quantity} × ${line.name} — ${euro(line.quantity * line.unitPriceCents)}`),
+    ...checkout.lines.flatMap((line, index) => [
+      `${line.quantity} × ${line.name} — ${euro(line.quantity * line.unitPriceCents)}`,
+      ...(preorderLine(checkout, order, index, "buyer") ? [`   ${preorderLine(checkout, order, index, "buyer")}`] : []),
+    ]),
     `Spedizione: ${checkout.shippingCents === 0 ? "gratuita" : euro(checkout.shippingCents)}`,
     `Totale pagato: ${euro(checkout.totalCents)}`,
     "",

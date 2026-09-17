@@ -175,7 +175,7 @@ ${rows(productRows)}
 insert into public.products (
   category_id, slug, sku, name, tagline, description, price_cents,
   compare_at_price_cents, publication_status, active, stock_quantity,
-  availability_override, preorder_allocation, blade_type, rating, review_count, sort_order
+  availability_override, preorder_allocation, allow_backorder, blade_type, rating, review_count, sort_order
 )
 select
   category.id,
@@ -191,6 +191,8 @@ select
   seed.stock_quantity,
   null::public.availability_override,
   0 as preorder_allocation,
+  -- Sold out means pre-order, never a closed sale (migration 20260917140000).
+  true as allow_backorder,
   seed.blade_type::public.blade_type,
   seed.rating,
   seed.review_count,

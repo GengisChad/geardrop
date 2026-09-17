@@ -14,17 +14,26 @@ export function resolveBundle(bundle: Product, bySlug: ReadonlyMap<string, Produ
   if (parts.length === 0 || parts.some((part) => !part.product)) return { ...bundle, stock: "esaurito", availableQuantity: 0 };
 
   const sets = parts.map(({ component, product }) =>
-    product!.stock === "esaurito" ? 0 : product!.availableQuantity === undefined ? undefined : Math.floor(product!.availableQuantity / component.quantity),
+    product!.stock === "esaurito"
+      ? 0
+      : product!.availableQuantity === undefined
+        ? undefined
+        : Math.floor(Math.max(product!.availableQuantity, 0) / component.quantity),
   );
   const known = sets.filter((count): count is number => count !== undefined);
   const available = known.length > 0 ? Math.min(...known) : bundle.availableQuantity;
+  // A duo keeps selling as a pre-order only when every pack in it does.
+  const autoPreorder = parts.every((part) => part.product!.autoPreorder === true);
   const status =
     available === 0
-      ? "esaurito"
+      ? autoPreorder
+        ? "pre-ordine"
+        : "esaurito"
       : (STOCK_PRIORITY.find((candidate) => parts.some((part) => part.product!.stock === candidate)) ?? bundle.stock);
 
+  const resolved = { ...bundle, stock: status, ...(autoPreorder ? { autoPreorder: true } : {}) };
   // With no component counting its stock, the bundle keeps its own catalogue figure, if any.
-  return available === undefined ? { ...bundle, stock: status } : { ...bundle, stock: status, availableQuantity: available };
+  return available === undefined ? resolved : { ...resolved, availableQuantity: available };
 }
 
 /** The storefront catalogue: bundles first, with the stock their components hold right now. */

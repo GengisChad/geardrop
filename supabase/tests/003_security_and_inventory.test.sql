@@ -53,13 +53,14 @@ select results_eq(
     from public.products
     where stock_quantity = 0
       and is_purchasable
+      and not (availability_override is null and allow_backorder)
       and (
         availability_override is distinct from 'preorder'::public.availability_override
         or preorder_allocation = 0
       )
   $$,
   array[0::bigint],
-  'zero-stock products without funded preorder allocation are not purchasable'
+  'zero-stock products sell only as a funded or automatic pre-order'
 );
 
 select function_returns(

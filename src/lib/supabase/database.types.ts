@@ -1062,6 +1062,7 @@ export type Database = {
           image_src_snapshot: string
           line_total_cents: number
           order_id: number
+          preorder_quantity: number
           product_id: number | null
           product_name_snapshot: string
           quantity: number
@@ -1074,6 +1075,7 @@ export type Database = {
           image_src_snapshot: string
           line_total_cents: number
           order_id: number
+          preorder_quantity?: number
           product_id?: number | null
           product_name_snapshot: string
           quantity: number
@@ -1086,6 +1088,7 @@ export type Database = {
           image_src_snapshot?: string
           line_total_cents?: number
           order_id?: number
+          preorder_quantity?: number
           product_id?: number | null
           product_name_snapshot?: string
           quantity?: number
