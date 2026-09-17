@@ -61,7 +61,8 @@ async function fillContact(page: Page, email: string) {
   await page.locator("#address").fill("Via Roma 1");
   await page.locator("#city").fill("Milano");
   await page.locator("#postalCode").fill("20121");
-  await page.locator("#province").fill("MI");
+  // Province is now a <select>; select by value (sigla).
+  await page.locator("#province").selectOption("MI");
 }
 
 test.describe("storefront order intake", () => {

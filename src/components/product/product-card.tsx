@@ -80,7 +80,7 @@ export function ProductCard({
             {showTagline ? <p className="hidden text-small text-grey-600 sm:line-clamp-2">{product.tagline}</p> : null}
             {showRating ? <Rating value={product.rating} count={product.reviewCount} /> : null}
 
-            <p className="gd-mono flex flex-wrap items-baseline gap-x-2 text-[0.625rem] uppercase tracking-[0.1em] text-[var(--f2)]">
+            <p className="gd-mono flex flex-wrap items-baseline gap-x-2 text-[0.8125rem] tracking-[0.02em] text-[var(--f2)]">
               {availabilityLine(product)}
               {product.compareAtPrice ? (
                 <span className="tabular normal-case tracking-normal text-grey-400 line-through" data-testid="card-compare-price">
