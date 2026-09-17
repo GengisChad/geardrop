@@ -12,13 +12,13 @@ insert into public.product_images(product_id,src,width,height,alt,sort_order,pub
 ((select id from public.products where sku='STRIPE-LAST'),'/products/stripe-last.webp',800,800,'Stripe last',0,true,true);
 
 -- 1-4. Only the server's secret key can record a paid order ----------------------------
-select ok(has_function_privilege('service_role','public.record_stripe_checkout_order(text,text,text,text,text,jsonb,jsonb,integer,text)','EXECUTE'),
+select ok(has_function_privilege('service_role','public.record_stripe_checkout_order(text,text,text,text,text,jsonb,jsonb,integer,text,integer,text)','EXECUTE'),
   'the webhook, running with the secret key, may record paid orders');
-select ok(not has_function_privilege('anon','public.record_stripe_checkout_order(text,text,text,text,text,jsonb,jsonb,integer,text)','EXECUTE'),
+select ok(not has_function_privilege('anon','public.record_stripe_checkout_order(text,text,text,text,text,jsonb,jsonb,integer,text,integer,text)','EXECUTE'),
   'guests cannot record a paid order');
-select ok(not has_function_privilege('authenticated','public.record_stripe_checkout_order(text,text,text,text,text,jsonb,jsonb,integer,text)','EXECUTE'),
+select ok(not has_function_privilege('authenticated','public.record_stripe_checkout_order(text,text,text,text,text,jsonb,jsonb,integer,text,integer,text)','EXECUTE'),
   'signed-in customers cannot record a paid order');
-select ok((select prosecdef from pg_proc where oid='public.record_stripe_checkout_order(text,text,text,text,text,jsonb,jsonb,integer,text)'::regprocedure),
+select ok((select prosecdef from pg_proc where oid='public.record_stripe_checkout_order(text,text,text,text,text,jsonb,jsonb,integer,text,integer,text)'::regprocedure),
   'recording runs as security definer');
 
 -- 5-13. A paid session becomes a confirmed order and takes the stock ------------------------

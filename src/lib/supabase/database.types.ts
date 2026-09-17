@@ -2107,6 +2107,8 @@ export type Database = {
       record_staff_login: { Args: never; Returns: undefined }
       record_stripe_checkout_order: {
         Args: {
+          p_coupon_code?: string
+          p_discount_cents?: number
           p_email: string
           p_lines: Json
           p_notes: string
