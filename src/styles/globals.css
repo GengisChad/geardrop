@@ -923,6 +923,182 @@
 }
 
 /* ==========================================================================
+   Duo drop
+   Two packs lean in from their own colour fields while their tops spin towards each other,
+   clash with a spark and recoil. Transforms and opacity only; every loop starts and ends on
+   the resting frame, which is what reduced motion shows.
+   ========================================================================== */
+
+@layer components {
+  .gd-duo-stage {
+    --duo-red: 255, 84, 112;
+    --duo-cyan: 60, 240, 255;
+    position: relative;
+    aspect-ratio: 1 / 0.98;
+    width: 100%;
+    max-width: 38rem;
+    margin-inline: auto;
+    isolation: isolate;
+    pointer-events: none;
+  }
+
+  @media (min-width: 1024px) {
+    .gd-duo-stage {
+      aspect-ratio: 1 / 0.92;
+      max-width: none;
+    }
+  }
+
+  .gd-duo-field {
+    position: absolute;
+    inset: -6% -10%;
+    z-index: -2;
+    background:
+      radial-gradient(42% 46% at 26% 42%, rgba(var(--duo-cyan), 0.26), transparent 70%),
+      radial-gradient(42% 46% at 74% 42%, rgba(var(--duo-red), 0.26), transparent 70%);
+  }
+
+  .gd-duo-ring {
+    position: absolute;
+    left: 50%;
+    top: 46%;
+    z-index: -1;
+    width: 78%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    translate: -50% -50%;
+    background: conic-gradient(from 0deg, transparent 0deg, rgba(var(--duo-cyan), 0.9) 50deg, transparent 110deg, transparent 180deg, rgba(var(--duo-red), 0.9) 230deg, transparent 290deg);
+    -webkit-mask: radial-gradient(closest-side, transparent 94%, #000 95%, #000 99%, transparent 100%);
+    mask: radial-gradient(closest-side, transparent 94%, #000 95%, #000 99%, transparent 100%);
+    opacity: 0.8;
+    animation: gd-spin 9s linear infinite;
+  }
+
+  .gd-duo-pack {
+    position: absolute;
+    top: 3%;
+    width: 38%;
+    height: auto;
+    filter: drop-shadow(0 26px 30px rgba(0, 0, 0, 0.6));
+    will-change: transform;
+  }
+
+  .gd-duo-pack--left {
+    left: 7%;
+    rotate: -8deg;
+    animation: gd-duo-float 6s ease-in-out infinite;
+  }
+
+  .gd-duo-pack--right {
+    right: 7%;
+    top: 6%;
+    rotate: 8deg;
+    animation: gd-duo-float 6s ease-in-out -3s infinite;
+  }
+
+  .gd-duo-clash {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 66%;
+    height: 36%;
+    translate: -50% 0;
+  }
+
+  .gd-duo-floor {
+    position: absolute;
+    inset: 38% 4% 0;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(198, 255, 0, 0.18), rgba(122, 60, 255, 0.12) 55%, transparent);
+    box-shadow: 0 0 0 1px rgba(198, 255, 0, 0.25) inset;
+  }
+
+  .gd-duo-top {
+    position: absolute;
+    top: 4%;
+    width: 30%;
+    aspect-ratio: 1;
+    filter: drop-shadow(0 14px 12px rgba(0, 0, 0, 0.7));
+    will-change: transform;
+  }
+
+  .gd-duo-top--left {
+    left: 12%;
+    animation: gd-duo-clash-left 2.8s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+  }
+
+  .gd-duo-top--right {
+    right: 12%;
+    animation: gd-duo-clash-right 2.8s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+  }
+
+  .gd-duo-top--left::after,
+  .gd-duo-top--right::after {
+    content: "";
+    position: absolute;
+    inset: -8%;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    animation: gd-spin 0.5s linear infinite;
+  }
+
+  .gd-duo-top--left::after {
+    border-top-color: rgba(var(--duo-cyan), 0.85);
+  }
+
+  .gd-duo-top--right::after {
+    border-bottom-color: rgba(var(--duo-red), 0.85);
+  }
+
+  .gd-duo-spin {
+    width: 100%;
+    height: 100%;
+    animation: gd-spin 0.34s linear infinite;
+  }
+
+  .gd-duo-spin--reverse {
+    animation-direction: reverse;
+  }
+
+  .gd-duo-spark {
+    position: absolute;
+    left: 50%;
+    top: 34%;
+    width: 78%;
+    height: auto;
+    opacity: 0;
+    mix-blend-mode: screen;
+    translate: -50% -50%;
+    animation: gd-duo-spark 2.8s ease-out infinite;
+  }
+
+  .gd-duo-sticker {
+    position: absolute;
+    right: 3%;
+    top: 0;
+    z-index: 2;
+    padding: 0.55rem 0.9rem 0.6rem;
+    background: var(--color-lime);
+    color: var(--color-void);
+    font-weight: 800;
+    text-align: center;
+    rotate: 6deg;
+    box-shadow: 0 10px 30px -8px rgba(198, 255, 0, 0.7);
+  }
+
+  /* A child rather than a pseudo-element: .gd-hud draws its corner brackets with both. */
+  .gd-duo-offer-glow {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(40% 90% at 8% 50%, rgba(60, 240, 255, 0.14), transparent 70%),
+      radial-gradient(40% 90% at 30% 50%, rgba(255, 84, 112, 0.12), transparent 70%);
+  }
+}
+
+/* ==========================================================================
    Fixed bottom bars
    Below lg the tab bar is fixed to the bottom edge, and product pages add the sticky buy
    bar above it. The end of every page and the toast stack clear whatever is showing, so
@@ -1317,5 +1493,65 @@
   }
   to {
     transform: translateX(-50%);
+  }
+}
+
+@keyframes gd-duo-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3%);
+  }
+}
+
+/* The tops rest apart, rush in, meet at 42%, recoil and drift back to rest. */
+@keyframes gd-duo-clash-left {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  42% {
+    transform: translateX(58%) rotate(-6deg);
+  }
+  52% {
+    transform: translateX(22%) rotate(8deg);
+  }
+  70% {
+    transform: translateX(12%) rotate(0deg);
+  }
+}
+
+@keyframes gd-duo-clash-right {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  42% {
+    transform: translateX(-58%) rotate(6deg);
+  }
+  52% {
+    transform: translateX(-22%) rotate(-8deg);
+  }
+  70% {
+    transform: translateX(-12%) rotate(0deg);
+  }
+}
+
+@keyframes gd-duo-spark {
+  0%,
+  36% {
+    opacity: 0;
+    transform: scale(0.35) rotate(-10deg);
+  }
+  43% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  62%,
+  100% {
+    opacity: 0;
+    transform: scale(1.3) rotate(6deg);
   }
 }

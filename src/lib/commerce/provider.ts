@@ -1,5 +1,7 @@
 import "server-only";
 
+import { BUNDLES } from "@/data/catalog";
+import { withBundles } from "./bundles";
 import { loadLiveCatalogue } from "./live-stock";
 import { createMockProvider } from "./mock-provider";
 import { createSupabaseCommerceProvider } from "./supabase-provider";
@@ -56,7 +58,8 @@ function cachedSupabaseProvider(): CommerceProvider {
 export async function getCommerceProvider(): Promise<CommerceProvider> {
   const requested = resolveCommerceProviderName();
   // The catalogue build still sells through Stripe, but with the stock the database holds.
-  return requested === "mock" ? createMockProvider(await loadLiveCatalogue()) : cachedSupabaseProvider();
+  // Bundles are priced on the same live stock, so a duo sells out with its last pack.
+  return requested === "mock" ? createMockProvider(withBundles(await loadLiveCatalogue(), BUNDLES)) : cachedSupabaseProvider();
 }
 
 export const commerce: CommerceProvider = createMockProvider();

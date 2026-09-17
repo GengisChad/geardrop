@@ -4,6 +4,17 @@ import { createPrivilegedSupabaseClient } from "@/lib/supabase/admin";
 import type { OrderStore, StoredOrder } from "./process-paid-checkout";
 import type { PaidCheckout } from "./stripe-order";
 
+/** The order lines as the database function reads them; a bundle carries the packs it ships. */
+export function stripeOrderLines(checkout: PaidCheckout) {
+  return checkout.lines.map((line) => ({
+    slug: line.slug,
+    name: line.name,
+    quantity: line.quantity,
+    unit_price_cents: line.unitPriceCents,
+    ...(line.components ? { components: line.components.map((part) => ({ slug: part.slug, quantity: part.quantity })) } : {}),
+  }));
+}
+
 /**
  * Order storage for the Stripe webhook. It runs with the secret key because no shopper is
  * signed in when Stripe calls; the database function is granted to that key alone.
@@ -18,12 +29,7 @@ export function createSupabaseOrderStore(client = createPrivilegedSupabaseClient
         p_email: checkout.email,
         p_phone: checkout.phone ?? "",
         p_shipping_address: { ...checkout.shipping, phone: checkout.phone ?? "" },
-        p_lines: checkout.lines.map((line) => ({
-          slug: line.slug,
-          name: line.name,
-          quantity: line.quantity,
-          unit_price_cents: line.unitPriceCents,
-        })),
+        p_lines: stripeOrderLines(checkout),
         p_shipping_cents: checkout.shippingCents,
         p_notes: checkout.notes ?? "",
       });

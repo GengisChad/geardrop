@@ -20,6 +20,11 @@ scripts/normalize_images.py does not know about.
 The three Infinity Starters also get their loose spinning top cropped into public/products/tops/ for
 the homepage Arena. Centres and radii are measured on the 1000 px tile and scaled to the canvas.
 
+Bundles sold as one item (COMPOSITES) get a packshot assembled from their packs' own cut-outs: each
+box is cropped out of its cut-out and the loose tops come from public/products/tops, so the bundle
+image is made only of the owner's photos. It writes both the tile and the cut-out, and each pack's
+box on its own into public/products/boxes/ for the homepage duo scene.
+
 Usage: python scripts/cutout_products.py [--force]
 """
 
@@ -39,6 +44,7 @@ SOURCES = ROOT / "prodotti"
 TILES = ROOT / "public" / "products"
 CUTOUT = TILES / "cutout"
 TOPS = ROOT / "public" / "products" / "tops"
+BOXES = ROOT / "public" / "products" / "boxes"
 
 SLUGS = (
     "cobalt-dragoon-2-60c",
@@ -71,6 +77,15 @@ OUTLINED = {
 # slug -> (centre x, centre y, radius) on the 1000 px tile, and what else cuts the top out: "alpha"
 # keeps only the product inside the circle; "dark" also drops the dark box artwork around a top
 # taken from the pack illustration.
+# Bundle slug -> packs left to right, each with the box's crop (left, top, right, bottom) in its
+# 1200 px cut-out: the box without the loose top and launcher photographed beside it.
+COMPOSITES = {
+    "duo-horus-enlil": (
+        ("hurricane-enlil-is-7-55t", (120, 110, 570, 850)),
+        ("shatter-horus-9-65gb", (122, 110, 572, 850)),
+    ),
+}
+
 TOP_CROPS = {
     "glory-valkerion-lf": (487, 526, 168, "dark"),
     "hurricane-enlil-is-7-55t": (596, 478, 128, "alpha"),
@@ -250,6 +265,33 @@ def top(slug: str, cut: Image.Image) -> Image.Image:
     return crop.convert("RGBa").resize((TOP_SIZE, TOP_SIZE), Image.LANCZOS).convert("RGBA")
 
 
+def composite(slug: str) -> Image.Image:
+    """The bundle's packs leaning towards each other, their tops clashing in front, on transparency."""
+    (left_slug, left_box), (right_slug, right_box) = COMPOSITES[slug]
+    stage = Image.new("RGBA", (CANVAS + 200, CANVAS + 200), (0, 0, 0, 0))
+    boxes = [
+        (Image.open(CUTOUT / f"{left_slug}.webp").convert("RGBA").crop(left_box), 4, (50, 30)),
+        (Image.open(CUTOUT / f"{right_slug}.webp").convert("RGBA").crop(right_box), -4, (650, 50)),
+    ]
+    for box, angle, (x, y) in boxes:
+        scaled = box.resize((round(box.width * 1.18), round(box.height * 1.18)), Image.LANCZOS)
+        tilted = scaled.rotate(angle, resample=Image.BICUBIC, expand=True)
+        stage.alpha_composite(tilted, (x, y))
+    # Below the boxes' printed names, overlapping each other like a clash.
+    for top_slug, (x, y) in ((left_slug, (340, 930)), (right_slug, (620, 930))):
+        spinner = Image.open(TOPS / f"{top_slug}.webp").convert("RGBA").resize((330, 330), Image.LANCZOS)
+        stage.alpha_composite(spinner, (x, y))
+    return stage.crop(stage.getchannel("A").getbbox())
+
+
+def fit_on(canvas: Image.Image, art: Image.Image, box: float) -> Image.Image:
+    scale = box / max(art.width, art.height)
+    size = (round(art.width * scale), round(art.height * scale))
+    resized = art.resize(size, Image.LANCZOS)
+    canvas.alpha_composite(resized, ((canvas.width - size[0]) // 2, (canvas.height - size[1]) // 2))
+    return canvas
+
+
 def main() -> None:
     force = "--force" in sys.argv
     CUTOUT.mkdir(parents=True, exist_ok=True)
@@ -271,6 +313,28 @@ def main() -> None:
         if needs_top:
             top(slug, cut).save(top_target, "WEBP", quality=90, alpha_quality=100, method=6)
             print(f"top {top_target.relative_to(ROOT)} {top_target.stat().st_size // 1024} KB")
+
+    # Bundles last: they are assembled from the cut-outs and tops written above.
+    BOXES.mkdir(parents=True, exist_ok=True)
+    for slug, packs in COMPOSITES.items():
+        for pack_slug, crop in packs:
+            box_target = BOXES / f"{pack_slug}.webp"
+            if force or not box_target.exists():
+                box = Image.open(CUTOUT / f"{pack_slug}.webp").convert("RGBA").crop(crop)
+                box.save(box_target, "WEBP", quality=92, alpha_quality=100, method=6)
+                print(f"box {box_target.relative_to(ROOT)}")
+        tile_target = TILES / f"{slug}.webp"
+        target = CUTOUT / f"{slug}.webp"
+        if tile_target.exists() and target.exists() and not force:
+            continue
+        art = composite(slug)
+        fit_on(Image.new("RGBA", (CANVAS, CANVAS), (0, 0, 0, 0)), art, (TILE - 2 * NORMALISER.PAD) * CANVAS / TILE).save(
+            target, "WEBP", quality=92, alpha_quality=100, method=6
+        )
+        fit_on(Image.new("RGBA", (TILE, TILE), (255, 255, 255, 255)), art, TILE - 2 * NORMALISER.PAD).convert("RGB").save(
+            tile_target, "WEBP", quality=90
+        )
+        print(f"bundle {tile_target.relative_to(ROOT)} + {target.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":

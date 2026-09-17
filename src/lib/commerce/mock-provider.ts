@@ -6,7 +6,8 @@
  * contract for the whole UI to keep working.
  */
 
-import { BUNDLE, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_FLAT_RATE } from "@/data/catalog";
+import { BUNDLE, BUNDLES, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_FLAT_RATE } from "@/data/catalog";
+import { piecesOf, withBundles } from "./bundles";
 import type {
   BladeType,
   Bundle,
@@ -88,7 +89,10 @@ function countBy<T extends string>(products: readonly Product[], pick: (p: Produ
   return counts;
 }
 
-export function createMockProvider(catalogue: readonly Product[] = PRODUCTS): CommerceProvider {
+/** The reviewed catalogue with its bundles, priced on the catalogue's own stock. */
+export const STOREFRONT_CATALOGUE: readonly Product[] = withBundles(PRODUCTS, BUNDLES);
+
+export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CATALOGUE): CommerceProvider {
   const bySlug = new Map(catalogue.map((product) => [product.slug as string, product]));
 
   const filter = (query: ProductQuery) => catalogue.filter((product) => matches(product, query));
@@ -169,6 +173,27 @@ export function createMockProvider(catalogue: readonly Product[] = PRODUCTS): Co
       const missingSlugs: string[] = [];
       const quoteLines: CartQuoteLine[] = [];
 
+      // A bundle and a single pack can both take the same pieces, so stock is checked against
+      // everything the cart asks of each catalogue product, not line by line.
+      const demand = new Map<string, number>();
+      for (const line of request.lines) {
+        const product = bySlug.get(line.slug);
+        if (!product) continue;
+        for (const piece of piecesOf(product, line.quantity)) {
+          demand.set(piece.slug, (demand.get(piece.slug) ?? 0) + piece.quantity);
+        }
+      }
+      const sharedShortage = (product: Product, quantity: number): string | null => {
+        for (const piece of piecesOf(product, quantity)) {
+          const source = bySlug.get(piece.slug);
+          const available = source?.availableQuantity;
+          if (source && available !== undefined && (demand.get(piece.slug) ?? 0) > available) {
+            return `Disponibilità insufficiente: restano ${available} ${source.name}, contando anche il duo.`;
+          }
+        }
+        return null;
+      };
+
       for (const line of request.lines) {
         const product = bySlug.get(line.slug);
         if (!product) {
@@ -191,7 +216,7 @@ export function createMockProvider(catalogue: readonly Product[] = PRODUCTS): Co
               ? "Non disponibile: rimuovilo per procedere."
               : product.availableQuantity !== undefined && line.quantity > product.availableQuantity
                 ? `Disponibilità insufficiente: ne restano ${product.availableQuantity}.`
-              : null,
+                : sharedShortage(product, line.quantity),
         });
       }
 

@@ -61,7 +61,12 @@ export function BuyPanel({ product }: { product: Product }) {
           ) : null}
           {product.stock === "disponibile" && product.availableQuantity !== undefined ? (
             <p className="mt-1 tabular text-[0.6875rem] font-bold text-available" data-testid="stock-remaining">
-              {product.availableQuantity} {product.availableQuantity === 1 ? "pezzo disponibile" : "pezzi disponibili"}
+              {product.availableQuantity}{" "}
+              {product.bundleOf
+                ? "duo disponibili"
+                : product.availableQuantity === 1
+                  ? "pezzo disponibile"
+                  : "pezzi disponibili"}
             </p>
           ) : null}
         </div>

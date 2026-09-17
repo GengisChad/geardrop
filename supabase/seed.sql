@@ -303,17 +303,17 @@ insert into public.bundles (
   price_cents, compare_at_price_cents, hero_product_id, active
 )
 select
-  'bundle-campione',
-  'Bundle campione',
-  'Scatena il',
-  'tuo potenziale.',
-  'Uno stadio e le trottole ad alte prestazioni per iniziare a dominare l''arena.',
-  9900,
-  10400,
+  'duo-horus-enlil',
+  'Offerta duo',
+  'Horus ×',
+  'Enlil.',
+  'Due Infinity Starter Beyblade X, stamina contro bilanciata, a €37 invece di €40.',
+  3700,
+  4000,
   product.id,
   true
 from public.products as product
-where product.slug = 'drop-attack-battle-set'
+where product.slug = 'shatter-horus-9-65gb'
 on conflict (slug) do update set
   eyebrow = excluded.eyebrow,
   title_line_one = excluded.title_line_one,
@@ -325,9 +325,8 @@ on conflict (slug) do update set
 
 with seed(bundle_slug, product_slug, quantity, sort_order) as (
   values
-  ('bundle-campione', 'drop-attack-battle-set', 1, 0),
-  ('bundle-campione', 'cobalt-dragoon-2-60c', 1, 1),
-  ('bundle-campione', 'soar-phoenix-9-60gf', 1, 2)
+  ('duo-horus-enlil', 'shatter-horus-9-65gb', 1, 0),
+  ('duo-horus-enlil', 'hurricane-enlil-is-7-55t', 1, 1)
 )
 insert into public.bundle_items (bundle_id, product_id, quantity, sort_order)
 select bundle.id, product.id, seed.quantity, seed.sort_order
@@ -541,7 +540,7 @@ with seed(menu_key, label, href, sort_order) as (
   ('main', 'Stadi', '/negozio/stadi', 3),
   ('main', 'Accessori', '/negozio/accessori', 4),
   ('main', 'Nuovi arrivi', '/negozio?sort=novita', 5),
-  ('main', 'Offerte', '/negozio?stock=disponibile', 6)
+  ('main', 'Offerte', '/prodotto/duo-horus-enlil', 6)
 )
 insert into public.navigation_items(menu_id, parent_id, label, href, active, sort_order)
 select menu.id, null, seed.label, seed.href, true, seed.sort_order

@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { CATEGORIES, PRODUCTS } from "@/data/catalog";
+import { BUNDLES, CATEGORIES, PRODUCTS } from "@/data/catalog";
 import { LEGAL_PAGES, SUPPORT_PAGES } from "@/data/pages";
 import { absoluteUrl } from "@/lib/seo";
 
@@ -18,7 +18,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly" as const,
       priority: 0.8,
     })),
-    ...PRODUCTS.map((product) => ({
+    ...[...BUNDLES, ...PRODUCTS].map((product) => ({
       url: absoluteUrl(`/prodotto/${product.slug}`),
       lastModified,
       changeFrequency: "daily" as const,

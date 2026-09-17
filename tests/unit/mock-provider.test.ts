@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createMockProvider } from "@/lib/commerce/mock-provider";
+import { createMockProvider, STOREFRONT_CATALOGUE } from "@/lib/commerce/mock-provider";
 import { FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_FLAT_RATE } from "@/data/catalog";
 
 const provider = createMockProvider();
@@ -76,7 +76,7 @@ describe("listProducts", () => {
     const page = await provider.listProducts({ perPage: 3, page: 2 });
     expect(page.items).toHaveLength(3);
     expect(page.page).toBe(2);
-    expect(page.pageCount).toBe(Math.ceil(PRODUCTS.length / 3));
+    expect(page.pageCount).toBe(Math.ceil(STOREFRONT_CATALOGUE.length / 3));
   });
 
   it("clamps an out-of-range page instead of returning an empty list", async () => {
@@ -92,7 +92,7 @@ describe("getFacets", () => {
     // or the filter panel would become a dead end.
     const facets = await provider.getFacets({ stock: ["esaurito"] });
     const available = facets.stock.find((f) => f.value === "disponibile");
-    expect(available?.count).toBe(PRODUCTS.length);
+    expect(available?.count).toBe(STOREFRONT_CATALOGUE.length);
   });
 
   it("narrows sibling facets by the other active filters", async () => {

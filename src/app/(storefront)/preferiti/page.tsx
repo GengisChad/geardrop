@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { WishlistClient } from "./wishlist-client";
-import { PRODUCTS } from "@/data/catalog";
+import { getCommerceProvider } from "@/lib/commerce/provider";
 
 export const metadata: Metadata = {
   title: "Preferiti",
@@ -8,7 +8,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function PreferitiPage() {
+export default async function PreferitiPage() {
+  // The storefront catalogue as the shop sells it: live stock and bundles included, the same
+  // list the home page deals from.
+  const commerce = await getCommerceProvider();
+  const catalogue = await commerce.listProducts({ perPage: 100 });
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-10 sm:px-6">
       <div data-testid="wishlist-surface" className="gd-glass-panel rounded-[--radius-glass] px-5 py-6 sm:px-7">
@@ -16,7 +20,7 @@ export default function PreferitiPage() {
         <p className="mt-2 text-small text-grey-600">I prodotti che hai salvato restano qui, anche se chiudi il browser.</p>
       </div>
       {/* The catalogue is passed down so the client never re-fetches what the server has. */}
-      <WishlistClient catalogue={PRODUCTS} />
+      <WishlistClient catalogue={catalogue.items} />
     </div>
   );
 }

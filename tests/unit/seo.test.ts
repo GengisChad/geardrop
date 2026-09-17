@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
-import { CATEGORIES, PRODUCTS } from "@/data/catalog";
+import { BUNDLES, CATEGORIES, PRODUCTS } from "@/data/catalog";
 import { breadcrumbJsonLd, jsonLd, productDescription, productJsonLd, productTitle, siteJsonLd } from "@/lib/seo";
 
 afterEach(() => vi.unstubAllEnvs());
@@ -14,7 +14,7 @@ describe("sitemap", () => {
     expect(urls).toContain("https://geardropshop.it/");
     expect(urls).toContain("https://geardropshop.it/negozio");
     for (const category of CATEGORIES) expect(urls).toContain(`https://geardropshop.it/negozio/${category.slug}`);
-    for (const product of PRODUCTS) expect(urls).toContain(`https://geardropshop.it/prodotto/${product.slug}`);
+    for (const product of [...BUNDLES, ...PRODUCTS]) expect(urls).toContain(`https://geardropshop.it/prodotto/${product.slug}`);
     expect(urls.every((url) => url.startsWith("https://geardropshop.it/"))).toBe(true);
   });
 
