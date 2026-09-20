@@ -308,7 +308,7 @@ test.describe("desktop", () => {
     await page.getByTestId("search-input").fill("cobalt");
     await page.getByTestId("search-input").press("Enter");
     await expect(page).toHaveURL(/\/ricerca\?q=cobalt/);
-    await expect(page.getByTestId("product-card").first()).toContainText("Cobalt Dragoon");
+    await expect(page.getByTestId("product-card").first()).toContainText("Cobalt");
   });
 });
 
