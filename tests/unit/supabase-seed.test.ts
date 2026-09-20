@@ -7,7 +7,10 @@ describe("Supabase catalogue seed", () => {
   it("is idempotent and creates new products with the reviewed stock", () => {
     expect(sql).toContain("on conflict (slug) do update");
     expect(sql).toContain("seed.stock_quantity,");
-    expect(sql).toContain("0 as preorder_allocation");
+    // A pre-order sells from its allocation: both travel with the row.
+    expect(sql).toContain("seed.availability_override,");
+    expect(sql).toContain("seed.preorder_allocation,");
+    expect(sql).toMatch(/'cobalt-drake-4-60f', '[a-z0-9-]+', 0, 'preorder'::public\.availability_override, 9,/);
     expect(sql).not.toContain("stock_quantity = excluded.stock_quantity");
   });
 

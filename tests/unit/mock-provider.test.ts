@@ -92,7 +92,10 @@ describe("getFacets", () => {
     // or the filter panel would become a dead end.
     const facets = await provider.getFacets({ stock: ["esaurito"] });
     const available = facets.stock.find((f) => f.value === "disponibile");
-    expect(available?.count).toBe(STOREFRONT_CATALOGUE.length);
+    const preorder = facets.stock.find((f) => f.value === "pre-ordine");
+    expect((available?.count ?? 0) + (preorder?.count ?? 0)).toBe(STOREFRONT_CATALOGUE.length);
+    expect(available?.count).toBeGreaterThan(0);
+    expect(preorder?.count).toBeGreaterThan(0);
   });
 
   it("narrows sibling facets by the other active filters", async () => {
@@ -209,9 +212,13 @@ describe("catalogue integrity", () => {
     }
   });
 
-  it("publishes every reviewed product as available", () => {
+  it("publishes every reviewed product as available or as a funded pre-order", () => {
     const states = new Set(PRODUCTS.map((p) => p.stock));
-    expect([...states]).toEqual(["disponibile"]);
+    expect([...states].sort()).toEqual(["disponibile", "pre-ordine"]);
+    // A pre-order that cannot be bought would be a dead card: every one names its allocation.
+    for (const product of PRODUCTS.filter((p) => p.stock === "pre-ordine")) {
+      expect(product.availableQuantity, product.slug).toBeGreaterThan(0);
+    }
   });
 
   it("keeps an excessive line in the quote with its availability error", async () => {

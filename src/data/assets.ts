@@ -47,6 +47,46 @@ export type ProductImage = {
 
 /** Owner-supplied packshots, normalised to square WebP tiles. */
 export const productImages = {
+  "cobalt-drake-4-60f": [
+    {
+      src: "/products/cobalt-drake-4-60f.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Confezione Beyblade X Cobalt Drake 4-60F con la trottola argentata trasparente accanto",
+    },
+  ],
+  "mirage-clock-9-65b": [
+    {
+      src: "/products/mirage-clock-9-65b.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Confezione Beyblade X Mirage Clock 9-65B con la trottola verde acqua e rosa accanto",
+    },
+  ],
+  "suppress-superion-0-70lp": [
+    {
+      src: "/products/suppress-superion-0-70lp.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Confezione Beyblade X Suppress Superion 0-70LP con trottola bianca e oro",
+    },
+  ],
+  "strike-dran-4-50ff": [
+    {
+      src: "/products/strike-dran-4-50ff.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Confezione Beyblade X Strike Dran 4-50FF con trottola blu e argento",
+    },
+  ],
+  "tread-croc-tq-5-50gn": [
+    {
+      src: "/products/tread-croc-tq-5-50gn.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Confezione Beyblade X Tread Croc TQ 5-50GN della linea CX con trottola dorata e verde",
+    },
+  ],
   "cobalt-dragoon-2-60c": [
     {
       src: "/products/cobalt-dragoon-2-60c.webp",
@@ -158,6 +198,8 @@ export function cutoutSrc(src: string): string | null {
 
 /** The loose spinning top cropped from each Infinity Starter tile, launched in the homepage Arena. */
 export const productTops: Readonly<Partial<Record<string, string>>> = {
+  "cobalt-drake-4-60f": "/products/tops/cobalt-drake-4-60f.webp",
+  "mirage-clock-9-65b": "/products/tops/mirage-clock-9-65b.webp",
   "glory-valkerion-lf": "/products/tops/glory-valkerion-lf.webp",
   "hurricane-enlil-is-7-55t": "/products/tops/hurricane-enlil-is-7-55t.webp",
   "shatter-horus-9-65gb": "/products/tops/shatter-horus-9-65gb.webp",

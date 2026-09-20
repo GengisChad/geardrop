@@ -58,7 +58,8 @@ describe("truthful public presentation", () => {
   it("renders the neutral preorder homepage without bestseller, Club, bundle, or rating decoration", async () => {
     const html = renderToStaticMarkup(<Providers>{await HomePage()}</Providers>);
 
-    expect(html).toContain("Disponibili ora");
+    // The hero deals the 2026-09-21 pre-order drop, so it says so.
+    expect(html).toContain("Pre-ordini aperti");
     expect(html).toContain("Tutto il drop");
     expect(html).toContain("Scegli. Carica.");
     expect(html).not.toContain("Più venduti");

@@ -37,7 +37,10 @@ export function generateSupabaseSeed(): string {
       text(product.category),
       text(product.slug),
       text(product.slug.toUpperCase()),
-      product.availableQuantity ?? 0,
+      // A pre-order sells from its allocation, not from a shelf.
+      product.stock === "pre-ordine" ? 0 : (product.availableQuantity ?? 0),
+      product.stock === "pre-ordine" ? "'preorder'::public.availability_override" : "null::public.availability_override",
+      product.stock === "pre-ordine" ? (product.availableQuantity ?? 0) : 0,
       text(product.name),
       text(product.tagline),
       text(product.description),
@@ -168,7 +171,7 @@ on conflict (slug) do update set
   description = excluded.description,
   sort_order = excluded.sort_order;
 
-with seed(category_slug, slug, sku, stock_quantity, name, tagline, description, price_cents, compare_at_price_cents, blade_type, rating, review_count, sort_order) as (
+with seed(category_slug, slug, sku, stock_quantity, availability_override, preorder_allocation, name, tagline, description, price_cents, compare_at_price_cents, blade_type, rating, review_count, sort_order) as (
   values
 ${rows(productRows)}
 )
@@ -189,8 +192,8 @@ select
   'published'::public.publication_status,
   true,
   seed.stock_quantity,
-  null::public.availability_override,
-  0 as preorder_allocation,
+  seed.availability_override,
+  seed.preorder_allocation,
   -- Sold out means pre-order, never a closed sale (migration 20260917140000).
   true as allow_backorder,
   seed.blade_type::public.blade_type,
