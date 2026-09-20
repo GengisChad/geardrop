@@ -160,9 +160,12 @@ test.describe("product page", () => {
 
 test.describe("search", () => {
   test("finds a product by name", async ({ page }) => {
+    // Two Cobalts in the catalogue since the 2026-09-21 drop: the search must return both.
     await page.goto("/ricerca?q=cobalt");
     await expect(page.getByTestId("search-results")).toBeVisible();
-    await expect(page.getByTestId("product-card").first()).toContainText("Cobalt Dragoon");
+    await expect(page.getByTestId("product-card")).toHaveCount(2);
+    await expect(page.getByTestId("search-results")).toContainText("Cobalt Dragoon");
+    await expect(page.getByTestId("search-results")).toContainText("Cobalt Drake");
   });
 
   test("shows an empty state for no matches", async ({ page }) => {
