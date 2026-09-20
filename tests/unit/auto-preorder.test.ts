@@ -231,3 +231,13 @@ describe("pre-order copy and database rule", () => {
     expect(migration).toContain("if short > 0 and not backorder then");
   });
 });
+
+describe("what a card says about a pre-order", () => {
+  it("never passes an allocation off as pieces on the shelf", async () => {
+    const { availabilityLine } = await import("@/lib/holo");
+    expect(availabilityLine({ stock: "pre-ordine", availableQuantity: 9 })).toBe("Solo 9 in pre-ordine");
+    expect(availabilityLine({ stock: "pre-ordine" })).toBe("Pre-ordine");
+    expect(availabilityLine({ stock: "disponibile", availableQuantity: 9 })).toBe("Solo 9 pezzi");
+    expect(availabilityLine({ stock: "disponibile", availableQuantity: 3, bundleOf: [] })).toBe("Solo 3 duo");
+  });
+});
