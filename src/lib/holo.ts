@@ -63,11 +63,15 @@ export function productLine(product: Pick<Product, "specs">): string | null {
   return /^([A-Z]{2})\b/.exec(value)?.[1] ?? null;
 }
 
-/** Scarcity line: the remaining allocation when it is small, the plain status otherwise. */
+/**
+ * Scarcity line: what is left when the number is small, the plain status otherwise. A pre-order
+ * says so, so its allocation is never mistaken for pieces on the shelf.
+ */
 export function availabilityLine(product: Pick<Product, "stock" | "availableQuantity" | "bundleOf">): string {
   if (product.stock === "esaurito") return STOCK_LABEL.esaurito;
   const left = product.availableQuantity;
   if (left !== undefined && left > 0 && left <= 10) {
+    if (product.stock === "pre-ordine") return `Solo ${left} in pre-ordine`;
     return product.bundleOf ? `Solo ${left} duo` : `Solo ${left} ${left === 1 ? "pezzo" : "pezzi"}`;
   }
   return STOCK_LABEL[product.stock];
