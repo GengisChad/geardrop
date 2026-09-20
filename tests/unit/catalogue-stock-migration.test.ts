@@ -25,7 +25,7 @@ const CONVERTED = [
 ] as const;
 
 describe("catalogue stock conversion migration", () => {
-  it("converts the products it found, and the shop still sells each of them from stock", () => {
+  it("converts the products it found, and the shop still sells each of them", () => {
     const slugList = migration.match(/insert into catalogue_stock_slugs \(slug\) values([\s\S]+?);/)?.[1] ?? "";
     const slugs = [...slugList.matchAll(/'([^']+)'/g)].map((match) => RENAMED[match[1]!] ?? match[1]);
     const catalogue = new Map(PRODUCTS.map((product) => [product.slug as string, product]));
@@ -33,7 +33,8 @@ describe("catalogue stock conversion migration", () => {
     // The catalogue has grown since (the 2026-09-21 pre-order drop), so this is the set it converted.
     expect([...slugs].sort()).toEqual([...CONVERTED].sort());
     for (const slug of slugs) {
-      expect(catalogue.get(slug ?? "")?.stock, slug).toBe("disponibile");
+      // Six of them now sell as open pre-orders; none of them was dropped or closed.
+      expect(catalogue.get(slug ?? "")?.stock, slug).not.toBe("esaurito");
     }
   });
 

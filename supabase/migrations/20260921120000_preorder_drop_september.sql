@@ -4,6 +4,8 @@
 -- Catalogue copy, images, specs and relations come from src/data/catalog.ts through
 -- scripts/generate-supabase-seed.ts; this mirrors the same rows into the live database.
 
+begin;
+
 with seed(category_slug, slug, sku, stock_quantity, availability_override, preorder_allocation, name, tagline, description, price_cents, compare_at_price_cents, blade_type, rating, review_count, sort_order) as (
   values
   ('beyblade-x', 'cobalt-drake-4-60f', 'COBALT-DRAKE-4-60F', 0, 'preorder'::public.availability_override, 9, 'Cobalt Drake 4-60F', 'Attacco BX. Lame di cristallo.', 'Cobalt Drake 4-60F è una trottola d''attacco della linea BX: la blade trasparente dal profilo affilato concentra il peso sulle punte, il Ratchet 4-60 tiene l''assetto basso e il Bit F (Flat) la lancia in traiettorie rapide e aggressive lungo il bordo dello stadio. Richiede lanciatore e Beystadium Beyblade X (venduti separatamente).', 2000, null, 'attacco', 0, 0, 0),
@@ -227,3 +229,24 @@ update public.products as target
 set sort_order = seed.sort_order
 from seed
 where target.slug = seed.slug;
+
+-- The six older pieces stop claiming a shelf they no longer have: they sell as open pre-orders,
+-- which the automatic pre-order rule already supports (zero stock with allow_backorder). The
+-- shelf they held is written off in the ledger so the movements still explain every number.
+insert into public.inventory_movements(product_id, delta, stock_after, reason, note)
+select id, -stock_quantity, 0, 'manual_adjustment'::public.inventory_reason,
+  'Passaggio a pre-ordine aperto: la disponibilità dichiarata non era a magazzino'
+from public.products
+where slug in ('cobalt-dragoon-2-60c', 'soar-phoenix-9-60gf', 'saber-samurai-2-70l', 'blast-pegasus-a-tr',
+               'drop-attack-battle-set', 'sneak-attack-battle-set')
+  and stock_quantity > 0;
+
+update public.products
+set stock_quantity = 0,
+    availability_override = null,
+    preorder_allocation = 0,
+    allow_backorder = true
+where slug in ('cobalt-dragoon-2-60c', 'soar-phoenix-9-60gf', 'saber-samurai-2-70l', 'blast-pegasus-a-tr',
+               'drop-attack-battle-set', 'sneak-attack-battle-set');
+
+commit;

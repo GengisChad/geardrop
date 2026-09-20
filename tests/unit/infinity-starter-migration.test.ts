@@ -33,10 +33,9 @@ describe("infinity starter preorder migration", () => {
     const published = PRODUCTS.filter((product) => publishedCatalogue.includes(`('${product.slug}',`));
     expect(published).toHaveLength(9);
     for (const product of published) {
+      // The quantity in that migration is the allocation of the day; the price is still the price.
       expect(publishedCatalogue, product.slug).toMatch(
-        new RegExp(
-          `\\('${product.slug}', ${product.availableQuantity}, '${product.category}', [^\\n]*, ${product.price.amount}, `,
-        ),
+        new RegExp(`\\('${product.slug}', \\d+, '${product.category}', [^\\n]*, ${product.price.amount}, `),
       );
     }
   });

@@ -169,8 +169,8 @@ describe("quoteCart", () => {
   });
 
   it("never claims an order can be placed against the local catalogue", async () => {
-    const quote = await provider.quoteCart({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }] });
-    expect(quote.lines[0]?.availableQuantity).toBe(10);
+    const quote = await provider.quoteCart({ lines: [{ slug: "cobalt-drake-4-60f", quantity: 1 }] });
+    expect(quote.lines[0]?.availableQuantity).toBe(9);
     expect(quote.orderIntake).toBe("unconfigured");
     expect(quote.orderable).toBe(false);
     expect(quote.notice).toContain("Gli ordini non sono ancora attivi");
@@ -215,19 +215,19 @@ describe("catalogue integrity", () => {
   it("publishes every reviewed product as available or as a funded pre-order", () => {
     const states = new Set(PRODUCTS.map((p) => p.stock));
     expect([...states].sort()).toEqual(["disponibile", "pre-ordine"]);
-    // A pre-order that cannot be bought would be a dead card: every one names its allocation.
+    // A pre-order either names an allocation or is open; an allocation of zero would be a dead card.
     for (const product of PRODUCTS.filter((p) => p.stock === "pre-ordine")) {
-      expect(product.availableQuantity, product.slug).toBeGreaterThan(0);
+      if (product.availableQuantity !== undefined) expect(product.availableQuantity, product.slug).toBeGreaterThan(0);
     }
   });
 
   it("keeps an excessive line in the quote with its availability error", async () => {
     const quote = await provider.quoteCart({
-      lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 11 }],
+      lines: [{ slug: "cobalt-drake-4-60f", quantity: 10 }],
     });
 
-    expect(quote.lines[0]?.quantity).toBe(11);
-    expect(quote.lines[0]?.availableQuantity).toBe(10);
-    expect(quote.lines[0]?.issue).toBe("Disponibilità insufficiente: ne restano 10.");
+    expect(quote.lines[0]?.quantity).toBe(10);
+    expect(quote.lines[0]?.availableQuantity).toBe(9);
+    expect(quote.lines[0]?.issue).toBe("Disponibilità insufficiente: ne restano 9.");
   });
 });

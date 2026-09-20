@@ -59,7 +59,7 @@ describe("search metadata", () => {
       expect(description.length).toBeLessThanOrEqual(160);
       expect(description).toContain("€");
     }
-    expect(productDescription(glory)).toContain("€30,00, disponibile");
+    expect(productDescription(glory)).toContain("€30,00, pre-ordine");
   });
 });
 
@@ -76,7 +76,7 @@ describe("structured data", () => {
       offers: {
         price: "30.00",
         priceCurrency: "EUR",
-        availability: "https://schema.org/InStock",
+        availability: "https://schema.org/PreOrder",
         itemCondition: "https://schema.org/NewCondition",
         shippingDetails: { shippingRate: { value: "4.90", currency: "EUR" }, shippingDestination: { addressCountry: "IT" } },
         hasMerchantReturnPolicy: { merchantReturnDays: 30, returnFees: "https://schema.org/FreeReturn" },

@@ -37,9 +37,12 @@ export function generateSupabaseSeed(): string {
       text(product.category),
       text(product.slug),
       text(product.slug.toUpperCase()),
-      // A pre-order sells from its allocation, not from a shelf.
+      // A pre-order sells from its allocation, not from a shelf; one without an allocation is
+      // open, and sells through allow_backorder at zero stock.
       product.stock === "pre-ordine" ? 0 : (product.availableQuantity ?? 0),
-      product.stock === "pre-ordine" ? "'preorder'::public.availability_override" : "null::public.availability_override",
+      product.stock === "pre-ordine" && product.availableQuantity
+        ? "'preorder'::public.availability_override"
+        : "null::public.availability_override",
       product.stock === "pre-ordine" ? (product.availableQuantity ?? 0) : 0,
       text(product.name),
       text(product.tagline),

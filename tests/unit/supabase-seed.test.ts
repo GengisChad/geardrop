@@ -15,13 +15,16 @@ describe("Supabase catalogue seed", () => {
   });
 
   it("bootstraps uppercase SKUs next to the reviewed quantities", () => {
+    // The older six sell as open pre-orders (no shelf, no allocation); the drop carries nine each.
     for (const [sku, allocation] of [
-      ["COBALT-DRAGOON-2-60C", 10],
-      ["SOAR-PHOENIX-9-60GF", 60],
-      ["SABER-SAMURAI-2-70L", 30],
-      ["BLAST-PEGASUS-A-TR", 30],
-      ["DROP-ATTACK-BATTLE-SET", 30],
-      ["SNEAK-ATTACK-BATTLE-SET", 30],
+      ["COBALT-DRAGOON-2-60C", 0],
+      ["SOAR-PHOENIX-9-60GF", 0],
+      ["SABER-SAMURAI-2-70L", 0],
+      ["BLAST-PEGASUS-A-TR", 0],
+      ["DROP-ATTACK-BATTLE-SET", 0],
+      ["SNEAK-ATTACK-BATTLE-SET", 0],
+      ["COBALT-DRAKE-4-60F", 9],
+      ["TREAD-CROC-TQ-5-50GN", 9],
     ] as const) {
       expect(sql).toContain(`'${sku.toLowerCase()}'`);
       expect(generateSupabaseSeed()).toContain(`'${sku}'`);
