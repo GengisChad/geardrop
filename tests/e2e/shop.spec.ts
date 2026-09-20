@@ -122,19 +122,27 @@ test.describe("product page", () => {
     await expect(page.getByTestId("add-to-cart")).toHaveCount(0);
   });
 
-  test("an available product adds to the cart, not a pre-order", async ({ page }) => {
-    await page.goto("/prodotto/sneak-attack-battle-set");
+  test("a product on the shelf adds to the cart, not as a pre-order", async ({ page }) => {
+    // Hurricane Enlil still has a shelf; most of the catalogue sells as a pre-order.
+    await page.goto("/prodotto/hurricane-enlil-is-7-55t");
     await expect(buyPanel(page).getByTestId("add-to-cart")).toContainText("Aggiungi al carrello");
-    await expect(page.locator("body")).not.toContainText("Pre-ordina");
+    await expect(buyPanel(page)).not.toContainText("Pre-ordina");
   });
 
   test("publishes Product structured data matching the visible price", async ({ page }) => {
-    await page.goto("/prodotto/cobalt-dragoon-2-60c");
+    await page.goto("/prodotto/hurricane-enlil-is-7-55t");
     const blocks = await page.locator('script[type="application/ld+json"]').allInnerTexts();
     const data = blocks.map((raw) => JSON.parse(raw)).find((item) => item["@type"] === "Product");
     expect(data["@type"]).toBe("Product");
-    expect(data.offers.price).toBe("25.50");
+    expect(data.offers.price).toBe("20.00");
     expect(data.offers.availability).toBe("https://schema.org/InStock");
+
+    // A pre-order says so in the same place.
+    await page.goto("/prodotto/cobalt-drake-4-60f");
+    const preorder = (await page.locator('script[type="application/ld+json"]').allInnerTexts())
+      .map((raw) => JSON.parse(raw))
+      .find((item) => item["@type"] === "Product");
+    expect(preorder.offers.availability).toBe("https://schema.org/PreOrder");
   });
 
   test("an unknown product 404s", async ({ page }) => {
@@ -152,9 +160,12 @@ test.describe("product page", () => {
 
 test.describe("search", () => {
   test("finds a product by name", async ({ page }) => {
+    // Two Cobalts in the catalogue since the 2026-09-21 drop: the search must return both.
     await page.goto("/ricerca?q=cobalt");
     await expect(page.getByTestId("search-results")).toBeVisible();
-    await expect(page.getByTestId("product-card").first()).toContainText("Cobalt Dragoon");
+    await expect(page.getByTestId("product-card")).toHaveCount(2);
+    await expect(page.getByTestId("search-results")).toContainText("Cobalt Dragoon");
+    await expect(page.getByTestId("search-results")).toContainText("Cobalt Drake");
   });
 
   test("shows an empty state for no matches", async ({ page }) => {

@@ -11,13 +11,31 @@ const migration = readFileSync(
   "utf8",
 ).replaceAll("\r\n", "\n");
 
+/** The nine products this migration moved from pre-order allocations to stock. */
+const CONVERTED = [
+  "cobalt-dragoon-2-60c",
+  "soar-phoenix-9-60gf",
+  "saber-samurai-2-70l",
+  "blast-pegasus-a-tr",
+  "drop-attack-battle-set",
+  "sneak-attack-battle-set",
+  "glory-valkerion-lf",
+  "hurricane-enlil-is-7-55t",
+  "shatter-horus-9-65gb",
+] as const;
+
 describe("catalogue stock conversion migration", () => {
-  it("converts exactly the catalogue products, which the storefront sells as available", () => {
+  it("converts the products it found, and the shop still sells each of them", () => {
     const slugList = migration.match(/insert into catalogue_stock_slugs \(slug\) values([\s\S]+?);/)?.[1] ?? "";
     const slugs = [...slugList.matchAll(/'([^']+)'/g)].map((match) => RENAMED[match[1]!] ?? match[1]);
+    const catalogue = new Map(PRODUCTS.map((product) => [product.slug as string, product]));
 
-    expect([...slugs].sort()).toEqual(PRODUCTS.map((product) => product.slug).sort());
-    expect(PRODUCTS.every((product) => product.stock === "disponibile")).toBe(true);
+    // The catalogue has grown since (the 2026-09-21 pre-order drop), so this is the set it converted.
+    expect([...slugs].sort()).toEqual([...CONVERTED].sort());
+    for (const slug of slugs) {
+      // Six of them now sell as open pre-orders; none of them was dropped or closed.
+      expect(catalogue.get(slug ?? "")?.stock, slug).not.toBe("esaurito");
+    }
   });
 
   it("only moves unsold pre-order allocations into stock and records the movement", () => {

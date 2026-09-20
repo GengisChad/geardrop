@@ -39,6 +39,12 @@ MAPPING = {
     # along its outline and writes its tile too.
     "hurricaneenlil.jpg": "hurricane-enlil-is-7-55t",
     "shatterhorus.jpg": "shatter-horus-9-65gb",
+    # The 2026-09-21 pre-order drop.
+    "cobaltdrake.jpg": "cobalt-drake-4-60f",
+    "clockmirage.webp": "mirage-clock-9-65b",
+    "suppressSuperion.jpg": "suppress-superion-0-70lp",
+    "dranstrike.jpg": "strike-dran-4-50ff",
+    "treadcroc.jpg": "tread-croc-tq-5-50gn",
 }
 
 

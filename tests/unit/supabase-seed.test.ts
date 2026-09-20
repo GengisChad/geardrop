@@ -7,18 +7,24 @@ describe("Supabase catalogue seed", () => {
   it("is idempotent and creates new products with the reviewed stock", () => {
     expect(sql).toContain("on conflict (slug) do update");
     expect(sql).toContain("seed.stock_quantity,");
-    expect(sql).toContain("0 as preorder_allocation");
+    // A pre-order sells from its allocation: both travel with the row.
+    expect(sql).toContain("seed.availability_override,");
+    expect(sql).toContain("seed.preorder_allocation,");
+    expect(sql).toMatch(/'cobalt-drake-4-60f', '[a-z0-9-]+', 0, 'preorder'::public\.availability_override, 9,/);
     expect(sql).not.toContain("stock_quantity = excluded.stock_quantity");
   });
 
   it("bootstraps uppercase SKUs next to the reviewed quantities", () => {
+    // The older six sell as open pre-orders (no shelf, no allocation); the drop carries nine each.
     for (const [sku, allocation] of [
-      ["COBALT-DRAGOON-2-60C", 10],
-      ["SOAR-PHOENIX-9-60GF", 60],
-      ["SABER-SAMURAI-2-70L", 30],
-      ["BLAST-PEGASUS-A-TR", 30],
-      ["DROP-ATTACK-BATTLE-SET", 30],
-      ["SNEAK-ATTACK-BATTLE-SET", 30],
+      ["COBALT-DRAGOON-2-60C", 0],
+      ["SOAR-PHOENIX-9-60GF", 0],
+      ["SABER-SAMURAI-2-70L", 0],
+      ["BLAST-PEGASUS-A-TR", 0],
+      ["DROP-ATTACK-BATTLE-SET", 0],
+      ["SNEAK-ATTACK-BATTLE-SET", 0],
+      ["COBALT-DRAKE-4-60F", 9],
+      ["TREAD-CROC-TQ-5-50GN", 9],
     ] as const) {
       expect(sql).toContain(`'${sku.toLowerCase()}'`);
       expect(generateSupabaseSeed()).toContain(`'${sku}'`);

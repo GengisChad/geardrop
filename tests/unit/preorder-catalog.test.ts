@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PRODUCTS } from "@/data/catalog";
 
 describe("reviewed catalogue", () => {
-  it("publishes exactly the nine owner-supplied products and allocations", () => {
+  it("publishes exactly the owner-supplied products, allocations and order", () => {
     expect(
       PRODUCTS.map(({ slug, price, stock, availableQuantity, rating, reviewCount }) => ({
         slug,
@@ -13,15 +13,22 @@ describe("reviewed catalogue", () => {
         reviewCount,
       })),
     ).toEqual([
-      { slug: "cobalt-dragoon-2-60c", price: 2550, stock: "disponibile", availableQuantity: 10, rating: 0, reviewCount: 0 },
-      { slug: "soar-phoenix-9-60gf", price: 3200, stock: "disponibile", availableQuantity: 60, rating: 0, reviewCount: 0 },
-      { slug: "saber-samurai-2-70l", price: 2790, stock: "disponibile", availableQuantity: 30, rating: 0, reviewCount: 0 },
-      { slug: "blast-pegasus-a-tr", price: 2950, stock: "disponibile", availableQuantity: 30, rating: 0, reviewCount: 0 },
-      { slug: "drop-attack-battle-set", price: 4650, stock: "disponibile", availableQuantity: 30, rating: 0, reviewCount: 0 },
-      { slug: "sneak-attack-battle-set", price: 4500, stock: "disponibile", availableQuantity: 30, rating: 0, reviewCount: 0 },
-      { slug: "glory-valkerion-lf", price: 3000, stock: "disponibile", availableQuantity: 8, rating: 0, reviewCount: 0 },
+      // The 2026-09-21 pre-order drop leads the shop, nine allocations each.
+      { slug: "cobalt-drake-4-60f", price: 2000, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
+      { slug: "mirage-clock-9-65b", price: 1950, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
+      { slug: "suppress-superion-0-70lp", price: 2500, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
+      { slug: "strike-dran-4-50ff", price: 2500, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
+      { slug: "tread-croc-tq-5-50gn", price: 2500, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
+      // The Infinity Starters follow, then the rest of the catalogue.
+      { slug: "glory-valkerion-lf", price: 3000, stock: "pre-ordine", availableQuantity: undefined, rating: 0, reviewCount: 0 },
       { slug: "hurricane-enlil-is-7-55t", price: 2000, stock: "disponibile", availableQuantity: 10, rating: 0, reviewCount: 0 },
       { slug: "shatter-horus-9-65gb", price: 2000, stock: "disponibile", availableQuantity: 8, rating: 0, reviewCount: 0 },
+      { slug: "cobalt-dragoon-2-60c", price: 2550, stock: "pre-ordine", availableQuantity: undefined, rating: 0, reviewCount: 0 },
+      { slug: "soar-phoenix-9-60gf", price: 3200, stock: "pre-ordine", availableQuantity: undefined, rating: 0, reviewCount: 0 },
+      { slug: "saber-samurai-2-70l", price: 2790, stock: "pre-ordine", availableQuantity: undefined, rating: 0, reviewCount: 0 },
+      { slug: "blast-pegasus-a-tr", price: 2950, stock: "pre-ordine", availableQuantity: undefined, rating: 0, reviewCount: 0 },
+      { slug: "drop-attack-battle-set", price: 4650, stock: "pre-ordine", availableQuantity: undefined, rating: 0, reviewCount: 0 },
+      { slug: "sneak-attack-battle-set", price: 4500, stock: "pre-ordine", availableQuantity: undefined, rating: 0, reviewCount: 0 },
     ]);
   });
 

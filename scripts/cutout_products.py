@@ -56,6 +56,11 @@ SLUGS = (
     "glory-valkerion-lf",
     "hurricane-enlil-is-7-55t",
     "shatter-horus-9-65gb",
+    "cobalt-drake-4-60f",
+    "mirage-clock-9-65b",
+    "suppress-superion-0-70lp",
+    "strike-dran-4-50ff",
+    "tread-croc-tq-5-50gn",
 )
 
 # Measured in source pixels, one pixel inside the photographed edge so no background survives.
@@ -88,6 +93,9 @@ COMPOSITES = {
 
 TOP_CROPS = {
     "glory-valkerion-lf": (487, 526, 168, "dark"),
+    # The 2026-09-21 drop: two of the packs are photographed with the loose top beside the box.
+    "cobalt-drake-4-60f": (704, 718, 202, "alpha"),
+    "mirage-clock-9-65b": (726, 733, 187, "alpha"),
     "hurricane-enlil-is-7-55t": (596, 478, 128, "alpha"),
     "shatter-horus-9-65gb": (643, 454, 146, "alpha"),
 }

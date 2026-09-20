@@ -27,7 +27,8 @@ import type {
   StockStatus,
 } from "./types";
 
-const DEFAULT_PER_PAGE = 12;
+// The catalogue is small: one page holds it all, so nobody lands on a page with two cards.
+const DEFAULT_PER_PAGE = 24;
 
 /**
  * The one delivery option the local catalogue knows about. Real shipping options come

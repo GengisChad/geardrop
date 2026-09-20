@@ -81,7 +81,8 @@ describe("stripe checkout switch", () => {
   });
 
   it("keeps a cart over the allocation blocked", async () => {
-    expect(await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 11 }])).toMatchObject({
+    // An open pre-order has no ceiling; a funded one stops at its allocation.
+    expect(await quoteFor([{ slug: "cobalt-drake-4-60f", quantity: 10 }])).toMatchObject({
       orderable: false,
       notice: STRIPE_BLOCKED_NOTICE,
     });
@@ -112,7 +113,7 @@ describe("stripe checkout session", () => {
   });
 
   it("charges through price ids and carries the address collected on the site", async () => {
-    const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 2 }]);
+    const quote = await quoteFor([{ slug: "hurricane-enlil-is-7-55t", quantity: 2 }]);
     const fields = buildCheckoutSessionFields({ quote, order, origin: ORIGIN }, matchStripePrices(quote, catalogPrices)!);
 
     expect(fields).toMatchObject({
@@ -122,7 +123,7 @@ describe("stripe checkout session", () => {
       client_reference_id: orderReference(order.idempotencyKey),
       success_url: "https://geardropshop.it/checkout/successo?session_id={CHECKOUT_SESSION_ID}",
       cancel_url: "https://geardropshop.it/checkout",
-      "line_items[0][price]": "price_cobalt-dragoon-2-60c",
+      "line_items[0][price]": "price_hurricane-enlil-is-7-55t",
       "line_items[0][quantity]": 2,
       "shipping_options[0][shipping_rate_data][display_name]": "Spedizione standard",
       "shipping_options[0][shipping_rate_data][fixed_amount][amount]": 490,
@@ -130,7 +131,7 @@ describe("stripe checkout session", () => {
       "payment_intent_data[shipping][address][postal_code]": "20121",
       "payment_intent_data[shipping][address][country]": "IT",
       "metadata[notes]": "Citofono Rossi",
-      "metadata[lines]": "cobalt-dragoon-2-60c x2",
+      "metadata[lines]": "hurricane-enlil-is-7-55t x2",
     });
     // The catalogue is in stock, so Stripe shows no pre-order notice.
     expect(fields["custom_text[submit][message]"]).toBeUndefined();

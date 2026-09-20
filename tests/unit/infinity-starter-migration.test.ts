@@ -28,12 +28,14 @@ describe("infinity starter preorder migration", () => {
     }
   });
 
-  it("keeps every catalogue product, price and allocation in a published migration", () => {
-    for (const product of PRODUCTS) {
+  it("keeps every product it published at its catalogue price and allocation", () => {
+    // Products added after this campaign (the 2026-09-21 drop) come with their own migration.
+    const published = PRODUCTS.filter((product) => publishedCatalogue.includes(`('${product.slug}',`));
+    expect(published).toHaveLength(9);
+    for (const product of published) {
+      // The quantity in that migration is the allocation of the day; the price is still the price.
       expect(publishedCatalogue, product.slug).toMatch(
-        new RegExp(
-          `\\('${product.slug}', ${product.availableQuantity}, '${product.category}', [^\\n]*, ${product.price.amount}, `,
-        ),
+        new RegExp(`\\('${product.slug}', \\d+, '${product.category}', [^\\n]*, ${product.price.amount}, `),
       );
     }
   });
