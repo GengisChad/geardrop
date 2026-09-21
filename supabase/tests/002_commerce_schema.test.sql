@@ -23,7 +23,9 @@ select results_eq(
 select results_eq(
   $$select count(*)::bigint from public.products
     where stock_quantity <> 0
-      and slug not in ('cobalt-dragoon-2-60c', 'soar-phoenix-9-60gf', 'saber-samurai-2-70l', 'blast-pegasus-a-tr', 'drop-attack-battle-set', 'sneak-attack-battle-set', 'glory-valkerion-lf', 'hurricane-enlil-is-7-55t', 'shatter-horus-9-65gb')$$,
+      and slug not in ('cobalt-dragoon-2-60c', 'soar-phoenix-9-60gf', 'saber-samurai-2-70l', 'blast-pegasus-a-tr', 'drop-attack-battle-set', 'sneak-attack-battle-set', 'glory-valkerion-lf', 'hurricane-enlil-is-7-55t', 'shatter-horus-9-65gb',
+        -- The deck cases sell without a limit: the database keeps a counter the shop never shows.
+        'porta-deck-giallo', 'porta-deck-verde-lime', 'porta-deck-azzurro', 'porta-deck-blu', 'porta-deck-rosa', 'porta-deck-fucsia', 'porta-deck-bianco')$$,
   array[0::bigint],
   'only the owner-reviewed catalogue carries stock'
 );
@@ -104,13 +106,13 @@ select results_eq(
 );
 select results_eq(
   $$select count(*)::bigint from public.products$$,
-  array[14::bigint],
-  'double seed keeps the fourteen catalogue products'
+  array[21::bigint],
+  'double seed keeps the twenty-one catalogue products'
 );
 select results_eq(
   $$select count(*)::bigint from public.product_images$$,
-  array[14::bigint],
-  'double seed keeps one primary image per product'
+  array[28::bigint],
+  'double seed keeps every catalogue image once (the deck cases carry two each)'
 );
 select results_eq(
   $$select count(*)::bigint from public.site_settings$$,

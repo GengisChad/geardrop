@@ -48,7 +48,14 @@ with seed(category_slug, slug, sku, stock_quantity, availability_override, preor
   ('beyblade-x', 'saber-samurai-2-70l', 'SABER-SAMURAI-2-70L', 0, null::public.availability_override, 0, 'Saber Samurai 2-70L', 'Doppia lama. Colpi da katana.', 'Saber Samurai 2-70L (linea UX) è una trottola d''attacco: le due protuberanze si ritraggono a metà battaglia, passando da colpi ripetuti in stile katana a un singolo impatto "tachi" per KO improvvisi. Lo starter include il lanciatore con impugnatura (grip).', 2790, null, 'attacco', 0, 0, 10),
   ('beyblade-x', 'blast-pegasus-a-tr', 'BLAST-PEGASUS-A-TR', 0, null::public.availability_override, 0, 'Blast Pegasus A Tr', 'Attacco portatile. Clip & Rip Launcher.', 'Blast Pegasus A Tr è una trottola d''attacco a rotazione destra della linea CX, venduta con il Clip & Rip Launcher: un lanciatore portatile che si aggancia a cintura e zaino e ripone il ripcord all''interno. Richiede un Beystadium Beyblade X (venduto separatamente).', 2950, null, 'attacco', 0, 0, 11),
   ('stadi', 'drop-attack-battle-set', 'DROP-ATTACK-BATTLE-SET', 0, null::public.availability_override, 0, 'Drop Attack Battle Set', 'Stadio + 2 trottole + 2 lanciatori.', 'Il Drop Attack Battle Set include tutto per giocare: il Beystadium con X-Celerator Rail rialzato che porta le trottole in alto per farle piombare sull''avversario, due trottole (Impact Drake 9-60LR d''attacco e Hover Wyvern 3-85N di difesa) e due lanciatori a corda.', 4650, null, null, 0, 0, 12),
-  ('stadi', 'sneak-attack-battle-set', 'SNEAK-ATTACK-BATTLE-SET', 0, null::public.availability_override, 0, 'Sneak Attack Battle Set', 'Stadio verde + 2 trottole + 2 lanciatori.', 'Il Sneak Attack Battle Set mette in scatola tutto per il primo scontro: il Beystadium con rail a scomparsa che devia le trottole in una nuova direzione, due trottole (Rampart Aegis GB di stamina e Cutter Shinobi LF d''attacco) e due lanciatori a corda.', 4500, null, null, 0, 0, 13)
+  ('stadi', 'sneak-attack-battle-set', 'SNEAK-ATTACK-BATTLE-SET', 0, null::public.availability_override, 0, 'Sneak Attack Battle Set', 'Stadio verde + 2 trottole + 2 lanciatori.', 'Il Sneak Attack Battle Set mette in scatola tutto per il primo scontro: il Beystadium con rail a scomparsa che devia le trottole in una nuova direzione, due trottole (Rampart Aegis GB di stamina e Cutter Shinobi LF d''attacco) e due lanciatori a corda.', 4500, null, null, 0, 0, 13),
+  ('accessori', 'porta-deck-giallo', 'PORTA-DECK-GIALLO', 9999, null::public.availability_override, 0, 'Porta Deck Giallo', 'Tre trottole al sicuro. Anche Expanded e Infinity.', 'Il porta deck tiene un deck completo di Beyblade X: tre scomparti, uno per trottola, ognuno con la sua chiusura a clip. Entrano anche i bey Expanded e Infinity. Stampato in 3D. Accessorio non ufficiale: non è prodotto né certificato da Hasbro.', 2000, null, null, 0, 0, 14),
+  ('accessori', 'porta-deck-verde-lime', 'PORTA-DECK-VERDE-LIME', 9999, null::public.availability_override, 0, 'Porta Deck Verde lime', 'Tre trottole al sicuro. Anche Expanded e Infinity.', 'Il porta deck tiene un deck completo di Beyblade X: tre scomparti, uno per trottola, ognuno con la sua chiusura a clip. Entrano anche i bey Expanded e Infinity. Stampato in 3D. Accessorio non ufficiale: non è prodotto né certificato da Hasbro.', 2000, null, null, 0, 0, 15),
+  ('accessori', 'porta-deck-azzurro', 'PORTA-DECK-AZZURRO', 9999, null::public.availability_override, 0, 'Porta Deck Azzurro', 'Tre trottole al sicuro. Anche Expanded e Infinity.', 'Il porta deck tiene un deck completo di Beyblade X: tre scomparti, uno per trottola, ognuno con la sua chiusura a clip. Entrano anche i bey Expanded e Infinity. Stampato in 3D. Accessorio non ufficiale: non è prodotto né certificato da Hasbro.', 2000, null, null, 0, 0, 16),
+  ('accessori', 'porta-deck-blu', 'PORTA-DECK-BLU', 9999, null::public.availability_override, 0, 'Porta Deck Blu', 'Tre trottole al sicuro. Anche Expanded e Infinity.', 'Il porta deck tiene un deck completo di Beyblade X: tre scomparti, uno per trottola, ognuno con la sua chiusura a clip. Entrano anche i bey Expanded e Infinity. Stampato in 3D. Accessorio non ufficiale: non è prodotto né certificato da Hasbro.', 2000, null, null, 0, 0, 17),
+  ('accessori', 'porta-deck-rosa', 'PORTA-DECK-ROSA', 9999, null::public.availability_override, 0, 'Porta Deck Rosa', 'Tre trottole al sicuro. Anche Expanded e Infinity.', 'Il porta deck tiene un deck completo di Beyblade X: tre scomparti, uno per trottola, ognuno con la sua chiusura a clip. Entrano anche i bey Expanded e Infinity. Stampato in 3D. Accessorio non ufficiale: non è prodotto né certificato da Hasbro.', 2000, null, null, 0, 0, 18),
+  ('accessori', 'porta-deck-fucsia', 'PORTA-DECK-FUCSIA', 9999, null::public.availability_override, 0, 'Porta Deck Fucsia', 'Tre trottole al sicuro. Anche Expanded e Infinity.', 'Il porta deck tiene un deck completo di Beyblade X: tre scomparti, uno per trottola, ognuno con la sua chiusura a clip. Entrano anche i bey Expanded e Infinity. Stampato in 3D. Accessorio non ufficiale: non è prodotto né certificato da Hasbro.', 2000, null, null, 0, 0, 19),
+  ('accessori', 'porta-deck-bianco', 'PORTA-DECK-BIANCO', 9999, null::public.availability_override, 0, 'Porta Deck Bianco', 'Tre trottole al sicuro. Anche Expanded e Infinity.', 'Il porta deck tiene un deck completo di Beyblade X: tre scomparti, uno per trottola, ognuno con la sua chiusura a clip. Entrano anche i bey Expanded e Infinity. Stampato in 3D. Accessorio non ufficiale: non è prodotto né certificato da Hasbro.', 2000, null, null, 0, 0, 20)
 )
 insert into public.products (
   category_id, slug, sku, name, tagline, description, price_cents,
@@ -105,7 +112,21 @@ with seed(product_slug, src, width, height, alt, sort_order) as (
   ('saber-samurai-2-70l', '/products/saber-samurai-2-70l.webp', 1000, 1000, 'Confezione Beyblade X Saber Samurai 2-70L viola con lanciatore a impugnatura e trottola', 0),
   ('blast-pegasus-a-tr', '/products/blast-pegasus-a-tr.webp', 1000, 1000, 'Beyblade X Blast Pegasus A Tr con Clip & Rip Launcher verde e trottola', 0),
   ('drop-attack-battle-set', '/products/drop-attack-battle-set.webp', 1000, 1000, 'Beyblade X Drop Attack Battle Set: stadio blu, due trottole e due lanciatori', 0),
-  ('sneak-attack-battle-set', '/products/sneak-attack-battle-set.webp', 1000, 1000, 'Beyblade X Sneak Attack Battle Set: stadio verde, due trottole e due lanciatori', 0)
+  ('sneak-attack-battle-set', '/products/sneak-attack-battle-set.webp', 1000, 1000, 'Beyblade X Sneak Attack Battle Set: stadio verde, due trottole e due lanciatori', 0),
+  ('porta-deck-giallo', '/products/porta-deck-giallo.webp', 1000, 1000, 'Porta deck giallo con la scritta Beyblade X in nero e tre scomparti a clip', 0),
+  ('porta-deck-giallo', '/products/porta-deck-colori.webp', 1000, 1000, 'I sette porta deck: giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 1),
+  ('porta-deck-verde-lime', '/products/porta-deck-verde-lime.webp', 1000, 1000, 'Porta deck verde lime con la scritta Beyblade X in nero e tre scomparti a clip', 0),
+  ('porta-deck-verde-lime', '/products/porta-deck-colori.webp', 1000, 1000, 'I sette porta deck: giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 1),
+  ('porta-deck-azzurro', '/products/porta-deck-azzurro.webp', 1000, 1000, 'Porta deck azzurro con la scritta Beyblade X in bianco e tre scomparti a clip', 0),
+  ('porta-deck-azzurro', '/products/porta-deck-colori.webp', 1000, 1000, 'I sette porta deck: giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 1),
+  ('porta-deck-blu', '/products/porta-deck-blu.webp', 1000, 1000, 'Porta deck blu con la scritta Beyblade X in bianco e tre scomparti a clip', 0),
+  ('porta-deck-blu', '/products/porta-deck-colori.webp', 1000, 1000, 'I sette porta deck: giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 1),
+  ('porta-deck-rosa', '/products/porta-deck-rosa.webp', 1000, 1000, 'Porta deck rosa con la scritta Beyblade X in bianco e tre scomparti a clip', 0),
+  ('porta-deck-rosa', '/products/porta-deck-colori.webp', 1000, 1000, 'I sette porta deck: giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 1),
+  ('porta-deck-fucsia', '/products/porta-deck-fucsia.webp', 1000, 1000, 'Porta deck fucsia con la scritta Beyblade X in bianco e tre scomparti a clip', 0),
+  ('porta-deck-fucsia', '/products/porta-deck-colori.webp', 1000, 1000, 'I sette porta deck: giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 1),
+  ('porta-deck-bianco', '/products/porta-deck-bianco.webp', 1000, 1000, 'Porta deck bianco con la scritta Beyblade X in viola e tre scomparti a clip', 0),
+  ('porta-deck-bianco', '/products/porta-deck-colori.webp', 1000, 1000, 'I sette porta deck: giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 1)
 )
 insert into public.product_images (product_id, src, width, height, alt, sort_order, published, is_primary)
 select product.id, seed.src, seed.width, seed.height, seed.alt, seed.sort_order, true, seed.sort_order = 0
@@ -207,7 +228,56 @@ with seed(product_slug, label, value, sort_order) as (
   ('sneak-attack-battle-set', 'Sistema', 'Beyblade X', 2),
   ('sneak-attack-battle-set', 'Componenti', '1 stadio, 2 trottole, 2 lanciatori', 3),
   ('sneak-attack-battle-set', 'Trottole incluse', 'Rampart Aegis GB, Cutter Shinobi LF', 4),
-  ('sneak-attack-battle-set', 'Materiale', 'Plastica e metallo', 5)
+  ('sneak-attack-battle-set', 'Materiale', 'Plastica e metallo', 5),
+  ('porta-deck-giallo', 'Tipo', 'Porta deck', 0),
+  ('porta-deck-giallo', 'Produttore', 'Non ufficiale, non prodotto da Hasbro', 1),
+  ('porta-deck-giallo', 'Compatibilità', 'Beyblade X, compresi Expanded e Infinity', 2),
+  ('porta-deck-giallo', 'Scomparti', '3, uno per trottola', 3),
+  ('porta-deck-giallo', 'Colore', 'Giallo', 4),
+  ('porta-deck-giallo', 'Materiale', 'Plastica stampata in 3D', 5),
+  ('porta-deck-giallo', 'Nota', 'Trottole non incluse', 6),
+  ('porta-deck-verde-lime', 'Tipo', 'Porta deck', 0),
+  ('porta-deck-verde-lime', 'Produttore', 'Non ufficiale, non prodotto da Hasbro', 1),
+  ('porta-deck-verde-lime', 'Compatibilità', 'Beyblade X, compresi Expanded e Infinity', 2),
+  ('porta-deck-verde-lime', 'Scomparti', '3, uno per trottola', 3),
+  ('porta-deck-verde-lime', 'Colore', 'Verde lime', 4),
+  ('porta-deck-verde-lime', 'Materiale', 'Plastica stampata in 3D', 5),
+  ('porta-deck-verde-lime', 'Nota', 'Trottole non incluse', 6),
+  ('porta-deck-azzurro', 'Tipo', 'Porta deck', 0),
+  ('porta-deck-azzurro', 'Produttore', 'Non ufficiale, non prodotto da Hasbro', 1),
+  ('porta-deck-azzurro', 'Compatibilità', 'Beyblade X, compresi Expanded e Infinity', 2),
+  ('porta-deck-azzurro', 'Scomparti', '3, uno per trottola', 3),
+  ('porta-deck-azzurro', 'Colore', 'Azzurro', 4),
+  ('porta-deck-azzurro', 'Materiale', 'Plastica stampata in 3D', 5),
+  ('porta-deck-azzurro', 'Nota', 'Trottole non incluse', 6),
+  ('porta-deck-blu', 'Tipo', 'Porta deck', 0),
+  ('porta-deck-blu', 'Produttore', 'Non ufficiale, non prodotto da Hasbro', 1),
+  ('porta-deck-blu', 'Compatibilità', 'Beyblade X, compresi Expanded e Infinity', 2),
+  ('porta-deck-blu', 'Scomparti', '3, uno per trottola', 3),
+  ('porta-deck-blu', 'Colore', 'Blu', 4),
+  ('porta-deck-blu', 'Materiale', 'Plastica stampata in 3D', 5),
+  ('porta-deck-blu', 'Nota', 'Trottole non incluse', 6),
+  ('porta-deck-rosa', 'Tipo', 'Porta deck', 0),
+  ('porta-deck-rosa', 'Produttore', 'Non ufficiale, non prodotto da Hasbro', 1),
+  ('porta-deck-rosa', 'Compatibilità', 'Beyblade X, compresi Expanded e Infinity', 2),
+  ('porta-deck-rosa', 'Scomparti', '3, uno per trottola', 3),
+  ('porta-deck-rosa', 'Colore', 'Rosa', 4),
+  ('porta-deck-rosa', 'Materiale', 'Plastica stampata in 3D', 5),
+  ('porta-deck-rosa', 'Nota', 'Trottole non incluse', 6),
+  ('porta-deck-fucsia', 'Tipo', 'Porta deck', 0),
+  ('porta-deck-fucsia', 'Produttore', 'Non ufficiale, non prodotto da Hasbro', 1),
+  ('porta-deck-fucsia', 'Compatibilità', 'Beyblade X, compresi Expanded e Infinity', 2),
+  ('porta-deck-fucsia', 'Scomparti', '3, uno per trottola', 3),
+  ('porta-deck-fucsia', 'Colore', 'Fucsia', 4),
+  ('porta-deck-fucsia', 'Materiale', 'Plastica stampata in 3D', 5),
+  ('porta-deck-fucsia', 'Nota', 'Trottole non incluse', 6),
+  ('porta-deck-bianco', 'Tipo', 'Porta deck', 0),
+  ('porta-deck-bianco', 'Produttore', 'Non ufficiale, non prodotto da Hasbro', 1),
+  ('porta-deck-bianco', 'Compatibilità', 'Beyblade X, compresi Expanded e Infinity', 2),
+  ('porta-deck-bianco', 'Scomparti', '3, uno per trottola', 3),
+  ('porta-deck-bianco', 'Colore', 'Bianco', 4),
+  ('porta-deck-bianco', 'Materiale', 'Plastica stampata in 3D', 5),
+  ('porta-deck-bianco', 'Nota', 'Trottole non incluse', 6)
 )
 insert into public.product_specs (product_id, label, value, sort_order)
 select product.id, seed.label, seed.value, seed.sort_order
@@ -273,7 +343,35 @@ with seed(product_slug, title, description, sort_order) as (
   ('sneak-attack-battle-set', 'Rail a scomparsa', 'Devia le trottole in una nuova direzione a sorpresa', 0),
   ('sneak-attack-battle-set', 'Set completo', 'Stadio, due trottole e due lanciatori pronti al gioco', 1),
   ('sneak-attack-battle-set', 'Rampart Aegis + Cutter Shinobi', 'Un assetto di stamina e uno d''attacco', 2),
-  ('sneak-attack-battle-set', 'Compatibile Beyblade X', 'Usa tutte le trottole e parti della serie', 3)
+  ('sneak-attack-battle-set', 'Compatibile Beyblade X', 'Usa tutte le trottole e parti della serie', 3),
+  ('porta-deck-giallo', 'Un deck completo', 'Tre scomparti, uno per ogni trottola', 0),
+  ('porta-deck-giallo', 'Anche Expanded e Infinity', 'Compatibile con i bey Expanded e Infinity', 1),
+  ('porta-deck-giallo', 'Chiusura a clip', 'Ogni scomparto si chiude con la sua clip', 2),
+  ('porta-deck-giallo', 'Sette colori', 'Giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 3),
+  ('porta-deck-verde-lime', 'Un deck completo', 'Tre scomparti, uno per ogni trottola', 0),
+  ('porta-deck-verde-lime', 'Anche Expanded e Infinity', 'Compatibile con i bey Expanded e Infinity', 1),
+  ('porta-deck-verde-lime', 'Chiusura a clip', 'Ogni scomparto si chiude con la sua clip', 2),
+  ('porta-deck-verde-lime', 'Sette colori', 'Giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 3),
+  ('porta-deck-azzurro', 'Un deck completo', 'Tre scomparti, uno per ogni trottola', 0),
+  ('porta-deck-azzurro', 'Anche Expanded e Infinity', 'Compatibile con i bey Expanded e Infinity', 1),
+  ('porta-deck-azzurro', 'Chiusura a clip', 'Ogni scomparto si chiude con la sua clip', 2),
+  ('porta-deck-azzurro', 'Sette colori', 'Giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 3),
+  ('porta-deck-blu', 'Un deck completo', 'Tre scomparti, uno per ogni trottola', 0),
+  ('porta-deck-blu', 'Anche Expanded e Infinity', 'Compatibile con i bey Expanded e Infinity', 1),
+  ('porta-deck-blu', 'Chiusura a clip', 'Ogni scomparto si chiude con la sua clip', 2),
+  ('porta-deck-blu', 'Sette colori', 'Giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 3),
+  ('porta-deck-rosa', 'Un deck completo', 'Tre scomparti, uno per ogni trottola', 0),
+  ('porta-deck-rosa', 'Anche Expanded e Infinity', 'Compatibile con i bey Expanded e Infinity', 1),
+  ('porta-deck-rosa', 'Chiusura a clip', 'Ogni scomparto si chiude con la sua clip', 2),
+  ('porta-deck-rosa', 'Sette colori', 'Giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 3),
+  ('porta-deck-fucsia', 'Un deck completo', 'Tre scomparti, uno per ogni trottola', 0),
+  ('porta-deck-fucsia', 'Anche Expanded e Infinity', 'Compatibile con i bey Expanded e Infinity', 1),
+  ('porta-deck-fucsia', 'Chiusura a clip', 'Ogni scomparto si chiude con la sua clip', 2),
+  ('porta-deck-fucsia', 'Sette colori', 'Giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 3),
+  ('porta-deck-bianco', 'Un deck completo', 'Tre scomparti, uno per ogni trottola', 0),
+  ('porta-deck-bianco', 'Anche Expanded e Infinity', 'Compatibile con i bey Expanded e Infinity', 1),
+  ('porta-deck-bianco', 'Chiusura a clip', 'Ogni scomparto si chiude con la sua clip', 2),
+  ('porta-deck-bianco', 'Sette colori', 'Giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 3)
 )
 insert into public.product_features (product_id, title, description, sort_order)
 select product.id, seed.title, seed.description, seed.sort_order
@@ -329,7 +427,14 @@ with seed(product_slug, content, sort_order) as (
   ('sneak-attack-battle-set', '1 × Rampart Aegis GB', 1),
   ('sneak-attack-battle-set', '1 × Cutter Shinobi LF', 2),
   ('sneak-attack-battle-set', '2 × Lanciatori a corda', 3),
-  ('sneak-attack-battle-set', 'Manuale di gioco', 4)
+  ('sneak-attack-battle-set', 'Manuale di gioco', 4),
+  ('porta-deck-giallo', '1 × Porta Deck Giallo (trottole non incluse)', 0),
+  ('porta-deck-verde-lime', '1 × Porta Deck Verde lime (trottole non incluse)', 0),
+  ('porta-deck-azzurro', '1 × Porta Deck Azzurro (trottole non incluse)', 0),
+  ('porta-deck-blu', '1 × Porta Deck Blu (trottole non incluse)', 0),
+  ('porta-deck-rosa', '1 × Porta Deck Rosa (trottole non incluse)', 0),
+  ('porta-deck-fucsia', '1 × Porta Deck Fucsia (trottole non incluse)', 0),
+  ('porta-deck-bianco', '1 × Porta Deck Bianco (trottole non incluse)', 0)
 )
 insert into public.product_box_contents (product_id, content, sort_order)
 select product.id, seed.content, seed.sort_order
@@ -394,7 +499,28 @@ with seed(product_slug, related_slug, sort_order) as (
   ('drop-attack-battle-set', 'soar-phoenix-9-60gf', 2),
   ('sneak-attack-battle-set', 'drop-attack-battle-set', 0),
   ('sneak-attack-battle-set', 'cobalt-dragoon-2-60c', 1),
-  ('sneak-attack-battle-set', 'saber-samurai-2-70l', 2)
+  ('sneak-attack-battle-set', 'saber-samurai-2-70l', 2),
+  ('porta-deck-giallo', 'hurricane-enlil-is-7-55t', 0),
+  ('porta-deck-giallo', 'tread-croc-tq-5-50gn', 1),
+  ('porta-deck-giallo', 'cobalt-drake-4-60f', 2),
+  ('porta-deck-verde-lime', 'hurricane-enlil-is-7-55t', 0),
+  ('porta-deck-verde-lime', 'tread-croc-tq-5-50gn', 1),
+  ('porta-deck-verde-lime', 'cobalt-drake-4-60f', 2),
+  ('porta-deck-azzurro', 'hurricane-enlil-is-7-55t', 0),
+  ('porta-deck-azzurro', 'tread-croc-tq-5-50gn', 1),
+  ('porta-deck-azzurro', 'cobalt-drake-4-60f', 2),
+  ('porta-deck-blu', 'hurricane-enlil-is-7-55t', 0),
+  ('porta-deck-blu', 'tread-croc-tq-5-50gn', 1),
+  ('porta-deck-blu', 'cobalt-drake-4-60f', 2),
+  ('porta-deck-rosa', 'hurricane-enlil-is-7-55t', 0),
+  ('porta-deck-rosa', 'tread-croc-tq-5-50gn', 1),
+  ('porta-deck-rosa', 'cobalt-drake-4-60f', 2),
+  ('porta-deck-fucsia', 'hurricane-enlil-is-7-55t', 0),
+  ('porta-deck-fucsia', 'tread-croc-tq-5-50gn', 1),
+  ('porta-deck-fucsia', 'cobalt-drake-4-60f', 2),
+  ('porta-deck-bianco', 'hurricane-enlil-is-7-55t', 0),
+  ('porta-deck-bianco', 'tread-croc-tq-5-50gn', 1),
+  ('porta-deck-bianco', 'cobalt-drake-4-60f', 2)
 )
 insert into public.product_relations (product_id, related_product_id, relation_type, sort_order)
 select product.id, related.id, 'related'::public.product_relation_type, seed.sort_order
@@ -452,7 +578,7 @@ values
   ('categories', 'categories', null, 'Categorie', null, null, null, null, 'published'::public.publication_status, now(), true, 1),
   ('status-legend', 'status_legend', null, 'Legenda della disponibilità', null, null, null, null, 'published'::public.publication_status, now(), true, 2),
   ('featured-products', 'featured_products', null, 'In evidenza', null, null, 'Vedi tutto', '/negozio', 'published'::public.publication_status, now(), true, 3),
-  ('trust', 'trust', null, 'Prodotti Hasbro originali. Consegna in 1-5 giorni lavorativi, spedizione solo in Italia.', null, null, null, null, 'published'::public.publication_status, now(), true, 4),
+  ('trust', 'trust', null, 'Trottole, lanciatori e stadi Hasbro originali. Consegna in 1-5 giorni lavorativi, spedizione solo in Italia.', null, null, null, null, 'published'::public.publication_status, now(), true, 4),
   ('latest-drops', 'latest_drops', null, 'Catalogo Beyblade X', null, null, 'Esplora il catalogo', '/negozio', 'published'::public.publication_status, now(), true, 5),
   ('bestsellers', 'bestsellers', null, 'Pre-ordini aperti', null, null, 'Vedi Beyblade X', '/negozio/beyblade-x', 'published'::public.publication_status, now(), true, 6),
   ('competitive-picks', 'competitive_products', null, 'Esplora il catalogo', null, null, 'Vedi Beyblade X', '/negozio/beyblade-x', 'published'::public.publication_status, now(), true, 7)
@@ -540,7 +666,9 @@ Il catalogo raccoglie trottole, set e accessori Beyblade X con descrizioni e dis
 
 ## I prodotti sono originali?
 
-Sì, tutti i prodotti in vendita su GEAR//DROP sono Beyblade X originali certificati Hasbro.
+Trottole, starter, lanciatori e stadi in vendita su GEAR//DROP sono Beyblade X originali certificati Hasbro.
+
+Gli accessori compatibili, come i porta deck, non sono prodotti da Hasbro: la loro scheda lo dice chiaramente.
 
 ## Quanto costa la spedizione?
 

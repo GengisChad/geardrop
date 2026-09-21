@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createMockProvider, STOREFRONT_CATALOGUE } from "@/lib/commerce/mock-provider";
+import { oneCardPerFamily } from "@/lib/commerce/variants";
 import { FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_FLAT_RATE } from "@/data/catalog";
 
 const provider = createMockProvider();
@@ -76,13 +77,40 @@ describe("listProducts", () => {
     const page = await provider.listProducts({ perPage: 3, page: 2 });
     expect(page.items).toHaveLength(3);
     expect(page.page).toBe(2);
-    expect(page.pageCount).toBe(Math.ceil(STOREFRONT_CATALOGUE.length / 3));
+    // An item sold in several colours is one card, so pages count cards, not products.
+    expect(page.pageCount).toBe(Math.ceil(oneCardPerFamily(STOREFRONT_CATALOGUE).length / 3));
   });
 
   it("clamps an out-of-range page instead of returning an empty list", async () => {
     const page = await provider.listProducts({ perPage: 3, page: 999 });
     expect(page.page).toBe(page.pageCount);
     expect(page.items.length).toBeGreaterThan(0);
+  });
+});
+
+describe("an item sold in several colours", () => {
+  it("is listed once, led by its first colour, and counted once", async () => {
+    const page = await provider.listProducts({ category: "accessori" });
+    expect(page.items.map((product) => product.slug)).toEqual(["porta-deck-giallo"]);
+    expect(page.total).toBe(1);
+    const facets = await provider.getFacets();
+    expect(facets.categories.find((facet) => facet.value === "accessori")?.count).toBe(1);
+  });
+
+  it("is found by any of its colours, still as one card", async () => {
+    const page = await provider.listProducts({ search: "fucsia" });
+    expect(page.items.map((product) => product.slug)).toEqual(["porta-deck-fucsia"]);
+    const all = await provider.listProducts({ search: "porta deck" });
+    expect(all.items.map((product) => product.slug)).toEqual(["porta-deck-giallo"]);
+  });
+
+  it("keeps a page for every colour, sold with no stock limit", async () => {
+    const white = await provider.getProduct("porta-deck-bianco");
+    expect(white).toMatchObject({ name: "Porta Deck Bianco", stock: "disponibile", unofficial: true });
+    expect(white?.availableQuantity).toBeUndefined();
+    const quote = await provider.quoteCart({ lines: [{ slug: "porta-deck-blu", quantity: 50 }] });
+    expect(quote.lines[0]).toMatchObject({ issue: null, name: "Porta Deck Blu" });
+    expect(quote.lines[0]?.preorderQuantity).toBeUndefined();
   });
 });
 
@@ -93,7 +121,7 @@ describe("getFacets", () => {
     const facets = await provider.getFacets({ stock: ["esaurito"] });
     const available = facets.stock.find((f) => f.value === "disponibile");
     const preorder = facets.stock.find((f) => f.value === "pre-ordine");
-    expect((available?.count ?? 0) + (preorder?.count ?? 0)).toBe(STOREFRONT_CATALOGUE.length);
+    expect((available?.count ?? 0) + (preorder?.count ?? 0)).toBe(oneCardPerFamily(STOREFRONT_CATALOGUE).length);
     expect(available?.count).toBeGreaterThan(0);
     expect(preorder?.count).toBeGreaterThan(0);
   });

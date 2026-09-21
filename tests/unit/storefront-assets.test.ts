@@ -47,9 +47,13 @@ describe("storefront artwork", () => {
     }
   });
 
-  it("keeps every catalogue slug in the cut-out generator", () => {
+  it("keeps every catalogue slug in a cut-out generator", () => {
     const script = readFileSync(join(ROOT, "scripts/cutout_products.py"), "utf8");
-    for (const slug of Object.keys(productImages)) expect(script).toContain(`"${slug}"`);
+    // The deck cases come out of one photo of all of them, through their own script.
+    const deckCases = readFileSync(join(ROOT, "scripts/cut_deck_cases.py"), "utf8");
+    for (const slug of Object.keys(productImages)) {
+      expect(slug.startsWith("porta-deck-") ? deckCases : script).toContain(`"${slug}"`);
+    }
     for (const slug of Object.keys(productTops)) expect(script).toContain(`"${slug}": (`);
   });
 });

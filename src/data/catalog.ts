@@ -1,16 +1,39 @@
 /**
  * The real Beyblade X products supplied by the owner: six on 2026-09-04, three Infinity Starter
- * Packs on 2026-09-15 and five pre-order pieces on 2026-09-21. Prices and allocations are
- * reviewed inputs; no product or review data is invented.
+ * Packs on 2026-09-15, five pre-order pieces on 2026-09-21 and, the same day, the deck case in
+ * seven colours. Prices and allocations are reviewed inputs; no product or review data is invented.
  *
  * The order here is the order the shop shows: the newest drop leads, the Infinity Starters
  * follow, then the rest of the catalogue.
  */
 
 import { productImages } from "@/data/assets";
+import { VARIANT_FAMILIES, type VariantColour } from "@/data/variant-families";
 import type { Bundle, Category, Product } from "@/lib/commerce/types";
 
 const eur = (amount: number) => ({ amount, currency: "EUR" }) as const;
+
+/**
+ * One colour of the deck case: printed in 3D, not a Hasbro product, €20 in every colour, with
+ * no stock limit (no count on a product in stock). Owner's words: it also takes the Expanded
+ * and Infinity tops. The colours live in variant-families.ts.
+ */
+const DECK_CASE = VARIANT_FAMILIES["porta-deck"]!;
+
+function deckCase({ slug, label, swatch }: VariantColour): Product {
+  return {
+    slug, name: `${DECK_CASE.name} ${label}`, tagline: "Tre trottole al sicuro. Anche Expanded e Infinity.",
+    description: "Il porta deck tiene un deck completo di Beyblade X: tre scomparti, uno per trottola, ognuno con la sua chiusura a clip. Entrano anche i bey Expanded e Infinity. Stampato in 3D. Accessorio non ufficiale: non è prodotto né certificato da Hasbro.",
+    price: eur(2000), category: "accessori", stock: "disponibile", tags: [], rating: 0, reviewCount: 0,
+    images: productImages[slug],
+    specs: [{ label: "Tipo", value: "Porta deck" }, { label: "Produttore", value: "Non ufficiale, non prodotto da Hasbro" }, { label: "Compatibilità", value: "Beyblade X, compresi Expanded e Infinity" }, { label: "Scomparti", value: "3, uno per trottola" }, { label: "Colore", value: label }, { label: "Materiale", value: "Plastica stampata in 3D" }, { label: "Nota", value: "Trottole non incluse" }],
+    features: [{ title: "Un deck completo", description: "Tre scomparti, uno per ogni trottola" }, { title: "Anche Expanded e Infinity", description: "Compatibile con i bey Expanded e Infinity" }, { title: "Chiusura a clip", description: "Ogni scomparto si chiude con la sua clip" }, { title: "Sette colori", description: "Giallo, verde lime, azzurro, blu, rosa, fucsia e bianco" }],
+    boxContents: [`1 × Porta Deck ${label} (trottole non incluse)`],
+    relatedSlugs: ["hurricane-enlil-is-7-55t", "tread-croc-tq-5-50gn", "cobalt-drake-4-60f"],
+    variant: { family: "porta-deck", familyName: DECK_CASE.name, label, swatch },
+    unofficial: true,
+  };
+}
 
 export const CATEGORIES: readonly Category[] = [
   { slug: "beyblade-x", name: "Beyblade X", tagline: "Scatena la tua energia. Domina lo stadio.", description: "Tutta la collezione di trottole Beyblade X: attacco, difesa, stamina e bilanciate, pronte per ogni scontro." },
@@ -160,6 +183,8 @@ export const PRODUCTS: readonly Product[] = [
     boxContents: ["1 × Beystadium Sneak Attack", "1 × Rampart Aegis GB", "1 × Cutter Shinobi LF", "2 × Lanciatori a corda", "Manuale di gioco"],
     relatedSlugs: ["drop-attack-battle-set", "cobalt-dragoon-2-60c", "saber-samurai-2-70l"],
   },
+  // One card in the shop, seven colours on the product page; the first colour leads the family.
+  ...DECK_CASE.colours.map(deckCase),
 ];
 
 /**

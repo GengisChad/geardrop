@@ -33,6 +33,8 @@ describe("Supabase catalogue seed", () => {
       );
     }
     expect(sql).toContain("null::public.availability_override");
+    // A product in stock with no count has no limit: the database keeps a counter the shop never shows.
+    expect(generateSupabaseSeed()).toMatch(/'PORTA-DECK-GIALLO', 9999, null::public\.availability_override, 0,/);
   });
 
   it("never overwrites order intake or availability overrides", () => {

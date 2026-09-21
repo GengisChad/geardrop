@@ -24,6 +24,14 @@ const BY_SLUG: Readonly<Record<string, HoloPalette>> = {
   "blast-pegasus-a-tr": palette("#f1ffc4", "#c6ff00", "#1fd1a5", "#3cf0ff", "rgba(198, 255, 0, 0.3)"),
   "drop-attack-battle-set": palette("#d6e2ff", "#6b8cff", "#7a3cff", "#3cf0ff", "rgba(107, 140, 255, 0.3)"),
   "sneak-attack-battle-set": palette("#d9ffe6", "#3dff8a", "#1fae5b", "#c6ff00", "rgba(61, 255, 138, 0.3)"),
+  // The deck cases shimmer in their own lid colour.
+  "porta-deck-giallo": palette("#fff6c4", "#ecd12a", "#7a3cff", "#c6ff00", "rgba(236, 209, 42, 0.35)"),
+  "porta-deck-verde-lime": palette("#f1ffc4", "#c6ff00", "#1fd1a5", "#3cf0ff", "rgba(198, 255, 0, 0.3)"),
+  "porta-deck-azzurro": palette("#d6f0ff", "#62a6d8", "#3a5bff", "#c9fbff", "rgba(98, 166, 216, 0.35)"),
+  "porta-deck-blu": palette("#d6e2ff", "#3a5bff", "#1a33a3", "#3cf0ff", "rgba(58, 91, 255, 0.35)"),
+  "porta-deck-rosa": palette("#ffe3ee", "#eab3c6", "#b07cff", "#ffd3db", "rgba(234, 179, 198, 0.35)"),
+  "porta-deck-fucsia": palette("#ffd3db", "#eb4f78", "#7a3cff", "#ffd36b", "rgba(235, 79, 120, 0.35)"),
+  "porta-deck-bianco": palette("#ffffff", "#e8ecf5", "#9d6bff", "#c6ff00", "rgba(232, 236, 245, 0.3)"),
 };
 
 const BY_TYPE: Readonly<Record<BladeType, HoloPalette>> = {

@@ -41,6 +41,22 @@ export type ProductFeature = {
   readonly description: string;
 };
 
+/**
+ * One colour of an item sold in several (the deck cases). Every colour is a product of its own,
+ * with its own stock, Stripe price and order line, so the cart, checkout and orders need nothing
+ * new; the shop lists the family once and the product page offers the other colours.
+ */
+export type ProductVariant = {
+  /** Shared by every colour of the item: "porta-deck". */
+  readonly family: string;
+  /** The item without its colour, as the family's card names it: "Porta Deck". */
+  readonly familyName: string;
+  /** The colour as the shopper picks it: "Giallo". */
+  readonly label: string;
+  /** CSS colour of the swatch. */
+  readonly swatch: string;
+};
+
 /** One product inside a bundle sold as a single item. */
 export type BundleComponent = {
   readonly slug: ProductSlug;
@@ -78,6 +94,13 @@ export type Product = {
    * sale takes these pieces, and its availability is what they can still make up.
    */
   readonly bundleOf?: readonly BundleComponent[];
+  /** Set when this product is one colour of an item sold in several. */
+  readonly variant?: ProductVariant;
+  /**
+   * Not made by Hasbro: a compatible accessory. The shop never calls it original, and neither
+   * its page nor its structured data names a brand it does not carry.
+   */
+  readonly unofficial?: true;
 };
 
 export type CartLine = {

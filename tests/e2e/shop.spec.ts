@@ -38,6 +38,29 @@ test.describe("home", () => {
   });
 });
 
+test.describe("deck case colours", () => {
+  test("one card in Accessori opens a page that offers every colour", async ({ page }) => {
+    await page.goto("/negozio/accessori");
+    const card = page.getByTestId("product-card");
+    await expect(card).toHaveCount(1);
+    await expect(card).toContainText("Porta Deck");
+    await expect(card.getByTestId("card-colours")).toContainText("7 colori");
+
+    await card.getByTestId("choose-colour").click();
+    await expect(page).toHaveURL(/\/prodotto\/porta-deck-giallo$/);
+    await expect(page.getByTestId("variant-current")).toHaveText("Giallo");
+    await expect(page.getByTestId("variant-swatch")).toHaveCount(7);
+
+    await page.getByTestId("variant-picker").getByRole("link", { name: "Fucsia" }).click();
+    await expect(page).toHaveURL(/\/prodotto\/porta-deck-fucsia$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Porta Deck Fucsia");
+    await expect(page.getByTestId("variant-current")).toHaveText("Fucsia");
+    // A compatible accessory never passes for a Hasbro product.
+    await expect(page.getByTestId("buy-panel")).toContainText("Compatibile Beyblade");
+    await expect(page.getByTestId("buy-panel")).toContainText("non è prodotto né certificato da Hasbro");
+  });
+});
+
 test.describe("catalogue", () => {
   test("lists products and reports a count", async ({ page }) => {
     await page.goto("/negozio");
