@@ -104,6 +104,7 @@ export function OrderActions({ orderId, status, paymentStatus, role, tracking, s
       <label>Messaggio al cliente (arriva così com&rsquo;è nell&rsquo;email di rimborso)<textarea maxLength={1000} minLength={3} name="reason" placeholder="Spiega al cliente perché lo rimborsi" required rows={5}/></label>
       {["pending","confirmed","processing"].includes(status) ? <label className={styles.confirm}><input name="restoreStock" type="checkbox"/> Annulla l&rsquo;ordine e rimetti i pezzi a magazzino</label> : null}
       <label className={styles.confirm}><input defaultChecked name="notifyCustomer" type="checkbox"/> Invia l&rsquo;email di rimborso al cliente</label>
+      <label className={styles.confirm}><input name="alreadyRefunded" type="checkbox"/> L&rsquo;ho già rimborsato io dalla dashboard di Stripe: registralo e avvisa il cliente, senza rimborsare di nuovo</label>
       <label className={styles.confirm}><input name="confirmed" required type="checkbox"/> Confermo il rimborso su Stripe</label>
       <button disabled={stripeRefundPending} type="submit">{stripeRefundPending ? "Rimborso…" : "Rimborsa su Stripe"}</button><Feedback state={stripeRefundState}/>
     </form> : null}

@@ -215,6 +215,7 @@ export async function refundStripeAction(_previous: OrderActionState, formData: 
     confirmed: formData.get("confirmed") === "on",
     restoreStock: formData.get("restoreStock") === "on",
     notifyCustomer: formData.get("notifyCustomer") === "on",
+    alreadyRefunded: formData.get("alreadyRefunded") === "on",
     attempt: text(formData, "attempt"),
   });
   if (!parsed.success) return { ok: false, message: "Importo, motivazione e conferma sono obbligatori." };
@@ -237,19 +238,25 @@ export async function refundStripeAction(_previous: OrderActionState, formData: 
       return { ok: false, message: `Puoi rimborsare al massimo ${(remaining / 100).toFixed(2).replace(".", ",")} €.` };
     }
 
-    const secretKey = process.env["STRIPE_SECRET_KEY"]?.trim();
-    if (!secretKey) return { ok: false, message: "La configurazione Stripe non è disponibile." };
+    let refund: { readonly id: string };
+    if (parsed.data.alreadyRefunded) {
+      // Done by hand in the Stripe dashboard: the shop only records it and writes to the buyer.
+      refund = { id: `dashboard-${parsed.data.attempt.slice(0, 8)}` };
+    } else {
+      const secretKey = process.env["STRIPE_SECRET_KEY"]?.trim();
+      if (!secretKey) return { ok: false, message: "La configurazione Stripe non è disponibile." };
 
-    // Call Stripe to create the refund
-    const stripe = createStripeClient(secretKey);
-    const idempotencyKey = `gd-refund-${order.order_number}-${parsed.data.attempt}`;
-    type StripeRefund = { readonly id: string; readonly status: string };
-    const refund = await stripe.post<StripeRefund>("/refunds", {
-      payment_intent: order.stripe_payment_intent_id,
-      amount: parsed.data.amountCents,
-      reason: "requested_by_customer",
-      "metadata[order_number]": order.order_number,
-    }, idempotencyKey);
+      // Call Stripe to create the refund
+      const stripe = createStripeClient(secretKey);
+      const idempotencyKey = `gd-refund-${order.order_number}-${parsed.data.attempt}`;
+      type StripeRefund = { readonly id: string; readonly status: string };
+      refund = await stripe.post<StripeRefund>("/refunds", {
+        payment_intent: order.stripe_payment_intent_id,
+        amount: parsed.data.amountCents,
+        reason: "requested_by_customer",
+        "metadata[order_number]": order.order_number,
+      }, idempotencyKey);
+    }
 
     // Record the refund in the database
     const { error: recordError } = await client.rpc("record_order_refund", {
@@ -273,7 +280,8 @@ export async function refundStripeAction(_previous: OrderActionState, formData: 
     }
 
     refresh(parsed.data.orderId);
-    if (!parsed.data.notifyCustomer) return { ok: true, message: `Rimborso ${refund.id} eseguito su Stripe.` };
+    const done = parsed.data.alreadyRefunded ? "Rimborso fatto su Stripe registrato" : `Rimborso ${refund.id} eseguito su Stripe`;
+    if (!parsed.data.notifyCustomer) return { ok: true, message: `${done}.` };
 
     // The money is back either way: an email that fails is reported, never undoes the refund.
     const sent = await sendEmail({
@@ -290,8 +298,8 @@ export async function refundStripeAction(_previous: OrderActionState, formData: 
       idempotencyKey: `gd-order-refund-${order.order_number}-${refund.id}`,
     });
     return sent.ok
-      ? { ok: true, message: `Rimborso ${refund.id} eseguito su Stripe ed email inviata al cliente.` }
-      : { ok: true, message: `Rimborso ${refund.id} eseguito su Stripe, ma l'email non è partita: ${emailFailure(sent.reason, sent.detail)}` };
+      ? { ok: true, message: `${done} ed email inviata al cliente.` }
+      : { ok: true, message: `${done}, ma l'email non è partita: ${emailFailure(sent.reason, sent.detail)}` };
   } catch (error) {
     return stripeRefundFailure(error);
   }
