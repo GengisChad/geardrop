@@ -28,6 +28,8 @@ const SAFE_LOGIN_ERROR = "Email o password non corretti.";
  */
 const SIGNUP_NOTICE =
   "Ti abbiamo inviato un'email di conferma. Apri il link per attivare l'account.";
+const SIGNUP_FAILED =
+  "Non riusciamo a creare l'account in questo momento. Riprova tra poco o scrivi a infogeardrop@gmail.com.";
 const RECOVER_NOTICE =
   "Se l'indirizzo è registrato, riceverai un'email con il link per reimpostare la password.";
 
@@ -83,7 +85,7 @@ export async function registerAction(
   // Open sign-up creates customers only. The role a visitor could try to smuggle in here
   // would land in user_metadata, which no authorization path reads: staff comes from
   // staff_profiles, writable only by an owner through a security-definer RPC.
-  const { error } = await client.auth.signUp({
+  const { data, error } = await client.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
@@ -97,8 +99,20 @@ export async function registerAction(
     if (error.status === 429) {
       return { error: "Troppi tentativi. Riprova tra qualche minuto.", notice: null };
     }
+    // A server-side failure (for instance the confirmation email could not be sent) must not
+    // be dressed up as success: the buyer would wait for an email that never comes.
+    if (error.status !== undefined && error.status >= 500) {
+      console.error("[register]", error.status, error.message);
+      return { error: SIGNUP_FAILED, notice: null };
+    }
 
     return { error: null, notice: SIGNUP_NOTICE };
+  }
+
+  // Without email confirmation the account is live and already signed in: go straight to it.
+  if (data.session) {
+    revalidatePath("/account");
+    redirect("/account");
   }
 
   return { error: null, notice: SIGNUP_NOTICE };
