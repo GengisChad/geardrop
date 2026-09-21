@@ -14,8 +14,8 @@ import type { Bundle, Category, Product } from "@/lib/commerce/types";
 const eur = (amount: number) => ({ amount, currency: "EUR" }) as const;
 
 /**
- * One colour of the deck case: printed in 3D, not a Hasbro product, €20 in every colour, with
- * no stock limit (no count on a product in stock). Owner's words: it also takes the Expanded
+ * One colour of the deck case: printed in 3D, not a Hasbro product, €24,50 in every colour (the
+ * owner raised it from €20 the day it launched), with no stock limit (no count on a product in stock). Owner's words: it also takes the Expanded
  * and Infinity tops. The colours live in variant-families.ts.
  */
 const DECK_CASE = VARIANT_FAMILIES["porta-deck"]!;
@@ -24,7 +24,7 @@ function deckCase({ slug, label, swatch }: VariantColour): Product {
   return {
     slug, name: `${DECK_CASE.name} ${label}`, tagline: "Tre trottole al sicuro. Anche Expanded e Infinity.",
     description: "Il porta deck tiene un deck completo di Beyblade X: tre scomparti, uno per trottola, ognuno con la sua chiusura a clip. Entrano anche i bey Expanded e Infinity. Stampato in 3D. Accessorio non ufficiale: non è prodotto né certificato da Hasbro.",
-    price: eur(2000), category: "accessori", stock: "disponibile", tags: [], rating: 0, reviewCount: 0,
+    price: eur(2450), category: "accessori", stock: "disponibile", tags: [], rating: 0, reviewCount: 0,
     images: productImages[slug],
     specs: [{ label: "Tipo", value: "Porta deck" }, { label: "Produttore", value: "Non ufficiale, non prodotto da Hasbro" }, { label: "Compatibilità", value: "Beyblade X, compresi Expanded e Infinity" }, { label: "Scomparti", value: "3, uno per trottola" }, { label: "Colore", value: label }, { label: "Materiale", value: "Plastica stampata in 3D" }, { label: "Nota", value: "Trottole non incluse" }],
     features: [{ title: "Un deck completo", description: "Tre scomparti, uno per ogni trottola" }, { title: "Anche Expanded e Infinity", description: "Compatibile con i bey Expanded e Infinity" }, { title: "Chiusura a clip", description: "Ogni scomparto si chiude con la sua clip" }, { title: "Sette colori", description: "Giallo, verde lime, azzurro, blu, rosa, fucsia e bianco" }],

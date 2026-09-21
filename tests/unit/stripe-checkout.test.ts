@@ -112,6 +112,18 @@ describe("stripe checkout session", () => {
     expect(matchStripePrices(quote, [])).toBeNull();
   });
 
+  it("closes the Stripe page after 35 minutes, so a finished drop cannot be paid later", async () => {
+    const quote = await quoteFor([{ slug: "hurricane-enlil-is-7-55t", quantity: 1 }]);
+    const now = Date.UTC(2026, 8, 21, 16, 0, 0);
+    const fields = buildCheckoutSessionFields({ quote, order, origin: ORIGIN, now }, matchStripePrices(quote, catalogPrices)!);
+
+    expect(fields["expires_at"]).toBe(now / 1000 + 35 * 60);
+    // Stripe refuses anything under 30 minutes or over 24 hours.
+    const minutes = (Number(fields["expires_at"]) - now / 1000) / 60;
+    expect(minutes).toBeGreaterThan(30);
+    expect(minutes).toBeLessThanOrEqual(24 * 60);
+  });
+
   it("charges through price ids and carries the address collected on the site", async () => {
     const quote = await quoteFor([{ slug: "hurricane-enlil-is-7-55t", quantity: 2 }]);
     const fields = buildCheckoutSessionFields({ quote, order, origin: ORIGIN }, matchStripePrices(quote, catalogPrices)!);
