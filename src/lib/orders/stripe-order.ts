@@ -164,8 +164,7 @@ export function paidCheckoutFromStripe(
   const shippingCents = session.total_details?.amount_shipping ?? session.shipping_cost?.amount_total ?? 0;
   const discountCents = session.total_details?.amount_discount ?? 0;
 
-  // Promotion code text: available when the session is expanded with
-  // total_details.breakdown.discounts.discount.promotion_code.
+  // Promotion code text: loadPaidCheckout swaps the code's id for the object that carries it.
   const firstDiscount = session.total_details?.breakdown?.discounts?.[0];
   const promoCodeValue = firstDiscount?.discount?.promotion_code;
   const couponCode =
@@ -201,13 +200,36 @@ export function paidCheckoutFromStripe(
 /** Reads a session back from Stripe with everything the order needs. */
 export async function loadPaidCheckout(sessionId: string, stripe: StripeClient): Promise<PaidCheckout | null> {
   if (!/^cs_(live|test)_[A-Za-z0-9]{10,200}$/.test(sessionId)) return null;
-  // Expand payment_intent for the shipping address and promotion_code for the discount code text.
+  // payment_intent carries the shipping address, the breakdown the discounts. Stripe expands at
+  // most four levels deep, so the promotion code inside a discount stays an id and is read on its
+  // own: asking for it inline fails the whole read, and with it every paid order.
   const session = await stripe.get<StripeSessionForOrder>(
-    `/checkout/sessions/${sessionId}?expand[]=payment_intent&expand[]=total_details.breakdown.discounts.discount.promotion_code`,
+    `/checkout/sessions/${sessionId}?expand[]=payment_intent&expand[]=total_details.breakdown`,
   );
   if (!session) return null;
   const items = await stripe.get<{ readonly data: readonly StripeLineItemForOrder[] }>(
     `/checkout/sessions/${sessionId}/line_items?limit=100&expand[]=data.price`,
   );
-  return paidCheckoutFromStripe(session, items?.data ?? []);
+  return paidCheckoutFromStripe(await withPromotionCode(session, stripe), items?.data ?? []);
+}
+
+/** Replaces the applied promotion code's id with the code itself. The order never waits on it. */
+async function withPromotionCode(session: StripeSessionForOrder, stripe: StripeClient): Promise<StripeSessionForOrder> {
+  const discounts = session.total_details?.breakdown?.discounts ?? [];
+  const id = discounts[0]?.discount?.promotion_code;
+  if (typeof id !== "string" || !/^promo_[A-Za-z0-9]{1,200}$/.test(id)) return session;
+  try {
+    const promotion = await stripe.get<{ readonly code?: string | null }>(`/promotion_codes/${id}`);
+    if (!promotion?.code) return session;
+    return {
+      ...session,
+      total_details: {
+        ...session.total_details,
+        breakdown: { discounts: [{ discount: { promotion_code: { code: promotion.code } } }, ...discounts.slice(1)] },
+      },
+    };
+  } catch (error) {
+    console.error("[orders] promotion code not readable:", error instanceof Error ? error.message : String(error));
+    return session;
+  }
 }

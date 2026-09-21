@@ -7,12 +7,14 @@ import { sendEmail, orderNotificationRecipient } from "@/lib/email/resend";
 import { customerOrderEmail, ownerOrderEmail } from "@/lib/orders/order-email";
 import { processPaidCheckout, type LowStockProduct, type OrderStore } from "@/lib/orders/process-paid-checkout";
 import {
+  loadPaidCheckout,
   paidCheckoutFromStripe,
   slugFromStripeId,
   type PaidCheckout,
   type StripeLineItemForOrder,
   type StripeSessionForOrder,
 } from "@/lib/orders/stripe-order";
+import type { StripeClient } from "@/lib/payments/stripe-api";
 import { stripeSignature, verifyStripeSignature, parseStripeEvent } from "@/lib/payments/stripe-webhook";
 
 const SECRET = "whsec_test_secret";
@@ -71,6 +73,34 @@ const lineItems: readonly StripeLineItemForOrder[] = [
   { description: "Glory Valkerion LF", quantity: 1, amount_subtotal: 3000, price: { lookup_key: "gd_glory_valkerion_lf", unit_amount: 3000, product: "gd_glory_valkerion_lf" } },
 ];
 
+/**
+ * Stripe as the webhook meets it: a paid session whose discount names its promotion code by id,
+ * and a hard refusal of any expansion deeper than four levels, as the live API answers.
+ */
+function fakeStripe(requested: string[], extra: Readonly<Record<string, unknown>>): StripeClient {
+  const session: StripeSessionForOrder = {
+    ...paidSession,
+    total_details: { amount_shipping: 490, amount_discount: 500, breakdown: { discounts: [{ discount: { promotion_code: "promo_1AbC" } }] } },
+  };
+  return {
+    async get<T>(path: string): Promise<T | null> {
+      requested.push(path);
+      for (const expand of new URLSearchParams(path.split("?")[1] ?? "").getAll("expand[]")) {
+        if (expand.split(".").length > 4) throw new Error(`Stripe GET → 400: You cannot expand more than 4 levels of a property. Property: ${expand}`);
+      }
+      const route = path.split("?")[0]!;
+      if (route === `/checkout/sessions/${paidSession.id}`) return session as T;
+      if (route === `/checkout/sessions/${paidSession.id}/line_items`) return { data: lineItems } as T;
+      const answer = extra[route];
+      if (answer instanceof Error) throw answer;
+      return (answer ?? null) as T | null;
+    },
+    async post<T>(): Promise<T> {
+      throw new Error("the webhook never writes to Stripe");
+    },
+  };
+}
+
 describe("paid checkout mapping", () => {
   it("collects the shipping details the site sent to Stripe", () => {
     const checkout = paidCheckoutFromStripe(paidSession, lineItems);
@@ -113,6 +143,28 @@ describe("paid checkout mapping", () => {
   it("defaults discount to 0 and couponCode to null when no promo code was applied", () => {
     const checkout = paidCheckoutFromStripe(paidSession, lineItems);
     expect(checkout?.discountCents).toBe(0);
+    expect(checkout?.couponCode).toBeNull();
+  });
+
+  it("reads the session within Stripe's four expansion levels, then the promotion code on its own", async () => {
+    const requested: string[] = [];
+    const stripe = fakeStripe(requested, {
+      "/promotion_codes/promo_1AbC": { code: "SUMMER10" },
+    });
+    const checkout = await loadPaidCheckout(paidSession.id, stripe);
+
+    expect(checkout?.reference).toBe("GD-FL3NHC8W");
+    expect(checkout?.couponCode).toBe("SUMMER10");
+    expect(checkout?.discountCents).toBe(500);
+    expect(requested).toContain("/promotion_codes/promo_1AbC");
+  });
+
+  it("records the order without the code text when the promotion code cannot be read", async () => {
+    const stripe = fakeStripe([], { "/promotion_codes/promo_1AbC": new Error("Stripe GET /promotion_codes → 403: permission") });
+    const checkout = await loadPaidCheckout(paidSession.id, stripe);
+
+    expect(checkout?.reference).toBe("GD-FL3NHC8W");
+    expect(checkout?.discountCents).toBe(500);
     expect(checkout?.couponCode).toBeNull();
   });
 
