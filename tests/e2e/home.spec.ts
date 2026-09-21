@@ -1,8 +1,7 @@
 import { expect, test } from "@playwright/test";
-import { productTops } from "../../src/data/assets";
-import { PRODUCTS } from "../../src/data/catalog";
 import { STOREFRONT_CATALOGUE } from "../../src/lib/commerce/mock-provider";
 import { oneCardPerFamily } from "../../src/lib/commerce/variants";
+import { homepagePlan } from "../../src/lib/home/product-selection";
 
 /**
  * The public homepage on the default (mock) gate — the Holo Drop composition served when no
@@ -19,17 +18,12 @@ const VIEWPORTS = [
   { name: "wide", width: 1920, height: 1000 },
 ] as const;
 
-const NEW_RELEASE_SLUGS = PRODUCTS.filter((product) => product.tags.includes("novita")).map((product) => product.slug);
-/** The hero deals up to three new releases. */
-const HERO_SLUGS = NEW_RELEASE_SLUGS.slice(0, 3);
 /** Every card of the storefront: an item sold in several colours (the deck case) is one card. */
 const STOREFRONT_CARDS = oneCardPerFamily(STOREFRONT_CATALOGUE);
-/** New releases open the arsenal, then the rest of the storefront catalogue (bundles first) in its own order. */
-const ARSENAL_SLUGS = [
-  ...NEW_RELEASE_SLUGS,
-  ...STOREFRONT_CARDS.map((product) => product.slug).filter((slug) => !NEW_RELEASE_SLUGS.includes(slug)),
-];
-const ATTACK_COUNT = PRODUCTS.filter((product) => product.bladeType === "attacco").length;
+/** The owner's order: four new releases on sale, what ships now, then the rest. */
+const PLAN = homepagePlan(STOREFRONT_CARDS, 4);
+const slugs = (products: readonly { readonly slug: string }[]) => products.map((product) => product.slug);
+const ATTACK_COUNT = PLAN.rest.filter((product) => product.bladeType === "attacco").length;
 
 test.describe("public homepage", () => {
   test("renders the Holo Drop composition, never the placeholder scaffold", async ({ page }) => {
@@ -47,21 +41,18 @@ test.describe("public homepage", () => {
     await expect(lines.last()).toHaveText("disponibili in Italia.");
     await expect(lines.last()).toHaveClass(/gd-holo-text/);
 
-    // The hero deals the owner's new releases as holographic cards.
-    const heroSlugs = await page.getByTestId("holo-card").evaluateAll((cards) =>
-      cards.map((card) => card.getAttribute("data-slug")),
-    );
-    expect(heroSlugs).toEqual(HERO_SLUGS);
+    // The hero deals the new releases on sale as product cards, right under the pitch.
+    const cardSlugs = (testId: string) =>
+      page.getByTestId(testId).getByTestId("product-card").evaluateAll((cards) => cards.map((card) => card.getAttribute("data-slug")));
+    expect(await cardSlugs("hero-products")).toEqual(slugs(PLAN.hero));
+    expect(await cardSlugs("ready-to-ship")).toEqual(slugs(PLAN.ready));
+    expect(await cardSlugs("arsenal-grid")).toEqual(slugs(PLAN.rest));
 
-    if (HERO_SLUGS.some((slug) => productTops[slug])) {
-      await expect(page.getByTestId("arena")).toBeVisible();
-    }
-
-    // The arsenal carries the whole catalogue exactly once, new releases first.
+    // The page carries the whole catalogue exactly once, and nothing moves on its own.
     const productCards = page.getByTestId("product-card");
-    await expect(productCards).toHaveCount(ARSENAL_SLUGS.length);
-    const arsenalSlugs = await productCards.evaluateAll((cards) => cards.map((card) => card.getAttribute("data-slug")));
-    expect(arsenalSlugs).toEqual(ARSENAL_SLUGS);
+    await expect(productCards).toHaveCount(STOREFRONT_CARDS.length);
+    await expect(page.getByTestId("arena")).toHaveCount(0);
+    await expect(page.getByTestId("holo-card")).toHaveCount(0);
     await expect(page.getByTestId("product-carousel")).toHaveCount(0);
 
     await expect(page.locator("body")).not.toContainText("target relazionali");
@@ -83,38 +74,13 @@ test.describe("public homepage", () => {
     await expect(visibleCards).toHaveCount(ATTACK_COUNT);
 
     await page.getByTestId("arsenal").getByRole("button", { name: /^Tutti/ }).click();
-    await expect(visibleCards).toHaveCount(STOREFRONT_CARDS.length);
+    await expect(visibleCards).toHaveCount(PLAN.rest.length);
   });
 
-  test("a hero card flips to its product sheet and back", async ({ page }) => {
-    // The front card bobs forever; reduced motion holds it still so it can be clicked.
-    await page.emulateMedia({ reducedMotion: "reduce" });
+  test("a new release goes to the cart straight from the hero", async ({ page }) => {
     await page.goto("/");
-    const card = page.getByTestId("holo-card").first();
-    const flip = card.locator(".gd-holo-flip");
-
-    await card.getByRole("button", { name: /^Gira la carta di/ }).click();
-    await expect(flip).toHaveAttribute("data-flipped", "true");
-    await expect(card.getByTestId("add-to-cart")).toBeVisible();
-
-    await card.getByRole("button", { name: /^Torna al fronte di/ }).click();
-    await expect(flip).toHaveAttribute("data-flipped", "false");
-  });
-
-  test("the hero CTA pre-orders the front card", async ({ page }) => {
-    await page.goto("/");
-    await page.getByTestId("hero-add-to-cart").click();
+    await page.getByTestId("hero-products").getByTestId("add-to-cart").first().click();
     await expect(page.getByTestId("cart-count")).toHaveText("1");
-  });
-
-  test("the arena switches to the chosen new release", async ({ page }) => {
-    test.skip(HERO_SLUGS.filter((slug) => productTops[slug]).length < 2, "needs two contenders");
-    await page.goto("/");
-    const arena = page.getByTestId("arena");
-    const second = PRODUCTS.find((product) => product.slug === HERO_SLUGS[1])!;
-
-    await arena.getByRole("button", { name: second.name.split(" ").slice(0, 2).join(" ") }).click();
-    await expect(arena.getByRole("heading", { level: 3 })).toContainText(second.name.split(" ")[0]!);
   });
 
   for (const viewport of VIEWPORTS) {

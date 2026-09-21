@@ -113,20 +113,13 @@ with seed(product_slug, src, width, height, alt, sort_order) as (
   ('blast-pegasus-a-tr', '/products/blast-pegasus-a-tr.webp', 1000, 1000, 'Beyblade X Blast Pegasus A Tr con Clip & Rip Launcher verde e trottola', 0),
   ('drop-attack-battle-set', '/products/drop-attack-battle-set.webp', 1000, 1000, 'Beyblade X Drop Attack Battle Set: stadio blu, due trottole e due lanciatori', 0),
   ('sneak-attack-battle-set', '/products/sneak-attack-battle-set.webp', 1000, 1000, 'Beyblade X Sneak Attack Battle Set: stadio verde, due trottole e due lanciatori', 0),
-  ('porta-deck-giallo', '/products/porta-deck-giallo.webp', 1000, 1000, 'Porta deck giallo con la scritta Beyblade X in nero e tre scomparti a clip', 0),
-  ('porta-deck-giallo', '/products/porta-deck-colori.webp', 1000, 1000, 'I sette porta deck: giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 1),
-  ('porta-deck-verde-lime', '/products/porta-deck-verde-lime.webp', 1000, 1000, 'Porta deck verde lime con la scritta Beyblade X in nero e tre scomparti a clip', 0),
-  ('porta-deck-verde-lime', '/products/porta-deck-colori.webp', 1000, 1000, 'I sette porta deck: giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 1),
-  ('porta-deck-azzurro', '/products/porta-deck-azzurro.webp', 1000, 1000, 'Porta deck azzurro con la scritta Beyblade X in bianco e tre scomparti a clip', 0),
-  ('porta-deck-azzurro', '/products/porta-deck-colori.webp', 1000, 1000, 'I sette porta deck: giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 1),
-  ('porta-deck-blu', '/products/porta-deck-blu.webp', 1000, 1000, 'Porta deck blu con la scritta Beyblade X in bianco e tre scomparti a clip', 0),
-  ('porta-deck-blu', '/products/porta-deck-colori.webp', 1000, 1000, 'I sette porta deck: giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 1),
-  ('porta-deck-rosa', '/products/porta-deck-rosa.webp', 1000, 1000, 'Porta deck rosa con la scritta Beyblade X in bianco e tre scomparti a clip', 0),
-  ('porta-deck-rosa', '/products/porta-deck-colori.webp', 1000, 1000, 'I sette porta deck: giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 1),
-  ('porta-deck-fucsia', '/products/porta-deck-fucsia.webp', 1000, 1000, 'Porta deck fucsia con la scritta Beyblade X in bianco e tre scomparti a clip', 0),
-  ('porta-deck-fucsia', '/products/porta-deck-colori.webp', 1000, 1000, 'I sette porta deck: giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 1),
-  ('porta-deck-bianco', '/products/porta-deck-bianco.webp', 1000, 1000, 'Porta deck bianco con la scritta Beyblade X in viola e tre scomparti a clip', 0),
-  ('porta-deck-bianco', '/products/porta-deck-colori.webp', 1000, 1000, 'I sette porta deck: giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 1)
+  ('porta-deck-giallo', '/products/porta-deck.webp', 1000, 1000, 'Porta deck Beyblade X giallo a tre scomparti, disponibile in giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 0),
+  ('porta-deck-verde-lime', '/products/porta-deck.webp', 1000, 1000, 'Porta deck Beyblade X giallo a tre scomparti, disponibile in giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 0),
+  ('porta-deck-azzurro', '/products/porta-deck.webp', 1000, 1000, 'Porta deck Beyblade X giallo a tre scomparti, disponibile in giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 0),
+  ('porta-deck-blu', '/products/porta-deck.webp', 1000, 1000, 'Porta deck Beyblade X giallo a tre scomparti, disponibile in giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 0),
+  ('porta-deck-rosa', '/products/porta-deck.webp', 1000, 1000, 'Porta deck Beyblade X giallo a tre scomparti, disponibile in giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 0),
+  ('porta-deck-fucsia', '/products/porta-deck.webp', 1000, 1000, 'Porta deck Beyblade X giallo a tre scomparti, disponibile in giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 0),
+  ('porta-deck-bianco', '/products/porta-deck.webp', 1000, 1000, 'Porta deck Beyblade X giallo a tre scomparti, disponibile in giallo, verde lime, azzurro, blu, rosa, fucsia e bianco', 0)
 )
 insert into public.product_images (product_id, src, width, height, alt, sort_order, published, is_primary)
 select product.id, seed.src, seed.width, seed.height, seed.alt, seed.sort_order, true, seed.sort_order = 0

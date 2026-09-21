@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Arena } from "@/components/home/arena";
 import { Arsenal } from "@/components/home/arsenal";
-import { DuoDrop } from "@/components/home/duo-drop";
-import { Hero } from "@/components/home/hero";
+import { HERO_CARDS, Hero } from "@/components/home/hero";
+import { ProductShelf } from "@/components/home/product-shelf";
 import { TrustBandDark } from "@/components/home/trust";
 import { Reveal } from "@/components/ui/reveal";
 import { ManagedHomepage, type ManagedHomepageFallback } from "@/components/content/managed-homepage";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { storefrontContent } from "@/lib/content/provider";
-import { HOME_FEATURED_LIMIT, newReleases } from "@/lib/home/product-selection";
+import { STANDARD_DELIVERY } from "@/lib/labels";
+import { HOME_FEATURED_LIMIT, homepagePlan } from "@/lib/home/product-selection";
 import { jsonLd, siteJsonLd } from "@/lib/seo";
 import { resolveHomepageSections } from "@/lib/storefront/homepage-resolver";
 
@@ -17,11 +17,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-/** The bundle the homepage spotlights right under the hero. */
+/** The bundle the managed homepage can spotlight. */
 const DUO_SLUG = "duo-horus-enlil";
-
-/** The hero deals at most three cards. */
-const HERO_CARDS = 3;
 
 export default async function HomePage() {
   const commerce = await getCommerceProvider();
@@ -36,19 +33,15 @@ export default async function HomePage() {
     storefrontContent.getHomepage(),
   ]);
 
-  // The duo offer is sold as one item; its packs come in the bundle's own order.
-  const duoPacks = bundleHero?.bundleOf ? await commerce.getProductsBySlugs(bundleHero.bundleOf.map((part) => part.slug)) : [];
-
   // Without a catalogue the page has nothing to deal.
   if (all.items.length === 0) notFound();
 
-  // The owner's new releases lead; without any, the hero deals the leading featured products.
-  const releases = newReleases(all.items);
-  const heroProducts = (releases.length > 0 ? releases : featured.items).slice(0, HERO_CARDS);
+  // The new releases still on sale lead, then what ships right away, then the rest.
+  const plan = homepagePlan(all.items, HERO_CARDS);
 
   const fallback: ManagedHomepageFallback = {
-    heroProducts,
-    heroIsNewRelease: releases.length > 0,
+    heroProducts: plan.hero,
+    heroIsNewRelease: plan.heroIsNewRelease,
     bundleHero,
     bundle,
     featured: featured.items,
@@ -73,17 +66,15 @@ export default async function HomePage() {
     );
   }
 
-  // New releases open the arsenal, then the rest of the catalogue in its own order.
-  const arsenal = [...releases, ...all.items.filter((product) => !releases.includes(product))];
-
+  // The owner's order (2026-09-21): the drop on the first screen, what ships now right under
+  // it, then everything else. Clean on purpose: no fight animation, no banner in between.
   return (
     <>
       {structuredData}
       {/* The hero holds the LCP image, so it is never revealed on scroll: it paints at once. */}
-      <Hero products={heroProducts} isNewRelease={releases.length > 0} />
-      {bundleHero?.bundleOf ? <DuoDrop bundle={bundleHero} packs={duoPacks} /> : null}
-      <Arena products={heroProducts} />
-      <Arsenal products={arsenal} />
+      <Hero products={plan.hero} isNewRelease={plan.heroIsNewRelease} />
+      <ProductShelf testId="ready-to-ship" kicker="Disponibili subito" title="Pronti da spedire" note={STANDARD_DELIVERY} products={plan.ready} />
+      <Arsenal products={plan.rest} title="Tutto il resto" kicker="Catalogo" />
       <Reveal>
         <TrustBandDark className="pb-20" />
       </Reveal>

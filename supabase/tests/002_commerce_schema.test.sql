@@ -111,8 +111,8 @@ select results_eq(
 );
 select results_eq(
   $$select count(*)::bigint from public.product_images$$,
-  array[28::bigint],
-  'double seed keeps every catalogue image once (the deck cases carry two each)'
+  array[21::bigint],
+  'double seed keeps one image per catalogue product'
 );
 select results_eq(
   $$select count(*)::bigint from public.site_settings$$,

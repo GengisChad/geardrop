@@ -79,9 +79,9 @@ test.describe("anonymous storefront on Supabase", () => {
     // runs against the real database, on the managed path, where the black page lived.
     expect(body, "the placeholder CMS scaffold is back").not.toContain("target relazionali");
 
-    // The Holo Drop hero deals the new releases as holographic cards.
+    // The hero deals the new releases as product cards, right under the pitch.
     await expect(page.getByTestId("hero")).toBeVisible();
-    expect(await page.getByTestId("holo-card").count(), "the managed hero dealt no cards").toBeGreaterThan(0);
+    expect(await page.getByTestId("hero-products").getByTestId("product-card").count(), "the managed hero dealt no cards").toBeGreaterThan(0);
 
     // No section paints a full graphite scaffold panel.
     expect(await page.locator("section.bg-graphite").count(), "a graphite scaffold section is rendering").toBe(0);
@@ -102,7 +102,8 @@ test.describe("anonymous storefront on Supabase", () => {
     for (const slug of ["beyblade-x", "lanciatori", "stadi", "accessori"]) {
       await expect(page.locator(`a[href="/negozio/${slug}"]`).first()).toBeVisible();
     }
-    const productCards = page.getByTestId("product-card");
+    // The shelves below the hero, which deals its own cards.
+    const productCards = page.locator("section:not([data-testid='hero']) [data-testid='product-card']");
     await expect(productCards).toHaveCount(EXPECTED_HOME_PRODUCT_SLUGS.length);
     await expect(page.getByTestId("product-carousel")).toHaveCount(1);
     const homepageProductSlugs = await productCards.evaluateAll((cards) =>
