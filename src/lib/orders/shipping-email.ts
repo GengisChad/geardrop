@@ -20,7 +20,7 @@ export type ShippedOrder = {
 };
 
 export function shippingNotificationEmail(order: ShippedOrder) {
-  const name = firstName(order.shippingAddress);
+  const name = buyerFirstName(order.shippingAddress);
   const link = trackingLink(order.carrier, order.trackingCode, order.trackingUrl);
   const address = deliveryLines(order.shippingAddress);
   const subject = `Il tuo ordine ${order.orderNumber} è stato spedito · GEAR//DROP`;
@@ -80,7 +80,8 @@ function deliveryLines(address: unknown): readonly string[] {
   return [value("name"), value("address"), place].filter(Boolean);
 }
 
-function firstName(address: unknown): string | null {
+/** The buyer's first name from the shipping snapshot, capitalised; null when there is none. */
+export function buyerFirstName(address: unknown): string | null {
   if (!address || typeof address !== "object") return null;
   const name = (address as Record<string, unknown>)["name"];
   if (typeof name !== "string" || !name.trim()) return null;

@@ -5,6 +5,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { requireStaffRole, requireUser } from "@/lib/auth/guards";
 import { sendEmail, SHOP_EMAIL } from "@/lib/email/resend";
 import { carrierById, normalizeTrackingCode } from "@/lib/orders/carriers";
+import { refundNotificationEmail } from "@/lib/orders/refund-email";
 import { shippingNotificationEmail } from "@/lib/orders/shipping-email";
 import type { Database } from "@/lib/supabase/database.types";
 import {
@@ -213,6 +214,7 @@ export async function refundStripeAction(_previous: OrderActionState, formData: 
     reason: text(formData, "reason"),
     confirmed: formData.get("confirmed") === "on",
     restoreStock: formData.get("restoreStock") === "on",
+    notifyCustomer: formData.get("notifyCustomer") === "on",
     attempt: text(formData, "attempt"),
   });
   if (!parsed.success) return { ok: false, message: "Importo, motivazione e conferma sono obbligatori." };
@@ -223,7 +225,7 @@ export async function refundStripeAction(_previous: OrderActionState, formData: 
     // Read the order to get the payment intent id and current state.
     const { data: order, error: orderError } = await client
       .from("orders")
-      .select("id,order_number,stripe_payment_intent_id,payment_status,total_cents,refunded_cents,status")
+      .select("id,order_number,email,shipping_address_snapshot,stripe_payment_intent_id,payment_status,total_cents,refunded_cents,status")
       .eq("id", parsed.data.orderId)
       .single();
 
@@ -271,7 +273,25 @@ export async function refundStripeAction(_previous: OrderActionState, formData: 
     }
 
     refresh(parsed.data.orderId);
-    return { ok: true, message: `Rimborso ${refund.id} eseguito su Stripe.` };
+    if (!parsed.data.notifyCustomer) return { ok: true, message: `Rimborso ${refund.id} eseguito su Stripe.` };
+
+    // The money is back either way: an email that fails is reported, never undoes the refund.
+    const sent = await sendEmail({
+      ...refundNotificationEmail({
+        orderNumber: order.order_number,
+        email: order.email,
+        shippingAddress: order.shipping_address_snapshot,
+        amountCents: parsed.data.amountCents,
+        refundedCents: order.refunded_cents + parsed.data.amountCents,
+        totalCents: order.total_cents,
+        reason: parsed.data.reason,
+      }),
+      replyTo: SHOP_EMAIL,
+      idempotencyKey: `gd-order-refund-${order.order_number}-${refund.id}`,
+    });
+    return sent.ok
+      ? { ok: true, message: `Rimborso ${refund.id} eseguito su Stripe ed email inviata al cliente.` }
+      : { ok: true, message: `Rimborso ${refund.id} eseguito su Stripe, ma l'email non è partita: ${emailFailure(sent.reason, sent.detail)}` };
   } catch (error) {
     return stripeRefundFailure(error);
   }
