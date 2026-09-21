@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
 import { BUNDLES, CATEGORIES, PRODUCTS } from "@/data/catalog";
+import { oneCardPerFamily } from "@/lib/commerce/variants";
 import { breadcrumbJsonLd, jsonLd, productDescription, productJsonLd, productTitle, siteJsonLd } from "@/lib/seo";
 
 afterEach(() => vi.unstubAllEnvs());
@@ -14,7 +15,10 @@ describe("sitemap", () => {
     expect(urls).toContain("https://geardropshop.it/");
     expect(urls).toContain("https://geardropshop.it/negozio");
     for (const category of CATEGORIES) expect(urls).toContain(`https://geardropshop.it/negozio/${category.slug}`);
-    for (const product of [...BUNDLES, ...PRODUCTS]) expect(urls).toContain(`https://geardropshop.it/prodotto/${product.slug}`);
+    for (const product of oneCardPerFamily([...BUNDLES, ...PRODUCTS])) expect(urls).toContain(`https://geardropshop.it/prodotto/${product.slug}`);
+    // The other colours of the deck case name the first as canonical, so only it is listed.
+    expect(urls).toContain("https://geardropshop.it/prodotto/porta-deck-giallo");
+    expect(urls).not.toContain("https://geardropshop.it/prodotto/porta-deck-blu");
     expect(urls.every((url) => url.startsWith("https://geardropshop.it/"))).toBe(true);
   });
 

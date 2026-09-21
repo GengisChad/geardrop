@@ -25,7 +25,9 @@ export function absoluteUrl(path: string): string {
 }
 
 /** Every product is a Beyblade X item; the line name is what people type into Google. */
-export function productTitle(product: Pick<Product, "name">): string {
+export function productTitle(product: Pick<Product, "name" | "unofficial">): string {
+  // A compatible accessory is for Beyblade X, never sold as one.
+  if (product.unofficial) return `${product.name} compatibile Beyblade X`;
   return /^beyblade/i.test(product.name) ? product.name : `Beyblade X ${product.name}`;
 }
 
@@ -35,7 +37,7 @@ function clip(text: string): string {
   return `${cut.slice(0, cut.lastIndexOf(" "))}…`;
 }
 
-export function productDescription(product: Pick<Product, "name" | "tagline" | "price" | "stock">): string {
+export function productDescription(product: Pick<Product, "name" | "tagline" | "price" | "stock" | "unofficial">): string {
   const shipping = product.price.amount >= FREE_SHIPPING_THRESHOLD ? "spedizione gratuita" : "spedizione €4,90, gratis da €59";
   return clip(`${productTitle(product)} a ${formatPrice(product.price)}, ${STOCK_LABEL[product.stock].toLowerCase()}. ${product.tagline} Pagamento sicuro, ${shipping}.`);
 }
@@ -127,7 +129,8 @@ export function productJsonLd(product: Product) {
     sku: product.slug.toUpperCase(),
     image: product.images.map((image) => absoluteUrl(image.src)),
     category: CATEGORY_LABEL[product.category],
-    brand: { "@type": "Brand", name: "Hasbro" },
+    // A compatible accessory carries no Hasbro brand, and the shop never claims one for it.
+    ...(product.unofficial ? {} : { brand: { "@type": "Brand", name: "Hasbro" } }),
     ...(product.reviewCount > 0
       ? {
           aggregateRating: {

@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { BUNDLES, CATEGORIES, PRODUCTS } from "@/data/catalog";
 import { LEGAL_PAGES, SUPPORT_PAGES } from "@/data/pages";
+import { oneCardPerFamily } from "@/lib/commerce/variants";
 import { absoluteUrl } from "@/lib/seo";
 
 /**
@@ -18,7 +19,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly" as const,
       priority: 0.8,
     })),
-    ...[...BUNDLES, ...PRODUCTS].map((product) => ({
+    // An item sold in several colours is listed once: its other colours point here as canonical.
+    ...oneCardPerFamily([...BUNDLES, ...PRODUCTS]).map((product) => ({
       url: absoluteUrl(`/prodotto/${product.slug}`),
       lastModified,
       changeFrequency: "daily" as const,

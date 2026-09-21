@@ -2,6 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/database.types";
 import type { ProductImage } from "@/data/assets";
 import { checkoutErrorCode, checkoutErrorMessage } from "./checkout-errors";
+import { isUnlimitedStock } from "./live-stock-overlay";
+import { catalogueTraits, oneCardPerFamily } from "./variants";
 import { STANDARD_DELIVERY } from "@/lib/labels";
 import type {
   BladeType,
@@ -108,7 +110,7 @@ export function mapSupabaseProduct(row: RawProduct): Product {
     category: category.slug as CategorySlug,
     ...bladeType,
     stock: row.stock_status,
-    availableQuantity: projectedAvailability(row),
+    ...(isUnlimitedStock(row) ? {} : { availableQuantity: projectedAvailability(row) }),
     tags: row.tags.map(({ tag }) => tag),
     rating: Number(row.rating),
     reviewCount: row.review_count,
@@ -117,6 +119,7 @@ export function mapSupabaseProduct(row: RawProduct): Product {
     features: ordered(row.features).map(({ title, description }) => ({ title, description })),
     boxContents: ordered(row.box_contents).map(({ content }) => content),
     relatedSlugs: ordered(row.relations).map(({ related }) => first(related).slug as Product["slug"]),
+    ...catalogueTraits(row.slug),
   };
 }
 
@@ -190,7 +193,7 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>)
 
     async listProducts(query = {}): Promise<ProductPage> {
       const perPage = query.perPage ?? DEFAULT_PER_PAGE;
-      const filtered = (await allProducts()).filter((product) => matches(product, query));
+      const filtered = oneCardPerFamily((await allProducts()).filter((product) => matches(product, query)));
       const sorted = [...filtered].sort(SORTERS[query.sort ?? "popolari"]);
       const pageCount = Math.max(1, Math.ceil(sorted.length / perPage));
       const page = Math.min(Math.max(1, query.page ?? 1), pageCount);
@@ -200,7 +203,7 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>)
 
     async getFacets(query = {}): Promise<Facets> {
       const products = await allProducts();
-      const filtered = products.filter((product) => matches(product, query));
+      const filtered = oneCardPerFamily(products.filter((product) => matches(product, query)));
       const categoryCounts = count(filtered.map((product) => product.category));
       const stockCounts = count(filtered.map((product) => product.stock));
       const bladeTypeCounts = count(

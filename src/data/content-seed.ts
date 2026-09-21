@@ -40,7 +40,7 @@ export const HOMEPAGE_SECTION_SEEDS: readonly HomepageSectionSeed[] = [
       "blast-pegasus-a-tr", "drop-attack-battle-set", "sneak-attack-battle-set",
     ],
   },
-  { key: "trust", type: "trust", title: "Prodotti Hasbro originali. Consegna in 1-5 giorni lavorativi, spedizione solo in Italia." },
+  { key: "trust", type: "trust", title: "Trottole, lanciatori e stadi Hasbro originali. Consegna in 1-5 giorni lavorativi, spedizione solo in Italia." },
   {
     key: "latest-drops",
     type: "latest_drops",

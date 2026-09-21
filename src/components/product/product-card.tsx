@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Palette } from "lucide-react";
 import { HoloSurface } from "@/components/holo/holo-surface";
 import { AddToCartButton } from "@/components/product/add-to-cart-button";
 import { WishlistButton } from "@/components/product/wishlist-button";
@@ -9,6 +10,7 @@ import { cutoutSrc } from "@/data/assets";
 import { formatPrice } from "@/lib/format";
 import { availabilityLine, displayName, holoStyle } from "@/lib/holo";
 import type { Product } from "@/lib/commerce/types";
+import { familyColours } from "@/lib/commerce/variants";
 import { cn } from "@/lib/cn";
 
 type ProductCardProps = {
@@ -38,6 +40,10 @@ export function ProductCard({
   const cutout = image ? cutoutSrc(image.src) : null;
   const promo = product.tags[0];
   const isNew = product.tags.includes("novita");
+  // An item sold in several colours has one card for all of them: it names the item, shows
+  // the colours, and sends the shopper to pick one instead of adding the card's own colour.
+  const colours = familyColours(product);
+  const family = colours.length > 1 ? product.variant : undefined;
 
   return (
     <HoloSurface className={cn("h-full", className)} style={holoStyle(product)}>
@@ -73,9 +79,22 @@ export function ProductCard({
             <h3 className="gd-display-wide text-[0.95rem] font-bold leading-[1.05] sm:text-[1.15rem]">
               {/* Stretched link: the whole card is the hit target, but the buttons stay on top. */}
               <Link href={`/prodotto/${product.slug}`} className="after:absolute after:inset-0 after:z-10 after:content-['']">
-                {displayName(product.name)}
+                {displayName(family?.familyName ?? product.name)}
               </Link>
             </h3>
+            {family ? (
+              <p className="flex items-center gap-1" data-testid="card-colours">
+                {colours.map((colour) => (
+                  <span
+                    key={colour.slug}
+                    aria-hidden="true"
+                    className="size-2.5 rounded-full ring-1 ring-inset ring-black/25"
+                    style={{ backgroundColor: colour.swatch }}
+                  />
+                ))}
+                <span className="ml-1 text-[0.6875rem] text-grey-600">{colours.length} colori</span>
+              </p>
+            ) : null}
 
             {showTagline ? <p className="hidden text-small text-grey-600 sm:line-clamp-2">{product.tagline}</p> : null}
             {showRating ? <Rating value={product.rating} count={product.reviewCount} /> : null}
@@ -98,7 +117,18 @@ export function ProductCard({
                 {formatPrice(product.price)}
               </p>
               <span className="relative z-20">
-                <AddToCartButton slug={product.slug} name={product.name} stock={product.stock} compact />
+                {family ? (
+                  <Link
+                    href={`/prodotto/${product.slug}`}
+                    data-testid="choose-colour"
+                    aria-label={`Scegli il colore: ${family.familyName}`}
+                    className="gd-chamfer inline-flex size-11 shrink-0 items-center justify-center bg-white/[0.09] text-graphite transition-colors duration-200 hover:bg-lime hover:text-void"
+                  >
+                    <Palette className="size-4" aria-hidden="true" />
+                  </Link>
+                ) : (
+                  <AddToCartButton slug={product.slug} name={product.name} stock={product.stock} compact />
+                )}
               </span>
             </div>
           </div>

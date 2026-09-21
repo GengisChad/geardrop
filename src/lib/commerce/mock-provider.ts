@@ -9,6 +9,7 @@
 import { BUNDLE, BUNDLES, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_FLAT_RATE } from "@/data/catalog";
 import { STANDARD_DELIVERY } from "@/lib/labels";
 import { piecesOf, withBundles } from "./bundles";
+import { oneCardPerFamily } from "./variants";
 import type {
   BladeType,
   Bundle,
@@ -97,7 +98,9 @@ export const STOREFRONT_CATALOGUE: readonly Product[] = withBundles(PRODUCTS, BU
 export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CATALOGUE): CommerceProvider {
   const bySlug = new Map(catalogue.map((product) => [product.slug as string, product]));
 
-  const filter = (query: ProductQuery) => catalogue.filter((product) => matches(product, query));
+  // Lists show an item sold in several colours once (see variants.ts); its product page still
+  // finds every colour by slug.
+  const filter = (query: ProductQuery) => oneCardPerFamily(catalogue.filter((product) => matches(product, query)));
 
   return {
     name: "mock",
@@ -128,9 +131,9 @@ export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CA
     async getFacets(query = {}) {
       // Each facet is counted against the query with that facet removed, so ticking
       // "Disponibile" doesn't drive the other availability counts to zero.
-      const forCategories = catalogue.filter((p) => matches(p, omit(query, ["category"])));
-      const forStock = catalogue.filter((p) => matches(p, omit(query, ["stock"])));
-      const forType = catalogue.filter((p) => matches(p, omit(query, ["bladeType"])));
+      const forCategories = oneCardPerFamily(catalogue.filter((p) => matches(p, omit(query, ["category"]))));
+      const forStock = oneCardPerFamily(catalogue.filter((p) => matches(p, omit(query, ["stock"]))));
+      const forType = oneCardPerFamily(catalogue.filter((p) => matches(p, omit(query, ["bladeType"]))));
 
       const categoryCounts = countBy<CategorySlug>(forCategories, (p) => p.category);
       const stockCounts = countBy<StockStatus>(forStock, (p) => p.stock);

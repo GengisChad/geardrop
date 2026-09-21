@@ -29,7 +29,8 @@ export const SUPPORT_PAGES = {
       {
         heading: "I prodotti sono originali?",
         body: [
-          "Sì, tutti i prodotti in vendita su GEAR//DROP sono Beyblade X originali certificati Hasbro.",
+          "Trottole, starter, lanciatori e stadi in vendita su GEAR//DROP sono Beyblade X originali certificati Hasbro.",
+          "Gli accessori compatibili, come i porta deck, non sono prodotti da Hasbro: la loro scheda lo dice chiaramente.",
         ],
       },
       {

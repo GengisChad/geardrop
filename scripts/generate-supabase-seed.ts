@@ -8,6 +8,7 @@ import {
   INITIAL_PUBLIC_SETTINGS,
   NAVIGATION_MENU_SEEDS,
 } from "../src/data/content-seed";
+import { UNLIMITED_STOCK } from "../src/lib/commerce/live-stock-overlay";
 
 function text(value: string): string {
   return `'${value.replaceAll("'", "''")}'`;
@@ -38,8 +39,9 @@ export function generateSupabaseSeed(): string {
       text(product.slug),
       text(product.slug.toUpperCase()),
       // A pre-order sells from its allocation, not from a shelf; one without an allocation is
-      // open, and sells through allow_backorder at zero stock.
-      product.stock === "pre-ordine" ? 0 : (product.availableQuantity ?? 0),
+      // open, and sells through allow_backorder at zero stock. A product in stock with no count
+      // has no limit: the database keeps a counter the shop never shows.
+      product.stock === "pre-ordine" ? 0 : (product.availableQuantity ?? UNLIMITED_STOCK),
       product.stock === "pre-ordine" && product.availableQuantity
         ? "'preorder'::public.availability_override"
         : "null::public.availability_override",

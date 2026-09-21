@@ -8,6 +8,7 @@ import { Gallery } from "@/components/product/gallery";
 import { BuyPanel } from "@/components/product/buy-panel";
 import { ProductDetails } from "@/components/product/product-details";
 import { StickyBuyBar } from "@/components/product/sticky-buy-bar";
+import { VariantPicker } from "@/components/product/variant-picker";
 import { ProductCarousel } from "@/components/product/product-carousel";
 import { Rating } from "@/components/ui/rating";
 import { TrustBarLight } from "@/components/home/trust";
@@ -15,6 +16,7 @@ import { TrackPageView } from "@/components/funnel/track-page-view";
 import { BUNDLES, PRODUCTS } from "@/data/catalog";
 import { bundlesContaining } from "@/lib/commerce/bundles";
 import { getCommerceProvider } from "@/lib/commerce/provider";
+import { familyColours, familyLead } from "@/lib/commerce/variants";
 import { formatPrice } from "@/lib/format";
 import { BLADE_TYPE_LABEL, CATEGORY_LABEL, PREORDER_DELIVERY } from "@/lib/labels";
 import { absoluteUrl, breadcrumbJsonLd, jsonLd, productDescription, productJsonLd, productTitle } from "@/lib/seo";
@@ -38,7 +40,8 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   return {
     title,
     description,
-    alternates: { canonical: `/prodotto/${product.slug}` },
+    // Every colour of an item is its own page; search engines index the family's leading colour.
+    alternates: { canonical: `/prodotto/${familyLead(product)}` },
     openGraph: { type: "website", url: `/prodotto/${product.slug}`, title, description, images },
     twitter: { card: "summary_large_image", title, description, images: images.map((item) => item.url) },
   };
@@ -51,6 +54,7 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
   if (!product) notFound();
 
   const related = await commerce.getProductsBySlugs(product.relatedSlugs);
+  const colours = await commerce.getProductsBySlugs(familyColours(product).map((colour) => colour.slug));
 
   // A bundle lists its packs; a pack offers the bundle it belongs to, priced on live stock.
   const components = product.bundleOf ? await commerce.getProductsBySlugs(product.bundleOf.map((part) => part.slug)) : [];
@@ -99,7 +103,8 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
 
         <div data-testid="buy-panel" className="gd-glass-panel self-start rounded-[--radius-glass] p-5 sm:p-7">
           <p className="gd-display-wide flex items-center gap-1.5 text-small font-bold tracking-[0.2em] text-grey-600">
-            Beyblade <span className="text-lime-ink">X</span>
+            {/* A compatible accessory is not a Beyblade X product, and says so before its name. */}
+            {product.unofficial ? "Compatibile Beyblade" : "Beyblade"} <span className="text-lime-ink">X</span>
           </p>
 
           <h1 className="gd-display-wide mt-3 text-[2rem] font-extrabold leading-[1.02] text-graphite sm:text-[2.5rem]">
@@ -146,6 +151,8 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
             ) : null}
             <span className="text-small text-grey-600">IVA inclusa</span>
           </p>
+
+          <VariantPicker current={product} colours={colours} />
 
           <p className="mt-5 max-w-lg text-small leading-relaxed text-grey-600">{product.description}</p>
 
