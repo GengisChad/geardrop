@@ -77,6 +77,8 @@ export const refundStripeSchema = z.object({
   reason: z.string().trim().min(3).max(1000),
   confirmed: z.literal(true),
   restoreStock: z.boolean(),
+  /** Email the buyer once the refund has gone through (the reason is written for them). */
+  notifyCustomer: z.boolean().default(false),
   /** One id per form attempt: a double click reuses it, a new refund gets a new one. */
   attempt: z.uuid(),
 });
