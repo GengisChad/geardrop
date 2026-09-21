@@ -17,7 +17,7 @@ export type RefundedOrder = {
   /** Everything refunded on the order so far, this refund included. */
   readonly refundedCents: number;
   readonly totalCents: number;
-  /** The owner's reason, written for the buyer. */
+  /** The owner's own words to the buyer, shown as written. */
   readonly reason: string;
 };
 
@@ -36,24 +36,24 @@ export function refundNotificationEmail(order: RefundedOrder) {
   const html = emailShell(
     "Ti abbiamo rimborsato",
     `<p style="margin:0 0 16px;font-size:16px;line-height:1.5">${name ? `Ciao ${escapeHtml(name)},` : "Ciao,"} abbiamo rimborsato <strong>${amount}</strong> sul tuo ordine <strong>${escapeHtml(order.orderNumber)}</strong>.</p>
-    <div style="background:#f6f2ff;border-radius:8px;padding:16px;font-size:15px;line-height:1.6"><div>Motivo: ${escapeHtml(order.reason)}</div></div>
+    <div style="background:#f6f2ff;border-radius:8px;padding:16px;font-size:15px;line-height:1.6;white-space:pre-line">${escapeHtml(order.reason)}</div>
     <p style="margin:20px 0 0;font-size:15px;line-height:1.5">${standing}</p>
     <p style="margin:12px 0 0;font-size:15px;line-height:1.5">${timing}</p>
     <p style="margin:24px 0 0;font-size:14px;line-height:1.5">Qualcosa non torna? Rispondi a questa email o scrivi a <a href="mailto:${SHOP_EMAIL}">${SHOP_EMAIL}</a> indicando il numero d'ordine.</p>
-    <p style="margin:16px 0 0;font-size:14px">Ci scusiamo per il disagio.<br>GEAR//DROP</p>`,
+    <p style="margin:16px 0 0;font-size:14px">Grazie per la pazienza.<br>GEAR//DROP</p>`,
   );
 
   const text = [
     `${name ? `Ciao ${name},` : "Ciao,"} abbiamo rimborsato ${amount} sul tuo ordine ${order.orderNumber}.`,
     "",
-    `Motivo: ${order.reason}`,
+    order.reason,
     "",
     standing,
     timing,
     "",
     `Qualcosa non torna? Rispondi a questa email o scrivi a ${SHOP_EMAIL} indicando il numero d'ordine.`,
     "",
-    "Ci scusiamo per il disagio.",
+    "Grazie per la pazienza.",
     "GEAR//DROP",
   ].join("\n");
 

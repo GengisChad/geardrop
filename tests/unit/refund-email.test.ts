@@ -18,7 +18,9 @@ describe("refund email", () => {
     expect(email.to).toBe("cliente@example.com");
     expect(email.subject).toBe("Rimborso di 25,00 € per il tuo ordine GD-ML6E4UEE · GEAR//DROP");
     expect(email.text).toContain("Ciao Mario, abbiamo rimborsato 25,00 € sul tuo ordine GD-ML6E4UEE.");
-    expect(email.text).toContain("Motivo: il terzo Suppress Superion era già esaurito quando hai pagato");
+    // The owner's words reach the buyer as written, with no label in front.
+    expect(email.text).toContain("\n\nil terzo Suppress Superion era già esaurito quando hai pagato\n");
+    expect(email.text).not.toContain("Motivo:");
     expect(email.text).toContain("Il resto dell'ordine resta confermato");
     expect(email.text).toContain("5-10 giorni lavorativi");
     expect(email.html).toContain("<strong>25,00 €</strong>");

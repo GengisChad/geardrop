@@ -101,7 +101,7 @@ export function OrderActions({ orderId, status, paymentStatus, role, tracking, s
       <input name="orderId" type="hidden" value={orderId}/>
       <input name="attempt" type="hidden" value={refundAttempt}/>
       <label>Importo EUR (max {(refundable_cents / 100).toFixed(2)})<input defaultValue={(refundable_cents / 100).toFixed(2)} key={refundAttempt} max={(refundable_cents / 100).toFixed(2)} min="0.01" name="amount" required step="0.01" type="number"/></label>
-      <label>Motivo (lo legge anche il cliente nell&rsquo;email)<textarea maxLength={1000} minLength={3} name="reason" placeholder="Es. il pezzo era già esaurito quando hai pagato" required rows={3}/></label>
+      <label>Messaggio al cliente (arriva così com&rsquo;è nell&rsquo;email di rimborso)<textarea maxLength={1000} minLength={3} name="reason" placeholder="Spiega al cliente perché lo rimborsi" required rows={5}/></label>
       {["pending","confirmed","processing"].includes(status) ? <label className={styles.confirm}><input name="restoreStock" type="checkbox"/> Annulla l&rsquo;ordine e rimetti i pezzi a magazzino</label> : null}
       <label className={styles.confirm}><input defaultChecked name="notifyCustomer" type="checkbox"/> Invia l&rsquo;email di rimborso al cliente</label>
       <label className={styles.confirm}><input name="confirmed" required type="checkbox"/> Confermo il rimborso su Stripe</label>
