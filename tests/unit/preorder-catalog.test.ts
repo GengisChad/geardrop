@@ -29,14 +29,14 @@ describe("reviewed catalogue", () => {
       { slug: "blast-pegasus-a-tr", price: 2950, stock: "pre-ordine", availableQuantity: undefined, rating: 0, reviewCount: 0 },
       { slug: "drop-attack-battle-set", price: 4650, stock: "pre-ordine", availableQuantity: undefined, rating: 0, reviewCount: 0 },
       { slug: "sneak-attack-battle-set", price: 4500, stock: "pre-ordine", availableQuantity: undefined, rating: 0, reviewCount: 0 },
-      // The deck case: one product per colour, €20, no stock limit (2026-09-21).
-      { slug: "porta-deck-giallo", price: 2000, stock: "disponibile", availableQuantity: undefined, rating: 0, reviewCount: 0 },
-      { slug: "porta-deck-verde-lime", price: 2000, stock: "disponibile", availableQuantity: undefined, rating: 0, reviewCount: 0 },
-      { slug: "porta-deck-azzurro", price: 2000, stock: "disponibile", availableQuantity: undefined, rating: 0, reviewCount: 0 },
-      { slug: "porta-deck-blu", price: 2000, stock: "disponibile", availableQuantity: undefined, rating: 0, reviewCount: 0 },
-      { slug: "porta-deck-rosa", price: 2000, stock: "disponibile", availableQuantity: undefined, rating: 0, reviewCount: 0 },
-      { slug: "porta-deck-fucsia", price: 2000, stock: "disponibile", availableQuantity: undefined, rating: 0, reviewCount: 0 },
-      { slug: "porta-deck-bianco", price: 2000, stock: "disponibile", availableQuantity: undefined, rating: 0, reviewCount: 0 },
+      // The deck case: one product per colour, €24,50, no stock limit (2026-09-21).
+      { slug: "porta-deck-giallo", price: 2450, stock: "disponibile", availableQuantity: undefined, rating: 0, reviewCount: 0 },
+      { slug: "porta-deck-verde-lime", price: 2450, stock: "disponibile", availableQuantity: undefined, rating: 0, reviewCount: 0 },
+      { slug: "porta-deck-azzurro", price: 2450, stock: "disponibile", availableQuantity: undefined, rating: 0, reviewCount: 0 },
+      { slug: "porta-deck-blu", price: 2450, stock: "disponibile", availableQuantity: undefined, rating: 0, reviewCount: 0 },
+      { slug: "porta-deck-rosa", price: 2450, stock: "disponibile", availableQuantity: undefined, rating: 0, reviewCount: 0 },
+      { slug: "porta-deck-fucsia", price: 2450, stock: "disponibile", availableQuantity: undefined, rating: 0, reviewCount: 0 },
+      { slug: "porta-deck-bianco", price: 2450, stock: "disponibile", availableQuantity: undefined, rating: 0, reviewCount: 0 },
     ]);
   });
 

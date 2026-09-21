@@ -42,10 +42,17 @@ export function applyLiveStock(products: readonly Product[], rows: readonly Live
     const row = bySlug.get(product.slug);
     if (!row) return product;
     const autoPreorder = row.availability_override === null && row.allow_backorder === true;
+    // A pre-order with a fixed number of pieces sells that number and no more: at zero it is
+    // sold out until the owner adds pieces (owner's rule, 2026-09-21; migration 20260921180000).
+    const soldOutPreorder = row.availability_override === "preorder" && row.preorder_allocation <= 0 && row.stock_quantity <= 0;
     return {
       ...withoutCount(product),
       // The database already reads "pre-ordine" at zero; this also holds while that change is deploying.
-      stock: autoPreorder && row.stock_quantity <= 0 && row.stock_status === "esaurito" ? "pre-ordine" : row.stock_status,
+      stock: soldOutPreorder
+        ? "esaurito"
+        : autoPreorder && row.stock_quantity <= 0 && row.stock_status === "esaurito"
+          ? "pre-ordine"
+          : row.stock_status,
       ...(isUnlimitedStock(row)
         ? {}
         : { availableQuantity: row.availability_override === "preorder" ? row.preorder_allocation : row.stock_quantity }),

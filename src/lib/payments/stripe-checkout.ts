@@ -96,10 +96,20 @@ export type CheckoutSessionInput = {
   readonly order: PlaceOrderInput;
   /** Absolute origin the buyer returns to, without a trailing slash. */
   readonly origin: string;
+  /** Milliseconds since the epoch; the session's expiry counts from here. */
+  readonly now?: number;
 };
 
+/**
+ * How long a buyer has to pay once on Stripe. Stock is checked when the session opens, so a
+ * session left open for the default 24 hours could still be paid after the last piece had gone
+ * (a pre-order drop sells out in an hour). Stripe accepts 30 minutes to 24 hours; the margin
+ * keeps a slow clock from asking for less than 30.
+ */
+export const CHECKOUT_SESSION_MINUTES = 35;
+
 export function buildCheckoutSessionFields(
-  { quote, order, origin }: CheckoutSessionInput,
+  { quote, order, origin, now = Date.now() }: CheckoutSessionInput,
   priceIds: ReadonlyMap<string, string>,
 ): Record<string, string | number> {
   const { contact } = order;
@@ -114,6 +124,7 @@ export function buildCheckoutSessionFields(
     // Stripe substitutes the literal placeholder; it must not be URL-encoded.
     success_url: `${origin}/checkout/successo?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/checkout`,
+    expires_at: Math.floor(now / 1000) + CHECKOUT_SESSION_MINUTES * 60,
     // No consent_collection or after_expiration recovery: Stripe refuses promotions consent for
     // Italian accounts ("not available in your country") and fails the whole session, and
     // recovery emails need that consent. Manual promotion codes are fine.

@@ -9,10 +9,10 @@ const deck = PRODUCTS.filter((product) => product.variant?.family === "porta-dec
 const original = PRODUCTS.find((product) => product.slug === "cobalt-drake-4-60f")!;
 
 describe("deck case colours", () => {
-  it("sells every colour of the owner's photo at €20, as an unofficial accessory with no stock limit", () => {
+  it("sells every colour of the owner's photo at €24,50, as an unofficial accessory with no stock limit", () => {
     expect(deck.map((product) => product.variant?.label)).toEqual(["Giallo", "Verde lime", "Azzurro", "Blu", "Rosa", "Fucsia", "Bianco"]);
     for (const product of deck) {
-      expect(product).toMatchObject({ category: "accessori", price: { amount: 2000 }, stock: "disponibile", unofficial: true });
+      expect(product).toMatchObject({ category: "accessori", price: { amount: 2450 }, stock: "disponibile", unofficial: true });
       expect(product.availableQuantity).toBeUndefined();
       expect(product.name).toBe(`Porta Deck ${product.variant?.label}`);
       expect(product.description).toContain("non è prodotto né certificato da Hasbro");
@@ -52,6 +52,28 @@ describe("deck case colours", () => {
       unofficial: true,
     });
     expect(catalogueTraits(original.slug)).toEqual({});
+  });
+});
+
+describe("a pre-order with a fixed number of pieces", () => {
+  const superion = PRODUCTS.find((product) => product.slug === "suppress-superion-0-70lp")!;
+  const row = (preorder_allocation: number) => ({
+    slug: superion.slug,
+    stock_status: "pre-ordine" as const,
+    stock_quantity: 0,
+    preorder_allocation,
+    availability_override: "preorder",
+    allow_backorder: true,
+  });
+
+  it("is sold out once its pieces are gone, even before the database says so", () => {
+    const [product] = applyLiveStock([superion], [row(0)]);
+    expect(product?.stock).toBe("esaurito");
+  });
+
+  it("sells as a pre-order while pieces are left", () => {
+    const [product] = applyLiveStock([superion], [row(2)]);
+    expect(product).toMatchObject({ stock: "pre-ordine", availableQuantity: 2 });
   });
 });
 
