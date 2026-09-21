@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { refundStripeSchema } from "@/lib/admin/orders";
 import { refundNotificationEmail } from "@/lib/orders/refund-email";
@@ -36,6 +38,16 @@ describe("refund email", () => {
     const email = refundNotificationEmail({ ...order, reason: "<b>errore</b> & scuse" });
     expect(email.html).toContain("&#60;b&#62;errore&#60;/b&#62; &#38; scuse");
     expect(email.html).not.toContain("<b>errore</b>");
+  });
+
+  it("records a refund already made in the Stripe dashboard without asking Stripe again", () => {
+    const base = { orderId: 7, amountCents: 2500, reason: "pezzo esaurito", confirmed: true, restoreStock: false, attempt: "3b241101-e2bb-4255-8caf-4136c566a962" };
+    expect(refundStripeSchema.parse(base).alreadyRefunded).toBe(false);
+    expect(refundStripeSchema.parse({ ...base, alreadyRefunded: true }).alreadyRefunded).toBe(true);
+    const action = readFileSync(join(process.cwd(), "src/app/admin/actions/orders.ts"), "utf8");
+    const branch = action.slice(action.indexOf("if (parsed.data.alreadyRefunded) {"));
+    // The dashboard branch closes before the only call that moves money.
+    expect(branch.indexOf("} else {")).toBeLessThan(branch.indexOf('stripe.post<StripeRefund>("/refunds"'));
   });
 
   it("emails the buyer only when the owner leaves the box ticked", () => {

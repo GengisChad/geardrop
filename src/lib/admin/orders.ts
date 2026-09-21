@@ -79,6 +79,11 @@ export const refundStripeSchema = z.object({
   restoreStock: z.boolean(),
   /** Email the buyer once the refund has gone through (the reason is written for them). */
   notifyCustomer: z.boolean().default(false),
+  /**
+   * The owner already refunded this amount from the Stripe dashboard: record it and write to
+   * the buyer, but never ask Stripe for the money a second time.
+   */
+  alreadyRefunded: z.boolean().default(false),
   /** One id per form attempt: a double click reuses it, a new refund gets a new one. */
   attempt: z.uuid(),
 });
