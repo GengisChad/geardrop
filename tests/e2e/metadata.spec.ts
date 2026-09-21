@@ -16,6 +16,11 @@ test.describe("public canonical metadata", () => {
       route: "/prodotto/cobalt-dragoon-2-60c",
       canonical: `${productionOrigin}/prodotto/cobalt-dragoon-2-60c`,
     },
+    // Every colour of the deck case names the first colour as the page to index.
+    {
+      route: "/prodotto/porta-deck-blu",
+      canonical: `${productionOrigin}/prodotto/porta-deck-giallo`,
+    },
     { route: "/chi-siamo", canonical: `${productionOrigin}/chi-siamo` },
     { route: "/assistenza/faq", canonical: `${productionOrigin}/assistenza/faq` },
   ] as const;
