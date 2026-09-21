@@ -35,7 +35,9 @@ function refresh(id: number) {
 }
 
 function failure(error: unknown): OrderActionState {
-  const message = error instanceof Error ? error.message : "";
+  // Supabase RPC errors are plain objects with a message, not Error instances.
+  const message =
+    error instanceof Error ? error.message : typeof error === "object" && error && "message" in error ? String(error.message) : "";
   if (message.includes("GD_ORDER_NOT_FOUND")) return { ok: false, message: "Ordine non trovato." };
   if (message.includes("GD_ORDER_INVALID_TRANSITION")) return { ok: false, message: "Transizione non consentita per lo stato attuale." };
   if (message.includes("GD_ORDER_INVALID_TRACKING")) return { ok: false, message: "Controlla corriere, codice e URL HTTPS." };
