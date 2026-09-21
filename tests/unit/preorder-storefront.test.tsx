@@ -60,8 +60,10 @@ describe("truthful public presentation", () => {
 
     // The hero deals the 2026-09-21 pre-order drop, so it says so.
     expect(html).toContain("Pre-ordini aperti");
-    expect(html).toContain("Tutto il drop");
-    expect(html).toContain("Scegli. Carica.");
+    expect(html).toContain("Pronti da spedire");
+    expect(html).toContain("Tutto il resto");
+    // The owner took the fight animation off the homepage on 2026-09-21.
+    expect(html).not.toContain("Scegli. Carica.");
     expect(html).not.toContain("Più venduti");
     expect(html).not.toContain("Scelti per il competitivo");
     expect(html).not.toContain("GEAR//DROP Club");

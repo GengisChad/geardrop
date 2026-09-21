@@ -16,9 +16,10 @@ test.describe("truthful preorder storefront", () => {
 
   test("omits fabricated home, footer, and zero-review presentation", async ({ page }) => {
     await page.goto("/");
-    // The Holo Drop homepage: the new releases lead the hero, the whole catalogue follows.
+    // The homepage: the new releases lead the hero, what ships now follows, then the rest.
     await expect(page.getByRole("heading", { name: "Nuove uscite", exact: true })).toHaveCount(1);
-    await expect(page.getByRole("heading", { name: "Tutto il drop" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Pronti da spedire" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Tutto il resto" })).toBeVisible();
     await expect(page.getByTestId("product-carousel")).toHaveCount(0);
     // The hero says what it deals: the 2026-09-21 drop is a pre-order.
     await expect(page.locator("body")).toContainText("Pre-ordini aperti");

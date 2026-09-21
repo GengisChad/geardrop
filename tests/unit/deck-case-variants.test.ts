@@ -17,7 +17,8 @@ describe("deck case colours", () => {
       expect(product.name).toBe(`Porta Deck ${product.variant?.label}`);
       expect(product.description).toContain("non è prodotto né certificato da Hasbro");
       expect(product.specs).toContainEqual({ label: "Produttore", value: "Non ufficiale, non prodotto da Hasbro" });
-      expect(product.images[0]?.src).toBe(`/products/${product.slug}.webp`);
+      // One picture for every colour: the case above "Scegli il tuo colore" and the swatches.
+      expect(product.images.map((image) => image.src)).toEqual(["/products/porta-deck.webp"]);
     }
   });
 

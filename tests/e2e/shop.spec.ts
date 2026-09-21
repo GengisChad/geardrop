@@ -8,13 +8,15 @@ const buyPanel = (page: Page) => page.locator("#buy-panel");
 
 
 test.describe("home", () => {
-  test("renders the Holo Drop hero, the arena and the whole drop", async ({ page }) => {
+  test("renders the drop up front, what ships now, then the rest, with no fight animation", async ({ page }) => {
     await page.goto("/");
 
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Beyblade X originali");
     await expect(page.getByRole("link", { name: "GEAR//DROP — vai alla home" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Scegli. Carica. Lancia." })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Tutto il drop" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Scegli. Carica. Lancia." })).toHaveCount(0);
+    await expect(page.getByTestId("arena")).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Pronti da spedire" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Tutto il resto" })).toBeVisible();
     await expect(page.getByTestId("product-carousel")).toHaveCount(0);
     await expect(page.getByTestId("product-card").first()).toBeVisible();
   });

@@ -1,7 +1,5 @@
 import type { Route } from "next";
 import Link from "next/link";
-import { Fragment } from "react";
-import { Arena } from "@/components/home/arena";
 import { Hero, type HeroContent } from "@/components/home/hero";
 import { CategoryTiles } from "@/components/home/category-tiles";
 import { StatusLegend } from "@/components/home/status-legend";
@@ -128,16 +126,14 @@ function renderSection(
   switch (section.section_type) {
     case "hero":
       // Above the fold and the LCP element: never wrapped in Reveal, must paint at once.
-      // The Arena launches the same cards the hero deals, so it always follows it.
+      // The fight animation that followed it is gone (owner, 2026-09-21).
       return (
-        <Fragment key={section.id}>
-          <Hero
-            products={fallback.heroProducts}
-            isNewRelease={fallback.heroIsNewRelease}
-            content={heroContentOf(section)}
-          />
-          <Arena products={fallback.heroProducts} />
-        </Fragment>
+        <Hero
+          key={section.id}
+          products={fallback.heroProducts}
+          isNewRelease={fallback.heroIsNewRelease}
+          content={heroContentOf(section)}
+        />
       );
 
     case "categories":

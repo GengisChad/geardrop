@@ -45,17 +45,20 @@ export type ProductImage = {
   readonly alt: string;
 };
 
-/** Every colour of the deck case side by side (scripts/cut_deck_cases.py), shown second on each colour's page. */
-const DECK_LINE_UP = {
-  src: "/products/porta-deck-colori.webp",
+/**
+ * The deck case's one picture, shared by every colour: the owner's yellow case above "Scegli il
+ * tuo colore" and a swatch per colour (scripts/cut_deck_cases.py, owner's choice 2026-09-21).
+ */
+const DECK_IMAGE = {
+  src: "/products/porta-deck.webp",
   width: 1000,
   height: 1000,
-  alt: "I sette porta deck: giallo, verde lime, azzurro, blu, rosa, fucsia e bianco",
+  alt: "Porta deck Beyblade X giallo a tre scomparti, disponibile in giallo, verde lime, azzurro, blu, rosa, fucsia e bianco",
 } as const;
 
 /**
- * Owner-supplied packshots, normalised to square WebP tiles. The deck cases are cut out of one
- * photo of all of them by scripts/cut_deck_cases.py.
+ * Owner-supplied packshots, normalised to square WebP tiles. Every deck case colour shows the
+ * same picture, which offers them all.
  */
 export const productImages = {
   "cobalt-drake-4-60f": [
@@ -190,69 +193,13 @@ export const productImages = {
       alt: "Confezione Beyblade X Shatter Horus 9-65GB con lanciatore e trottola argento e rossa",
     },
   ],
-  "porta-deck-giallo": [
-    {
-      src: "/products/porta-deck-giallo.webp",
-      width: 1000,
-      height: 1000,
-      alt: "Porta deck giallo con la scritta Beyblade X in nero e tre scomparti a clip",
-    },
-    DECK_LINE_UP,
-  ],
-  "porta-deck-verde-lime": [
-    {
-      src: "/products/porta-deck-verde-lime.webp",
-      width: 1000,
-      height: 1000,
-      alt: "Porta deck verde lime con la scritta Beyblade X in nero e tre scomparti a clip",
-    },
-    DECK_LINE_UP,
-  ],
-  "porta-deck-azzurro": [
-    {
-      src: "/products/porta-deck-azzurro.webp",
-      width: 1000,
-      height: 1000,
-      alt: "Porta deck azzurro con la scritta Beyblade X in bianco e tre scomparti a clip",
-    },
-    DECK_LINE_UP,
-  ],
-  "porta-deck-blu": [
-    {
-      src: "/products/porta-deck-blu.webp",
-      width: 1000,
-      height: 1000,
-      alt: "Porta deck blu con la scritta Beyblade X in bianco e tre scomparti a clip",
-    },
-    DECK_LINE_UP,
-  ],
-  "porta-deck-rosa": [
-    {
-      src: "/products/porta-deck-rosa.webp",
-      width: 1000,
-      height: 1000,
-      alt: "Porta deck rosa con la scritta Beyblade X in bianco e tre scomparti a clip",
-    },
-    DECK_LINE_UP,
-  ],
-  "porta-deck-fucsia": [
-    {
-      src: "/products/porta-deck-fucsia.webp",
-      width: 1000,
-      height: 1000,
-      alt: "Porta deck fucsia con la scritta Beyblade X in bianco e tre scomparti a clip",
-    },
-    DECK_LINE_UP,
-  ],
-  "porta-deck-bianco": [
-    {
-      src: "/products/porta-deck-bianco.webp",
-      width: 1000,
-      height: 1000,
-      alt: "Porta deck bianco con la scritta Beyblade X in viola e tre scomparti a clip",
-    },
-    DECK_LINE_UP,
-  ],
+  "porta-deck-giallo": [DECK_IMAGE],
+  "porta-deck-verde-lime": [DECK_IMAGE],
+  "porta-deck-azzurro": [DECK_IMAGE],
+  "porta-deck-blu": [DECK_IMAGE],
+  "porta-deck-rosa": [DECK_IMAGE],
+  "porta-deck-fucsia": [DECK_IMAGE],
+  "porta-deck-bianco": [DECK_IMAGE],
 } as const satisfies Record<string, readonly ProductImage[]>;
 
 export type ProductSlug = keyof typeof productImages;
@@ -263,7 +210,7 @@ export type ProductSlug = keyof typeof productImages;
  */
 const PRODUCT_CUTOUTS: Readonly<Record<string, string>> = Object.fromEntries([
   ...Object.keys(productImages).map((slug) => [`/products/${slug}.webp`, `/products/cutout/${slug}.webp`]),
-  [DECK_LINE_UP.src, "/products/cutout/porta-deck-colori.webp"],
+  [DECK_IMAGE.src, "/products/cutout/porta-deck.webp"],
 ]);
 
 /** The cut-out for a packshot path, or null when that image has none. */

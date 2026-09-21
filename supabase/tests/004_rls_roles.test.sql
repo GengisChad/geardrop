@@ -84,7 +84,7 @@ select results_eq(
 );
 select results_eq(
   $$select count(*)::bigint from public.product_images$$,
-  array[28::bigint],
+  array[21::bigint],
   'anon sees only images belonging to eligible published products'
 );
 reset role;
