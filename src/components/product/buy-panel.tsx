@@ -8,7 +8,7 @@ import { RestockForm } from "@/components/product/restock-form";
 import { Button } from "@/components/ui/button";
 import { useWishlist } from "@/lib/store/wishlist";
 import { MAX_QUANTITY_PER_LINE } from "@/lib/store/cart";
-import { PREORDER_DELIVERY, STOCK_HINT, STOCK_LABEL, deliveryClause, isPurchasable, preorderDelivery } from "@/lib/labels";
+import { PREORDER_DELIVERY, deliveryClause, isPurchasable, stockHint, stockLabel } from "@/lib/labels";
 import type { Product, StockStatus } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
 
@@ -40,7 +40,9 @@ export function BuyPanel({ product }: { product: Product }) {
   const hydrated = useWishlist((s) => s.hydrated);
   const saved = useWishlist((s) => s.slugs.includes(product.slug));
   const isSaved = hydrated && saved;
-  const Icon = STATUS_ICON[product.stock];
+  // A sold-out drop wears the pre-order's own icon and colour: it is waiting, not gone.
+  const tone: StockStatus = product.stock === "esaurito" && product.releasePreorder ? "pre-ordine" : product.stock;
+  const Icon = STATUS_ICON[tone];
   // A product that sells past its stock is capped only by the per-line limit.
   const quantityCap = product.autoPreorder
     ? MAX_QUANTITY_PER_LINE
@@ -51,15 +53,13 @@ export function BuyPanel({ product }: { product: Product }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className={cn("flex items-center gap-3 rounded-xl border px-4 py-3", STATUS_PANEL[product.stock])}>
-        <Icon className={cn("size-5 shrink-0", STATUS_TEXT[product.stock])} strokeWidth={2.25} aria-hidden="true" />
+      <div className={cn("flex items-center gap-3 rounded-xl border px-4 py-3", STATUS_PANEL[tone])}>
+        <Icon className={cn("size-5 shrink-0", STATUS_TEXT[tone])} strokeWidth={2.25} aria-hidden="true" />
         <div>
-          <p className={cn("gd-display text-small font-bold tracking-wider", STATUS_TEXT[product.stock])}>
-            {STOCK_LABEL[product.stock]}
+          <p className={cn("gd-display text-small font-bold tracking-wider", STATUS_TEXT[tone])}>
+            {stockLabel(product)}
           </p>
-          <p className="text-[0.6875rem] text-grey-600">
-            {product.stock === "pre-ordine" ? preorderDelivery(product.releasePreorder) : STOCK_HINT[product.stock]}
-          </p>
+          <p className="text-[0.6875rem] text-grey-600">{stockHint(product)}</p>
           {product.stock === "pre-ordine" && !product.autoPreorder && product.availableQuantity !== undefined ? (
             <p className="mt-1 tabular text-[0.6875rem] font-bold text-preorder" data-testid="preorder-remaining">
               {product.availableQuantity} pre-ordini rimasti
@@ -94,7 +94,7 @@ export function BuyPanel({ product }: { product: Product }) {
       ) : null}
 
       {product.stock === "esaurito" ? (
-        <RestockForm slug={product.slug} name={product.name} />
+        <RestockForm slug={product.slug} name={product.name} {...(product.releasePreorder ? { releasePreorder: true } : {})} />
       ) : (
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="flex-1">

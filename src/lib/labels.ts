@@ -123,6 +123,24 @@ export function isPurchasable(stock: StockStatus): boolean {
   return stock !== "esaurito";
 }
 
+type Availability = { readonly stock: StockStatus; readonly releasePreorder?: boolean };
+
+/**
+ * A drop that has sold its pieces is out of pieces, not out of the catalogue: it keeps saying
+ * pre-order and offers the notice, so nobody reads "esaurito" and gives up on a release that
+ * reopens (owner, 2026-09-22). Everything else keeps its own word.
+ */
+export function stockLabel(product: Availability): string {
+  return product.stock === "esaurito" && product.releasePreorder ? "Pre-ordine esaurito" : STOCK_LABEL[product.stock];
+}
+
+/** The sub-line under the status: the wait while it sells, the promise of a notice once it cannot. */
+export function stockHint(product: Availability): string {
+  if (product.stock === "pre-ordine") return preorderDelivery(product.releasePreorder);
+  if (product.stock === "esaurito" && product.releasePreorder) return "Pre-ordini chiusi: ti avvisiamo appena riaprono";
+  return STOCK_HINT[product.stock];
+}
+
 /** Units of a quote line that ship as a pre-order; a pre-order line without a split waits whole. */
 export function preorderUnits(line: { readonly quantity: number; readonly stock: StockStatus; readonly preorderQuantity?: number }): number {
   return line.preorderQuantity ?? (line.stock === "pre-ordine" ? line.quantity : 0);

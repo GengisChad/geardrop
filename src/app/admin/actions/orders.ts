@@ -1,14 +1,17 @@
 "use server";
 
+import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { requireStaffRole, requireUser } from "@/lib/auth/guards";
 import { sendEmail, SHOP_EMAIL } from "@/lib/email/resend";
 import { carrierById, normalizeTrackingCode } from "@/lib/orders/carriers";
+import { customerMessageEmail } from "@/lib/orders/customer-message-email";
 import { refundNotificationEmail } from "@/lib/orders/refund-email";
 import { shippingNotificationEmail } from "@/lib/orders/shipping-email";
 import type { Database } from "@/lib/supabase/database.types";
 import {
+  messageCustomerSchema,
   orderCancellationSchema,
   orderNoteSchema,
   orderTransitionSchema,
@@ -99,6 +102,58 @@ export async function addOrderNoteAction(_previous: OrderActionState, formData: 
     refresh(parsed.data.orderId);
     return { ok: true, message: "Nota interna aggiunta." };
   } catch (error) { return failure(error); }
+}
+
+/**
+ * Writes to the buyer of an order in the shop's own template, and keeps a note of it on the
+ * order, so an answer given by email is never lost to the next person reading the order.
+ */
+export async function messageCustomerAction(_previous: OrderActionState, formData: FormData): Promise<OrderActionState> {
+  const parsed = messageCustomerSchema.safeParse({
+    orderId: text(formData, "orderId"),
+    subject: text(formData, "subject"),
+    message: text(formData, "message"),
+    confirmed: formData.get("confirmed") === "on",
+  });
+  if (!parsed.success) return { ok: false, message: "Oggetto, messaggio e conferma sono obbligatori." };
+
+  try {
+    const client = await clientFor(MANAGERS);
+    const { data: order, error } = await client
+      .from("orders")
+      .select("id,order_number,email,shipping_address_snapshot")
+      .eq("id", parsed.data.orderId)
+      .single();
+    if (error || !order) return { ok: false, message: "Ordine non trovato." };
+
+    // The same words to the same order are one email, however often the button is pressed.
+    const fingerprint = createHash("sha256").update(`${parsed.data.subject}\n${parsed.data.message}`).digest("hex").slice(0, 24);
+    const sent = await sendEmail({
+      ...customerMessageEmail({
+        orderNumber: order.order_number,
+        email: order.email,
+        shippingAddress: order.shipping_address_snapshot,
+        subject: parsed.data.subject,
+        message: parsed.data.message,
+      }),
+      replyTo: SHOP_EMAIL,
+      idempotencyKey: `gd-order-message-${order.order_number}-${fingerprint}`,
+    });
+    if (!sent.ok) return { ok: false, message: `Email non inviata: ${emailFailure(sent.reason, sent.detail)}` };
+
+    // The order carries what was said, even if the reply lands in another inbox.
+    const noted = await client.rpc("add_order_note", {
+      p_order_id: parsed.data.orderId,
+      // The note table takes 4000 characters; the message is capped at 2000, so nothing is lost.
+      p_note: `Email al cliente · ${parsed.data.subject}: ${parsed.data.message}`.slice(0, 4000),
+    });
+    refresh(parsed.data.orderId);
+    return noted.error
+      ? { ok: true, message: "Email inviata al cliente, ma la nota sull'ordine non è stata salvata." }
+      : { ok: true, message: "Email inviata al cliente." };
+  } catch (error) {
+    return failure(error);
+  }
 }
 
 export async function prepareOrderRefundAction(_previous: OrderActionState, formData: FormData): Promise<OrderActionState> {

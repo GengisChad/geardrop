@@ -75,8 +75,9 @@ export function productLine(product: Pick<Product, "specs">): string | null {
  * Scarcity line: what is left when the number is small, the plain status otherwise. A pre-order
  * says so, so its allocation is never mistaken for pieces on the shelf.
  */
-export function availabilityLine(product: Pick<Product, "stock" | "availableQuantity" | "bundleOf">): string {
-  if (product.stock === "esaurito") return STOCK_LABEL.esaurito;
+export function availabilityLine(product: Pick<Product, "stock" | "availableQuantity" | "bundleOf" | "releasePreorder">): string {
+  // A sold-out drop keeps its name: it reopens, and the card offers the notice, not the cart.
+  if (product.stock === "esaurito") return product.releasePreorder ? "Pre-ordine esaurito" : STOCK_LABEL.esaurito;
   const left = product.availableQuantity;
   if (left !== undefined && left > 0 && left <= 10) {
     if (product.stock === "pre-ordine") return `Solo ${left} in pre-ordine`;
