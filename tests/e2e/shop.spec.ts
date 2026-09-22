@@ -159,7 +159,9 @@ test.describe("product page", () => {
     const blocks = await page.locator('script[type="application/ld+json"]').allInnerTexts();
     const data = blocks.map((raw) => JSON.parse(raw)).find((item) => item["@type"] === "Product");
     expect(data["@type"]).toBe("Product");
-    expect(data.offers.price).toBe("20.00");
+    // The price Google reads is the catalogue's, whatever the owner sets it to.
+    const enlil = PRODUCTS.find((product) => product.slug === "hurricane-enlil-is-7-55t")!;
+    expect(data.offers.price).toBe((enlil.price.amount / 100).toFixed(2));
     expect(data.offers.availability).toBe("https://schema.org/InStock");
 
     // A pre-order says so in the same place.

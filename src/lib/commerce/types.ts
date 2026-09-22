@@ -81,6 +81,11 @@ export type Product = {
    * pre-order, and at zero the product reads "pre-ordine" instead of sold out.
    */
   readonly autoPreorder?: boolean;
+  /**
+   * Sold before it exists: the pieces are bought from the distributor and ship at the Hasbro
+   * release, not from a shelf. It changes only how long the shop says the wait is.
+   */
+  readonly releasePreorder?: true;
   readonly tags: readonly PromoTag[];
   readonly rating: number;
   readonly reviewCount: number;
@@ -138,6 +143,8 @@ export type CartQuoteLine = {
   readonly availableQuantity?: number;
   /** The product sells beyond its stock as a pre-order (see Product.autoPreorder). */
   readonly autoPreorder?: boolean;
+  /** Set when the product only ships at its release (see Product.releasePreorder). */
+  readonly releasePreorder?: true;
   /** Units of this line that are not on the shelf and ship as a pre-order. */
   readonly preorderQuantity?: number;
   /** Italian sentence when this line cannot be ordered as requested, else null. */

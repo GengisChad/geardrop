@@ -47,7 +47,11 @@ export function ProductDetails({ product }: { product: Product }) {
       content: (
         <div className="flex flex-col gap-2 leading-relaxed">
           {product.stock === "pre-ordine" ? (
-            <p>Questo prodotto è in pre-ordine: potrebbe arrivare tra 10/15 giorni lavorativi dalla conferma.</p>
+            product.releasePreorder ? (
+              <p>Questo prodotto è una nuova uscita in pre-ordine: arriva con l&rsquo;uscita Hasbro, circa 20 giorni lavorativi, poi dipende dalle consegne.</p>
+            ) : (
+              <p>Questo prodotto è in pre-ordine: potrebbe arrivare tra 10/15 giorni lavorativi dalla conferma.</p>
+            )
           ) : (
             <p>Dopo la conferma del pagamento GEAR//DROP prepara il pacco e lo affida al corriere.</p>
           )}

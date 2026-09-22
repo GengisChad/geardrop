@@ -23,7 +23,9 @@ select results_eq($$select count(*)::integer from public.products where publicat
 select results_eq($$select count(*)::integer from public.products
   where publication_status = 'published' and availability_override is null and stock_quantity = 0 and allow_backorder$$,
   array[7], 'the seven older pieces sell as open pre-orders');
-select results_eq($$select count(*)::integer from public.products where availability_override = 'preorder'::public.availability_override and preorder_allocation = 9$$, array[5], 'the pre-order drop carries nine allocations each');
+select results_eq($$select slug, preorder_allocation from public.products where availability_override = 'preorder'::public.availability_override order by sort_order$$,
+  $$values ('cobalt-drake-4-60f',9),('mirage-clock-9-65b',9),('suppress-superion-0-70lp',5),('strike-dran-4-50ff',9),('tread-croc-tq-5-50gn',9)$$,
+  'the pre-order drop carries the allocations the owner set');
 select is((select accept_orders from public.site_settings where singleton), false, 'order acceptance remains disabled');
 select results_eq($$select count(*)::integer from public.orders$$, array[0], 'seed invents no orders');
 select results_eq($$select count(*)::integer from public.coupons$$, array[0], 'seed invents no coupons');

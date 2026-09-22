@@ -22,8 +22,8 @@ export type HeroContent = {
   readonly ctaHref?: string | null;
 };
 
-/** The whole current drop at a glance: up to four cards, side by side from lg. */
-export const HERO_CARDS = 4;
+/** The whole current drop at a glance: up to five cards, side by side from lg. */
+export const HERO_CARDS = 5;
 
 function listNames(products: readonly Product[]): string {
   const names = products.map((product) => displayName(product.name));
@@ -93,7 +93,7 @@ export function Hero({
         </div>
 
         <h2 className="sr-only">{isNewRelease ? "Nuove uscite" : "In evidenza"}</h2>
-        <ul data-testid="hero-products" className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 xl:gap-5">
+        <ul data-testid="hero-products" className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5 xl:gap-5">
           {shown.map((product, index) => (
             <li key={product.slug}>
               <ProductCard product={product} showTagline priority={index < 2} />

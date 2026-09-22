@@ -17,14 +17,34 @@ export const STOCK_LABEL: Record<StockStatus, string> = {
 /** Standard in-stock delivery promise shown across checkout, cart and the PDP trust bar. */
 export const STANDARD_DELIVERY = "Consegna in 1-5 giorni lavorativi, a seconda del corriere";
 
-/** How long a pre-ordered piece may take, wherever a pre-order is sold or confirmed. */
+/** How long a piece bought beyond the shelf may take, wherever a pre-order is sold or confirmed. */
 export const PREORDER_DELIVERY = "Potrebbe arrivare tra 10/15 giorni lavorativi";
 
-/** Sub-line shown next to the status in the legend and on the PDP panel. */
+/** A drop that has not been released yet: it reaches Italy with Hasbro's release (owner, 2026-09-22). */
+export const RELEASE_DELIVERY = "Arriva con l'uscita Hasbro, tra circa 20 giorni lavorativi, poi dipende dalle consegne";
+
+/** The wait to show: the release one for an unreleased drop, the shelf one otherwise. */
+export function preorderDelivery(releasePreorder?: boolean): string {
+  return releasePreorder ? RELEASE_DELIVERY : PREORDER_DELIVERY;
+}
+
+/**
+ * A delivery line used inside a sentence. Only the first letter drops its case, so a brand in
+ * the middle of it keeps its own ("uscita Hasbro", never "uscita hasbro").
+ */
+export function deliveryClause(text: string): string {
+  return text.charAt(0).toLowerCase() + text.slice(1);
+}
+
+/**
+ * Sub-line shown next to the status in the legend. A pre-order has two possible waits, so the
+ * legend sends the shopper to the product, which knows which one it is; the product panel says
+ * the wait itself (preorderDelivery).
+ */
 export const STOCK_HINT: Record<StockStatus, string> = {
   disponibile: "Disponibilità indicata nel catalogo",
   "in-arrivo": "Disponibilità in aggiornamento",
-  "pre-ordine": PREORDER_DELIVERY,
+  "pre-ordine": "Tempi indicati su ogni scheda prodotto",
   esaurito: "Attualmente non disponibile",
 };
 
@@ -108,18 +128,27 @@ export function preorderUnits(line: { readonly quantity: number; readonly stock:
   return line.preorderQuantity ?? (line.stock === "pre-ordine" ? line.quantity : 0);
 }
 
+type DeliveryLine = {
+  readonly quantity: number;
+  readonly stock: StockStatus;
+  readonly preorderQuantity?: number;
+  readonly releasePreorder?: boolean;
+};
+
 /** The delivery line for a cart: in-stock time, pre-order time, or both when the cart mixes them. */
-export function cartDelivery(lines: readonly { readonly quantity: number; readonly stock: StockStatus; readonly preorderQuantity?: number }[]): string {
+export function cartDelivery(lines: readonly DeliveryLine[]): string {
   const waiting = lines.reduce((sum, line) => sum + preorderUnits(line), 0);
   const total = lines.reduce((sum, line) => sum + line.quantity, 0);
   if (waiting === 0) return STANDARD_DELIVERY;
-  if (waiting >= total) return PREORDER_DELIVERY;
-  return `${STANDARD_DELIVERY}; i pre-ordini potrebbero arrivare tra 10/15 giorni lavorativi`;
+  // A cart that waits for a release waits at least that long, whatever else is in it.
+  const release = lines.some((line) => line.releasePreorder && preorderUnits(line) > 0);
+  if (waiting >= total) return preorderDelivery(release);
+  return `${STANDARD_DELIVERY}; i pre-ordini ${release ? "arrivano con l'uscita Hasbro, tra circa 20 giorni lavorativi" : "potrebbero arrivare tra 10/15 giorni lavorativi"}`;
 }
 
 /** "1 in pre-ordine" or "In pre-ordine" when the whole line waits, followed by the delivery time. */
-export function preorderNote(line: { readonly quantity: number; readonly stock: StockStatus; readonly preorderQuantity?: number }): string | null {
+export function preorderNote(line: DeliveryLine): string | null {
   const units = preorderUnits(line);
   if (units <= 0) return null;
-  return `${units >= line.quantity ? "In pre-ordine" : `${units} in pre-ordine`} · ${PREORDER_DELIVERY.toLowerCase()}`;
+  return `${units >= line.quantity ? "In pre-ordine" : `${units} in pre-ordine`} · ${deliveryClause(preorderDelivery(line.releasePreorder))}`;
 }

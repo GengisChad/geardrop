@@ -13,16 +13,16 @@ describe("reviewed catalogue", () => {
         reviewCount,
       })),
     ).toEqual([
-      // The 2026-09-21 pre-order drop leads the shop, nine allocations each.
+      // The 2026-09-21 pre-order drop leads the shop: nine pieces each, five left of Suppress Superion.
       { slug: "cobalt-drake-4-60f", price: 2000, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
       { slug: "mirage-clock-9-65b", price: 1950, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
-      { slug: "suppress-superion-0-70lp", price: 2500, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
-      { slug: "strike-dran-4-50ff", price: 2500, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
+      { slug: "suppress-superion-0-70lp", price: 2500, stock: "pre-ordine", availableQuantity: 5, rating: 0, reviewCount: 0 },
+      { slug: "strike-dran-4-50ff", price: 2300, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
       { slug: "tread-croc-tq-5-50gn", price: 2500, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
       // The Infinity Starters follow, then the rest of the catalogue.
       { slug: "glory-valkerion-lf", price: 3000, stock: "pre-ordine", availableQuantity: undefined, rating: 0, reviewCount: 0 },
-      { slug: "hurricane-enlil-is-7-55t", price: 2000, stock: "disponibile", availableQuantity: 10, rating: 0, reviewCount: 0 },
-      { slug: "shatter-horus-9-65gb", price: 2000, stock: "disponibile", availableQuantity: 8, rating: 0, reviewCount: 0 },
+      { slug: "hurricane-enlil-is-7-55t", price: 1800, stock: "disponibile", availableQuantity: 10, rating: 0, reviewCount: 0 },
+      { slug: "shatter-horus-9-65gb", price: 1800, stock: "disponibile", availableQuantity: 8, rating: 0, reviewCount: 0 },
       { slug: "cobalt-dragoon-2-60c", price: 2550, stock: "pre-ordine", availableQuantity: undefined, rating: 0, reviewCount: 0 },
       { slug: "soar-phoenix-9-60gf", price: 3200, stock: "pre-ordine", availableQuantity: undefined, rating: 0, reviewCount: 0 },
       { slug: "saber-samurai-2-70l", price: 2790, stock: "pre-ordine", availableQuantity: undefined, rating: 0, reviewCount: 0 },

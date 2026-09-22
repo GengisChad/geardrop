@@ -37,12 +37,12 @@ with seed(category_slug, slug, sku, stock_quantity, availability_override, preor
   values
   ('beyblade-x', 'cobalt-drake-4-60f', 'COBALT-DRAKE-4-60F', 0, 'preorder'::public.availability_override, 9, 'Cobalt Drake 4-60F', 'Attacco BX. Lame di cristallo.', 'Cobalt Drake 4-60F è una trottola d''attacco della linea BX: la blade trasparente dal profilo affilato concentra il peso sulle punte, il Ratchet 4-60 tiene l''assetto basso e il Bit F (Flat) la lancia in traiettorie rapide e aggressive lungo il bordo dello stadio. Richiede lanciatore e Beystadium Beyblade X (venduti separatamente).', 2000, null, 'attacco', 0, 0, 0),
   ('beyblade-x', 'mirage-clock-9-65b', 'MIRAGE-CLOCK-9-65B', 0, 'preorder'::public.availability_override, 9, 'Mirage Clock 9-65B', 'Stamina UX. Gira finché l''altro si ferma.', 'Mirage Clock 9-65B è una trottola stamina della linea UX: la blade rotonda con corona dentata distribuisce il peso sul bordo per restare in piedi a lungo, il Ratchet 9-65 alza l''assetto e il Bit B (Ball) riduce l''attrito sulla punta. Richiede lanciatore e Beystadium Beyblade X (venduti separatamente).', 1950, null, 'stamina', 0, 0, 1),
-  ('beyblade-x', 'suppress-superion-0-70lp', 'SUPPRESS-SUPERION-0-70LP', 0, 'preorder'::public.availability_override, 9, 'Suppress Superion 0-70LP', 'Bilanciata BX. Tiene il centro.', 'Suppress Superion 0-70LP è una trottola bilanciata della linea BX: la blade con il leone dorato unisce massa e superfici di contatto larghe per assorbire gli urti, mentre il Ratchet 0-70 e il Bit LP (Low Point) la tengono alta sul centro dello stadio, dove l''attacco avversario perde efficacia. Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).', 2500, null, 'bilanciato', 0, 0, 2),
-  ('beyblade-x', 'strike-dran-4-50ff', 'STRIKE-DRAN-4-50FF', 0, 'preorder'::public.availability_override, 9, 'Strike Dran 4-50FF', 'Attacco BX. Blade interna in metallo.', 'Strike Dran 4-50FF è una trottola d''attacco della linea BX: la blade monta una lama interna in metallo che porta la massa verso il centro, il Ratchet 4-50 la tiene bassa e il Bit FF (Flat Force) la spinge in corse veloci sul bordo, pronte a colpire di taglio. Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).', 2500, null, 'attacco', 0, 0, 3),
+  ('beyblade-x', 'suppress-superion-0-70lp', 'SUPPRESS-SUPERION-0-70LP', 0, 'preorder'::public.availability_override, 5, 'Suppress Superion 0-70LP', 'Bilanciata BX. Tiene il centro.', 'Suppress Superion 0-70LP è una trottola bilanciata della linea BX: la blade con il leone dorato unisce massa e superfici di contatto larghe per assorbire gli urti, mentre il Ratchet 0-70 e il Bit LP (Low Point) la tengono alta sul centro dello stadio, dove l''attacco avversario perde efficacia. Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).', 2500, null, 'bilanciato', 0, 0, 2),
+  ('beyblade-x', 'strike-dran-4-50ff', 'STRIKE-DRAN-4-50FF', 0, 'preorder'::public.availability_override, 9, 'Strike Dran 4-50FF', 'Attacco BX. Blade interna in metallo.', 'Strike Dran 4-50FF è una trottola d''attacco della linea BX: la blade monta una lama interna in metallo che porta la massa verso il centro, il Ratchet 4-50 la tiene bassa e il Bit FF (Flat Force) la spinge in corse veloci sul bordo, pronte a colpire di taglio. Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).', 2300, null, 'attacco', 0, 0, 3),
   ('beyblade-x', 'tread-croc-tq-5-50gn', 'TREAD-CROC-TQ-5-50GN', 0, 'preorder'::public.availability_override, 9, 'Tread Croc TQ 5-50GN', 'Attacco CX. Quattro pezzi da combinare.', 'Tread Croc TQ 5-50GN è una trottola d''attacco della linea CX: la blade si scompone in quattro pezzi — lock chip, main blade, assist blade e il resto dell''assetto — per costruire combinazioni su misura, con Ratchet 5-50 e Bit GN. Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).', 2500, null, 'attacco', 0, 0, 4),
   ('beyblade-x', 'glory-valkerion-lf', 'GLORY-VALKERION-LF', 0, null::public.availability_override, 0, 'Glory Valkerion LF', 'Attacco UX. Blade e ratchet in un pezzo.', 'Glory Valkerion LF è una trottola d''attacco a rotazione destra della linea UX: la blade integra il ratchet in un unico pezzo e il Bit Low Flat (LF), a punta piatta e bassa, la spinge in movimenti rapidi e aggressivi per agganciare l''Xtreme Line e scatenare l''Xtreme Dash. Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).', 3000, null, 'attacco', 0, 0, 5),
-  ('beyblade-x', 'hurricane-enlil-is-7-55t', 'HURRICANE-ENLIL-IS-7-55T', 10, null::public.availability_override, 0, 'Hurricane Enlil IS 7-55T', 'Bilanciata CX. Blade Infinity scomponibile.', 'Hurricane Enlil IS 7-55T è una trottola bilanciata a rotazione destra della linea CX: la blade Infinity si scompone in lock chip, over blade, blade metallica e assist blade per costruire l''assetto su misura, con Ratchet 7-55 e Bit T. Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).', 2000, null, 'bilanciato', 0, 0, 6),
-  ('beyblade-x', 'shatter-horus-9-65gb', 'SHATTER-HORUS-9-65GB', 8, null::public.availability_override, 0, 'Shatter Horus 9-65GB', 'Stamina BX. Metallo oltre i ganci.', 'Shatter Horus 9-65GB è una trottola stamina della linea BX: la blade dalla forma rotonda estende il metallo oltre i ganci del lanciatore e riveste di metallo anche il bordo del gear chip, che raffigura il dio egizio Horus. Monta il Ratchet 9-65 e il Bit GB. Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).', 2000, null, 'stamina', 0, 0, 7),
+  ('beyblade-x', 'hurricane-enlil-is-7-55t', 'HURRICANE-ENLIL-IS-7-55T', 10, null::public.availability_override, 0, 'Hurricane Enlil IS 7-55T', 'Bilanciata CX. Blade Infinity scomponibile.', 'Hurricane Enlil IS 7-55T è una trottola bilanciata a rotazione destra della linea CX: la blade Infinity si scompone in lock chip, over blade, blade metallica e assist blade per costruire l''assetto su misura, con Ratchet 7-55 e Bit T. Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).', 1800, null, 'bilanciato', 0, 0, 6),
+  ('beyblade-x', 'shatter-horus-9-65gb', 'SHATTER-HORUS-9-65GB', 8, null::public.availability_override, 0, 'Shatter Horus 9-65GB', 'Stamina BX. Metallo oltre i ganci.', 'Shatter Horus 9-65GB è una trottola stamina della linea BX: la blade dalla forma rotonda estende il metallo oltre i ganci del lanciatore e riveste di metallo anche il bordo del gear chip, che raffigura il dio egizio Horus. Monta il Ratchet 9-65 e il Bit GB. Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).', 1800, null, 'stamina', 0, 0, 7),
   ('beyblade-x', 'cobalt-dragoon-2-60c', 'COBALT-DRAGOON-2-60C', 0, null::public.availability_override, 0, 'Cobalt Dragoon 2-60C', 'Attacco left-spin. Smash devastante.', 'Cobalt Dragoon 2-60C è una trottola d''attacco a rotazione sinistra (left-spin): quattro lame inclinate verso l''alto concentrano uno Smash Attack estremo, mentre il Ratchet 2-60 e il Bit Cyclone bilanciano velocità e stabilità. Lo starter include il lanciatore a corda left-spin dedicato.', 2550, null, 'attacco', 0, 0, 8),
   ('beyblade-x', 'soar-phoenix-9-60gf', 'SOAR-PHOENIX-9-60GF', 0, null::public.availability_override, 0, 'Soar Phoenix 9-60GF', 'Upper attack. Colpisci verso l''alto.', 'Soar Phoenix 9-60GF è una trottola d''attacco a tre lame che salgono verso l''alto per un Upper Attack capace di sollevare l''avversario, unito allo Smash che lo spinge fuori arena. Tra le blade più pesanti della serie. Lo starter include il lanciatore a corda.', 3200, null, 'attacco', 0, 0, 9),
   ('beyblade-x', 'saber-samurai-2-70l', 'SABER-SAMURAI-2-70L', 0, null::public.availability_override, 0, 'Saber Samurai 2-70L', 'Doppia lama. Colpi da katana.', 'Saber Samurai 2-70L (linea UX) è una trottola d''attacco: le due protuberanze si ritraggono a metà battaglia, passando da colpi ripetuti in stile katana a un singolo impatto "tachi" per KO improvvisi. Lo starter include il lanciatore con impugnatura (grip).', 2790, null, 'attacco', 0, 0, 10),
@@ -532,9 +532,9 @@ select
   'Offerta duo',
   'Horus ×',
   'Enlil.',
-  'Due Infinity Starter Beyblade X, stamina contro bilanciata, a €37 invece di €40.',
-  3700,
-  4000,
+  'Due Infinity Starter Beyblade X, stamina contro bilanciata, a €33 invece di €36.',
+  3300,
+  3600,
   product.id,
   true
 from public.products as product
@@ -675,7 +675,9 @@ La disponibilità è in aggiornamento. Contattaci prima dell''ordine per conosce
 
 ## Cosa significa “pre-ordine”?
 
-Quando i pezzi a magazzino finiscono puoi comunque ordinare il prodotto: il pre-ordine potrebbe arrivare tra 10/15 giorni lavorativi dalla conferma dell''ordine. Il carrello e la pagina di pagamento ti indicano quali pezzi sono in pre-ordine prima di pagare.
+Quando i pezzi a magazzino finiscono puoi comunque ordinare il prodotto: quel pre-ordine potrebbe arrivare tra 10/15 giorni lavorativi dalla conferma dell''ordine. Il carrello e la pagina di pagamento ti indicano quali pezzi sono in pre-ordine prima di pagare.
+
+Le nuove uscite, invece, non sono ancora distribuite: arrivano in Italia con l''uscita Hasbro, circa 20 giorni lavorativi, e poi dipende dalle consegne. La scheda del prodotto, il carrello e la pagina di pagamento indicano sempre il tempo giusto.
 
 ## Posso cambiare idea?
 
@@ -684,7 +686,9 @@ Hai 30 giorni dalla consegna per richiedere il reso. Vedi la pagina Resi e rimbo
 
 I prodotti disponibili vengono consegnati in 1-5 giorni lavorativi a seconda del corriere, dalla conferma del pagamento.
 
-I pre-ordini potrebbero arrivare tra 10/15 giorni lavorativi dalla conferma dell''ordine.
+Un pre-ordine di un prodotto già uscito, ordinato quando il magazzino è finito, potrebbe arrivare tra 10/15 giorni lavorativi dalla conferma dell''ordine.
+
+Un pre-ordine di una nuova uscita arriva con l''uscita Hasbro: circa 20 giorni lavorativi, poi dipende dalle consegne.
 
 ## Destinazioni
 

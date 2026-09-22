@@ -8,7 +8,7 @@ import { RestockForm } from "@/components/product/restock-form";
 import { Button } from "@/components/ui/button";
 import { useWishlist } from "@/lib/store/wishlist";
 import { MAX_QUANTITY_PER_LINE } from "@/lib/store/cart";
-import { PREORDER_DELIVERY, STOCK_HINT, STOCK_LABEL, isPurchasable } from "@/lib/labels";
+import { PREORDER_DELIVERY, STOCK_HINT, STOCK_LABEL, deliveryClause, isPurchasable, preorderDelivery } from "@/lib/labels";
 import type { Product, StockStatus } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
 
@@ -57,7 +57,9 @@ export function BuyPanel({ product }: { product: Product }) {
           <p className={cn("gd-display text-small font-bold tracking-wider", STATUS_TEXT[product.stock])}>
             {STOCK_LABEL[product.stock]}
           </p>
-          <p className="text-[0.6875rem] text-grey-600">{STOCK_HINT[product.stock]}</p>
+          <p className="text-[0.6875rem] text-grey-600">
+            {product.stock === "pre-ordine" ? preorderDelivery(product.releasePreorder) : STOCK_HINT[product.stock]}
+          </p>
           {product.stock === "pre-ordine" && !product.autoPreorder && product.availableQuantity !== undefined ? (
             <p className="mt-1 tabular text-[0.6875rem] font-bold text-preorder" data-testid="preorder-remaining">
               {product.availableQuantity} pre-ordini rimasti
@@ -85,7 +87,7 @@ export function BuyPanel({ product }: { product: Product }) {
           {beyondShelf > 0 ? (
             <p className="text-[0.6875rem] font-bold text-preorder" data-testid="preorder-split" role="status">
               {beyondShelf} in pre-ordine oltre {product.bundleOf ? "i duo" : "i pezzi"} disponibili ·{" "}
-              {PREORDER_DELIVERY.toLowerCase()}
+              {deliveryClause(PREORDER_DELIVERY)}
             </p>
           ) : null}
         </div>
