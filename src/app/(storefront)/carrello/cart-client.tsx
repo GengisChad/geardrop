@@ -15,7 +15,7 @@ import { ProductCard } from "@/components/product/product-card";
 import { useCartQuote } from "@/lib/use-cart-quote";
 import { MAX_QUANTITY_PER_LINE, useCart } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/format";
-import { cartDelivery, preorderNote } from "@/lib/labels";
+import { cartDelivery, preorderNote, stockLabel } from "@/lib/labels";
 import type { Product } from "@/lib/commerce/types";
 
 type CartClientProps = {
@@ -112,7 +112,7 @@ export function CartClient({ shelfProducts }: CartClientProps) {
                           </Link>
                         </h2>
                         <p className="mt-1 flex items-center gap-2">
-                          <StockBadge status={line.stock} />
+                          <StockBadge status={line.stock} label={stockLabel(line)} />
                         </p>
                         {line.issue ? (
                           <p

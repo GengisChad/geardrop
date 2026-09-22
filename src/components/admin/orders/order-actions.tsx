@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import {
   addOrderNoteAction,
+  messageCustomerAction,
   cancelOrderAction,
   prepareOrderRefundAction,
   refundStripeAction,
@@ -41,6 +42,7 @@ export function OrderActions({ orderId, status, paymentStatus, role, tracking, s
   const [transitionState, transitionAction, transitionPending] = useActionState(transitionOrderAction, initial);
   const [trackingState, trackingAction, trackingPending] = useActionState(setOrderTrackingAction, initial);
   const [noteState, noteAction, notePending] = useActionState(addOrderNoteAction, initial);
+  const [messageState, messageAction, messagePending] = useActionState(messageCustomerAction, initial);
   const [cancelState, cancelAction, cancelPending] = useActionState(cancelOrderAction, initial);
   const [refundState, refundAction, refundPending] = useActionState(prepareOrderRefundAction, initial);
   const [stripeRefundState, stripeRefundAction, stripeRefundPending] = useActionState(refundStripeAction, initial);
@@ -81,6 +83,15 @@ export function OrderActions({ orderId, status, paymentStatus, role, tracking, s
       <label>URL HTTPS<input defaultValue={tracking.url ?? ""} name="url" type="url"/></label>
       <button disabled={trackingPending} type="submit">{trackingPending ? "Salvataggio…" : "Salva tracking"}</button><Feedback state={trackingState}/>
     </form> : null}
+
+    <form action={messageAction} className={styles.actionCard}>
+      <h3>Scrivi al cliente</h3><p>Manda un&rsquo;email dal negozio a chi ha fatto l&rsquo;ordine. Resta scritta anche nelle note.</p>
+      <input name="orderId" type="hidden" value={orderId}/>
+      <label>Oggetto<input maxLength={120} minLength={3} name="subject" placeholder="Es. Suppress Superion è tornato disponibile" required type="text"/></label>
+      <label>Messaggio<textarea maxLength={2000} minLength={10} name="message" required rows={6}/></label>
+      <label className={styles.confirm}><input name="confirmed" required type="checkbox"/> Confermo l&rsquo;invio al cliente</label>
+      <button disabled={messagePending} type="submit">{messagePending ? "Invio…" : "Invia email"}</button><Feedback state={messageState}/>
+    </form>
 
     <form action={noteAction} className={styles.actionCard}>
       <h3>Nota interna</h3><input name="orderId" type="hidden" value={orderId}/>

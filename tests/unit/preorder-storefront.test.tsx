@@ -110,6 +110,21 @@ describe("truthful public presentation", () => {
     expect(html).not.toContain("24/48h");
   });
 
+  it("keeps a sold-out drop on the page as a pre-order, with the notice and no cart", () => {
+    const release = PRODUCTS.find((candidate) => candidate.releasePreorder)!;
+    const html = renderToStaticMarkup(
+      <Providers><BuyPanel product={{ ...release, stock: "esaurito", availableQuantity: 0 }} /></Providers>,
+    );
+
+    // The owner's rule: it still reads as a pre-order, it simply cannot be bought right now.
+    expect(html).toContain("Pre-ordine esaurito");
+    expect(html).toContain("Pre-ordini chiusi: ti avvisiamo appena riaprono");
+    expect(html).toContain("Avvisami quando riaprono i pre-ordini");
+    expect(html).toContain('id="restock-form"');
+    expect(html).not.toContain('data-testid="add-to-cart"');
+    expect(html).not.toContain("Pre-ordina");
+  });
+
   it("says an unreleased drop arrives with the Hasbro release, not in 10/15 days", () => {
     const release = PRODUCTS.find((candidate) => candidate.releasePreorder)!;
     const html = renderToStaticMarkup(<Providers><BuyPanel product={release} /></Providers>);

@@ -88,6 +88,14 @@ export const refundStripeSchema = z.object({
   attempt: z.uuid(),
 });
 
+/** A message the owner writes to the buyer of an order, sent by the shop. */
+export const messageCustomerSchema = z.object({
+  orderId,
+  subject: z.string().trim().min(3).max(120),
+  message: z.string().trim().min(10).max(2000),
+  confirmed: z.literal(true),
+});
+
 export function allowedOrderTransitions(status: OrderStatus): readonly OrderStatus[] {
   const transitions: Record<OrderStatus, readonly OrderStatus[]> = {
     pending: ["confirmed", "cancelled"], confirmed: ["processing", "cancelled"], processing: ["shipped", "cancelled"],

@@ -10,6 +10,8 @@ import { cn } from "@/lib/cn";
 type RestockFormProps = {
   slug: string;
   name: string;
+  /** A drop that sold its pieces reopens: the notice says so. */
+  releasePreorder?: boolean;
 };
 
 const initial: RestockNoticeState = { ok: false, message: "" };
@@ -20,7 +22,7 @@ const initial: RestockNoticeState = { ok: false, message: "" };
  * live feedback without a page reload when JS is available.
  * Exposed as id="restock-form" so the sticky bar can scroll/focus it.
  */
-export function RestockForm({ slug, name }: RestockFormProps) {
+export function RestockForm({ slug, name, releasePreorder }: RestockFormProps) {
   const emailId = useId();
   const [state, formAction, pending] = useActionState(requestRestockNoticeAction, initial);
 
@@ -33,7 +35,9 @@ export function RestockForm({ slug, name }: RestockFormProps) {
         aria-live="polite"
       >
         <Check className="size-5 shrink-0 text-available" strokeWidth={2.5} aria-hidden="true" />
-        <p className="gd-display text-small font-bold text-available">{state.message}</p>
+        <p className="gd-display text-small font-bold text-available">
+          {releasePreorder ? "Ti avvisiamo appena riaprono i pre-ordini." : state.message}
+        </p>
       </div>
     );
   }
@@ -50,7 +54,7 @@ export function RestockForm({ slug, name }: RestockFormProps) {
       <div className="flex items-center gap-2">
         <Bell className="size-4 shrink-0 text-soldout" aria-hidden="true" />
         <p className="gd-display text-small font-bold text-soldout">
-          Avvisami quando {name} torna disponibile
+          {releasePreorder ? `Avvisami quando riaprono i pre-ordini di ${name}` : `Avvisami quando ${name} torna disponibile`}
         </p>
       </div>
 

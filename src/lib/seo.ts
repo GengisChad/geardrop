@@ -2,7 +2,7 @@ import { FREE_SHIPPING_THRESHOLD, SHIPPING_FLAT_RATE } from "@/data/catalog";
 import { brand } from "@/data/assets";
 import { SHOP_EMAIL } from "@/lib/email/resend";
 import { formatPrice } from "@/lib/format";
-import { CATEGORY_LABEL, STOCK_LABEL } from "@/lib/labels";
+import { CATEGORY_LABEL, stockLabel } from "@/lib/labels";
 import { PRODUCTION_ORIGIN } from "@/lib/site-url";
 import type { CategorySlug, Product } from "@/lib/commerce/types";
 
@@ -37,9 +37,11 @@ function clip(text: string): string {
   return `${cut.slice(0, cut.lastIndexOf(" "))}…`;
 }
 
-export function productDescription(product: Pick<Product, "name" | "tagline" | "price" | "stock" | "unofficial">): string {
+export function productDescription(
+  product: Pick<Product, "name" | "tagline" | "price" | "stock" | "unofficial" | "releasePreorder">,
+): string {
   const shipping = product.price.amount >= FREE_SHIPPING_THRESHOLD ? "spedizione gratuita" : "spedizione €4,90, gratis da €59";
-  return clip(`${productTitle(product)} a ${formatPrice(product.price)}, ${STOCK_LABEL[product.stock].toLowerCase()}. ${product.tagline} Pagamento sicuro, ${shipping}.`);
+  return clip(`${productTitle(product)} a ${formatPrice(product.price)}, ${stockLabel(product).toLowerCase()}. ${product.tagline} Pagamento sicuro, ${shipping}.`);
 }
 
 const CATEGORY_TITLE: Readonly<Record<CategorySlug, string>> = {

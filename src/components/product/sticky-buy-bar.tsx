@@ -8,7 +8,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { AddToCartButton } from "@/components/product/add-to-cart-button";
 import { StockBadge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/format";
-import { BLADE_TYPE_LABEL } from "@/lib/labels";
+import { BLADE_TYPE_LABEL, stockLabel } from "@/lib/labels";
 import type { Product } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
 
@@ -69,7 +69,7 @@ export function StickyBuyBar({ product }: { product: Product }) {
               <p className="gd-display truncate text-small font-bold text-graphite">{product.name}</p>
               <p className="flex items-center gap-2 text-[0.6875rem] text-grey-600">
                 {product.bladeType ? <span>{BLADE_TYPE_LABEL[product.bladeType]}</span> : null}
-                <StockBadge status={product.stock} />
+                <StockBadge status={product.stock} label={stockLabel(product)} />
               </p>
             </div>
 

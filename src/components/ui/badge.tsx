@@ -6,8 +6,17 @@ const PILL =
   "gd-display gd-chamfer inline-flex shrink-0 items-center px-2.5 py-1 text-[0.6875rem] font-bold leading-none tracking-[0.12em]";
 
 /** Compact stock chip — design system §03 "STOCK CHIP (COMPATTO)". */
-export function StockBadge({ status, className }: { status: StockStatus; className?: string }) {
-  return <span className={cn(PILL, STOCK_CHIP[status], className)}>{STOCK_LABEL[status]}</span>;
+export function StockBadge({
+  status,
+  label,
+  className,
+}: {
+  status: StockStatus;
+  /** Overrides the word, for a state the status alone cannot name (a sold-out pre-order). */
+  label?: string;
+  className?: string;
+}) {
+  return <span className={cn(PILL, STOCK_CHIP[status], className)}>{label ?? STOCK_LABEL[status]}</span>;
 }
 
 /** Promo chip; "Novità" wears the animated holographic foil. */
