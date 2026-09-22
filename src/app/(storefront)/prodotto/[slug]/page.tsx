@@ -18,7 +18,7 @@ import { bundlesContaining } from "@/lib/commerce/bundles";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { familyColours, familyLead } from "@/lib/commerce/variants";
 import { formatPrice } from "@/lib/format";
-import { BLADE_TYPE_LABEL, CATEGORY_LABEL, PREORDER_DELIVERY } from "@/lib/labels";
+import { BLADE_TYPE_LABEL, CATEGORY_LABEL, preorderDelivery } from "@/lib/labels";
 import { absoluteUrl, breadcrumbJsonLd, jsonLd, productDescription, productJsonLd, productTitle } from "@/lib/seo";
 
 type Params = { slug: string };
@@ -185,7 +185,7 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
 
       {offer ? <BundleOffer bundle={offer} current={product} partners={partners} /> : null}
 
-      <TrustBarLight className="pb-4" {...(product.stock === "pre-ordine" ? { delivery: PREORDER_DELIVERY } : {})} />
+      <TrustBarLight className="pb-4" {...(product.stock === "pre-ordine" ? { delivery: preorderDelivery(product.releasePreorder) } : {})} />
 
       <ProductDetails product={product} />
 

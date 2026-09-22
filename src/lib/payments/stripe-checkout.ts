@@ -3,7 +3,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import type { PlaceOrderInput } from "@/lib/checkout-schema";
 import type { CartQuote } from "@/lib/commerce/types";
-import { PREORDER_DELIVERY, preorderUnits } from "@/lib/labels";
+import { preorderDelivery, preorderUnits } from "@/lib/labels";
 import { createStripeClient, stripeProductId, type StripeClient } from "./stripe-api";
 
 /**
@@ -167,7 +167,7 @@ export function buildCheckoutSessionFields(
   if (preorders.length > 0) {
     fields["metadata[preorder]"] = truncate(preorders.map(({ line, units }) => `${line.slug} x${units}`).join(", "), METADATA_LIMIT);
     fields["custom_text[submit][message]"] = truncate(
-      `In pre-ordine: ${preorders.map(({ line, units }) => `${units} × ${line.name}`).join(", ")}. ${PREORDER_DELIVERY}.`,
+      `In pre-ordine: ${preorders.map(({ line, units }) => `${units} × ${line.name}`).join(", ")}. ${preorderDelivery(preorders.some(({ line }) => line.releasePreorder))}.`,
       CUSTOM_TEXT_LIMIT,
     );
   }

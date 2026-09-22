@@ -21,7 +21,7 @@ const VIEWPORTS = [
 /** Every card of the storefront: an item sold in several colours (the deck case) is one card. */
 const STOREFRONT_CARDS = oneCardPerFamily(STOREFRONT_CATALOGUE);
 /** The owner's order: four new releases on sale, what ships now, then the rest. */
-const PLAN = homepagePlan(STOREFRONT_CARDS, 4);
+const PLAN = homepagePlan(STOREFRONT_CARDS, 5);
 const slugs = (products: readonly { readonly slug: string }[]) => products.map((product) => product.slug);
 const ATTACK_COUNT = PLAN.rest.filter((product) => product.bladeType === "attacco").length;
 

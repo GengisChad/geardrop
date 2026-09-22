@@ -55,7 +55,7 @@ export default async function CheckoutResultPage({ searchParams }: { searchParam
             </p>
             <p className="mt-3 max-w-sm text-[0.6875rem] text-grey-600">
               {paid
-                ? "Grazie! Stripe ti invia la ricevuta via email. Se hai preso articoli in pre-ordine, potrebbero arrivare tra 10/15 giorni lavorativi."
+                ? "Grazie! Stripe ti invia la ricevuta via email. Se hai preso articoli in pre-ordine, l'email di conferma indica per ognuno quando arriva."
                 : "Il metodo scelto conferma il pagamento in differita: ti avvisiamo appena risulta accreditato."}
               {session.email ? <> Riferimento email: {session.email}.</> : null}
             </p>

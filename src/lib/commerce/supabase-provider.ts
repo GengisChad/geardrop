@@ -3,6 +3,7 @@ import type { Database } from "../supabase/database.types";
 import type { ProductImage } from "@/data/assets";
 import { checkoutErrorCode, checkoutErrorMessage } from "./checkout-errors";
 import { isUnlimitedStock } from "./live-stock-overlay";
+import { isReleasePreorder } from "./release-preorder";
 import { catalogueTraits, oneCardPerFamily } from "./variants";
 import { STANDARD_DELIVERY } from "@/lib/labels";
 import type {
@@ -119,6 +120,7 @@ export function mapSupabaseProduct(row: RawProduct): Product {
     features: ordered(row.features).map(({ title, description }) => ({ title, description })),
     boxContents: ordered(row.box_contents).map(({ content }) => content),
     relatedSlugs: ordered(row.relations).map(({ related }) => first(related).slug as Product["slug"]),
+    ...(isReleasePreorder(row.slug) ? { releasePreorder: true as const } : {}),
     ...catalogueTraits(row.slug),
   };
 }
@@ -390,6 +392,7 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>)
           image: primaryImage(row),
           stock: row.stock_status,
           availableQuantity: projectedAvailability(row),
+          ...(isReleasePreorder(row.slug) ? { releasePreorder: true as const } : {}),
           issue,
         });
         if (!issue) sellable.push({ product_id: row.id, quantity: line.quantity });

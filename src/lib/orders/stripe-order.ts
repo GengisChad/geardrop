@@ -1,4 +1,5 @@
 import { BUNDLES, PRODUCTS } from "@/data/catalog";
+import { isReleasePreorder } from "@/lib/commerce/release-preorder";
 import { stripeProductId, type StripeClient } from "@/lib/payments/stripe-api";
 
 /**
@@ -16,6 +17,8 @@ export type PaidCheckoutLine = {
   readonly unitPriceCents: number;
   /** Set for a bundle: the catalogue products one unit ships, whose stock the order takes. */
   readonly components?: readonly { readonly slug: string; readonly quantity: number }[];
+  /** Sold before its release: the buyer's email says it arrives with the Hasbro release. */
+  readonly releasePreorder?: true;
 };
 
 export type ShippingSnapshot = {
@@ -155,7 +158,14 @@ export function paidCheckoutFromStripe(
     if (!slug || quantity < 1) return [];
     const unitPriceCents = item.price?.unit_amount ?? Math.round((item.amount_subtotal ?? 0) / quantity);
     const components = COMPONENTS_BY_BUNDLE.get(slug);
-    return [{ slug, name: clean(item.description) || slug, quantity, unitPriceCents, ...(components ? { components } : {}) }];
+    return [{
+      slug,
+      name: clean(item.description) || slug,
+      quantity,
+      unitPriceCents,
+      ...(components ? { components } : {}),
+      ...(isReleasePreorder(slug) ? { releasePreorder: true as const } : {}),
+    }];
   });
 
   if (!email || lines.length === 0) return null;

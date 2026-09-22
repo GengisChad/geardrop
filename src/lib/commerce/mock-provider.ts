@@ -241,6 +241,7 @@ export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CA
             ? {}
             : { availableQuantity: product.availableQuantity }),
           ...(product.autoPreorder ? { autoPreorder: true } : {}),
+          ...(product.releasePreorder ? { releasePreorder: true } : {}),
           ...(preordered > 0 ? { preorderQuantity: preordered } : {}),
           issue,
         });

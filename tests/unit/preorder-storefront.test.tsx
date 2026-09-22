@@ -102,10 +102,22 @@ describe("truthful public presentation", () => {
   });
 
   it("tells how long a pre-order may take without promising a dispatch date", () => {
-    const html = renderToStaticMarkup(<Providers><BuyPanel product={{ ...product, stock: "pre-ordine" }} /></Providers>);
+    const backorder = PRODUCTS.find((candidate) => candidate.stock === "pre-ordine" && !candidate.releasePreorder)!;
+    const html = renderToStaticMarkup(<Providers><BuyPanel product={{ ...backorder, stock: "pre-ordine" }} /></Providers>);
 
     expect(html).toContain("Potrebbe arrivare tra 10/15 giorni lavorativi");
     expect(html).not.toContain("entro 14 giorni");
     expect(html).not.toContain("24/48h");
+  });
+
+  it("says an unreleased drop arrives with the Hasbro release, not in 10/15 days", () => {
+    const release = PRODUCTS.find((candidate) => candidate.releasePreorder)!;
+    const html = renderToStaticMarkup(<Providers><BuyPanel product={release} /></Providers>);
+
+    expect(html).toContain("uscita Hasbro");
+    expect(html).toContain("circa 20 giorni lavorativi");
+    expect(html).not.toContain("10/15 giorni lavorativi");
+    // Still no promised date, only a window that depends on the deliveries.
+    expect(html).toContain("dipende dalle consegne");
   });
 });

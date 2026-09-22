@@ -210,16 +210,25 @@ describe("paid pre-orders in the emails", () => {
 });
 
 describe("pre-order copy and database rule", () => {
-  it("uses one delivery time everywhere a pre-order is explained", () => {
-    expect(STOCK_HINT["pre-ordine"]).toBe(PREORDER_DELIVERY);
+  it("explains both waits wherever a pre-order is explained, and invents no third one", () => {
+    // The legend cannot know which wait applies, so it points at the product instead of guessing.
+    expect(STOCK_HINT["pre-ordine"]).toBe("Tempi indicati su ogni scheda prodotto");
     const policy = JSON.stringify([SUPPORT_PAGES, LEGAL_PAGES]);
+    // A piece bought beyond the shelf, and a drop that is not out yet: the pages say both.
     expect(policy).toContain("10/15 giorni lavorativi");
+    expect(policy).toContain("uscita Hasbro");
+    expect(policy).toContain("20 giorni lavorativi");
     expect(policy).not.toContain("entro 14 giorni dalla conferma");
-    for (const file of ["src/components/product/product-details.tsx", "src/app/(storefront)/checkout/successo/page.tsx"]) {
-      const source = readFileSync(join(process.cwd(), file), "utf8");
-      expect(source, file).toContain("10/15 giorni lavorativi");
-      expect(source, file).not.toContain("14 giorni");
-    }
+
+    const details = readFileSync(join(process.cwd(), "src/components/product/product-details.tsx"), "utf8");
+    expect(details).toContain("10/15 giorni lavorativi");
+    expect(details).toContain("uscita Hasbro");
+    expect(details).not.toContain("14 giorni");
+
+    // The success page cannot know what was bought, so it names no wait at all.
+    const success = readFileSync(join(process.cwd(), "src/app/(storefront)/checkout/successo/page.tsx"), "utf8");
+    expect(success).not.toContain("giorni lavorativi");
+    expect(success).toContain("l'email di conferma indica per ognuno quando arriva");
   });
 
   it("switches at zero stock in the database and records pre-ordered units per line", () => {

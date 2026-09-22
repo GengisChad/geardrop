@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { CheckCircle2, Package, PackageCheck, Truck, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { inputClass } from "@/components/ui/field";
-import { PREORDER_DELIVERY } from "@/lib/labels";
+import { PREORDER_DELIVERY, deliveryClause } from "@/lib/labels";
 import { trackingLink } from "@/lib/orders/carriers";
 import { lookupOrderAction, type OrderLookupResult } from "./actions";
 
@@ -172,7 +172,8 @@ function OrderResult({
 
         {hasPreorder ? (
           <p className="mt-4 text-[0.6875rem] text-grey-600">
-            <strong>Pre-ordine:</strong> {PREORDER_DELIVERY.toLowerCase()}.
+            <strong>Pre-ordine:</strong> {deliveryClause(PREORDER_DELIVERY)} per i prodotti già usciti; le nuove uscite
+            arrivano con l&rsquo;uscita Hasbro, circa 20 giorni lavorativi.
           </p>
         ) : null}
       </div>

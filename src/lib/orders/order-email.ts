@@ -1,7 +1,7 @@
 import { PRODUCTS } from "@/data/catalog";
 import { formatPrice } from "@/lib/format";
 import { SHOP_EMAIL } from "@/lib/email/resend";
-import { PREORDER_DELIVERY } from "@/lib/labels";
+import { deliveryClause, preorderDelivery } from "@/lib/labels";
 import { PRODUCTION_ORIGIN } from "@/lib/site-url";
 import type { LowStockProduct } from "./process-paid-checkout";
 import type { PaidCheckout } from "./stripe-order";
@@ -53,7 +53,7 @@ function preorderLine(checkout: PaidCheckout, order: RecordedOrder, index: numbe
   const units = order.preorderQuantities?.[index] ?? 0;
   if (units <= 0) return null;
   const which = units >= line.quantity ? "PRE-ORDINE" : `PRE-ORDINE: ${units} di ${line.quantity}`;
-  if (audience === "buyer") return `${which} · ${PREORDER_DELIVERY.toLowerCase()}`;
+  if (audience === "buyer") return `${which} · ${deliveryClause(preorderDelivery(line.releasePreorder))}`;
   const announced = checkout.announcedPreorder?.[line.slug] ?? 0;
   const surprise =
     units > announced
@@ -135,6 +135,14 @@ export function ownerOrderEmail(checkout: PaidCheckout, order: RecordedOrder, lo
   const stripeUrl = checkout.paymentIntentId ? `https://dashboard.stripe.com/payments/${checkout.paymentIntentId}` : null;
   const when = dateFormatter.format(new Date(checkout.createdAt));
   const preordered = preorderSummary(checkout, order);
+  // What the buyer was told, in their own words: an unreleased drop waits for the release.
+  const waits = [
+    ...new Set(
+      checkout.lines
+        .filter((_line, index) => (order.preorderQuantities?.[index] ?? 0) > 0)
+        .map((line) => deliveryClause(preorderDelivery(line.releasePreorder))),
+    ),
+  ];
   const subject = `${preordered.length ? "[PRE-ORDINE] " : ""}Nuovo ordine ${order.orderNumber} · ${euro(checkout.totalCents)} · ${checkout.shipping.name || checkout.email}`;
 
   const missingAddress = isAddressMissing(checkout);
@@ -154,7 +162,7 @@ export function ownerOrderEmail(checkout: PaidCheckout, order: RecordedOrder, lo
     ${checkout.notes ? `<p style="margin:16px 0 0"><strong>Note del cliente:</strong> ${escapeHtml(checkout.notes)}</p>` : ""}
     ${
       preordered.length
-        ? `<div style="margin:16px 0 0;background:#fff7ed;border:1px solid #fdba74;border-radius:8px;padding:12px;font-size:15px"><strong>Contiene un pre-ordine:</strong> ${escapeHtml(preordered.join(", "))}. Questi pezzi non erano a magazzino; al cliente è indicato che potrebbero arrivare tra 10/15 giorni lavorativi.</div>`
+        ? `<div style="margin:16px 0 0;background:#fff7ed;border:1px solid #fdba74;border-radius:8px;padding:12px;font-size:15px"><strong>Contiene un pre-ordine:</strong> ${escapeHtml(preordered.join(", "))}. Al cliente è indicato che ${escapeHtml(waits.join(" · "))}.</div>`
         : ""
     }
     <h2 style="font-size:16px;margin:24px 0 8px">Articoli</h2>
