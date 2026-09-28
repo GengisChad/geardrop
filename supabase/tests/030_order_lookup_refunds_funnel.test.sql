@@ -129,14 +129,14 @@ select is(
 
 -- 11. read_funnel_stats requires manager role ----------------------------------------
 select ok(
-  not has_function_privilege('anon','public.read_funnel_stats(integer)','EXECUTE'),
+  not has_function_privilege('anon','public.read_funnel_stats(bigint,integer)','EXECUTE'),
   'anon cannot call read_funnel_stats');
 
 -- 12. editor cannot call read_funnel_stats -------------------------------------------
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000003002',true);
 set local role authenticated;
 select throws_ok(
-  $$select * from public.read_funnel_stats(7)$$,
+  $$select * from public.read_funnel_stats((select id from public.organizations where slug = 'geardrop'), 7)$$,
   '42501','GD_ORDER_MANAGER_REQUIRED',
   'editor cannot read funnel stats');
 reset role;

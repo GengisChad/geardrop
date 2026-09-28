@@ -63,9 +63,9 @@ select ok(has_function_privilege('authenticated','public.create_order(text,text,
   'signed-in customers may create orders through the validating wrapper');
 select ok(not has_function_privilege('service_role','public.create_order(text,text,jsonb,jsonb,jsonb,text,text,uuid)','EXECUTE'),
   'no service-role path can create an order without a request identity');
-select ok(not has_function_privilege('anon','private.create_order_unchecked(text,text,jsonb,jsonb,jsonb,text,text,uuid)','EXECUTE'),
+select ok(not has_function_privilege('anon','private.create_order_unchecked(bigint,text,text,jsonb,jsonb,jsonb,text,text,uuid)','EXECUTE'),
   'anon cannot bypass the wrapper');
-select ok(not has_function_privilege('authenticated','private.create_order_unchecked(text,text,jsonb,jsonb,jsonb,text,text,uuid)','EXECUTE'),
+select ok(not has_function_privilege('authenticated','private.create_order_unchecked(bigint,text,text,jsonb,jsonb,jsonb,text,text,uuid)','EXECUTE'),
   'authenticated cannot bypass the wrapper');
 select ok(not has_table_privilege('anon','public.orders','INSERT'),
   'anon cannot write orders directly');

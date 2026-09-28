@@ -38,13 +38,13 @@ insert into public.products(category_id,slug,sku,name,tagline,description,price_
 values((select id from public.categories where slug='discount-order-cat'),'discount-pack','DISCOUNT-PACK','Discount pack','D','D',3000,'published',true,10);
 
 -- 1-4. Only the server's secret key can record a discounted order ----------------------
-select ok(has_function_privilege('service_role','public.record_stripe_checkout_order(text,text,text,text,text,jsonb,jsonb,integer,text,integer,text)','EXECUTE'),
+select ok(has_function_privilege('service_role','public.record_stripe_checkout_order(text,text,text,text,text,jsonb,jsonb,integer,text,integer,text,bigint)','EXECUTE'),
   'the webhook may record a discounted paid order');
-select ok(not has_function_privilege('anon','public.record_stripe_checkout_order(text,text,text,text,text,jsonb,jsonb,integer,text,integer,text)','EXECUTE'),
+select ok(not has_function_privilege('anon','public.record_stripe_checkout_order(text,text,text,text,text,jsonb,jsonb,integer,text,integer,text,bigint)','EXECUTE'),
   'guests cannot record a discounted order');
-select ok(not has_function_privilege('authenticated','public.record_stripe_checkout_order(text,text,text,text,text,jsonb,jsonb,integer,text,integer,text)','EXECUTE'),
+select ok(not has_function_privilege('authenticated','public.record_stripe_checkout_order(text,text,text,text,text,jsonb,jsonb,integer,text,integer,text,bigint)','EXECUTE'),
   'signed-in customers cannot record a discounted order');
-select ok((select prosecdef from pg_proc where oid='public.record_stripe_checkout_order(text,text,text,text,text,jsonb,jsonb,integer,text,integer,text)'::regprocedure),
+select ok((select prosecdef from pg_proc where oid='public.record_stripe_checkout_order(text,text,text,text,text,jsonb,jsonb,integer,text,integer,text,bigint)'::regprocedure),
   'recording runs as security definer');
 
 -- 5-7. A promo-code discount is recorded and totalled correctly -----------------------

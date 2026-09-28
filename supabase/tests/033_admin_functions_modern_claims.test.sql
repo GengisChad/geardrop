@@ -54,7 +54,7 @@ select results_eq(
   $$select refunded_cents, payment_status::text from public.orders where order_number = 'GD-CLAIMS-1'$$,
   $$values (2500, 'paid'::text)$$,
   'a partial refund adds up and leaves the order paid');
-select lives_ok($$select * from public.read_funnel_stats(7)$$, 'the owner reads the funnel stats with the claims JSON alone');
+select lives_ok($$select * from public.read_funnel_stats((select id from public.organizations where slug = 'geardrop'), 7)$$, 'the owner reads the funnel stats with the claims JSON alone');
 
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000003302","role":"authenticated"}', true);
 select throws_ok(

@@ -61,9 +61,9 @@ select ok(not has_function_privilege('anon','public.save_homepage_section(bigint
 select ok(not has_function_privilege('anon','public.save_navigation_tree(bigint,jsonb)','EXECUTE'), 'anon cannot mutate navigation');
 select ok(not has_function_privilege('anon','public.save_bundle_with_items(bigint,jsonb,jsonb)','EXECUTE'), 'anon cannot mutate bundles');
 select ok(not has_function_privilege('anon','public.transition_order_status(bigint,public.order_status,text)','EXECUTE'), 'anon cannot transition orders');
-select ok(not has_function_privilege('anon','private.create_order_unchecked(text,text,jsonb,jsonb,jsonb,text,text,uuid)','EXECUTE'), 'anon cannot bypass order intake validation');
+select ok(not has_function_privilege('anon','private.create_order_unchecked(bigint,text,text,jsonb,jsonb,jsonb,text,text,uuid)','EXECUTE'), 'anon cannot bypass order intake validation');
 select ok(not has_function_privilege('anon','public.set_order_acceptance(bigint,boolean,text)','EXECUTE'), 'anon cannot enable orders');
-select ok(not has_function_privilege('anon','public.change_staff_role(uuid,public.staff_role)','EXECUTE'), 'anon cannot change staff roles');
+select ok(not has_function_privilege('anon','public.change_staff_role(bigint,uuid,public.staff_role)','EXECUTE'), 'anon cannot change staff roles');
 
 select results_eq($$
   select count(*)::integer
