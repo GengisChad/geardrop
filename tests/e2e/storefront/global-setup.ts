@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { execFileSync } from "node:child_process";
+import { localPsql } from "../support/local-psql";
 
 /**
  * Fixtures for the storefront order gate.
@@ -52,9 +52,5 @@ export default async function globalSetup(): Promise<void> {
     update public.site_settings set accept_orders = true where singleton;
   `;
 
-  execFileSync(
-    "psql",
-    ["postgresql://postgres:postgres@127.0.0.1:54322/postgres", "--set", "ON_ERROR_STOP=1", "--command", sql],
-    { stdio: "ignore" },
-  );
+  localPsql(["--set", "ON_ERROR_STOP=1", "--command", sql], { stdio: "ignore" });
 }

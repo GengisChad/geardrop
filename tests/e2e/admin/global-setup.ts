@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { execFileSync } from "node:child_process";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "../../../src/lib/supabase/database.types";
+import { localPsql } from "../support/local-psql";
 
 type Role = "owner" | "admin" | "editor";
 
@@ -50,8 +50,5 @@ export default async function globalSetup(): Promise<void> {
       'Categoria tecnica per test browser locali', 'Fixture minima richiesta dal form prodotto.', true, 0
     );
   `;
-  execFileSync("psql", [
-    "postgresql://postgres:postgres@127.0.0.1:54322/postgres",
-    "--set", "ON_ERROR_STOP=1", "--command", sql,
-  ], { stdio: "ignore" });
+  localPsql(["--set", "ON_ERROR_STOP=1", "--command", sql], { stdio: "ignore" });
 }
