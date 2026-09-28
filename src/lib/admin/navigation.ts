@@ -12,6 +12,7 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { label: "Inventario", href: "/admin/inventario", disabled: false },
   { label: "Carichi merce", href: "/admin/carichi", disabled: false },
   { label: "Fornitori", href: "/admin/fornitori", disabled: false },
+  { label: "Previsioni", href: "/admin/previsioni", disabled: false },
   { label: "Media", href: "/admin/media", disabled: false },
   { label: "Homepage", href: "/admin/homepage", disabled: false },
   { label: "Pagine", href: "/admin/pagine", disabled: false },

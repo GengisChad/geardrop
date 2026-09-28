@@ -3079,6 +3079,35 @@ export type Database = {
         Args: { p_organization_id: number }
         Returns: Json
       }
+      get_inventory_forecast: {
+        Args: {
+          p_lead_days?: number
+          p_organization_id: number
+          p_target_days?: number
+        }
+        Returns: {
+          average_cost_cents: number
+          daily_rate: number
+          days_of_cover: number
+          incoming_quantity: number
+          name: string
+          preorder_backlog: number
+          price_cents: number
+          product_id: number
+          publication_status: Database["public"]["Enums"]["publication_status"]
+          reorder_cost_cents: number
+          reorder_point: number
+          sku: string
+          sold_30: number
+          sold_7: number
+          sold_90: number
+          stock_quantity: number
+          stockout_date: string
+          suggested_reorder: number
+          trend: number
+          unlimited_stock: boolean
+        }[]
+      }
       get_inventory_restock_demand: {
         Args: { p_organization_id: number; p_slugs: string[] }
         Returns: {
