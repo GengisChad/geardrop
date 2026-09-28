@@ -126,8 +126,8 @@ select results_eq(
 );
 select results_eq(
   $$select count(*)::bigint from pg_catalog.pg_policies where schemaname = 'public'$$,
-  array[94::bigint],
-  'exactly 94 public RLS policies exist'
+  array[95::bigint],
+  'exactly 95 public RLS policies exist'
 );
 select results_eq(
   $$select count(*)::bigint from public.categories$$,

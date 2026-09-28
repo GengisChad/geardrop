@@ -209,11 +209,12 @@ select results_eq(
       and policyname = 'product_images_content_staff_insert'
       and roles = array['authenticated'::name]
       and with_check ilike '%bucket_id = ''product-images''%'
-      and with_check ilike '%private.has_staff_role%'
+      and with_check ilike '%private.member_organization_ids%'
+      and with_check ilike '%media_asset.organization_id%'
       and with_check ilike '%editor%'
   $$,
   array[1::bigint],
-  'storage upload predicate is bucket-scoped to authenticated content staff'
+  'storage upload predicate is bucket-scoped to content staff of the media asset company'
 );
 select results_eq(
   $$
