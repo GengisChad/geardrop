@@ -23,6 +23,8 @@ insert into expected_tiers (table_name, tier) values
   ('storefront_daily_events', 'A'), ('order_enablement_checks', 'A'),
   ('coupon_redemptions', 'A'), ('audit_events', 'A'),
   ('suppliers', 'A'), ('supplier_receipts', 'A'), ('inventory_cost_state', 'A'),
+  ('market_sources', 'A'), ('pricing_policies', 'A'), ('agent_runs', 'A'), ('market_observations', 'A'),
+  ('pricing_proposals', 'A'),
   ('supplier_receipt_lines', 'B'), ('inventory_movement_costs', 'C'),
   ('order_items', 'B'), ('bundle_items', 'B'), ('product_relations', 'B'), ('product_images', 'B'),
   ('coupon_products', 'B'), ('coupon_categories', 'B'), ('coupon_bundles', 'B'),

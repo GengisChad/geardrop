@@ -9,6 +9,65 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      agent_runs: {
+        Row: {
+          agent: string
+          cost_estimate_cents: number
+          error: string | null
+          finished_at: string | null
+          id: number
+          input_tokens: number
+          models: string[]
+          organization_id: number
+          output_tokens: number
+          requested_by: string | null
+          started_at: string
+          status: string
+          summary: string | null
+          web_searches: number
+        }
+        Insert: {
+          agent: string
+          cost_estimate_cents?: number
+          error?: string | null
+          finished_at?: string | null
+          id?: never
+          input_tokens?: number
+          models?: string[]
+          organization_id: number
+          output_tokens?: number
+          requested_by?: string | null
+          started_at?: string
+          status?: string
+          summary?: string | null
+          web_searches?: number
+        }
+        Update: {
+          agent?: string
+          cost_estimate_cents?: number
+          error?: string | null
+          finished_at?: string | null
+          id?: never
+          input_tokens?: number
+          models?: string[]
+          organization_id?: number
+          output_tokens?: number
+          requested_by?: string | null
+          started_at?: string
+          status?: string
+          summary?: string | null
+          web_searches?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_runs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_events: {
         Row: {
           action: string
@@ -1207,6 +1266,127 @@ export type Database = {
           },
         ]
       }
+      market_observations: {
+        Row: {
+          agent_run_id: number
+          availability: string | null
+          currency: string
+          id: number
+          item_condition: string | null
+          notes: string | null
+          observed_at: string
+          organization_id: number
+          price_cents: number | null
+          product_id: number | null
+          source_domain: string
+          title: string
+          url: string
+        }
+        Insert: {
+          agent_run_id: number
+          availability?: string | null
+          currency?: string
+          id?: never
+          item_condition?: string | null
+          notes?: string | null
+          observed_at?: string
+          organization_id: number
+          price_cents?: number | null
+          product_id?: number | null
+          source_domain: string
+          title: string
+          url: string
+        }
+        Update: {
+          agent_run_id?: number
+          availability?: string | null
+          currency?: string
+          id?: never
+          item_condition?: string | null
+          notes?: string | null
+          observed_at?: string
+          organization_id?: number
+          price_cents?: number | null
+          product_id?: number | null
+          source_domain?: string
+          title?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_observations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_observations_product_fkey"
+            columns: ["product_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_valuation"
+            referencedColumns: ["product_id", "organization_id"]
+          },
+          {
+            foreignKeyName: "market_observations_product_fkey"
+            columns: ["product_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "market_observations_run_fkey"
+            columns: ["agent_run_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "agent_runs"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
+      market_sources: {
+        Row: {
+          active: boolean
+          created_at: string
+          domain: string
+          id: number
+          kind: string
+          name: string
+          notes: string | null
+          organization_id: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          domain: string
+          id?: never
+          kind: string
+          name: string
+          notes?: string | null
+          organization_id: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          domain?: string
+          id?: never
+          kind?: string
+          name?: string
+          notes?: string | null
+          organization_id?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_sources_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       media_assets: {
         Row: {
           alt_text: string
@@ -1801,6 +1981,139 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      pricing_policies: {
+        Row: {
+          cooldown_days: number
+          max_change_bp: number
+          min_margin_bp: number
+          organization_id: number
+          products_per_run: number
+          rounding: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          cooldown_days?: number
+          max_change_bp?: number
+          min_margin_bp?: number
+          organization_id: number
+          products_per_run?: number
+          rounding?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          cooldown_days?: number
+          max_change_bp?: number
+          min_margin_bp?: number
+          organization_id?: number
+          products_per_run?: number
+          rounding?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_policies_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pricing_proposals: {
+        Row: {
+          agent_run_id: number
+          applied_price_cents: number | null
+          average_cost_cents: number | null
+          confidence: number
+          created_at: string
+          current_price_cents: number
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          evidence: Json
+          id: number
+          organization_id: number
+          out_of_policy: boolean
+          policy_notes: string[]
+          product_id: number
+          proposed_price_cents: number
+          rationale: string
+          status: string
+        }
+        Insert: {
+          agent_run_id: number
+          applied_price_cents?: number | null
+          average_cost_cents?: number | null
+          confidence: number
+          created_at?: string
+          current_price_cents: number
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          evidence?: Json
+          id?: never
+          organization_id: number
+          out_of_policy?: boolean
+          policy_notes?: string[]
+          product_id: number
+          proposed_price_cents: number
+          rationale: string
+          status?: string
+        }
+        Update: {
+          agent_run_id?: number
+          applied_price_cents?: number | null
+          average_cost_cents?: number | null
+          confidence?: number
+          created_at?: string
+          current_price_cents?: number
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          evidence?: Json
+          id?: never
+          organization_id?: number
+          out_of_policy?: boolean
+          policy_notes?: string[]
+          product_id?: number
+          proposed_price_cents?: number
+          rationale?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_proposals_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_proposals_product_fkey"
+            columns: ["product_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_valuation"
+            referencedColumns: ["product_id", "organization_id"]
+          },
+          {
+            foreignKeyName: "pricing_proposals_product_fkey"
+            columns: ["product_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "pricing_proposals_run_fkey"
+            columns: ["agent_run_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "agent_runs"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
       }
       product_box_contents: {
         Row: {
@@ -3044,6 +3357,15 @@ export type Database = {
         }
         Returns: number
       }
+      decide_pricing_proposal: {
+        Args: {
+          p_decision: string
+          p_note?: string
+          p_price_cents?: number
+          p_proposal_id: number
+        }
+        Returns: number
+      }
       delete_product_permanently: {
         Args: { p_expected_name: string; p_product_id: number }
         Returns: undefined
@@ -3073,6 +3395,10 @@ export type Database = {
           p_mime_type: string
           p_width: number
         }
+        Returns: undefined
+      }
+      finish_agent_run: {
+        Args: { p_outcome: Json; p_run_id: number }
         Returns: undefined
       }
       get_admin_dashboard_metrics: {
@@ -3146,6 +3472,17 @@ export type Database = {
         Returns: undefined
       }
       product_deletion_impact: { Args: { p_product_id: number }; Returns: Json }
+      propose_price: {
+        Args: {
+          p_confidence: number
+          p_evidence: Json
+          p_product_id: number
+          p_proposed_price_cents: number
+          p_rationale: string
+          p_run_id: number
+        }
+        Returns: number
+      }
       publish_homepage_section: {
         Args: { p_section_id: number }
         Returns: undefined
@@ -3160,6 +3497,10 @@ export type Database = {
       }
       record_completed_media_storage_mutation: {
         Args: { p_object_path: string; p_operation: string }
+        Returns: number
+      }
+      record_market_observation: {
+        Args: { p_observation: Json; p_run_id: number }
         Returns: number
       }
       record_order_payment_fee: {
@@ -3267,6 +3608,10 @@ export type Database = {
         Args: { p_organization_id: number; p_tree: Json }
         Returns: number
       }
+      save_pricing_policy: {
+        Args: { p_organization_id: number; p_policy: Json }
+        Returns: undefined
+      }
       save_promotion_with_targets: {
         Args: {
           p_bundle_ids: number[]
@@ -3350,6 +3695,10 @@ export type Database = {
           p_url?: string
         }
         Returns: undefined
+      }
+      start_agent_run: {
+        Args: { p_agent: string; p_models: string[]; p_organization_id: number }
+        Returns: number
       }
       swap_media_asset_associations: {
         Args: { p_new_media_asset_id: number; p_old_media_asset_id: number }
