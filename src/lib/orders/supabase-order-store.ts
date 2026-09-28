@@ -73,6 +73,11 @@ export function createSupabaseOrderStore(
       if (result.error) throw new Error(`orders.owner_notified_at: ${result.error.message}`);
     },
 
+    async recordPaymentFee(orderId: number, feeCents: number): Promise<void> {
+      const result = await client.rpc("record_order_payment_fee", { p_order_id: orderId, p_fee_cents: feeCents });
+      if (result.error) throw new Error(`record_order_payment_fee: ${result.error.message}`);
+    },
+
     async lowStock(orderId: number): Promise<readonly LowStockProduct[]> {
       // Collect product ids touched by this order: regular lines and bundle components.
       const organizationId = await organization();

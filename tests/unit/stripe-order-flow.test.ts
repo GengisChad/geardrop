@@ -251,6 +251,23 @@ describe("processing a paid checkout", () => {
     expect(store.notified.size).toBe(0);
   });
 
+  it("records the Stripe fee for the order's profit, and never fails the order over it", async () => {
+    const fees: [number, number][] = [];
+    const store = { ...memoryStore(), recordPaymentFee: async (id: number, fee: number) => { fees.push([id, fee]); } };
+    const send = vi.fn().mockResolvedValue({ ok: true, id: "email_1" });
+    await processPaidCheckout(checkout.sessionId, { loadCheckout: async () => checkout, store, sendEmail: send, env: {}, paymentFee: async () => 87 });
+    expect(fees).toEqual([[41, 87]]);
+
+    const unreached = vi.fn(async () => undefined);
+    const failing = { loadCheckout: async () => checkout, store: { ...memoryStore(), recordPaymentFee: unreached }, sendEmail: send, env: {},
+      paymentFee: async () => { throw new Error("Stripe down"); } };
+    const errors = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    expect(await processPaidCheckout(checkout.sessionId, failing)).toMatchObject({ status: "recorded" });
+    expect(unreached).not.toHaveBeenCalled();
+    expect(errors).toHaveBeenCalledWith("[orders] payment fee not recorded:", "Stripe down");
+    errors.mockRestore();
+  });
+
   it("keeps the order when email is not configured", async () => {
     const deps = { loadCheckout: async () => checkout, store: memoryStore(), sendEmail: async () => ({ ok: false as const, reason: "not_configured" as const }), env: {} };
     expect(await processPaidCheckout(checkout.sessionId, deps)).toMatchObject({ status: "recorded", ownerEmail: "not_configured" });

@@ -15,6 +15,7 @@ import {
   relationTypeSchema,
 } from "@/lib/admin/products";
 import { associateMediaSchema } from "@/lib/admin/media";
+import { formatEuro, netOfVat } from "@/lib/admin/warehouse";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Database, Json } from "@/lib/supabase/database.types";
 
@@ -102,6 +103,18 @@ function checked(formData: FormData, key: string): boolean {
 function nullableNumber(formData: FormData, key: string): number | null {
   const value = text(formData, key).trim();
   return value ? Number(value) : null;
+}
+
+/** The net price is under the product's average cost: the sale would lose money. */
+async function priceBelowAverageCost(client: Client, organizationId: number, productId: number, priceCents: number) {
+  const [state, organization] = await Promise.all([
+    client.from("inventory_cost_state").select("average_cost_cents").eq("organization_id", organizationId)
+      .eq("product_id", productId).maybeSingle(),
+    client.from("organizations").select("default_vat_rate_bp").eq("id", organizationId).single(),
+  ]);
+  if (state.error || organization.error || !state.data) return null;
+  const netCents = netOfVat(priceCents, organization.data.default_vat_rate_bp);
+  return netCents < state.data.average_cost_cents ? { netCents, averageCostCents: state.data.average_cost_cents } : null;
 }
 
 async function verifiedStaff(
@@ -249,6 +262,16 @@ export async function saveProductAction(
     if (error) return safeFailure(error);
     refreshProductCache(data.slug);
     redirect(`/admin/prodotti/${data.id}?created=1`);
+  }
+
+  if (capabilities.editCommerce && formData.get("belowCostConfirmed") !== "on") {
+    const belowCost = await priceBelowAverageCost(client, principal.organization.id, productId, parsed.data.priceCents);
+    if (belowCost) {
+      return {
+        ok: false,
+        message: `Il prezzo netto IVA (${formatEuro(belowCost.netCents)}) è sotto il costo medio (${formatEuro(belowCost.averageCostCents)}). Spunta la conferma per salvarlo comunque.`,
+      };
+    }
   }
 
   const update: ProductUpdate = {

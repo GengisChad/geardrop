@@ -6,7 +6,7 @@ import { adjustInventoryAction } from "@/app/admin/actions/inventory";
 import type { AdminProductEditorData } from "@/lib/admin/product-repository";
 
 const boundary = vi.hoisted(() => ({
-  update: vi.fn(), eq: vi.fn(), rpc: vi.fn(), from: vi.fn(),
+  update: vi.fn(), eq: vi.fn(), rpc: vi.fn(), from: vi.fn(), select: vi.fn(),
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn() }));
 // CSS presentation is outside this form-validation test; avoid invoking PostCSS in Node.
@@ -55,8 +55,15 @@ describe("seeded uppercase SKU admin operations", () => {
     boundary.from.mockReturnValue(boundary);
     boundary.update.mockReturnValue(boundary);
     // Filters chain (`.eq("id").eq("organization_id")`) and the last one is awaited.
-    const filtered = { eq: boundary.eq, then: (resolve: (value: unknown) => unknown) => Promise.resolve({ error: null }).then(resolve) };
+    const filtered = {
+      eq: boundary.eq,
+      // No cost is known for the fixture product: the below-cost guard lets the save through.
+      maybeSingle: async () => ({ data: null, error: null }),
+      single: async () => ({ data: { default_vat_rate_bp: 2200 }, error: null }),
+      then: (resolve: (value: unknown) => unknown) => Promise.resolve({ error: null }).then(resolve),
+    };
     boundary.eq.mockReturnValue(filtered);
+    boundary.select.mockReturnValue(filtered);
     boundary.rpc.mockResolvedValue({ data: 5, error: null });
   });
 

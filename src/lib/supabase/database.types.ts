@@ -106,6 +106,13 @@ export type Database = {
             foreignKeyName: "bundle_items_product_id_fkey"
             columns: ["product_id", "organization_id"]
             isOneToOne: false
+            referencedRelation: "inventory_valuation"
+            referencedColumns: ["product_id", "organization_id"]
+          },
+          {
+            foreignKeyName: "bundle_items_product_id_fkey"
+            columns: ["product_id", "organization_id"]
+            isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id", "organization_id"]
           },
@@ -179,6 +186,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "bundles_hero_product_id_fkey"
+            columns: ["hero_product_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_valuation"
+            referencedColumns: ["product_id", "organization_id"]
+          },
           {
             foreignKeyName: "bundles_hero_product_id_fkey"
             columns: ["hero_product_id", "organization_id"]
@@ -454,6 +468,13 @@ export type Database = {
             foreignKeyName: "coupon_products_product_id_fkey"
             columns: ["product_id", "organization_id"]
             isOneToOne: false
+            referencedRelation: "inventory_valuation"
+            referencedColumns: ["product_id", "organization_id"]
+          },
+          {
+            foreignKeyName: "coupon_products_product_id_fkey"
+            columns: ["product_id", "organization_id"]
+            isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id", "organization_id"]
           },
@@ -497,6 +518,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "coupons"
             referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "coupon_redemptions_order_id_fkey"
+            columns: ["order_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "order_profit"
+            referencedColumns: ["order_id", "organization_id"]
           },
           {
             foreignKeyName: "coupon_redemptions_order_id_fkey"
@@ -887,6 +915,13 @@ export type Database = {
             foreignKeyName: "homepage_section_products_product_id_fkey"
             columns: ["product_id", "organization_id"]
             isOneToOne: false
+            referencedRelation: "inventory_valuation"
+            referencedColumns: ["product_id", "organization_id"]
+          },
+          {
+            foreignKeyName: "homepage_section_products_product_id_fkey"
+            columns: ["product_id", "organization_id"]
+            isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id", "organization_id"]
           },
@@ -990,6 +1025,97 @@ export type Database = {
           },
         ]
       }
+      inventory_cost_state: {
+        Row: {
+          average_cost_cents: number
+          last_cost_cents: number | null
+          last_receipt_id: number | null
+          organization_id: number
+          product_id: number
+          source: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          average_cost_cents: number
+          last_cost_cents?: number | null
+          last_receipt_id?: number | null
+          organization_id: number
+          product_id: number
+          source: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          average_cost_cents?: number
+          last_cost_cents?: number | null
+          last_receipt_id?: number | null
+          organization_id?: number
+          product_id?: number
+          source?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_cost_state_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_cost_state_product_fkey"
+            columns: ["product_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_valuation"
+            referencedColumns: ["product_id", "organization_id"]
+          },
+          {
+            foreignKeyName: "inventory_cost_state_product_fkey"
+            columns: ["product_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "inventory_cost_state_receipt_fkey"
+            columns: ["last_receipt_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_receipts"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
+      inventory_movement_costs: {
+        Row: {
+          movement_id: number
+          source: string
+          unit_cost_cents: number
+          valued_at: string
+        }
+        Insert: {
+          movement_id: number
+          source: string
+          unit_cost_cents: number
+          valued_at?: string
+        }
+        Update: {
+          movement_id?: number
+          source?: string
+          unit_cost_cents?: number
+          valued_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_movement_costs_movement_id_fkey"
+            columns: ["movement_id"]
+            isOneToOne: true
+            referencedRelation: "inventory_movements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_movements: {
         Row: {
           actor_user_id: string | null
@@ -1003,6 +1129,7 @@ export type Database = {
           organization_id: number
           product_id: number
           reason: Database["public"]["Enums"]["inventory_reason"]
+          receipt_line_id: number | null
           stock_after: number
         }
         Insert: {
@@ -1017,6 +1144,7 @@ export type Database = {
           organization_id: number
           product_id: number
           reason: Database["public"]["Enums"]["inventory_reason"]
+          receipt_line_id?: number | null
           stock_after: number
         }
         Update: {
@@ -1031,9 +1159,17 @@ export type Database = {
           organization_id?: number
           product_id?: number
           reason?: Database["public"]["Enums"]["inventory_reason"]
+          receipt_line_id?: number | null
           stock_after?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "inventory_movements_order_id_fkey"
+            columns: ["order_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "order_profit"
+            referencedColumns: ["order_id", "organization_id"]
+          },
           {
             foreignKeyName: "inventory_movements_order_id_fkey"
             columns: ["order_id", "organization_id"]
@@ -1052,7 +1188,21 @@ export type Database = {
             foreignKeyName: "inventory_movements_product_id_fkey"
             columns: ["product_id", "organization_id"]
             isOneToOne: false
+            referencedRelation: "inventory_valuation"
+            referencedColumns: ["product_id", "organization_id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_product_id_fkey"
+            columns: ["product_id", "organization_id"]
+            isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_receipt_line_fkey"
+            columns: ["receipt_line_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_receipt_lines"
             referencedColumns: ["id", "organization_id"]
           },
         ]
@@ -1312,6 +1462,13 @@ export type Database = {
             foreignKeyName: "order_items_order_id_fkey"
             columns: ["order_id", "organization_id"]
             isOneToOne: false
+            referencedRelation: "order_profit"
+            referencedColumns: ["order_id", "organization_id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id", "organization_id"]
+            isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id", "organization_id"]
           },
@@ -1321,6 +1478,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_valuation"
+            referencedColumns: ["product_id", "organization_id"]
           },
           {
             foreignKeyName: "order_items_product_id_fkey"
@@ -1354,6 +1518,13 @@ export type Database = {
           order_id?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "order_notes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order_profit"
+            referencedColumns: ["order_id"]
+          },
           {
             foreignKeyName: "order_notes_order_id_fkey"
             columns: ["order_id"]
@@ -1396,6 +1567,13 @@ export type Database = {
             foreignKeyName: "order_status_events_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "order_profit"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_status_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -1417,6 +1595,9 @@ export type Database = {
           order_number: string
           organization_id: number
           owner_notified_at: string | null
+          packaging_cost_cents: number | null
+          payment_fee_cents: number | null
+          payment_fee_source: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           phone: string | null
           refund_amount_cents: number | null
@@ -1426,6 +1607,7 @@ export type Database = {
           shipped_at: string | null
           shipping_address_snapshot: Json
           shipping_cents: number
+          shipping_cost_cents: number | null
           shipping_method_code: string
           shipping_notified_at: string | null
           status: Database["public"]["Enums"]["order_status"]
@@ -1438,6 +1620,7 @@ export type Database = {
           tracking_code: string | null
           tracking_url: string | null
           updated_at: string
+          vat_rate_bp: number
         }
         Insert: {
           billing_address_snapshot: Json
@@ -1454,6 +1637,9 @@ export type Database = {
           order_number: string
           organization_id: number
           owner_notified_at?: string | null
+          packaging_cost_cents?: number | null
+          payment_fee_cents?: number | null
+          payment_fee_source?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           phone?: string | null
           refund_amount_cents?: number | null
@@ -1463,6 +1649,7 @@ export type Database = {
           shipped_at?: string | null
           shipping_address_snapshot: Json
           shipping_cents: number
+          shipping_cost_cents?: number | null
           shipping_method_code: string
           shipping_notified_at?: string | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -1475,6 +1662,7 @@ export type Database = {
           tracking_code?: string | null
           tracking_url?: string | null
           updated_at?: string
+          vat_rate_bp: number
         }
         Update: {
           billing_address_snapshot?: Json
@@ -1491,6 +1679,9 @@ export type Database = {
           order_number?: string
           organization_id?: number
           owner_notified_at?: string | null
+          packaging_cost_cents?: number | null
+          payment_fee_cents?: number | null
+          payment_fee_source?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           phone?: string | null
           refund_amount_cents?: number | null
@@ -1500,6 +1691,7 @@ export type Database = {
           shipped_at?: string | null
           shipping_address_snapshot?: Json
           shipping_cents?: number
+          shipping_cost_cents?: number | null
           shipping_method_code?: string
           shipping_notified_at?: string | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -1512,6 +1704,7 @@ export type Database = {
           tracking_code?: string | null
           tracking_url?: string | null
           updated_at?: string
+          vat_rate_bp?: number
         }
         Relationships: [
           {
@@ -1569,10 +1762,12 @@ export type Database = {
           active: boolean
           created_at: string
           currency: string
+          default_vat_rate_bp: number
           id: number
           legal_name: string | null
           name: string
           order_number_prefix: string
+          packaging_cost_cents: number
           slug: string
           storefront_public: boolean
           updated_at: string
@@ -1581,10 +1776,12 @@ export type Database = {
           active?: boolean
           created_at?: string
           currency?: string
+          default_vat_rate_bp?: number
           id?: never
           legal_name?: string | null
           name: string
           order_number_prefix: string
+          packaging_cost_cents?: number
           slug: string
           storefront_public?: boolean
           updated_at?: string
@@ -1593,10 +1790,12 @@ export type Database = {
           active?: boolean
           created_at?: string
           currency?: string
+          default_vat_rate_bp?: number
           id?: never
           legal_name?: string | null
           name?: string
           order_number_prefix?: string
+          packaging_cost_cents?: number
           slug?: string
           storefront_public?: boolean
           updated_at?: string
@@ -1623,6 +1822,13 @@ export type Database = {
           sort_order?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "product_box_contents_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_valuation"
+            referencedColumns: ["product_id"]
+          },
           {
             foreignKeyName: "product_box_contents_product_id_fkey"
             columns: ["product_id"]
@@ -1655,6 +1861,13 @@ export type Database = {
           title?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "product_features_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_valuation"
+            referencedColumns: ["product_id"]
+          },
           {
             foreignKeyName: "product_features_product_id_fkey"
             columns: ["product_id"]
@@ -1723,6 +1936,13 @@ export type Database = {
             foreignKeyName: "product_images_product_id_fkey"
             columns: ["product_id", "organization_id"]
             isOneToOne: false
+            referencedRelation: "inventory_valuation"
+            referencedColumns: ["product_id", "organization_id"]
+          },
+          {
+            foreignKeyName: "product_images_product_id_fkey"
+            columns: ["product_id", "organization_id"]
+            isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id", "organization_id"]
           },
@@ -1762,8 +1982,22 @@ export type Database = {
             foreignKeyName: "product_relations_product_id_fkey"
             columns: ["product_id", "organization_id"]
             isOneToOne: false
+            referencedRelation: "inventory_valuation"
+            referencedColumns: ["product_id", "organization_id"]
+          },
+          {
+            foreignKeyName: "product_relations_product_id_fkey"
+            columns: ["product_id", "organization_id"]
+            isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "product_relations_related_product_id_fkey"
+            columns: ["related_product_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_valuation"
+            referencedColumns: ["product_id", "organization_id"]
           },
           {
             foreignKeyName: "product_relations_related_product_id_fkey"
@@ -1801,6 +2035,13 @@ export type Database = {
             foreignKeyName: "product_specs_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "inventory_valuation"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_specs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
@@ -1820,6 +2061,13 @@ export type Database = {
           tag?: Database["public"]["Enums"]["promo_tag"]
         }
         Relationships: [
+          {
+            foreignKeyName: "product_tags_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_valuation"
+            referencedColumns: ["product_id"]
+          },
           {
             foreignKeyName: "product_tags_product_id_fkey"
             columns: ["product_id"]
@@ -2063,6 +2311,13 @@ export type Database = {
             foreignKeyName: "promotion_products_product_id_fkey"
             columns: ["product_id", "organization_id"]
             isOneToOne: false
+            referencedRelation: "inventory_valuation"
+            referencedColumns: ["product_id", "organization_id"]
+          },
+          {
+            foreignKeyName: "promotion_products_product_id_fkey"
+            columns: ["product_id", "organization_id"]
+            isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id", "organization_id"]
           },
@@ -2176,6 +2431,7 @@ export type Database = {
         Row: {
           active: boolean
           code: string
+          cost_cents: number | null
           description: string | null
           enabled_country_codes: string[]
           estimate_max_days: number
@@ -2190,6 +2446,7 @@ export type Database = {
         Insert: {
           active?: boolean
           code: string
+          cost_cents?: number | null
           description?: string | null
           enabled_country_codes?: string[]
           estimate_max_days?: number
@@ -2204,6 +2461,7 @@ export type Database = {
         Update: {
           active?: boolean
           code?: string
+          cost_cents?: number | null
           description?: string | null
           enabled_country_codes?: string[]
           estimate_max_days?: number
@@ -2459,9 +2717,263 @@ export type Database = {
           },
         ]
       }
+      supplier_receipt_lines: {
+        Row: {
+          allocated_costs_cents: number | null
+          id: number
+          landed_total_cents: number | null
+          landed_unit_cost_cents: number | null
+          organization_id: number
+          product_id: number
+          quantity: number
+          receipt_id: number
+          sort_order: number
+          unit_cost_cents: number
+        }
+        Insert: {
+          allocated_costs_cents?: number | null
+          id?: never
+          landed_total_cents?: number | null
+          landed_unit_cost_cents?: number | null
+          organization_id: number
+          product_id: number
+          quantity: number
+          receipt_id: number
+          sort_order?: number
+          unit_cost_cents: number
+        }
+        Update: {
+          allocated_costs_cents?: number | null
+          id?: never
+          landed_total_cents?: number | null
+          landed_unit_cost_cents?: number | null
+          organization_id?: number
+          product_id?: number
+          quantity?: number
+          receipt_id?: number
+          sort_order?: number
+          unit_cost_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_receipt_lines_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_receipt_lines_product_fkey"
+            columns: ["product_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_valuation"
+            referencedColumns: ["product_id", "organization_id"]
+          },
+          {
+            foreignKeyName: "supplier_receipt_lines_product_fkey"
+            columns: ["product_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "supplier_receipt_lines_receipt_fkey"
+            columns: ["receipt_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_receipts"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
+      supplier_receipts: {
+        Row: {
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          document_date: string
+          document_kind: Database["public"]["Enums"]["supplier_document_kind"]
+          document_number: string
+          duties_cents: number
+          freight_cents: number
+          id: number
+          notes: string | null
+          organization_id: number
+          reversal_reason: string | null
+          reversed_at: string | null
+          reversed_by: string | null
+          status: Database["public"]["Enums"]["supplier_receipt_status"]
+          supplier_id: number
+          updated_at: string
+          vat_regime: Database["public"]["Enums"]["vat_regime"]
+        }
+        Insert: {
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          document_date: string
+          document_kind: Database["public"]["Enums"]["supplier_document_kind"]
+          document_number: string
+          duties_cents?: number
+          freight_cents?: number
+          id?: never
+          notes?: string | null
+          organization_id: number
+          reversal_reason?: string | null
+          reversed_at?: string | null
+          reversed_by?: string | null
+          status?: Database["public"]["Enums"]["supplier_receipt_status"]
+          supplier_id: number
+          updated_at?: string
+          vat_regime: Database["public"]["Enums"]["vat_regime"]
+        }
+        Update: {
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          document_date?: string
+          document_kind?: Database["public"]["Enums"]["supplier_document_kind"]
+          document_number?: string
+          duties_cents?: number
+          freight_cents?: number
+          id?: never
+          notes?: string | null
+          organization_id?: number
+          reversal_reason?: string | null
+          reversed_at?: string | null
+          reversed_by?: string | null
+          status?: Database["public"]["Enums"]["supplier_receipt_status"]
+          supplier_id?: number
+          updated_at?: string
+          vat_regime?: Database["public"]["Enums"]["vat_regime"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_receipts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_receipts_supplier_fkey"
+            columns: ["supplier_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          active: boolean
+          country_code: string
+          created_at: string
+          email: string | null
+          id: number
+          name: string
+          notes: string | null
+          organization_id: number
+          updated_at: string
+          vat_number: string | null
+          vat_regime: Database["public"]["Enums"]["vat_regime"]
+        }
+        Insert: {
+          active?: boolean
+          country_code: string
+          created_at?: string
+          email?: string | null
+          id?: never
+          name: string
+          notes?: string | null
+          organization_id: number
+          updated_at?: string
+          vat_number?: string | null
+          vat_regime: Database["public"]["Enums"]["vat_regime"]
+        }
+        Update: {
+          active?: boolean
+          country_code?: string
+          created_at?: string
+          email?: string | null
+          id?: never
+          name?: string
+          notes?: string | null
+          organization_id?: number
+          updated_at?: string
+          vat_number?: string | null
+          vat_regime?: Database["public"]["Enums"]["vat_regime"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suppliers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      inventory_valuation: {
+        Row: {
+          average_cost_cents: number | null
+          cost_source: string | null
+          cost_updated_at: string | null
+          last_cost_cents: number | null
+          name: string | null
+          organization_id: number | null
+          product_id: number | null
+          sku: string | null
+          stock_quantity: number | null
+          unlimited_stock: boolean | null
+          value_cents: number | null
+          valued_quantity: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_profit: {
+        Row: {
+          cost_of_goods_cents: number | null
+          created_at: string | null
+          missing: string[] | null
+          order_id: number | null
+          order_number: string | null
+          organization_id: number | null
+          packaging_cost_cents: number | null
+          payment_fee_cents: number | null
+          payment_status: Database["public"]["Enums"]["payment_status"] | null
+          profit_cents: number | null
+          revenue_gross_cents: number | null
+          revenue_net_cents: number | null
+          shipping_cost_cents: number | null
+          status: Database["public"]["Enums"]["order_status"] | null
+          vat_rate_bp: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       add_order_note: {
@@ -2514,6 +3026,10 @@ export type Database = {
       complete_media_delete: {
         Args: { p_media_asset_id: number }
         Returns: undefined
+      }
+      confirm_supplier_receipt: {
+        Args: { p_receipt_id: number }
+        Returns: Json
       }
       create_order: {
         Args: {
@@ -2571,6 +3087,10 @@ export type Database = {
           product_slug: string
         }[]
       }
+      get_warehouse_summary: {
+        Args: { p_days?: number; p_organization_id: number }
+        Returns: Json
+      }
       lookup_order_status: {
         Args: { p_email: string; p_order_number: string }
         Returns: {
@@ -2612,6 +3132,10 @@ export type Database = {
       record_completed_media_storage_mutation: {
         Args: { p_object_path: string; p_operation: string }
         Returns: number
+      }
+      record_order_payment_fee: {
+        Args: { p_fee_cents: number; p_order_id: number }
+        Returns: undefined
       }
       record_order_refund: {
         Args: {
@@ -2679,6 +3203,10 @@ export type Database = {
         Args: { p_email: string; p_organization_id?: number; p_slug: string }
         Returns: undefined
       }
+      reverse_supplier_receipt: {
+        Args: { p_reason: string; p_receipt_id: number }
+        Returns: number
+      }
       revoke_staff_access: { Args: { p_user_id: string }; Returns: undefined }
       save_bundle_with_items: {
         Args: { p_bundle: Json; p_items: Json; p_organization_id: number }
@@ -2720,6 +3248,10 @@ export type Database = {
         }
         Returns: number
       }
+      save_supplier_receipt: {
+        Args: { p_lines: Json; p_organization_id: number; p_receipt: Json }
+        Returns: number
+      }
       set_manual_order_enablement_check: {
         Args: {
           p_evidence: string
@@ -2737,6 +3269,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_order_costs: {
+        Args: { p_costs: Json; p_order_id: number }
+        Returns: undefined
+      }
       set_order_tracking: {
         Args: {
           p_carrier: string
@@ -2746,9 +3282,27 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_organization_cost_defaults: {
+        Args: {
+          p_default_vat_rate_bp: number
+          p_organization_id: number
+          p_packaging_cost_cents: number
+        }
+        Returns: undefined
+      }
       set_primary_product_image: {
         Args: { p_image_id: number; p_product_id: number }
         Returns: undefined
+      }
+      set_product_cost: {
+        Args: {
+          p_organization_id: number
+          p_product_id: number
+          p_reason: string
+          p_unit_cost_cents: number
+          p_value_unvalued_movements?: boolean
+        }
+        Returns: number
       }
       set_staff_active: {
         Args: {
@@ -2826,6 +3380,8 @@ export type Database = {
         | "order_cancelled"
         | "return"
         | "damage"
+        | "receipt"
+        | "receipt_reversal"
       media_asset_status: "pending" | "ready" | "failed"
       order_status:
         | "pending"
@@ -2842,6 +3398,9 @@ export type Database = {
       staff_invite_status: "invited" | "active" | "revoked"
       staff_role: "owner" | "admin" | "editor"
       stock_status: "disponibile" | "in-arrivo" | "pre-ordine" | "esaurito"
+      supplier_document_kind: "invoice" | "delivery_note"
+      supplier_receipt_status: "draft" | "confirmed" | "reversed"
+      vat_regime: "intra_ue" | "nazionale" | "extra_ue"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3000,6 +3559,8 @@ export const Constants = {
         "order_cancelled",
         "return",
         "damage",
+        "receipt",
+        "receipt_reversal",
       ],
       media_asset_status: ["pending", "ready", "failed"],
       order_status: [
@@ -3018,6 +3579,9 @@ export const Constants = {
       staff_invite_status: ["invited", "active", "revoked"],
       staff_role: ["owner", "admin", "editor"],
       stock_status: ["disponibile", "in-arrivo", "pre-ordine", "esaurito"],
+      supplier_document_kind: ["invoice", "delivery_note"],
+      supplier_receipt_status: ["draft", "confirmed", "reversed"],
+      vat_regime: ["intra_ue", "nazionale", "extra_ue"],
     },
   },
 } as const

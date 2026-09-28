@@ -4,6 +4,8 @@ import { requireAdminAccess } from "@/lib/admin/access";
 import { buildFunnelSummary, loadAdminDashboard, loadFunnelStats } from "@/lib/admin/dashboard";
 import { formatPrice } from "@/lib/format";
 import { organizationBrand } from "@/lib/org/organization";
+import { formatEuro } from "@/lib/admin/warehouse";
+import { loadWarehouseSummary } from "@/lib/admin/warehouse-repository";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import styles from "@/components/admin/admin.module.css";
 
@@ -26,6 +28,10 @@ export default async function AdminDashboardPage() {
     loadFunnelStats(client, principal.organization.id, 30),
   ]);
   const isManager = principal.role === "owner" || principal.role === "admin";
+  const warehouse = isManager ? await loadWarehouseSummary(client, principal.organization.id, 30) : null;
+  const warehouseMargin = warehouse && warehouse.revenueNetCents > 0
+    ? Math.round((warehouse.profitCents / warehouse.revenueNetCents) * 1000) / 10
+    : null;
   const funnelSummary7 = buildFunnelSummary(funnel7);
   const funnelSummary30 = buildFunnelSummary(funnel30);
   const metrics = [
@@ -51,6 +57,33 @@ export default async function AdminDashboardPage() {
       </section>
 
       {dashboard.commerce ? <section aria-labelledby="commerce-title"><div className={styles.sectionTitle}><h2 id="commerce-title">Commerce</h2><span>Visibile a owner e admin</span></div><div className={styles.metricsGrid}><article className={styles.metricCard} data-tone="violet"><span>Ordini</span><strong>{numberFormat.format(dashboard.commerce.orderCount)}</strong></article><article className={styles.metricCard} data-tone="lime"><span>Ricavi pagati</span><strong>{formatPrice({amount:dashboard.commerce.revenueCents,currency:"EUR"})}</strong></article><article className={styles.metricCard}><span>Valore medio pagato</span><strong>{formatPrice({amount:dashboard.commerce.averageOrderValueCents,currency:"EUR"})}</strong></article></div></section>:<section className={styles.movementsPanel}><div className={styles.sectionTitle}><h2>Commerce riservato</h2><span>Ruolo {principal.role}</span></div><p className={styles.redactionNotice}>Ordini, ricavi e attività staff non sono disponibili al ruolo editor.</p></section>}
+
+      {warehouse ? (
+        <section aria-labelledby="magazzino-title" data-testid="warehouse-summary">
+          <div className={styles.sectionTitle}>
+            <h2 id="magazzino-title">Magazzino e profitto</h2>
+            <span>Costi netti IVA · ultimi {warehouse.periodDays} giorni</span>
+          </div>
+          <div className={styles.metricsGrid}>
+            <article className={styles.metricCard} data-tone="violet"><span>Valore magazzino</span><strong>{formatEuro(warehouse.stockValueCents)}</strong></article>
+            <article className={styles.metricCard} data-tone="lime">
+              <span>Profitto ordini completi</span>
+              <strong>{formatEuro(warehouse.profitCents)}</strong>
+              <small>{warehouse.completeOrders} ordini{warehouseMargin === null ? "" : ` · margine ${warehouseMargin.toLocaleString("it-IT")}%`}</small>
+            </article>
+            <article className={styles.metricCard} data-tone={warehouse.incompleteOrders > 0 ? "warning" : "neutral"}>
+              <span>Ordini senza profitto</span>
+              <strong>{numberFormat.format(warehouse.incompleteOrders)}</strong>
+              <small><Link href={{ pathname: "/admin/ordini" }}>Manca un costo: completa</Link></small>
+            </article>
+            <article className={styles.metricCard} data-tone={warehouse.productsWithoutCost > 0 ? "warning" : "neutral"}>
+              <span>Prodotti senza costo</span>
+              <strong>{numberFormat.format(warehouse.productsWithoutCost)}</strong>
+              <small><Link href={{ pathname: "/admin/inventario", query: { costo: "mancante" } }}>Imposta i costi</Link></small>
+            </article>
+          </div>
+        </section>
+      ) : null}
 
       <section aria-labelledby="metriche-title">
         <div className={styles.sectionTitle}>

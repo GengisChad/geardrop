@@ -22,6 +22,8 @@ insert into expected_tiers (table_name, tier) values
   ('navigation_menus', 'A'), ('footer_columns', 'A'), ('social_links', 'A'),
   ('storefront_daily_events', 'A'), ('order_enablement_checks', 'A'),
   ('coupon_redemptions', 'A'), ('audit_events', 'A'),
+  ('suppliers', 'A'), ('supplier_receipts', 'A'), ('inventory_cost_state', 'A'),
+  ('supplier_receipt_lines', 'B'), ('inventory_movement_costs', 'C'),
   ('order_items', 'B'), ('bundle_items', 'B'), ('product_relations', 'B'), ('product_images', 'B'),
   ('coupon_products', 'B'), ('coupon_categories', 'B'), ('coupon_bundles', 'B'),
   ('promotion_products', 'B'), ('promotion_categories', 'B'), ('promotion_bundles', 'B'),

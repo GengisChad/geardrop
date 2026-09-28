@@ -5,6 +5,8 @@ import styles from "@/components/admin/inventory/inventory.module.css";
 import { requireAdminAccess } from "@/lib/admin/access";
 import { listAdminInventory, normalizeAdminInventoryQuery } from "@/lib/admin/inventory-repository";
 import { getRestockDemand } from "@/lib/admin/inventory-restock";
+import { formatEuro } from "@/lib/admin/warehouse";
+import { loadInventoryValuation } from "@/lib/admin/warehouse-repository";
 import { BUNDLES } from "@/data/catalog";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -19,6 +21,8 @@ const reasons = {
   order_cancelled: "Ordine annullato",
   return: "Reso",
   damage: "Danno",
+  receipt: "Carico merce",
+  receipt_reversal: "Storno carico",
 } as const;
 
 export default async function AdminInventoryPage({
@@ -44,6 +48,9 @@ export default async function AdminInventoryPage({
     ? await getRestockDemand(client, organizationId, allDemandSlugs).catch(() => [])
     : [];
 
+  // Costs are owners' and admins' business: editors see stock only.
+  const valuation = isManager ? await loadInventoryValuation(client, organizationId, page.items.map((item) => item.id)) : null;
+
   // Build name map for demand panel display.
   const nameBySlug = new Map<string, string>([
     ...page.items.map((p) => [p.slug, p.name] as [string, string]),
@@ -63,6 +70,7 @@ export default async function AdminInventoryPage({
     <form className={styles.filters} method="get">
       <label>Cerca<input defaultValue={query.q} name="q" placeholder="Nome, SKU o slug" /></label>
       <label className={styles.checkbox}><input defaultChecked={query.lowStock} name="lowStock" type="checkbox" value="true" />Solo stock basso</label>
+      {isManager ? <label className={styles.checkbox}><input defaultChecked={query.missingCost} name="costo" type="checkbox" value="mancante" />Solo senza costo</label> : null}
       <button type="submit">Filtra</button><Link href="/admin/inventario">Azzera</Link>
     </form>
 
@@ -72,10 +80,15 @@ export default async function AdminInventoryPage({
 
     <section className={styles.panel}>
       <header><h2>Stock prodotti</h2><span>Valori generati dal database, non ricalcolati nella UI.</span></header>
-      <div className={styles.tableWrap}><table><thead><tr><th>Prodotto</th><th>SKU</th><th>Stock reale</th><th>Override</th><th>Stato effettivo</th><th>Acquistabile</th><th>Aggiornato</th></tr></thead>
+      <div className={styles.tableWrap}><table><thead><tr><th>Prodotto</th><th>SKU</th><th>Stock reale</th>{valuation ? <><th>Costo medio</th><th>Valore</th></> : null}<th>Override</th><th>Stato effettivo</th><th>Acquistabile</th><th>Aggiornato</th></tr></thead>
         <tbody>{page.items.map((product) => <tr key={product.id}>
           <td><Link href={`/admin/prodotti/${product.id}`}>{product.name}</Link>{product.is_low_stock ? <small>stock basso</small> : null}</td>
           <td className={styles.mono}>{product.sku}</td><td className={styles.numeric}>{product.stock_quantity}</td>
+          {valuation ? (() => {
+            const cost = valuation.get(product.id);
+            return <><td className={styles.numeric}>{cost?.averageCostCents == null ? <small data-testid="cost-missing">costo mancante</small> : formatEuro(cost.averageCostCents)}</td>
+              <td className={styles.numeric}>{cost?.unlimitedStock ? <small>su ordinazione</small> : formatEuro(cost?.valueCents ?? null)}</td></>;
+          })() : null}
           <td>{product.availability_override ?? "Nessuno"}</td><td><span className={styles.status} data-status={product.stock_status}>{product.stock_status}</span></td>
           <td>{product.is_purchasable ? "Sì" : "No"}</td><td><time dateTime={product.updated_at}>{date.format(new Date(product.updated_at))}</time></td>
         </tr>)}</tbody></table></div>

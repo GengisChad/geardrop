@@ -354,6 +354,16 @@
   font-weight: 700;
 }
 
+.metricCard small {
+  color: #72777f;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.metricCard small a {
+  color: inherit;
+}
+
 .metricCard strong {
   font-variant-numeric: tabular-nums;
   font-size: 32px;
