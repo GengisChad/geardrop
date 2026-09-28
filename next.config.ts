@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { gestionaleRedirectSource, isGestionaleOnly } from "./src/lib/app-mode";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -10,12 +11,20 @@ const nextConfig: NextConfig = {
     qualities: [75, 90],
   },
   typedRoutes: true,
-  // Glory Valkerion LF was briefly renamed "Glory Valkyrie"; keep those links working. Temporary, so
-  // browsers that cached the earlier opposite redirect do not keep a permanent loop.
   async redirects() {
+    // The management app on its own deployment answers /admin only: every shop page leads there.
+    if (isGestionaleOnly()) {
+      return [{ source: gestionaleRedirectSource(), destination: "/admin", permanent: false }];
+    }
+    // Glory Valkerion LF was briefly renamed "Glory Valkyrie"; keep those links working. Temporary, so
+    // browsers that cached the earlier opposite redirect do not keep a permanent loop.
     return [
       { source: "/prodotto/glory-valkyrie-lf", destination: "/prodotto/glory-valkerion-lf", permanent: false },
     ];
+  },
+  async headers() {
+    // A private tool: never in a search engine.
+    return isGestionaleOnly() ? [{ source: "/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] }] : [];
   },
   experimental: {
     optimizePackageImports: ["lucide-react", "framer-motion"],

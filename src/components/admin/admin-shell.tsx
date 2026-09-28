@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { ExternalLink, LogOut } from "lucide-react";
 import type { StaffRole } from "@/lib/auth/roles";
+import { isGestionaleOnly } from "@/lib/app-mode";
 import { organizationBrand, type OrganizationMembership } from "@/lib/org/organization";
+import { PRODUCTION_ORIGIN } from "@/lib/site-url";
 import { AdminMobileDock, AdminNavigation } from "./admin-navigation";
 import { OrderLockBanner } from "./order-lock-banner";
 import { OrganizationSwitcher } from "./organization-switcher";
@@ -39,16 +41,23 @@ export function AdminShell({ acceptOrders, children, displayName, role, organiza
       <div className={styles.workspace}>
         <OrderLockBanner acceptOrders={acceptOrders} />
         <header className={styles.topbar}>
-          <div className={styles.staffIdentity}>
+          <Link className={styles.staffIdentity} href="/admin/account" aria-label={`${displayName}, il mio account`}>
             <strong>{displayName}</strong>
             <span>{ROLE_LABELS[role]}</span>
-          </div>
+          </Link>
           <div className={styles.topbarActions}>
             <OrganizationSwitcher current={organization} organizations={organizations} />
             {organization.storefrontPublic ? (
-              <Link href="/" className={styles.storeLink} aria-label="Visualizza negozio">
-                <span>Visualizza negozio</span> <ExternalLink size={16} aria-hidden="true" />
-              </Link>
+              // The management app has no shop of its own: it opens the live one.
+              isGestionaleOnly() ? (
+                <a href={PRODUCTION_ORIGIN} className={styles.storeLink} aria-label="Visualizza negozio" rel="noreferrer" target="_blank">
+                  <span>Visualizza negozio</span> <ExternalLink size={16} aria-hidden="true" />
+                </a>
+              ) : (
+                <Link href="/" className={styles.storeLink} aria-label="Visualizza negozio">
+                  <span>Visualizza negozio</span> <ExternalLink size={16} aria-hidden="true" />
+                </Link>
+              )
             ) : null}
             <form action="/admin/logout" method="post">
               <button
