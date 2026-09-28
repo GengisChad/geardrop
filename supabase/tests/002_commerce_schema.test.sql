@@ -1,4 +1,34 @@
 begin;
+-- Organization compatibility for fixtures written before organizations existed (see
+-- supabase/tests/044). Inside this rolled-back transaction every organization-scoped table
+-- defaults to Gear Drop, and every staff profile is mirrored as a Gear Drop member with the
+-- same role and state. Company isolation itself is tested without these shortcuts in 041-044.
+do $legacy_organization$
+declare
+  geardrop bigint := (select id from public.organizations where slug = 'geardrop');
+  target text;
+begin
+  for target in
+    select c.table_name
+    from information_schema.columns as c
+    join information_schema.tables as t on t.table_schema = c.table_schema and t.table_name = c.table_name
+    where c.table_schema = 'public' and c.column_name = 'organization_id'
+      and t.table_type = 'BASE TABLE' and c.table_name <> 'organization_members'
+  loop
+    execute format('alter table public.%I alter column organization_id set default %s', target, geardrop);
+  end loop;
+end
+$legacy_organization$;
+create function private.legacy_mirror_staff_membership() returns trigger language plpgsql set search_path = '' as $legacy_mirror$
+begin
+  insert into public.organization_members (organization_id, user_id, role, active)
+  values ((select id from public.organizations where slug = 'geardrop'), new.user_id, new.role, new.active)
+  on conflict (organization_id, user_id) do update set role = excluded.role, active = excluded.active;
+  return new;
+end
+$legacy_mirror$;
+create trigger legacy_mirror_staff_membership after insert or update of role, active on public.staff_profiles
+  for each row execute function private.legacy_mirror_staff_membership();
 select plan(26);
 
 select has_table('public', 'customer_profiles', 'customer profiles exist');
@@ -16,7 +46,7 @@ select col_not_null('public', 'products', 'stock_quantity', 'stock is required')
 select col_not_null('public', 'products', 'stock_status', 'computed stock status is required');
 
 select results_eq(
-  $$select accept_orders from public.site_settings where singleton$$,
+  $$select accept_orders from public.site_settings where organization_id = (select id from public.organizations where slug = 'geardrop')$$,
   array[false],
   'order intake starts disabled'
 );
@@ -115,9 +145,9 @@ select results_eq(
   'double seed keeps one image per catalogue product'
 );
 select results_eq(
-  $$select count(*)::bigint from public.site_settings$$,
-  array[1::bigint],
-  'double seed keeps one settings row'
+  $$select count(*)::bigint from public.site_settings group by organization_id order by organization_id$$,
+  array[1::bigint, 1::bigint],
+  'double seed keeps one settings row per company'
 );
 select results_eq(
   $$select count(*)::bigint from (select slug from public.categories group by slug having count(*) > 1) duplicates$$,

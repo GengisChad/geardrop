@@ -1,4 +1,34 @@
 begin;
+-- Organization compatibility for fixtures written before organizations existed (see
+-- supabase/tests/044). Inside this rolled-back transaction every organization-scoped table
+-- defaults to Gear Drop, and every staff profile is mirrored as a Gear Drop member with the
+-- same role and state. Company isolation itself is tested without these shortcuts in 041-044.
+do $legacy_organization$
+declare
+  geardrop bigint := (select id from public.organizations where slug = 'geardrop');
+  target text;
+begin
+  for target in
+    select c.table_name
+    from information_schema.columns as c
+    join information_schema.tables as t on t.table_schema = c.table_schema and t.table_name = c.table_name
+    where c.table_schema = 'public' and c.column_name = 'organization_id'
+      and t.table_type = 'BASE TABLE' and c.table_name <> 'organization_members'
+  loop
+    execute format('alter table public.%I alter column organization_id set default %s', target, geardrop);
+  end loop;
+end
+$legacy_organization$;
+create function private.legacy_mirror_staff_membership() returns trigger language plpgsql set search_path = '' as $legacy_mirror$
+begin
+  insert into public.organization_members (organization_id, user_id, role, active)
+  values ((select id from public.organizations where slug = 'geardrop'), new.user_id, new.role, new.active)
+  on conflict (organization_id, user_id) do update set role = excluded.role, active = excluded.active;
+  return new;
+end
+$legacy_mirror$;
+create trigger legacy_mirror_staff_membership after insert or update of role, active on public.staff_profiles
+  for each row execute function private.legacy_mirror_staff_membership();
 select plan(17);
 
 select results_eq($$select count(*)::integer from public.products$$, array[21], 'seed has the twenty-one reviewed products');
@@ -26,7 +56,7 @@ select results_eq($$select count(*)::integer from public.products
 select results_eq($$select slug, preorder_allocation from public.products where availability_override = 'preorder'::public.availability_override order by sort_order$$,
   $$values ('cobalt-drake-4-60f',9),('mirage-clock-9-65b',9),('suppress-superion-0-70lp',5),('strike-dran-4-50ff',9),('tread-croc-tq-5-50gn',9)$$,
   'the pre-order drop carries the allocations the owner set');
-select is((select accept_orders from public.site_settings where singleton), false, 'order acceptance remains disabled');
+select is((select accept_orders from public.site_settings where organization_id = (select id from public.organizations where slug = 'geardrop')), false, 'order acceptance remains disabled');
 select results_eq($$select count(*)::integer from public.orders$$, array[0], 'seed invents no orders');
 select results_eq($$select count(*)::integer from public.coupons$$, array[0], 'seed invents no coupons');
 select results_eq($$select count(*)::integer from public.promotions$$, array[0], 'seed invents no promotions');

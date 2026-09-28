@@ -26,9 +26,13 @@ function rows(values: readonly string[]): string {
   return values.map((value) => `  (${value})`).join(",\n");
 }
 
+/** Every seeded row belongs to Gear Drop, the company with the public shop. */
+const GEARDROP = "(select id from public.organizations where slug = 'geardrop')";
+
 export function generateSupabaseSeed(): string {
   const categoryRows = CATEGORIES.map((category, index) =>
     [
+      GEARDROP,
       text(category.slug), text(category.name), text(category.tagline), text(category.description),
       "true", index, "'published'::public.publication_status", "now()",
     ].join(", "),
@@ -87,6 +91,7 @@ export function generateSupabaseSeed(): string {
     [text(BUNDLE.slug), text(slug), 1, index].join(", "),
   );
   const homepageRows = HOMEPAGE_SECTION_SEEDS.map((section, index) => [
+    GEARDROP,
     text(section.key), text(section.type), nullable(section.eyebrow), text(section.title),
     nullable(section.subtitle), nullable(section.description), nullable(section.cta?.label),
     nullable(section.cta?.href), "'published'::public.publication_status", "now()", "true", index,
@@ -107,18 +112,20 @@ export function generateSupabaseSeed(): string {
     (section.bundleSlugs ?? []).map((slug, index) => [text(section.key), text(slug), index].join(", ")),
   );
   const pageRows = CONTENT_PAGE_SEEDS.map((page) => [
+    GEARDROP,
     text(page.slug), text(page.title), text(page.excerpt), text(page.markdownSource),
     "'markdown'::public.content_format", text(page.seoTitle), text(page.seoDescription),
     "'published'::public.publication_status", "now()", "true", page.sortOrder,
   ].join(", "));
   const menuRows = NAVIGATION_MENU_SEEDS.map((menu) => [
+    GEARDROP,
     text(menu.key), text(menu.label), "'published'::public.publication_status", "now()", "true",
   ].join(", "));
   const navigationRows = NAVIGATION_MENU_SEEDS.flatMap((menu) =>
     menu.items.map((item, index) => [text(menu.key), text(item.label), text(item.href), index].join(", ")),
   );
   const footerColumnRows = FOOTER_COLUMN_SEEDS.map((column, index) =>
-    [text(column.key), text(column.title), "'published'::public.publication_status", "now()", "true", index].join(", "),
+    [GEARDROP, text(column.key), text(column.title), "'published'::public.publication_status", "now()", "true", index].join(", "),
   );
   const footerItemRows = FOOTER_COLUMN_SEEDS.flatMap((column) =>
     column.links.map((item, index) => [text(column.key), text(item.label), text(item.href), index].join(", ")),
@@ -129,7 +136,7 @@ ${rows(tagRows)}
 )
 insert into public.product_tags (product_id, tag)
 select product.id, seed.tag::public.promo_tag
-from seed join public.products as product on product.slug = seed.product_slug
+from seed join public.products as product on product.slug = seed.product_slug and product.organization_id = ${GEARDROP}
 on conflict (product_id, tag) do nothing;
 `;
   const homepageBundleSql = homepageBundleRows.length === 0 ? "" : `with seed(section_key, bundle_slug, sort_order) as (
@@ -139,8 +146,8 @@ ${rows(homepageBundleRows)}
 insert into public.homepage_section_bundles(section_id, bundle_id, sort_order)
 select section.id, bundle.id, seed.sort_order
 from seed
-join public.homepage_sections as section on section.section_key = seed.section_key
-join public.bundles as bundle on bundle.slug = seed.bundle_slug
+join public.homepage_sections as section on section.section_key = seed.section_key and section.organization_id = ${GEARDROP}
+join public.bundles as bundle on bundle.slug = seed.bundle_slug and bundle.organization_id = ${GEARDROP}
 on conflict (section_id, bundle_id) do update set sort_order = excluded.sort_order;
 `;
 
@@ -161,16 +168,16 @@ begin
 end;
 $$;
 
-insert into public.site_settings (singleton, accept_orders)
-values (true, false)
-on conflict (singleton) do nothing;
+insert into public.site_settings (organization_id, accept_orders)
+select id, false from public.organizations where slug = 'geardrop'
+on conflict (organization_id) do nothing;
 
 insert into public.categories (
-  slug, name, tagline, description, active, sort_order, publication_status, published_at
+  organization_id, slug, name, tagline, description, active, sort_order, publication_status, published_at
 )
 values
 ${rows(categoryRows)}
-on conflict (slug) do update set
+on conflict (organization_id, slug) do update set
   name = excluded.name,
   tagline = excluded.tagline,
   description = excluded.description,
@@ -181,11 +188,12 @@ with seed(category_slug, slug, sku, stock_quantity, availability_override, preor
 ${rows(productRows)}
 )
 insert into public.products (
-  category_id, slug, sku, name, tagline, description, price_cents,
+  organization_id, category_id, slug, sku, name, tagline, description, price_cents,
   compare_at_price_cents, publication_status, active, stock_quantity,
   availability_override, preorder_allocation, allow_backorder, blade_type, rating, review_count, sort_order
 )
 select
+  category.organization_id,
   category.id,
   seed.slug,
   seed.sku,
@@ -206,8 +214,8 @@ select
   seed.review_count,
   seed.sort_order
 from seed
-join public.categories as category on category.slug = seed.category_slug
-on conflict (slug) do update set
+join public.categories as category on category.slug = seed.category_slug and category.organization_id = ${GEARDROP}
+on conflict (organization_id, slug) do update set
   category_id = excluded.category_id,
   sku = excluded.sku,
   name = excluded.name,
@@ -227,7 +235,7 @@ ${rows(imageRows)}
 insert into public.product_images (product_id, src, width, height, alt, sort_order, published, is_primary)
 select product.id, seed.src, seed.width, seed.height, seed.alt, seed.sort_order, true, seed.sort_order = 0
 from seed
-join public.products as product on product.slug = seed.product_slug
+join public.products as product on product.slug = seed.product_slug and product.organization_id = ${GEARDROP}
 on conflict (product_id, sort_order) do update set
   src = excluded.src,
   width = excluded.width,
@@ -240,7 +248,7 @@ ${rows(specRows)}
 )
 insert into public.product_specs (product_id, label, value, sort_order)
 select product.id, seed.label, seed.value, seed.sort_order
-from seed join public.products as product on product.slug = seed.product_slug
+from seed join public.products as product on product.slug = seed.product_slug and product.organization_id = ${GEARDROP}
 on conflict (product_id, sort_order) do update set
   label = excluded.label,
   value = excluded.value;
@@ -251,7 +259,7 @@ ${rows(featureRows)}
 )
 insert into public.product_features (product_id, title, description, sort_order)
 select product.id, seed.title, seed.description, seed.sort_order
-from seed join public.products as product on product.slug = seed.product_slug
+from seed join public.products as product on product.slug = seed.product_slug and product.organization_id = ${GEARDROP}
 on conflict (product_id, sort_order) do update set
   title = excluded.title,
   description = excluded.description;
@@ -262,7 +270,7 @@ ${rows(contentRows)}
 )
 insert into public.product_box_contents (product_id, content, sort_order)
 select product.id, seed.content, seed.sort_order
-from seed join public.products as product on product.slug = seed.product_slug
+from seed join public.products as product on product.slug = seed.product_slug and product.organization_id = ${GEARDROP}
 on conflict (product_id, sort_order) do update set
   content = excluded.content;
 
@@ -275,16 +283,17 @@ ${rows(relationRows)}
 insert into public.product_relations (product_id, related_product_id, relation_type, sort_order)
 select product.id, related.id, 'related'::public.product_relation_type, seed.sort_order
 from seed
-join public.products as product on product.slug = seed.product_slug
-join public.products as related on related.slug = seed.related_slug
+join public.products as product on product.slug = seed.product_slug and product.organization_id = ${GEARDROP}
+join public.products as related on related.slug = seed.related_slug and related.organization_id = ${GEARDROP}
 on conflict (product_id, related_product_id, relation_type) do update set
   sort_order = excluded.sort_order;
 
 insert into public.bundles (
-  slug, eyebrow, title_line_one, title_line_two, description,
+  organization_id, slug, eyebrow, title_line_one, title_line_two, description,
   price_cents, compare_at_price_cents, hero_product_id, active
 )
 select
+  product.organization_id,
   ${text(BUNDLE.slug)},
   ${text(BUNDLE.eyebrow)},
   ${text(BUNDLE.title[0])},
@@ -295,8 +304,8 @@ select
   product.id,
   true
 from public.products as product
-where product.slug = ${text(BUNDLE.heroSlug)}
-on conflict (slug) do update set
+where product.slug = ${text(BUNDLE.heroSlug)} and product.organization_id = ${GEARDROP}
+on conflict (organization_id, slug) do update set
   eyebrow = excluded.eyebrow,
   title_line_one = excluded.title_line_one,
   title_line_two = excluded.title_line_two,
@@ -312,19 +321,19 @@ ${rows(bundleItemRows)}
 insert into public.bundle_items (bundle_id, product_id, quantity, sort_order)
 select bundle.id, product.id, seed.quantity, seed.sort_order
 from seed
-join public.bundles as bundle on bundle.slug = seed.bundle_slug
-join public.products as product on product.slug = seed.product_slug
+join public.bundles as bundle on bundle.slug = seed.bundle_slug and bundle.organization_id = ${GEARDROP}
+join public.products as product on product.slug = seed.product_slug and product.organization_id = ${GEARDROP}
 on conflict (bundle_id, product_id) do update set
   quantity = excluded.quantity,
   sort_order = excluded.sort_order;
 
 insert into public.homepage_sections (
-  section_key, section_type, eyebrow, title, subtitle, description, cta_label, cta_href,
+  organization_id, section_key, section_type, eyebrow, title, subtitle, description, cta_label, cta_href,
   publication_status, published_at, active, sort_order
 )
 values
 ${rows(homepageRows)}
-on conflict (section_key) do update set
+on conflict (organization_id, section_key) do update set
   section_type = excluded.section_type,
   eyebrow = excluded.eyebrow,
   title = excluded.title,
@@ -336,6 +345,7 @@ on conflict (section_key) do update set
 delete from public.homepage_section_products as target
 using public.homepage_sections as section
 where target.section_id = section.id
+  and section.organization_id = ${GEARDROP}
   and section.section_key in (${HOMEPAGE_SECTION_SEEDS.map((section) => text(section.key)).join(", ")});
 
 with seed(section_key, product_slug, sort_order) as (
@@ -345,13 +355,14 @@ ${rows(homepageProductRows)}
 insert into public.homepage_section_products(section_id, product_id, sort_order)
 select section.id, product.id, seed.sort_order
 from seed
-join public.homepage_sections as section on section.section_key = seed.section_key
-join public.products as product on product.slug = seed.product_slug
+join public.homepage_sections as section on section.section_key = seed.section_key and section.organization_id = ${GEARDROP}
+join public.products as product on product.slug = seed.product_slug and product.organization_id = ${GEARDROP}
 on conflict (section_id, product_id) do update set sort_order = excluded.sort_order;
 
 delete from public.homepage_section_categories as target
 using public.homepage_sections as section
 where target.section_id = section.id
+  and section.organization_id = ${GEARDROP}
   and section.section_key in (${HOMEPAGE_SECTION_SEEDS.map((section) => text(section.key)).join(", ")});
 
 with seed(section_key, category_slug, sort_order) as (
@@ -361,38 +372,40 @@ ${rows(homepageCategoryRows)}
 insert into public.homepage_section_categories(section_id, category_id, sort_order)
 select section.id, category.id, seed.sort_order
 from seed
-join public.homepage_sections as section on section.section_key = seed.section_key
-join public.categories as category on category.slug = seed.category_slug
+join public.homepage_sections as section on section.section_key = seed.section_key and section.organization_id = ${GEARDROP}
+join public.categories as category on category.slug = seed.category_slug and category.organization_id = ${GEARDROP}
 on conflict (section_id, category_id) do update set sort_order = excluded.sort_order;
 
 delete from public.homepage_section_bundles as target
 using public.homepage_sections as section
 where target.section_id = section.id
+  and section.organization_id = ${GEARDROP}
   and section.section_key in (${HOMEPAGE_SECTION_SEEDS.map((section) => text(section.key)).join(", ")});
 
 ${homepageBundleSql}
 
 insert into public.content_pages (
-  slug, title, excerpt, markdown_source, format, seo_title, seo_description,
+  organization_id, slug, title, excerpt, markdown_source, format, seo_title, seo_description,
   publication_status, published_at, active, sort_order
 )
 values
 ${rows(pageRows)}
-on conflict (slug) do update set
+on conflict (organization_id, slug) do update set
   title = excluded.title,
   excerpt = excluded.excerpt,
   markdown_source = excluded.markdown_source,
   seo_title = excluded.seo_title,
   seo_description = excluded.seo_description;
 
-insert into public.navigation_menus(menu_key, label, publication_status, published_at, active)
+insert into public.navigation_menus(organization_id, menu_key, label, publication_status, published_at, active)
 values
 ${rows(menuRows)}
-on conflict (menu_key) do update set label = excluded.label;
+on conflict (organization_id, menu_key) do update set label = excluded.label;
 
 delete from public.navigation_items as item
 using public.navigation_menus as menu
 where item.menu_id = menu.id
+  and menu.organization_id = ${GEARDROP}
   and menu.menu_key in (${NAVIGATION_MENU_SEEDS.map((menu) => text(menu.key)).join(", ")});
 
 with seed(menu_key, label, href, sort_order) as (
@@ -401,17 +414,18 @@ ${rows(navigationRows)}
 )
 insert into public.navigation_items(menu_id, parent_id, label, href, active, sort_order)
 select menu.id, null, seed.label, seed.href, true, seed.sort_order
-from seed join public.navigation_menus as menu on menu.menu_key = seed.menu_key;
+from seed join public.navigation_menus as menu on menu.menu_key = seed.menu_key and menu.organization_id = ${GEARDROP};
 
-insert into public.footer_columns(column_key, title, publication_status, published_at, active, sort_order)
+insert into public.footer_columns(organization_id, column_key, title, publication_status, published_at, active, sort_order)
 values
 ${rows(footerColumnRows)}
-on conflict (column_key) do update set
+on conflict (organization_id, column_key) do update set
   title = excluded.title;
 
 delete from public.footer_items as item
 using public.footer_columns as column_row
 where item.column_id = column_row.id
+  and column_row.organization_id = ${GEARDROP}
   and column_row.column_key in (${FOOTER_COLUMN_SEEDS.map((column) => text(column.key)).join(", ")});
 
 with seed(column_key, label, href, sort_order) as (
@@ -420,7 +434,7 @@ ${rows(footerItemRows)}
 )
 insert into public.footer_items(column_id, label, href, active, sort_order)
 select column_row.id, seed.label, seed.href, true, seed.sort_order
-from seed join public.footer_columns as column_row on column_row.column_key = seed.column_key;
+from seed join public.footer_columns as column_row on column_row.column_key = seed.column_key and column_row.organization_id = ${GEARDROP};
 
 -- Fill reviewed public identity only while migration defaults are still blank.
 -- Later admin/runtime changes always win and are never reset by this seed.
@@ -428,22 +442,23 @@ update public.site_settings set
   store_name = case when store_name = '' then ${text(INITIAL_PUBLIC_SETTINGS.storeName)} else store_name end,
   default_seo_title = case when default_seo_title = '' then ${text(INITIAL_PUBLIC_SETTINGS.seoTitle)} else default_seo_title end,
   default_seo_description = coalesce(default_seo_description, ${text(INITIAL_PUBLIC_SETTINGS.seoDescription)})
-where singleton
+where organization_id = ${GEARDROP}
   and updated_by is null
   and store_name = ''
   and default_seo_title = ''
   and default_seo_description is null;
 
-insert into public.shipping_methods (code, name, price_cents, free_from_cents, active, sort_order)
-values ('standard', 'Spedizione standard', ${SHIPPING_FLAT_RATE}, ${FREE_SHIPPING_THRESHOLD}, false, 0)
-on conflict (code) do update set
+insert into public.shipping_methods (organization_id, code, name, price_cents, free_from_cents, active, sort_order)
+values (${GEARDROP}, 'standard', 'Spedizione standard', ${SHIPPING_FLAT_RATE}, ${FREE_SHIPPING_THRESHOLD}, false, 0)
+on conflict (organization_id, code) do update set
   name = excluded.name,
   price_cents = excluded.price_cents,
   free_from_cents = excluded.free_from_cents,
   sort_order = excluded.sort_order;
 
-insert into public.order_enablement_checks (key, label)
-values
+insert into public.order_enablement_checks (organization_id, key, label)
+select ${GEARDROP}, checks.key, checks.label
+from (values
   ('owners', 'Due owner verificati'),
   ('environment', 'Ambiente e segreti verificati'),
   ('stock', 'Stock reale caricato e revisionato'),
@@ -455,7 +470,8 @@ values
   ('advisors', 'Advisor sicurezza e performance verificati'),
   ('smoke_orders', 'Ordini guest e autenticati verificati'),
   ('backup', 'Backup e ripristino verificati')
-on conflict (key) do update set label = excluded.label;
+) as checks(key, label)
+on conflict (organization_id, key) do update set label = excluded.label;
 commit;
 `;
 }

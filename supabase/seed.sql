@@ -15,19 +15,19 @@ begin
 end;
 $$;
 
-insert into public.site_settings (singleton, accept_orders)
-values (true, false)
-on conflict (singleton) do nothing;
+insert into public.site_settings (organization_id, accept_orders)
+select id, false from public.organizations where slug = 'geardrop'
+on conflict (organization_id) do nothing;
 
 insert into public.categories (
-  slug, name, tagline, description, active, sort_order, publication_status, published_at
+  organization_id, slug, name, tagline, description, active, sort_order, publication_status, published_at
 )
 values
-  ('beyblade-x', 'Beyblade X', 'Scatena la tua energia. Domina lo stadio.', 'Tutta la collezione di trottole Beyblade X: attacco, difesa, stamina e bilanciate, pronte per ogni scontro.', true, 0, 'published'::public.publication_status, now()),
-  ('lanciatori', 'Lanciatori', 'Potenza e controllo nelle tue mani.', 'Lanciatori a corda e accessori di lancio per colpi precisi e ripetibili.', true, 1, 'published'::public.publication_status, now()),
-  ('stadi', 'Stadi', 'Arene per battaglie epiche.', 'Stadi e set arena ufficiali Beyblade X, studiati per urti estremi e KO spettacolari.', true, 2, 'published'::public.publication_status, now()),
-  ('accessori', 'Accessori', 'Personalizza. Migliora. Vinci.', 'Attrezzi, custodie e ricambi per tenere il tuo arsenale sempre pronto.', true, 3, 'published'::public.publication_status, now())
-on conflict (slug) do update set
+  ((select id from public.organizations where slug = 'geardrop'), 'beyblade-x', 'Beyblade X', 'Scatena la tua energia. Domina lo stadio.', 'Tutta la collezione di trottole Beyblade X: attacco, difesa, stamina e bilanciate, pronte per ogni scontro.', true, 0, 'published'::public.publication_status, now()),
+  ((select id from public.organizations where slug = 'geardrop'), 'lanciatori', 'Lanciatori', 'Potenza e controllo nelle tue mani.', 'Lanciatori a corda e accessori di lancio per colpi precisi e ripetibili.', true, 1, 'published'::public.publication_status, now()),
+  ((select id from public.organizations where slug = 'geardrop'), 'stadi', 'Stadi', 'Arene per battaglie epiche.', 'Stadi e set arena ufficiali Beyblade X, studiati per urti estremi e KO spettacolari.', true, 2, 'published'::public.publication_status, now()),
+  ((select id from public.organizations where slug = 'geardrop'), 'accessori', 'Accessori', 'Personalizza. Migliora. Vinci.', 'Attrezzi, custodie e ricambi per tenere il tuo arsenale sempre pronto.', true, 3, 'published'::public.publication_status, now())
+on conflict (organization_id, slug) do update set
   name = excluded.name,
   tagline = excluded.tagline,
   description = excluded.description,
@@ -58,11 +58,12 @@ with seed(category_slug, slug, sku, stock_quantity, availability_override, preor
   ('accessori', 'porta-deck-bianco', 'PORTA-DECK-BIANCO', 9999, null::public.availability_override, 0, 'Porta Deck Bianco', 'Tre trottole al sicuro. Anche Expanded e Infinity.', 'Il porta deck tiene un deck completo di Beyblade X: tre scomparti, uno per trottola, ognuno con la sua chiusura a clip. Entrano anche i bey Expanded e Infinity. Stampato in 3D. Accessorio non ufficiale: non è prodotto né certificato da Hasbro.', 2450, null, null, 0, 0, 20)
 )
 insert into public.products (
-  category_id, slug, sku, name, tagline, description, price_cents,
+  organization_id, category_id, slug, sku, name, tagline, description, price_cents,
   compare_at_price_cents, publication_status, active, stock_quantity,
   availability_override, preorder_allocation, allow_backorder, blade_type, rating, review_count, sort_order
 )
 select
+  category.organization_id,
   category.id,
   seed.slug,
   seed.sku,
@@ -83,8 +84,8 @@ select
   seed.review_count,
   seed.sort_order
 from seed
-join public.categories as category on category.slug = seed.category_slug
-on conflict (slug) do update set
+join public.categories as category on category.slug = seed.category_slug and category.organization_id = (select id from public.organizations where slug = 'geardrop')
+on conflict (organization_id, slug) do update set
   category_id = excluded.category_id,
   sku = excluded.sku,
   name = excluded.name,
@@ -124,7 +125,7 @@ with seed(product_slug, src, width, height, alt, sort_order) as (
 insert into public.product_images (product_id, src, width, height, alt, sort_order, published, is_primary)
 select product.id, seed.src, seed.width, seed.height, seed.alt, seed.sort_order, true, seed.sort_order = 0
 from seed
-join public.products as product on product.slug = seed.product_slug
+join public.products as product on product.slug = seed.product_slug and product.organization_id = (select id from public.organizations where slug = 'geardrop')
 on conflict (product_id, sort_order) do update set
   src = excluded.src,
   width = excluded.width,
@@ -274,7 +275,7 @@ with seed(product_slug, label, value, sort_order) as (
 )
 insert into public.product_specs (product_id, label, value, sort_order)
 select product.id, seed.label, seed.value, seed.sort_order
-from seed join public.products as product on product.slug = seed.product_slug
+from seed join public.products as product on product.slug = seed.product_slug and product.organization_id = (select id from public.organizations where slug = 'geardrop')
 on conflict (product_id, sort_order) do update set
   label = excluded.label,
   value = excluded.value;
@@ -368,7 +369,7 @@ with seed(product_slug, title, description, sort_order) as (
 )
 insert into public.product_features (product_id, title, description, sort_order)
 select product.id, seed.title, seed.description, seed.sort_order
-from seed join public.products as product on product.slug = seed.product_slug
+from seed join public.products as product on product.slug = seed.product_slug and product.organization_id = (select id from public.organizations where slug = 'geardrop')
 on conflict (product_id, sort_order) do update set
   title = excluded.title,
   description = excluded.description;
@@ -431,7 +432,7 @@ with seed(product_slug, content, sort_order) as (
 )
 insert into public.product_box_contents (product_id, content, sort_order)
 select product.id, seed.content, seed.sort_order
-from seed join public.products as product on product.slug = seed.product_slug
+from seed join public.products as product on product.slug = seed.product_slug and product.organization_id = (select id from public.organizations where slug = 'geardrop')
 on conflict (product_id, sort_order) do update set
   content = excluded.content;
 
@@ -445,7 +446,7 @@ with seed(product_slug, tag) as (
 )
 insert into public.product_tags (product_id, tag)
 select product.id, seed.tag::public.promo_tag
-from seed join public.products as product on product.slug = seed.product_slug
+from seed join public.products as product on product.slug = seed.product_slug and product.organization_id = (select id from public.organizations where slug = 'geardrop')
 on conflict (product_id, tag) do nothing;
 
 
@@ -518,16 +519,17 @@ with seed(product_slug, related_slug, sort_order) as (
 insert into public.product_relations (product_id, related_product_id, relation_type, sort_order)
 select product.id, related.id, 'related'::public.product_relation_type, seed.sort_order
 from seed
-join public.products as product on product.slug = seed.product_slug
-join public.products as related on related.slug = seed.related_slug
+join public.products as product on product.slug = seed.product_slug and product.organization_id = (select id from public.organizations where slug = 'geardrop')
+join public.products as related on related.slug = seed.related_slug and related.organization_id = (select id from public.organizations where slug = 'geardrop')
 on conflict (product_id, related_product_id, relation_type) do update set
   sort_order = excluded.sort_order;
 
 insert into public.bundles (
-  slug, eyebrow, title_line_one, title_line_two, description,
+  organization_id, slug, eyebrow, title_line_one, title_line_two, description,
   price_cents, compare_at_price_cents, hero_product_id, active
 )
 select
+  product.organization_id,
   'duo-horus-enlil',
   'Offerta duo',
   'Horus ×',
@@ -538,8 +540,8 @@ select
   product.id,
   true
 from public.products as product
-where product.slug = 'shatter-horus-9-65gb'
-on conflict (slug) do update set
+where product.slug = 'shatter-horus-9-65gb' and product.organization_id = (select id from public.organizations where slug = 'geardrop')
+on conflict (organization_id, slug) do update set
   eyebrow = excluded.eyebrow,
   title_line_one = excluded.title_line_one,
   title_line_two = excluded.title_line_two,
@@ -556,26 +558,26 @@ with seed(bundle_slug, product_slug, quantity, sort_order) as (
 insert into public.bundle_items (bundle_id, product_id, quantity, sort_order)
 select bundle.id, product.id, seed.quantity, seed.sort_order
 from seed
-join public.bundles as bundle on bundle.slug = seed.bundle_slug
-join public.products as product on product.slug = seed.product_slug
+join public.bundles as bundle on bundle.slug = seed.bundle_slug and bundle.organization_id = (select id from public.organizations where slug = 'geardrop')
+join public.products as product on product.slug = seed.product_slug and product.organization_id = (select id from public.organizations where slug = 'geardrop')
 on conflict (bundle_id, product_id) do update set
   quantity = excluded.quantity,
   sort_order = excluded.sort_order;
 
 insert into public.homepage_sections (
-  section_key, section_type, eyebrow, title, subtitle, description, cta_label, cta_href,
+  organization_id, section_key, section_type, eyebrow, title, subtitle, description, cta_label, cta_href,
   publication_status, published_at, active, sort_order
 )
 values
-  ('hero', 'hero', 'Beyblade X · Prodotti originali Hasbro', 'Beyblade X originali, disponibili in Italia.', null, 'Trottole, starter, lanciatori e stadi Beyblade X originali Hasbro, con disponibilità indicate e spedizione in Italia.', 'Esplora il catalogo', '/negozio', 'published'::public.publication_status, now(), true, 0),
-  ('categories', 'categories', null, 'Categorie', null, null, null, null, 'published'::public.publication_status, now(), true, 1),
-  ('status-legend', 'status_legend', null, 'Legenda della disponibilità', null, null, null, null, 'published'::public.publication_status, now(), true, 2),
-  ('featured-products', 'featured_products', null, 'In evidenza', null, null, 'Vedi tutto', '/negozio', 'published'::public.publication_status, now(), true, 3),
-  ('trust', 'trust', null, 'Trottole, lanciatori e stadi Hasbro originali. Consegna in 1-5 giorni lavorativi, spedizione solo in Italia.', null, null, null, null, 'published'::public.publication_status, now(), true, 4),
-  ('latest-drops', 'latest_drops', null, 'Catalogo Beyblade X', null, null, 'Esplora il catalogo', '/negozio', 'published'::public.publication_status, now(), true, 5),
-  ('bestsellers', 'bestsellers', null, 'Pre-ordini aperti', null, null, 'Vedi Beyblade X', '/negozio/beyblade-x', 'published'::public.publication_status, now(), true, 6),
-  ('competitive-picks', 'competitive_products', null, 'Esplora il catalogo', null, null, 'Vedi Beyblade X', '/negozio/beyblade-x', 'published'::public.publication_status, now(), true, 7)
-on conflict (section_key) do update set
+  ((select id from public.organizations where slug = 'geardrop'), 'hero', 'hero', 'Beyblade X · Prodotti originali Hasbro', 'Beyblade X originali, disponibili in Italia.', null, 'Trottole, starter, lanciatori e stadi Beyblade X originali Hasbro, con disponibilità indicate e spedizione in Italia.', 'Esplora il catalogo', '/negozio', 'published'::public.publication_status, now(), true, 0),
+  ((select id from public.organizations where slug = 'geardrop'), 'categories', 'categories', null, 'Categorie', null, null, null, null, 'published'::public.publication_status, now(), true, 1),
+  ((select id from public.organizations where slug = 'geardrop'), 'status-legend', 'status_legend', null, 'Legenda della disponibilità', null, null, null, null, 'published'::public.publication_status, now(), true, 2),
+  ((select id from public.organizations where slug = 'geardrop'), 'featured-products', 'featured_products', null, 'In evidenza', null, null, 'Vedi tutto', '/negozio', 'published'::public.publication_status, now(), true, 3),
+  ((select id from public.organizations where slug = 'geardrop'), 'trust', 'trust', null, 'Trottole, lanciatori e stadi Hasbro originali. Consegna in 1-5 giorni lavorativi, spedizione solo in Italia.', null, null, null, null, 'published'::public.publication_status, now(), true, 4),
+  ((select id from public.organizations where slug = 'geardrop'), 'latest-drops', 'latest_drops', null, 'Catalogo Beyblade X', null, null, 'Esplora il catalogo', '/negozio', 'published'::public.publication_status, now(), true, 5),
+  ((select id from public.organizations where slug = 'geardrop'), 'bestsellers', 'bestsellers', null, 'Pre-ordini aperti', null, null, 'Vedi Beyblade X', '/negozio/beyblade-x', 'published'::public.publication_status, now(), true, 6),
+  ((select id from public.organizations where slug = 'geardrop'), 'competitive-picks', 'competitive_products', null, 'Esplora il catalogo', null, null, 'Vedi Beyblade X', '/negozio/beyblade-x', 'published'::public.publication_status, now(), true, 7)
+on conflict (organization_id, section_key) do update set
   section_type = excluded.section_type,
   eyebrow = excluded.eyebrow,
   title = excluded.title,
@@ -587,6 +589,7 @@ on conflict (section_key) do update set
 delete from public.homepage_section_products as target
 using public.homepage_sections as section
 where target.section_id = section.id
+  and section.organization_id = (select id from public.organizations where slug = 'geardrop')
   and section.section_key in ('hero', 'categories', 'status-legend', 'featured-products', 'trust', 'latest-drops', 'bestsellers', 'competitive-picks');
 
 with seed(section_key, product_slug, sort_order) as (
@@ -618,13 +621,14 @@ with seed(section_key, product_slug, sort_order) as (
 insert into public.homepage_section_products(section_id, product_id, sort_order)
 select section.id, product.id, seed.sort_order
 from seed
-join public.homepage_sections as section on section.section_key = seed.section_key
-join public.products as product on product.slug = seed.product_slug
+join public.homepage_sections as section on section.section_key = seed.section_key and section.organization_id = (select id from public.organizations where slug = 'geardrop')
+join public.products as product on product.slug = seed.product_slug and product.organization_id = (select id from public.organizations where slug = 'geardrop')
 on conflict (section_id, product_id) do update set sort_order = excluded.sort_order;
 
 delete from public.homepage_section_categories as target
 using public.homepage_sections as section
 where target.section_id = section.id
+  and section.organization_id = (select id from public.organizations where slug = 'geardrop')
   and section.section_key in ('hero', 'categories', 'status-legend', 'featured-products', 'trust', 'latest-drops', 'bestsellers', 'competitive-picks');
 
 with seed(section_key, category_slug, sort_order) as (
@@ -637,23 +641,24 @@ with seed(section_key, category_slug, sort_order) as (
 insert into public.homepage_section_categories(section_id, category_id, sort_order)
 select section.id, category.id, seed.sort_order
 from seed
-join public.homepage_sections as section on section.section_key = seed.section_key
-join public.categories as category on category.slug = seed.category_slug
+join public.homepage_sections as section on section.section_key = seed.section_key and section.organization_id = (select id from public.organizations where slug = 'geardrop')
+join public.categories as category on category.slug = seed.category_slug and category.organization_id = (select id from public.organizations where slug = 'geardrop')
 on conflict (section_id, category_id) do update set sort_order = excluded.sort_order;
 
 delete from public.homepage_section_bundles as target
 using public.homepage_sections as section
 where target.section_id = section.id
+  and section.organization_id = (select id from public.organizations where slug = 'geardrop')
   and section.section_key in ('hero', 'categories', 'status-legend', 'featured-products', 'trust', 'latest-drops', 'bestsellers', 'competitive-picks');
 
 
 
 insert into public.content_pages (
-  slug, title, excerpt, markdown_source, format, seo_title, seo_description,
+  organization_id, slug, title, excerpt, markdown_source, format, seo_title, seo_description,
   publication_status, published_at, active, sort_order
 )
 values
-  ('faq', 'Domande frequenti', 'Le risposte alle domande che ci arrivano più spesso.', '## Cosa include il catalogo?
+  ((select id from public.organizations where slug = 'geardrop'), 'faq', 'Domande frequenti', 'Le risposte alle domande che ci arrivano più spesso.', '## Cosa include il catalogo?
 
 Il catalogo raccoglie trottole, set e accessori Beyblade X con descrizioni e disponibilità indicate per ciascun prodotto.
 
@@ -682,7 +687,7 @@ Le nuove uscite, invece, non sono ancora distribuite: arrivano in Italia con l''
 ## Posso cambiare idea?
 
 Hai 30 giorni dalla consegna per richiedere il reso. Vedi la pagina Resi e rimborsi.', 'markdown'::public.content_format, 'Domande frequenti', 'Le risposte alle domande che ci arrivano più spesso.', 'published'::public.publication_status, now(), true, 0),
-  ('spedizioni', 'Spedizioni', 'Come e quando arriva il tuo ordine.', '## Tempi di consegna
+  ((select id from public.organizations where slug = 'geardrop'), 'spedizioni', 'Spedizioni', 'Come e quando arriva il tuo ordine.', '## Tempi di consegna
 
 I prodotti disponibili vengono consegnati in 1-5 giorni lavorativi a seconda del corriere, dalla conferma del pagamento.
 
@@ -707,7 +712,7 @@ Le informazioni di tracciamento vengono comunicate quando il pacco viene affidat
 ## Prodotti in pre-ordine
 
 Gli articoli dello stesso ordine vengono gestiti insieme. Per esigenze diverse, chiedi assistenza prima della conferma.', 'markdown'::public.content_format, 'Spedizioni', 'Come e quando arriva il tuo ordine.', 'published'::public.publication_status, now(), true, 1),
-  ('resi', 'Resi e rimborsi', 'Se qualcosa non va, si risolve.', '## Hai 30 giorni
+  ((select id from public.organizations where slug = 'geardrop'), 'resi', 'Resi e rimborsi', 'Se qualcosa non va, si risolve.', '## Hai 30 giorni
 
 Puoi richiedere il reso entro 30 giorni dalla consegna, per qualsiasi motivo, purché il prodotto sia integro e nella confezione originale.
 
@@ -722,7 +727,7 @@ Il rimborso viene emesso entro 5 giorni lavorativi dalla ricezione del reso, sul
 ## Prodotto difettoso
 
 Se il prodotto arriva danneggiato o difettoso, la spedizione di reso è a nostro carico e la sostituzione è prioritaria.', 'markdown'::public.content_format, 'Resi e rimborsi', 'Se qualcosa non va, si risolve.', 'published'::public.publication_status, now(), true, 2),
-  ('contatti', 'Contattaci', 'Siamo blader anche noi: rispondiamo da persone, non da bot.', '## Assistenza ordini
+  ((select id from public.organizations where slug = 'geardrop'), 'contatti', 'Contattaci', 'Siamo blader anche noi: rispondiamo da persone, non da bot.', '## Assistenza ordini
 
 Per qualsiasi domanda su un ordine, scrivi a infogeardrop@gmail.com indicando il numero d''ordine.
 
@@ -735,7 +740,7 @@ Per consigli su combo e assetti scrivici a infogeardrop@gmail.com: rispondiamo v
 ## Collaborazioni
 
 Organizzi tornei o gestisci un negozio? Scrivi a infogeardrop@gmail.com.', 'markdown'::public.content_format, 'Contattaci', 'Siamo blader anche noi: rispondiamo da persone, non da bot.', 'published'::public.publication_status, now(), true, 3),
-  ('chi-siamo', 'Chi siamo', 'GEAR//DROP è un progetto indipendente dedicato al catalogo Beyblade X.', '## Pensato per il catalogo. Costruito per scegliere.
+  ((select id from public.organizations where slug = 'geardrop'), 'chi-siamo', 'Chi siamo', 'GEAR//DROP è un progetto indipendente dedicato al catalogo Beyblade X.', '## Pensato per il catalogo. Costruito per scegliere.
 
 GEAR//DROP è un progetto indipendente dedicato a un catalogo Beyblade X chiaro, con disponibilità indicate e assistenza prima dell''ordine.
 
@@ -756,21 +761,22 @@ Attacco, difesa, stamina, bilanciato: se ci chiedi un consiglio su un assetto, s
 ### Assistenza prima dell''ordine
 
 Hai un dubbio su un pezzo prima di ordinare? Scrivici e ti rispondiamo noi. Il pagamento avviene in sicurezza su Stripe.', 'markdown'::public.content_format, 'Chi siamo', 'GEAR//DROP è un progetto indipendente dedicato al catalogo Beyblade X.', 'published'::public.publication_status, now(), true, 4)
-on conflict (slug) do update set
+on conflict (organization_id, slug) do update set
   title = excluded.title,
   excerpt = excluded.excerpt,
   markdown_source = excluded.markdown_source,
   seo_title = excluded.seo_title,
   seo_description = excluded.seo_description;
 
-insert into public.navigation_menus(menu_key, label, publication_status, published_at, active)
+insert into public.navigation_menus(organization_id, menu_key, label, publication_status, published_at, active)
 values
-  ('main', 'Navigazione principale', 'published'::public.publication_status, now(), true)
-on conflict (menu_key) do update set label = excluded.label;
+  ((select id from public.organizations where slug = 'geardrop'), 'main', 'Navigazione principale', 'published'::public.publication_status, now(), true)
+on conflict (organization_id, menu_key) do update set label = excluded.label;
 
 delete from public.navigation_items as item
 using public.navigation_menus as menu
 where item.menu_id = menu.id
+  and menu.organization_id = (select id from public.organizations where slug = 'geardrop')
   and menu.menu_key in ('main');
 
 with seed(menu_key, label, href, sort_order) as (
@@ -785,20 +791,21 @@ with seed(menu_key, label, href, sort_order) as (
 )
 insert into public.navigation_items(menu_id, parent_id, label, href, active, sort_order)
 select menu.id, null, seed.label, seed.href, true, seed.sort_order
-from seed join public.navigation_menus as menu on menu.menu_key = seed.menu_key;
+from seed join public.navigation_menus as menu on menu.menu_key = seed.menu_key and menu.organization_id = (select id from public.organizations where slug = 'geardrop');
 
-insert into public.footer_columns(column_key, title, publication_status, published_at, active, sort_order)
+insert into public.footer_columns(organization_id, column_key, title, publication_status, published_at, active, sort_order)
 values
-  ('shop', 'Negozio', 'published'::public.publication_status, now(), true, 0),
-  ('help', 'Aiuto', 'published'::public.publication_status, now(), true, 1),
-  ('account', 'Account', 'published'::public.publication_status, now(), true, 2),
-  ('info', 'Info', 'published'::public.publication_status, now(), true, 3)
-on conflict (column_key) do update set
+  ((select id from public.organizations where slug = 'geardrop'), 'shop', 'Negozio', 'published'::public.publication_status, now(), true, 0),
+  ((select id from public.organizations where slug = 'geardrop'), 'help', 'Aiuto', 'published'::public.publication_status, now(), true, 1),
+  ((select id from public.organizations where slug = 'geardrop'), 'account', 'Account', 'published'::public.publication_status, now(), true, 2),
+  ((select id from public.organizations where slug = 'geardrop'), 'info', 'Info', 'published'::public.publication_status, now(), true, 3)
+on conflict (organization_id, column_key) do update set
   title = excluded.title;
 
 delete from public.footer_items as item
 using public.footer_columns as column_row
 where item.column_id = column_row.id
+  and column_row.organization_id = (select id from public.organizations where slug = 'geardrop')
   and column_row.column_key in ('shop', 'help', 'account', 'info');
 
 with seed(column_key, label, href, sort_order) as (
@@ -822,7 +829,7 @@ with seed(column_key, label, href, sort_order) as (
 )
 insert into public.footer_items(column_id, label, href, active, sort_order)
 select column_row.id, seed.label, seed.href, true, seed.sort_order
-from seed join public.footer_columns as column_row on column_row.column_key = seed.column_key;
+from seed join public.footer_columns as column_row on column_row.column_key = seed.column_key and column_row.organization_id = (select id from public.organizations where slug = 'geardrop');
 
 -- Fill reviewed public identity only while migration defaults are still blank.
 -- Later admin/runtime changes always win and are never reset by this seed.
@@ -830,22 +837,23 @@ update public.site_settings set
   store_name = case when store_name = '' then 'GEAR//DROP' else store_name end,
   default_seo_title = case when default_seo_title = '' then 'GEAR//DROP — Beyblade X per la community italiana' else default_seo_title end,
   default_seo_description = coalesce(default_seo_description, 'Catalogo Beyblade X in pre-ordine: trottole, lanciatori, stadi e accessori con disponibilità indicate.')
-where singleton
+where organization_id = (select id from public.organizations where slug = 'geardrop')
   and updated_by is null
   and store_name = ''
   and default_seo_title = ''
   and default_seo_description is null;
 
-insert into public.shipping_methods (code, name, price_cents, free_from_cents, active, sort_order)
-values ('standard', 'Spedizione standard', 490, 5900, false, 0)
-on conflict (code) do update set
+insert into public.shipping_methods (organization_id, code, name, price_cents, free_from_cents, active, sort_order)
+values ((select id from public.organizations where slug = 'geardrop'), 'standard', 'Spedizione standard', 490, 5900, false, 0)
+on conflict (organization_id, code) do update set
   name = excluded.name,
   price_cents = excluded.price_cents,
   free_from_cents = excluded.free_from_cents,
   sort_order = excluded.sort_order;
 
-insert into public.order_enablement_checks (key, label)
-values
+insert into public.order_enablement_checks (organization_id, key, label)
+select (select id from public.organizations where slug = 'geardrop'), checks.key, checks.label
+from (values
   ('owners', 'Due owner verificati'),
   ('environment', 'Ambiente e segreti verificati'),
   ('stock', 'Stock reale caricato e revisionato'),
@@ -857,5 +865,6 @@ values
   ('advisors', 'Advisor sicurezza e performance verificati'),
   ('smoke_orders', 'Ordini guest e autenticati verificati'),
   ('backup', 'Backup e ripristino verificati')
-on conflict (key) do update set label = excluded.label;
+) as checks(key, label)
+on conflict (organization_id, key) do update set label = excluded.label;
 commit;
