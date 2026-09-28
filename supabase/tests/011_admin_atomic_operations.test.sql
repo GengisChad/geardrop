@@ -117,7 +117,7 @@ select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000702
 select set_config('request.jwt.claim.role', 'authenticated', true);
 set local role authenticated;
 select throws_ok(
-  $$select public.adjust_inventory('atomic-inventory', 1, 'manual_adjustment', 'editor')$$,
+  $$select public.adjust_inventory((select id from public.organizations where slug = 'geardrop'), 'atomic-inventory', 1, 'manual_adjustment', 'editor')$$,
   '42501', 'GD_INVENTORY_MANAGER_REQUIRED',
   'editor commerce denial includes inventory adjustment'
 );
@@ -337,7 +337,7 @@ select results_eq(
 );
 
 select results_eq(
-  $$select public.adjust_inventory('atomic-inventory', 5, 'manual_adjustment', 'initial shelf count')$$,
+  $$select public.adjust_inventory((select id from public.organizations where slug = 'geardrop'), 'atomic-inventory', 5, 'manual_adjustment', 'initial shelf count')$$,
   array[5],
   'manager inventory adjustment returns new stock'
 );

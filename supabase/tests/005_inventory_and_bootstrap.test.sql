@@ -71,7 +71,7 @@ select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000301
 select set_config('request.jwt.claim.role', 'authenticated', true);
 set local role authenticated;
 select results_eq(
-  $$select public.adjust_inventory('SOAR-PHOENIX-9-60GF', 5, 'manual_adjustment', 'CI stock test')$$,
+  $$select public.adjust_inventory((select id from public.organizations where slug = 'geardrop'), 'SOAR-PHOENIX-9-60GF', 5, 'manual_adjustment', 'CI stock test')$$,
   array[5],
   'owner can increase stock through adjust_inventory'
 );
@@ -101,7 +101,7 @@ select is(
   'authenticated role cannot update stock directly'
 );
 select throws_ok(
-  $$select public.adjust_inventory('SOAR-PHOENIX-9-60GF', -6, 'manual_adjustment', 'negative stock')$$,
+  $$select public.adjust_inventory((select id from public.organizations where slug = 'geardrop'), 'SOAR-PHOENIX-9-60GF', -6, 'manual_adjustment', 'negative stock')$$,
   '23514',
   'GD_INSUFFICIENT_STOCK',
   'adjust_inventory blocks negative stock'

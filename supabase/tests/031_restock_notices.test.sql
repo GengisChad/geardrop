@@ -162,14 +162,14 @@ select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000003101'
 
 select results_eq(
   $$select product_slug, pending_notices::int, preorder_demand::int
-      from public.get_inventory_restock_demand(array['restock-pub','restock-pub2','restock-draft'])
+      from public.get_inventory_restock_demand((select id from public.organizations where slug = 'geardrop'), array['restock-pub','restock-pub2','restock-draft'])
       order by product_slug$$,
   $$values ('restock-draft'::text, 0, 0), ('restock-pub'::text, 2, 0), ('restock-pub2'::text, 1, 0)$$,
   'get_inventory_restock_demand returns correct pending notice counts');
 
 -- No pre-order demand yet (no active orders with preorder_quantity > 0).
 select is(
-  (select coalesce(sum(preorder_demand)::int,0) from public.get_inventory_restock_demand(array['restock-pub'])),
+  (select coalesce(sum(preorder_demand)::int,0) from public.get_inventory_restock_demand((select id from public.organizations where slug = 'geardrop'), array['restock-pub'])),
   0,
   'preorder_demand is zero when there are no active preorder orders');
 reset role;
@@ -178,7 +178,7 @@ reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000003102',true);
 select is(
-  (select count(*)::int from public.get_inventory_restock_demand(array['restock-pub'])),
+  (select count(*)::int from public.get_inventory_restock_demand((select id from public.organizations where slug = 'geardrop'), array['restock-pub'])),
   0,
   'editor gets no rows from get_inventory_restock_demand (guard returns empty)');
 reset role;
@@ -200,7 +200,7 @@ select is(
   'a delivered request is deleted');
 
 select is(
-  (select pending_notices::int from public.get_inventory_restock_demand(array['restock-pub'])),
+  (select pending_notices::int from public.get_inventory_restock_demand((select id from public.organizations where slug = 'geardrop'), array['restock-pub'])),
   1,
   'one request remains pending after marking one notified');
 reset role;
@@ -256,7 +256,7 @@ select (select id from public.orders where order_number='GD-RESTOCK-TEST'),
 set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000003101',true);
 select is(
-  (select preorder_demand::int from public.get_inventory_restock_demand(array['restock-pub'])),
+  (select preorder_demand::int from public.get_inventory_restock_demand((select id from public.organizations where slug = 'geardrop'), array['restock-pub'])),
   2,
   'preorder_demand counts preorder_quantity from confirmed/processing orders');
 reset role;

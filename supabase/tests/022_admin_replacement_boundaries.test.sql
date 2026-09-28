@@ -33,10 +33,10 @@ select plan(20);
 
 select has_column('public','inventory_movements','balance_kind','inventory ledger identifies its balance');
 select has_column('public','inventory_movements','balance_after','inventory ledger stores the affected balance');
-select has_function('public','save_footer_configuration',array['jsonb'],'atomic footer replacement exists');
-select has_function('public','set_manual_order_enablement_check',array['text','enablement_check_status','text'],'manual enablement verification exists');
+select has_function('public','save_footer_configuration',array['bigint', 'jsonb'],'atomic footer replacement exists');
+select has_function('public','set_manual_order_enablement_check',array['bigint', 'text','enablement_check_status','text'],'manual enablement verification exists');
 select has_function('public','update_product_image_metadata',array['bigint','bigint','text','boolean','boolean'],'atomic product image metadata update exists');
-select ok(not has_function_privilege('anon','public.save_footer_configuration(jsonb)','EXECUTE'),'anonymous cannot replace footer');
+select ok(not has_function_privilege('anon','public.save_footer_configuration(bigint,jsonb)','EXECUTE'),'anonymous cannot replace footer');
 
 insert into auth.users(instance_id,id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at,confirmation_token,email_change,email_change_token_new,recovery_token) values
 ('00000000-0000-0000-0000-000000000000','00000000-0000-0000-0000-000000002201','authenticated','authenticated','replacement-owner@example.com','',now(),'{}','{}',now(),now(),'','','',''),
@@ -51,7 +51,7 @@ values('preserved','Preserved','draft',false,0);
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000002202',true);
 set local role authenticated;
 select throws_ok(
-  $$select public.save_footer_configuration('{"columns":[{"key":"duplicate","title":"One","publication_status":"draft","active":false,"items":[]},{"key":"duplicate","title":"Two","publication_status":"draft","active":false,"items":[]}],"social_links":[]}'::jsonb)$$,
+  $$select public.save_footer_configuration((select id from public.organizations where slug = 'geardrop'), '{"columns":[{"key":"duplicate","title":"One","publication_status":"draft","active":false,"items":[]},{"key":"duplicate","title":"Two","publication_status":"draft","active":false,"items":[]}],"social_links":[]}'::jsonb)$$,
   '23505',null,'invalid footer replacement rolls back atomically');
 reset role;
 select results_eq($$select column_key from public.footer_columns$$,array['preserved'::text],'failed replacement preserves prior footer');
@@ -59,19 +59,19 @@ select results_eq($$select column_key from public.footer_columns$$,array['preser
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000002202',true);
 set local role authenticated;
 select throws_ok(
-  $$select public.set_manual_order_enablement_check('payments','passed','Editor evidence')$$,
+  $$select public.set_manual_order_enablement_check((select id from public.organizations where slug = 'geardrop'), 'payments','passed','Editor evidence')$$,
   '42501','GD_ORDER_OWNER_REQUIRED','editor cannot verify payment readiness');
 reset role;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000002201',true);
 set local role authenticated;
 select lives_ok(
-  $$select public.set_manual_order_enablement_check('payments','passed','Sandbox payment round trip verified')$$,
+  $$select public.set_manual_order_enablement_check((select id from public.organizations where slug = 'geardrop'), 'payments','passed','Sandbox payment round trip verified')$$,
   'owner records payment readiness');
 select lives_ok(
-  $$select public.set_manual_order_enablement_check('owners','passed','Two confirmed owner profiles verified')$$,
+  $$select public.set_manual_order_enablement_check((select id from public.organizations where slug = 'geardrop'), 'owners','passed','Two confirmed owner profiles verified')$$,
   'owner can complete a seeded operational check');
 select throws_ok(
-  $$select public.set_manual_order_enablement_check('store_identity','passed','Must be machine checked')$$,
+  $$select public.set_manual_order_enablement_check((select id from public.organizations where slug = 'geardrop'), 'store_identity','passed','Must be machine checked')$$,
   '22023','GD_ORDER_CHECK_INVALID','machine checks cannot be manually overridden');
 reset role;
 select results_eq(

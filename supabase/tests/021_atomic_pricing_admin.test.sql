@@ -31,11 +31,11 @@ create trigger legacy_mirror_staff_membership after insert or update of role, ac
   for each row execute function private.legacy_mirror_staff_membership();
 select plan(10);
 
-select has_function('public','save_promotion_with_targets',array['jsonb','bigint[]','bigint[]','bigint[]'],'atomic promotion save exists');
-select has_function('public','save_coupon_with_targets',array['jsonb','bigint[]','bigint[]','bigint[]'],'atomic coupon save exists');
+select has_function('public','save_promotion_with_targets',array['bigint', 'jsonb','bigint[]','bigint[]','bigint[]'],'atomic promotion save exists');
+select has_function('public','save_coupon_with_targets',array['bigint', 'jsonb','bigint[]','bigint[]','bigint[]'],'atomic coupon save exists');
 select has_function('public','duplicate_coupon_with_targets',array['bigint'],'atomic coupon duplication exists');
-select ok(not has_function_privilege('anon','public.save_promotion_with_targets(jsonb,bigint[],bigint[],bigint[])','EXECUTE'),'anonymous cannot save promotions');
-select ok(not has_function_privilege('anon','public.save_coupon_with_targets(jsonb,bigint[],bigint[],bigint[])','EXECUTE'),'anonymous cannot save coupons');
+select ok(not has_function_privilege('anon','public.save_promotion_with_targets(bigint,jsonb,bigint[],bigint[],bigint[])','EXECUTE'),'anonymous cannot save promotions');
+select ok(not has_function_privilege('anon','public.save_coupon_with_targets(bigint,jsonb,bigint[],bigint[],bigint[])','EXECUTE'),'anonymous cannot save coupons');
 
 insert into auth.users(instance_id,id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at,confirmation_token,email_change,email_change_token_new,recovery_token)
 values('00000000-0000-0000-0000-000000000000','00000000-0000-0000-0000-000000002101','authenticated','authenticated','atomic-admin@example.com','',now(),'{}','{}',now(),now(),'','','','');
@@ -57,12 +57,12 @@ values((select id from public.coupons where code='ATOMIC'),(select id from publi
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000002101',true);
 set local role authenticated;
 select throws_ok(
-  $$select public.save_promotion_with_targets(
+  $$select public.save_promotion_with_targets((select id from public.organizations where slug = 'geardrop'), 
     jsonb_build_object('id',(select id from public.promotions where name='Atomic promotion'),'name','Changed','description',null,'discount_kind','fixed','discount_value',200,'minimum_subtotal_cents',0,'minimum_quantity',1,'priority',0,'stackable',false,'starts_at',null,'ends_at',null,'active',true),
     array[9223372036854770000]::bigint[],array[]::bigint[],array[]::bigint[])$$,
   '23503','GD_PROMOTION_TARGET_NOT_FOUND','invalid promotion target rolls back the entire save');
 select throws_ok(
-  $$select public.save_coupon_with_targets(
+  $$select public.save_coupon_with_targets((select id from public.organizations where slug = 'geardrop'), 
     jsonb_build_object('id',(select id from public.coupons where code='ATOMIC'),'code','CHANGED','discount_kind','fixed','discount_value',200,'free_shipping',false,'minimum_subtotal_cents',0,'maximum_discount_cents',null,'usage_limit',null,'per_customer_limit',null,'first_purchase_only',false,'starts_at',null,'expires_at',null,'active',true),
     array[9223372036854770000]::bigint[],array[]::bigint[],array[]::bigint[])$$,
   '23503','GD_COUPON_TARGET_NOT_FOUND','invalid coupon target rolls back the entire save');

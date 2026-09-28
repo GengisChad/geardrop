@@ -35,7 +35,7 @@ select has_column('public', 'categories', 'media_asset_id', 'categories support 
 select col_type_is('public', 'categories', 'publication_status', 'publication_status', 'category publication is typed');
 select col_type_is('public', 'bundles', 'availability_override', 'availability_override', 'bundle availability is typed');
 select has_column('public', 'bundles', 'starts_at', 'bundles support publication windows');
-select has_function('public', 'save_bundle_with_items', array['jsonb', 'jsonb'], 'atomic bundle save exists');
+select has_function('public', 'save_bundle_with_items', array['bigint', 'jsonb', 'jsonb'], 'atomic bundle save exists');
 select has_function('public', 'reorder_categories', array['bigint[]'], 'collision-free category reorder exists');
 
 insert into auth.users (
@@ -125,7 +125,7 @@ select results_eq(
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000801', true);
 set local role authenticated;
 select lives_ok(
-  $$select public.save_bundle_with_items(
+  $$select public.save_bundle_with_items((select id from public.organizations where slug = 'geardrop'), 
     jsonb_build_object(
       'slug', 'task10-bundle', 'eyebrow', 'Bundle', 'title_line_one', 'Atomic',
       'title_line_two', 'Bundle', 'description', 'Saved atomically',
@@ -165,7 +165,7 @@ select throws_ok(
   'pending media cannot replace bundle media'
 );
 select throws_ok(
-  $$select public.save_bundle_with_items(
+  $$select public.save_bundle_with_items((select id from public.organizations where slug = 'geardrop'), 
     jsonb_build_object(
       'id', (select id from public.bundles where slug = 'task10-bundle'),
       'slug', 'task10-bundle', 'eyebrow', 'Bundle', 'title_line_one', 'Atomic',
@@ -223,7 +223,7 @@ select throws_ok(
   'editor cannot mutate bundle commerce fields directly'
 );
 select throws_ok(
-  $$select public.save_bundle_with_items(
+  $$select public.save_bundle_with_items((select id from public.organizations where slug = 'geardrop'), 
     jsonb_build_object(
       'id', (select id from public.bundles where slug = 'task10-bundle'),
       'slug', 'task10-bundle', 'eyebrow', 'Bundle', 'title_line_one', 'Atomic',

@@ -96,7 +96,7 @@ select results_eq(
 select function_returns(
   'public',
   'adjust_inventory',
-  array['text', 'integer', 'public.inventory_reason', 'text'],
+  array['bigint', 'text', 'integer', 'public.inventory_reason', 'text'],
   'integer',
   'inventory adjustment returns authoritative stock'
 );

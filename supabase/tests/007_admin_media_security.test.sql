@@ -122,7 +122,7 @@ select throws_like(
   'editor cannot permanently delete media'
 );
 select throws_ok(
-  $$select public.adjust_inventory('SOAR-PHOENIX-9-60GF', 1, 'manual_adjustment', 'editor denied')$$,
+  $$select public.adjust_inventory((select id from public.organizations where slug = 'geardrop'), 'SOAR-PHOENIX-9-60GF', 1, 'manual_adjustment', 'editor denied')$$,
   '42501',
   'GD_INVENTORY_MANAGER_REQUIRED',
   'editor cannot adjust inventory'

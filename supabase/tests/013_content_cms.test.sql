@@ -58,7 +58,7 @@ select results_eq(
 );
 select has_function('public', 'reorder_homepage_sections', array['bigint[]'], 'homepage reorder RPC exists');
 select has_function('public', 'publish_homepage_section', array['bigint'], 'homepage publish RPC exists');
-select has_function('public', 'save_homepage_section', array['jsonb', 'bigint[]'], 'atomic homepage save RPC exists');
+select has_function('public', 'save_homepage_section', array['bigint', 'jsonb', 'bigint[]'], 'atomic homepage save RPC exists');
 select has_function('public', 'save_navigation_tree', array['bigint', 'jsonb'], 'navigation tree RPC exists');
 select has_column('public', 'homepage_sections', 'desktop_media_asset_id', 'homepage supports desktop media');
 select has_column('public', 'homepage_sections', 'mobile_media_asset_id', 'homepage supports mobile media');
@@ -200,7 +200,7 @@ select results_eq(
   array[2::bigint], 'navigation tree writes nested items'
 );
 select lives_ok(
-  $$select public.save_homepage_section(
+  $$select public.save_homepage_section((select id from public.organizations where slug = 'geardrop'), 
     jsonb_build_object(
       'section_key','rpc-products','section_type','featured_products','eyebrow',null,'title','RPC products',
       'subtitle',null,'description',null,'desktop_media_asset_id',null,'mobile_media_asset_id',null,
@@ -217,7 +217,7 @@ select results_eq(
   array[1::bigint], 'atomic homepage save writes exact target set'
 );
 select throws_ok(
-  $$select public.save_homepage_section(
+  $$select public.save_homepage_section((select id from public.organizations where slug = 'geardrop'), 
     jsonb_build_object(
       'id',(select id from public.homepage_sections where section_key='rpc-products'),
       'section_key','rpc-products','section_type','featured_products','eyebrow',null,'title','Rollback',

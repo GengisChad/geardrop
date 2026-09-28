@@ -56,10 +56,10 @@ select ok(not has_table_privilege('anon','public.staff_profiles','SELECT'), 'ano
 select ok(not has_table_privilege('anon','public.audit_events','SELECT'), 'anon cannot read audit');
 select ok(not has_table_privilege('anon','public.orders','SELECT'), 'anon cannot read orders');
 
-select ok(not has_function_privilege('anon','public.adjust_inventory(text,integer,public.inventory_reason,text)','EXECUTE'), 'anon cannot adjust inventory');
-select ok(not has_function_privilege('anon','public.save_homepage_section(jsonb,bigint[])','EXECUTE'), 'anon cannot mutate homepage');
+select ok(not has_function_privilege('anon','public.adjust_inventory(bigint,text,integer,public.inventory_reason,text)','EXECUTE'), 'anon cannot adjust inventory');
+select ok(not has_function_privilege('anon','public.save_homepage_section(bigint,jsonb,bigint[])','EXECUTE'), 'anon cannot mutate homepage');
 select ok(not has_function_privilege('anon','public.save_navigation_tree(bigint,jsonb)','EXECUTE'), 'anon cannot mutate navigation');
-select ok(not has_function_privilege('anon','public.save_bundle_with_items(jsonb,jsonb)','EXECUTE'), 'anon cannot mutate bundles');
+select ok(not has_function_privilege('anon','public.save_bundle_with_items(bigint,jsonb,jsonb)','EXECUTE'), 'anon cannot mutate bundles');
 select ok(not has_function_privilege('anon','public.transition_order_status(bigint,public.order_status,text)','EXECUTE'), 'anon cannot transition orders');
 select ok(not has_function_privilege('anon','private.create_order_unchecked(text,text,jsonb,jsonb,jsonb,text,text,uuid)','EXECUTE'), 'anon cannot bypass order intake validation');
 select ok(not has_function_privilege('anon','public.set_order_acceptance(bigint,boolean,text)','EXECUTE'), 'anon cannot enable orders');
