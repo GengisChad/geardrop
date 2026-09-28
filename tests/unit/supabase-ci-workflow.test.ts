@@ -178,8 +178,12 @@ describe("admin browser configuration", () => {
     expect(source).toContain("SUPABASE_SECRET_KEY");
     expect(source).toContain("127\\.0\\.0\\.1|localhost");
     expect(source).toContain("auth.admin.createUser");
-    expect(source).toContain('execFileSync("psql"');
-    expect(source).toContain("postgresql://postgres:postgres@127.0.0.1:54322/postgres");
+    // SQL reaches the local stack only: the host psql, or psql inside its own container.
+    const psql = readFileSync(join(process.cwd(), "tests", "e2e", "support", "local-psql.ts"), "utf8");
+    expect(source).toContain("localPsql(");
+    expect(psql).toContain('execFileSync("psql"');
+    expect(psql).toContain("postgresql://postgres:postgres@127.0.0.1:54322/postgres");
+    expect(psql).toContain('"docker", ["exec", "-i", databaseContainer()');
     expect(source).toContain('stdio: "ignore"');
     expect(source).not.toContain("console.log");
     expect(source).not.toMatch(/\.supabase\.co/i);

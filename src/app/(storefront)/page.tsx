@@ -10,6 +10,7 @@ import { getCommerceProvider } from "@/lib/commerce/provider";
 import { storefrontContent } from "@/lib/content/provider";
 import { STANDARD_DELIVERY } from "@/lib/labels";
 import { HOME_FEATURED_LIMIT, homepagePlan } from "@/lib/home/product-selection";
+import { storefrontOrganizationId } from "@/lib/org/storefront";
 import { jsonLd, siteJsonLd } from "@/lib/seo";
 import { resolveHomepageSections } from "@/lib/storefront/homepage-resolver";
 
@@ -57,7 +58,7 @@ export default async function HomePage() {
   // Holo Drop components render them. When no managed content is published, the approved
   // composition below stands in.
   if (managed && managed.length > 0) {
-    const sections = await resolveHomepageSections(managed, commerce);
+    const sections = await resolveHomepageSections(await storefrontOrganizationId(), managed, commerce);
     return (
       <>
         {structuredData}

@@ -108,7 +108,7 @@ test.describe("storefront order intake", () => {
   });
 
   test("a closed shop refuses the order and keeps the cart", async ({ page }) => {
-    sql("update public.site_settings set accept_orders = false where singleton");
+    sql("update public.site_settings set accept_orders = false where organization_id = (select id from public.organizations where slug = 'geardrop')");
     try {
       await seedCart(page, 1);
       await page.goto("/checkout");
@@ -124,7 +124,7 @@ test.describe("storefront order intake", () => {
       const orders = sql(`select count(*) from public.orders where email = 'closed-${run}@example.com'`);
       expect(Number(orders)).toBe(0);
     } finally {
-      sql("update public.site_settings set accept_orders = true where singleton");
+      sql("update public.site_settings set accept_orders = true where organization_id = (select id from public.organizations where slug = 'geardrop')");
     }
   });
 

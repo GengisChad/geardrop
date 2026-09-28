@@ -14,7 +14,8 @@ import type { Database } from "@/lib/supabase/database.types";
  *   `accept_orders = false` (see docs/operations/geardrop-production-rollout.md): enforcing
  *   the switch there would stop live sales, so callers opt in with `requireAcceptOrders`.
  *
- * Both reads fail closed: if the switches cannot be read, nothing is written.
+ * Both switches belong to one company: every read names it. Both reads fail closed: if the
+ * switches cannot be read, nothing is written.
  */
 export type CommerceSwitches = { readonly maintenanceMode: boolean; readonly acceptOrders: boolean };
 
@@ -36,12 +37,15 @@ export class CommerceWriteBlockedError extends Error {
 /** Long enough for a healthy round trip, short enough that a stuck read never holds a buyer. */
 const SWITCH_READ_TIMEOUT_MS = 5_000;
 
-export async function readCommerceSwitches(client: SupabaseClient<Database>): Promise<CommerceSwitches> {
+export async function readCommerceSwitches(
+  client: SupabaseClient<Database>,
+  organizationId: number,
+): Promise<CommerceSwitches> {
   try {
     const { data, error } = await client
       .from("site_settings")
       .select("maintenance_mode,accept_orders")
-      .eq("singleton", true)
+      .eq("organization_id", organizationId)
       .abortSignal(AbortSignal.timeout(SWITCH_READ_TIMEOUT_MS))
       .maybeSingle();
     if (error || !data) throw new CommerceWriteBlockedError("GD_COMMERCE_SWITCHES_UNAVAILABLE");
@@ -53,17 +57,21 @@ export async function readCommerceSwitches(client: SupabaseClient<Database>): Pr
 }
 
 /** Throws unless commercial writes are allowed. Call it before any database, email or payment effect. */
-export async function assertCommerceMaintenanceOpen(client: SupabaseClient<Database>): Promise<void> {
-  const switches = await readCommerceSwitches(client);
+export async function assertCommerceMaintenanceOpen(
+  client: SupabaseClient<Database>,
+  organizationId: number,
+): Promise<void> {
+  const switches = await readCommerceSwitches(client, organizationId);
   if (switches.maintenanceMode) throw new CommerceWriteBlockedError("GD_COMMERCE_MAINTENANCE");
 }
 
 /** Throws unless a new order may be taken. Maintenance is checked first. */
 export async function assertCheckoutIntakeOpen(
   client: SupabaseClient<Database>,
+  organizationId: number,
   options: { readonly requireAcceptOrders: boolean },
 ): Promise<void> {
-  const switches = await readCommerceSwitches(client);
+  const switches = await readCommerceSwitches(client, organizationId);
   if (switches.maintenanceMode) throw new CommerceWriteBlockedError("GD_COMMERCE_MAINTENANCE");
   if (options.requireAcceptOrders && !switches.acceptOrders) throw new CommerceWriteBlockedError("GD_CHECKOUT_INTAKE_CLOSED");
 }

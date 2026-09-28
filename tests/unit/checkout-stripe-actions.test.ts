@@ -26,6 +26,7 @@ vi.mock("@/lib/payments/stripe-checkout", async (importOriginal) => ({
 vi.mock("next/headers", () => ({ headers: async () => new Headers({ origin: originMock() }) }));
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: vi.fn() }));
 vi.mock("@/lib/supabase/public", () => ({ createSupabasePublicClient: publicClientMock }));
+vi.mock("@/lib/org/storefront", () => ({ storefrontOrganizationId: async () => 1 }));
 
 const { requestCartQuote, submitOrder } = await import("@/app/(storefront)/checkout/actions");
 

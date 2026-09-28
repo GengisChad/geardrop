@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireAdminAccess } from "@/lib/admin/access";
 import { buildFunnelSummary, loadAdminDashboard, loadFunnelStats } from "@/lib/admin/dashboard";
 import { formatPrice } from "@/lib/format";
+import { organizationBrand } from "@/lib/org/organization";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import styles from "@/components/admin/admin.module.css";
 
@@ -19,10 +20,10 @@ const dateFormat = new Intl.DateTimeFormat("it-IT", {
 export default async function AdminDashboardPage() {
   const client = await createSupabaseServerClient();
   const principal=await requireAdminAccess(client);
-  const dashboard = await loadAdminDashboard(client);
+  const dashboard = await loadAdminDashboard(client, principal.organization.id);
   const [funnel7, funnel30] = await Promise.all([
-    loadFunnelStats(client, 7),
-    loadFunnelStats(client, 30),
+    loadFunnelStats(client, principal.organization.id, 7),
+    loadFunnelStats(client, principal.organization.id, 30),
   ]);
   const isManager = principal.role === "owner" || principal.role === "admin";
   const funnelSummary7 = buildFunnelSummary(funnel7);
@@ -44,7 +45,7 @@ export default async function AdminDashboardPage() {
       <section className={styles.pageHeading}>
         <div>
           <p className={styles.eyebrow}>Panoramica operativa</p>
-          <h1>Operazioni GEAR//DROP</h1>
+          <h1>Operazioni {organizationBrand(principal.organization)}</h1>
           <p>Aggregati reali del database, senza proiezioni, confronti o dati commerciali inventati.</p>
         </div>
       </section>
@@ -74,7 +75,7 @@ export default async function AdminDashboardPage() {
           <Link href={{ pathname: "/admin/prodotti/nuovo" }}><PackagePlus aria-hidden="true" />Nuovo prodotto</Link>
           <Link href={{ pathname: "/admin/inventario" }}><RefreshCcw aria-hidden="true" />Aggiorna stock</Link>
           <Link href={{ pathname: "/admin/media" }}><ImagePlus aria-hidden="true" />Carica media</Link>
-          <Link href="/"><ArrowUpRight aria-hidden="true" />Visualizza negozio</Link>
+          {principal.organization.storefrontPublic ? <Link href="/"><ArrowUpRight aria-hidden="true" />Visualizza negozio</Link> : null}
         </div>
       </section>
 

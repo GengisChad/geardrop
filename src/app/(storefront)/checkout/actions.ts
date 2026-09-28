@@ -14,6 +14,7 @@ import {
 } from "@/lib/commerce/checkout-errors";
 import { placeOrder } from "@/lib/commerce/order-intake";
 import { assertCheckoutIntakeOpen, commerceWriteBlockedMessage } from "@/lib/commerce/write-guard";
+import { storefrontOrganizationId } from "@/lib/org/storefront";
 import { getCommerceProvider, resolveCommerceProviderName } from "@/lib/commerce/provider";
 import type { CartQuote, Money } from "@/lib/commerce/types";
 import { createStripeCheckout, openQuoteForStripe, stripeCheckoutEnabled } from "@/lib/payments/stripe-checkout";
@@ -103,7 +104,7 @@ export async function submitOrder(input: PlaceOrderInput): Promise<PlaceOrderRes
 
   try {
     const client = await createSupabaseServerClient();
-    const order = await placeOrder(client, parsed.data);
+    const order = await placeOrder(client, await storefrontOrganizationId(), parsed.data);
     return { ok: true, orderNumber: order.orderNumber, total: order.total };
   } catch (error) {
     return { ok: false, message: checkoutErrorMessage(error) };
@@ -121,7 +122,8 @@ async function orderIntakeBlock(options: { readonly acceptOrders: boolean }): Pr
   const databaseCheckout = resolveCommerceProviderName() === "supabase";
   if (!stripeCheckoutEnabled() && !databaseCheckout) return null;
   try {
-    await assertCheckoutIntakeOpen(createSupabasePublicClient(), {
+    // The switches of this shop's company; a lookup that fails closes the checkout.
+    await assertCheckoutIntakeOpen(createSupabasePublicClient(), await storefrontOrganizationId(), {
       requireAcceptOrders: databaseCheckout && options.acceptOrders,
     });
     return null;

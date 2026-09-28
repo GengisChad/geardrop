@@ -27,7 +27,7 @@ async function dependencies(allowed: readonly StaffRole[]): Promise<MediaService
   const principal = await requireStaffRole(client, allowed);
   return {
     principal: { userId: principal.userId, role: principal.role },
-    repository: createMediaRepository(client),
+    repository: createMediaRepository(client, principal.organization.id),
     storage: {
       async createSignedUploadUrl(path, options) {
         const { data, error } = await client.storage.from("product-images").createSignedUploadUrl(path, options);

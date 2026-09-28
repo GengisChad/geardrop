@@ -69,7 +69,7 @@ function fakeProvider(options: Options = {}) {
     return query({ data: options.products ?? [PRODUCT_ROW], error: null });
   });
 
-  return { provider: createSupabaseCommerceProvider({ from, rpc } as never), rpc };
+  return { provider: createSupabaseCommerceProvider({ from, rpc } as never, 1), rpc };
 }
 
 const cart = { lines: [{ slug: "cobalt-dragoon-2-60c" as never, quantity: 2 }] };

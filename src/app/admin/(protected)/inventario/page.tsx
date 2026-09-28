@@ -30,7 +30,8 @@ export default async function AdminInventoryPage({
   const query = normalizeAdminInventoryQuery(params);
   const client = await createSupabaseServerClient();
   const principal = await requireAdminAccess(client);
-  const page = await listAdminInventory(client, query);
+  const organizationId = principal.organization.id;
+  const page = await listAdminInventory(client, organizationId, query);
   const hrefFor = (nextPage: number) => ({ pathname: "/admin/inventario", query: { ...params, page: String(nextPage) } });
   const canAdjust = principal.role === "owner" || principal.role === "admin";
   const isManager = canAdjust;
@@ -40,7 +41,7 @@ export default async function AdminInventoryPage({
   const bundleSlugs = BUNDLES.map((b) => b.slug);
   const allDemandSlugs = [...productSlugs, ...bundleSlugs];
   const demandRows = isManager && allDemandSlugs.length > 0
-    ? await getRestockDemand(client, allDemandSlugs).catch(() => [])
+    ? await getRestockDemand(client, organizationId, allDemandSlugs).catch(() => [])
     : [];
 
   // Build name map for demand panel display.

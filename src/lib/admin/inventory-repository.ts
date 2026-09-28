@@ -53,11 +53,12 @@ function escapePostgrestPattern(value: string): string {
 
 export async function listAdminInventory(
   client: SupabaseClient<Database>,
+  organizationId: number,
   query: AdminInventoryQuery,
 ): Promise<AdminInventoryPage> {
   const from = (query.page - 1) * query.pageSize;
   const to = from + query.pageSize - 1;
-  let productsQuery = client.from("products").select("*", { count: "exact" });
+  let productsQuery = client.from("products").select("*", { count: "exact" }).eq("organization_id", organizationId);
 
   if (query.q) {
     const pattern = `%${escapePostgrestPattern(query.q)}%`;
@@ -69,6 +70,7 @@ export async function listAdminInventory(
   let movementsQuery = client
     .from("inventory_movements")
     .select("*, product:products(name,sku)")
+    .eq("organization_id", organizationId)
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
     .limit(50);
@@ -96,6 +98,7 @@ export async function listAdminInventory(
       id: movement.id,
       note: movement.note,
       order_id: movement.order_id,
+      organization_id: movement.organization_id,
       product_id: movement.product_id,
       reason: movement.reason,
       stock_after: movement.stock_after,

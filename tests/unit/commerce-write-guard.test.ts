@@ -24,8 +24,8 @@ async function codeOf(promise: Promise<unknown>): Promise<string | null> {
 describe("readCommerceSwitches", () => {
   it("reads both switches from the singleton row with a timeout", async () => {
     const { client, calls } = fakeSettingsClient(open);
-    expect(await readCommerceSwitches(client)).toEqual({ maintenanceMode: false, acceptOrders: true });
-    expect(calls).toEqual(["select:maintenance_mode,accept_orders", "eq:singleton=true", "abortSignal:true"]);
+    expect(await readCommerceSwitches(client, 7)).toEqual({ maintenanceMode: false, acceptOrders: true });
+    expect(calls).toEqual(["select:maintenance_mode,accept_orders", "eq:organization_id=7", "abortSignal:true"]);
   });
 
   it.each([
@@ -33,21 +33,21 @@ describe("readCommerceSwitches", () => {
     ["a missing row", { row: null }],
     ["a network failure or timeout", { reject: new Error("AbortError: signal timed out") }],
   ] as const)("fails closed on %s", async (_label, read) => {
-    expect(await codeOf(readCommerceSwitches(fakeSettingsClient(read).client))).toBe("GD_COMMERCE_SWITCHES_UNAVAILABLE");
+    expect(await codeOf(readCommerceSwitches(fakeSettingsClient(read).client, 1))).toBe("GD_COMMERCE_SWITCHES_UNAVAILABLE");
   });
 });
 
 describe("assertCommerceMaintenanceOpen", () => {
   it("blocks every commercial write while the shop is in maintenance", async () => {
-    expect(await codeOf(assertCommerceMaintenanceOpen(fakeSettingsClient(maintenance).client))).toBe("GD_COMMERCE_MAINTENANCE");
+    expect(await codeOf(assertCommerceMaintenanceOpen(fakeSettingsClient(maintenance).client, 1))).toBe("GD_COMMERCE_MAINTENANCE");
   });
 
   it("lets refunds, shipping and notes through when only order intake is closed", async () => {
-    expect(await codeOf(assertCommerceMaintenanceOpen(fakeSettingsClient(productionToday).client))).toBeNull();
+    expect(await codeOf(assertCommerceMaintenanceOpen(fakeSettingsClient(productionToday).client, 1))).toBeNull();
   });
 
   it("refuses when the switches cannot be verified", async () => {
-    expect(await codeOf(assertCommerceMaintenanceOpen(fakeSettingsClient({ reject: new Error("offline") }).client))).toBe(
+    expect(await codeOf(assertCommerceMaintenanceOpen(fakeSettingsClient({ reject: new Error("offline") }).client, 1))).toBe(
       "GD_COMMERCE_SWITCHES_UNAVAILABLE",
     );
   });
@@ -57,24 +57,24 @@ describe("assertCheckoutIntakeOpen", () => {
   it("checks maintenance before order intake", async () => {
     const closedAndMaintenance = { row: { maintenance_mode: true, accept_orders: false } } as const;
     expect(
-      await codeOf(assertCheckoutIntakeOpen(fakeSettingsClient(closedAndMaintenance).client, { requireAcceptOrders: true })),
+      await codeOf(assertCheckoutIntakeOpen(fakeSettingsClient(closedAndMaintenance).client, 1, { requireAcceptOrders: true })),
     ).toBe("GD_COMMERCE_MAINTENANCE");
   });
 
   it("closes the database checkout while accept_orders is false", async () => {
-    expect(await codeOf(assertCheckoutIntakeOpen(fakeSettingsClient(productionToday).client, { requireAcceptOrders: true }))).toBe(
+    expect(await codeOf(assertCheckoutIntakeOpen(fakeSettingsClient(productionToday).client, 1, { requireAcceptOrders: true }))).toBe(
       "GD_CHECKOUT_INTAKE_CLOSED",
     );
   });
 
   it("keeps the static-catalogue Stripe checkout selling with accept_orders false, as production runs today", async () => {
     expect(
-      await codeOf(assertCheckoutIntakeOpen(fakeSettingsClient(productionToday).client, { requireAcceptOrders: false })),
+      await codeOf(assertCheckoutIntakeOpen(fakeSettingsClient(productionToday).client, 1, { requireAcceptOrders: false })),
     ).toBeNull();
   });
 
   it("opens when both switches are open", async () => {
-    expect(await codeOf(assertCheckoutIntakeOpen(fakeSettingsClient(open).client, { requireAcceptOrders: true }))).toBeNull();
+    expect(await codeOf(assertCheckoutIntakeOpen(fakeSettingsClient(open).client, 1, { requireAcceptOrders: true }))).toBeNull();
   });
 });
 

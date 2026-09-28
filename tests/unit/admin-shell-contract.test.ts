@@ -133,7 +133,7 @@ describe("admin dashboard data", () => {
     const dashboard = source("src/lib/admin/dashboard.ts");
     const page = source("src/app/admin/(protected)/page.tsx");
 
-    expect(dashboard).toContain('rpc("get_admin_dashboard_metrics")');
+    expect(dashboard).toContain('rpc("get_admin_dashboard_metrics",{p_organization_id:organizationId})');
     expect(dashboard).not.toContain('.from("site_settings")');
     expect(page).not.toContain("acceptOrders");
     expect(dashboard).toContain("publication_status");

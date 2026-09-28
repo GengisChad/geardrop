@@ -161,7 +161,8 @@ function count<T extends string>(values: readonly T[]): Map<T, number> {
   return result;
 }
 
-export function createSupabaseCommerceProvider(client: SupabaseClient<Database>): CommerceProvider {
+/** The public catalogue of one company: the storefront's. Every read names it. */
+export function createSupabaseCommerceProvider(client: SupabaseClient<Database>, organizationId: number): CommerceProvider {
   async function allProducts(): Promise<readonly Product[]> {
     // Product-image RLS admits linked media only when ready and also preserves the
     // reviewed static assets whose legacy rows intentionally have no Storage link:
@@ -169,7 +170,7 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>)
     // (media_asset_id IS NULL OR is_ready_media_asset(media_asset_id))`. The helper is
     // security definer, so the guarantee holds without anon reading media_assets —
     // which it cannot: that table grants SELECT to staff and service_role only.
-    const { data, error } = await client.from("products").select(PRODUCT_SELECT).eq("publication_status", "published").eq("active", true).eq("images.published", true);
+    const { data, error } = await client.from("products").select(PRODUCT_SELECT).eq("organization_id", organizationId).eq("publication_status", "published").eq("active", true).eq("images.published", true);
     if (error) throw error;
     return (data as unknown as readonly RawProduct[]).map(mapSupabaseProduct);
   }
@@ -178,14 +179,14 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>)
     name: "supabase",
 
     async getProduct(slug) {
-      const { data, error } = await client.from("products").select(PRODUCT_SELECT).eq("publication_status", "published").eq("active", true).eq("images.published", true).eq("slug", slug).maybeSingle();
+      const { data, error } = await client.from("products").select(PRODUCT_SELECT).eq("organization_id", organizationId).eq("publication_status", "published").eq("active", true).eq("images.published", true).eq("slug", slug).maybeSingle();
       if (error) throw error;
       return data ? mapSupabaseProduct(data as unknown as RawProduct) : null;
     },
 
     async getProductsBySlugs(slugs) {
       if (slugs.length === 0) return [];
-      const { data, error } = await client.from("products").select(PRODUCT_SELECT).eq("publication_status", "published").eq("active", true).eq("images.published", true).in("slug", [...slugs]);
+      const { data, error } = await client.from("products").select(PRODUCT_SELECT).eq("organization_id", organizationId).eq("publication_status", "published").eq("active", true).eq("images.published", true).in("slug", [...slugs]);
       if (error) throw error;
       const bySlug = new Map(
         (data as unknown as readonly RawProduct[]).map((row) => [row.slug, mapSupabaseProduct(row)]),
@@ -238,6 +239,7 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>)
       const { data, error } = await client
         .from("categories")
         .select("slug,name,tagline,description")
+        .eq("organization_id", organizationId)
         .eq("publication_status", "published")
         .eq("active", true)
         .order("sort_order");
@@ -249,6 +251,7 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>)
       const { data, error } = await client
         .from("categories")
         .select("slug,name,tagline,description")
+        .eq("organization_id", organizationId)
         .eq("publication_status", "published")
         .eq("active", true)
         .eq("slug", slug)
@@ -265,6 +268,7 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>)
           hero:products!bundles_hero_product_id_fkey(slug),
           items:bundle_items(sort_order,product:products(slug))
         `)
+        .eq("organization_id", organizationId)
         .eq("active", true)
         .order("id")
         .limit(1)
@@ -303,6 +307,7 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>)
           hero:products!bundles_hero_product_id_fkey(slug),
           items:bundle_items(sort_order,product:products(slug))
         `)
+        .eq("organization_id", organizationId)
         .eq("slug", slug)
         .eq("active", true)
         .maybeSingle();
@@ -337,10 +342,11 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>)
         client
           .from("shipping_methods")
           .select("code,name,price_cents,free_from_cents,estimate_min_days,estimate_max_days")
+          .eq("organization_id", organizationId)
           .eq("active", true)
           .order("sort_order")
           .order("code"),
-        client.from("site_settings").select("accept_orders").eq("singleton", true).maybeSingle(),
+        client.from("site_settings").select("accept_orders").eq("organization_id", organizationId).maybeSingle(),
       ]);
       if (methodRows.error) throw methodRows.error;
       if (settingsRow.error) throw settingsRow.error;
@@ -366,6 +372,7 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>)
            availability_override,is_purchasable,
            images:product_images(src,width,height,alt,sort_order,is_primary,published)`,
         )
+        .eq("organization_id", organizationId)
         .in("slug", request.lines.map((line) => line.slug));
       if (productError) throw productError;
 

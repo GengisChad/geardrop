@@ -14,7 +14,7 @@ export default async function EditAdminProductPage({ params }: { params: Promise
   if (!parsedId.success) notFound();
   const client = await createSupabaseServerClient();
   const principal = await requireAdminAccess(client);
-  const data = await loadAdminProductEditor(client, parsedId.data);
+  const data = await loadAdminProductEditor(client, principal.organization.id, parsedId.data);
   if (!data) notFound();
   const deletionImpact = principal.role === "owner" || principal.role === "admin"
     ? await loadProductDeletionImpact(client, parsedId.data)

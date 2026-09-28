@@ -1,9 +1,12 @@
 import "server-only";
 
 import type { SupabaseClient, User } from "@supabase/supabase-js";
+import { cookies } from "next/headers";
+import { chooseOrganization, ORGANIZATION_COOKIE, type OrganizationMembership } from "@/lib/org/organization";
 import type { Database } from "../supabase/database.types";
 import {
   assertAllowedStaffRole,
+  StaffAuthorizationError,
   type StaffPrincipal,
   type StaffRole,
 } from "./roles";
@@ -22,6 +25,49 @@ export async function requireUser(client: SupabaseClient<Database>): Promise<Use
   return data.user;
 }
 
+/**
+ * The companies the person works for, read under their own row level security: an active
+ * membership in an active company. The database repeats these checks on every query and RPC;
+ * this list only decides what the admin offers.
+ */
+export async function loadOrganizationMemberships(
+  client: SupabaseClient<Database>,
+  userId: string,
+): Promise<readonly OrganizationMembership[]> {
+  const { data, error } = await client
+    .from("organization_members")
+    .select("role, organization:organizations!inner(id, slug, name, storefront_public, active)")
+    .eq("user_id", userId)
+    .eq("active", true)
+    .eq("organization.active", true);
+
+  if (error) {
+    throw new AuthenticationRequiredError("Company memberships unavailable");
+  }
+
+  return (data ?? []).map((row) => ({
+    id: row.organization.id,
+    slug: row.organization.slug,
+    name: row.organization.name,
+    storefrontPublic: row.organization.storefront_public,
+    role: row.role as StaffRole,
+  }));
+}
+
+async function requestedOrganizationSlug(): Promise<string | null> {
+  try {
+    return (await cookies()).get(ORGANIZATION_COOKIE)?.value ?? null;
+  } catch {
+    // Outside a request (a script, a test): no preference, the first company is used.
+    return null;
+  }
+}
+
+/**
+ * The signed-in staff member, in the company chosen for this request, with one of the roles.
+ * The role checked is the one held in that company; an inactive account, or one without an
+ * active membership, is refused.
+ */
 export async function requireStaffRole(
   client: SupabaseClient<Database>,
   allowedRoles: readonly StaffRole[],
@@ -35,7 +81,7 @@ export async function requireStaffRole(
 
   const { data: profile, error: profileError } = await client
     .from("staff_profiles")
-    .select("user_id, role, active")
+    .select("user_id, active")
     .eq("user_id", subject)
     .maybeSingle();
 
@@ -43,11 +89,19 @@ export async function requireStaffRole(
     throw new AuthenticationRequiredError("Active staff profile required");
   }
 
+  const organizations = await loadOrganizationMemberships(client, subject);
+  const organization = chooseOrganization(organizations, await requestedOrganizationSlug());
+  if (!organization) {
+    throw new StaffAuthorizationError("No active company membership");
+  }
+
   return assertAllowedStaffRole(
     {
       userId: profile.user_id as string,
-      role: profile.role as StaffRole,
+      role: organization.role,
       active: profile.active as boolean,
+      organization,
+      organizations,
     },
     allowedRoles,
   );

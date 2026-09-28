@@ -19,11 +19,12 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
   const client = await createSupabaseServerClient();
   const principal = await requireAdminAccess(client);
   if (principal.role === "editor") redirect("/admin");
-  const result = await listAdminOrders(client, query, principal.role);
+  const result = await listAdminOrders(client, principal.organization.id, query, principal.role);
   // Shipped orders whose buyer has not had the shipping email yet.
   const unnotified = await client
     .from("orders")
     .select("id", { count: "exact", head: true })
+    .eq("organization_id", principal.organization.id)
     .in("status", ["shipped", "completed"])
     .is("shipping_notified_at", null);
   const hrefFor = (page: number) => ({ pathname: "/admin/ordini", query: { ...params, page: String(page) } });

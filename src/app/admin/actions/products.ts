@@ -222,6 +222,7 @@ export async function saveProductAction(
       ? requestedPublication
       : { publication_status: "draft" as const, active: false };
     const insert: ProductInsert = {
+      organization_id: principal.organization.id,
       category_id: parsed.data.categoryId,
       slug: parsed.data.slug,
       sku: parsed.data.sku,
@@ -255,7 +256,8 @@ export async function saveProductAction(
     ...requestedPublication,
     ...(capabilities.editCommerce ? commerceFields(parsed.data) : {}),
   };
-  const { error } = await client.from("products").update(update).eq("id", productId);
+  const { error } = await client.from("products").update(update).eq("id", productId)
+    .eq("organization_id", principal.organization.id);
   if (error) return safeFailure(error);
   refreshProductCache(parsed.data.slug);
   return { ok: true, message: "Prodotto salvato." };
@@ -264,9 +266,10 @@ export async function saveProductAction(
 export async function duplicateProductAction(formData: FormData): Promise<void> {
   const input = duplicateActionSchema.parse({ id: text(formData, "id") });
   const client = await createSupabaseServerClient();
-  await verifiedStaff(client);
+  const principal = await verifiedStaff(client);
   const { data: source, error: sourceError } = await client
-    .from("products").select("name,slug,sku").eq("id", input.id).single();
+    .from("products").select("name,slug,sku").eq("id", input.id)
+    .eq("organization_id", principal.organization.id).single();
   if (sourceError) redirect("/admin/prodotti?error=duplicate");
 
   const suffix = randomUUID().replaceAll("-", "").slice(0, 8);
@@ -291,9 +294,10 @@ export async function deleteProductAction(formData: FormData): Promise<void> {
     confirmPermanent: text(formData, "confirmPermanent"),
   });
   const client = await createSupabaseServerClient();
-  await verifiedStaff(client, ["owner", "admin"]);
+  const principal = await verifiedStaff(client, ["owner", "admin"]);
   const { data: product, error: readError } = await client
-    .from("products").select("slug").eq("id", input.id).single();
+    .from("products").select("slug").eq("id", input.id)
+    .eq("organization_id", principal.organization.id).single();
   if (readError) redirect(`/admin/prodotti/${input.id}?error=delete`);
   const { error } = await client.rpc("delete_product_permanently", {
     p_product_id: input.id,
@@ -344,8 +348,9 @@ export async function addProductRelationAction(formData: FormData): Promise<void
     relationType: text(formData, "relationType"), sortOrder: text(formData, "sortOrder"),
   });
   const client = await createSupabaseServerClient();
-  await verifiedStaff(client);
+  const principal = await verifiedStaff(client);
   const { error } = await client.from("product_relations").upsert({
+    organization_id: principal.organization.id,
     product_id: input.productId, related_product_id: input.relatedProductId,
     relation_type: input.relationType, sort_order: input.sortOrder,
   });
@@ -360,8 +365,9 @@ export async function removeProductRelationAction(formData: FormData): Promise<v
     relationType: text(formData, "relationType"),
   });
   const client = await createSupabaseServerClient();
-  await verifiedStaff(client);
+  const principal = await verifiedStaff(client);
   const { error } = await client.from("product_relations").delete()
+    .eq("organization_id", principal.organization.id)
     .eq("product_id", input.productId).eq("related_product_id", input.relatedProductId)
     .eq("relation_type", input.relationType);
   if (error) redirect(`/admin/prodotti/${input.productId}?error=relation`);
@@ -481,15 +487,19 @@ export async function associateProductMediaAction(formData: FormData): Promise<v
     productId: formData.get("productId"), mediaAssetId: formData.get("mediaAssetId"),
   });
   const client = await createSupabaseServerClient();
-  await verifiedStaff(client);
+  const principal = await verifiedStaff(client);
+  const organizationId = principal.organization.id;
   const [media, lastImage] = await Promise.all([
-    client.from("media_assets").select("id,object_path,width,height,alt_text,status").eq("id", input.mediaAssetId).single(),
-    client.from("product_images").select("sort_order").eq("product_id", input.productId).order("sort_order", { ascending: false }).limit(1).maybeSingle(),
+    client.from("media_assets").select("id,object_path,width,height,alt_text,status").eq("id", input.mediaAssetId)
+      .eq("organization_id", organizationId).single(),
+    client.from("product_images").select("sort_order").eq("product_id", input.productId).eq("organization_id", organizationId)
+      .order("sort_order", { ascending: false }).limit(1).maybeSingle(),
   ]);
   if (media.error || lastImage.error || media.data.status !== "ready") {
     redirect(`/admin/prodotti/${input.productId}?error=media-association`);
   }
   const { data: image, error } = await client.from("product_images").insert({
+    organization_id: organizationId,
     product_id: input.productId,
     media_asset_id: media.data.id,
     src: media.data.object_path,
@@ -514,9 +524,9 @@ export async function associateProductMediaAction(formData: FormData): Promise<v
 export async function removeProductImageLinkAction(formData: FormData): Promise<void> {
   const input = imageLinkSchema.parse({ productId: text(formData, "productId"), imageId: text(formData, "imageId") });
   const client = await createSupabaseServerClient();
-  await verifiedStaff(client);
+  const principal = await verifiedStaff(client);
   const { error } = await client.from("product_images").delete()
-    .eq("id", input.imageId).eq("product_id", input.productId);
+    .eq("id", input.imageId).eq("product_id", input.productId).eq("organization_id", principal.organization.id);
   if (error) redirect(`/admin/prodotti/${input.productId}?error=image`);
   refreshProductCache();
   redirect(`/admin/prodotti/${input.productId}#immagini`);

@@ -9,9 +9,16 @@ const stripeClientMock = vi.hoisted(() => vi.fn());
 const rpcMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: serverClientMock }));
+const geardrop = { id: 1, slug: "geardrop", name: "Gear Drop", storefrontPublic: true, role: "owner" as const };
 vi.mock("@/lib/auth/guards", () => ({
   requireUser: vi.fn(async () => ({ id: "00000000-0000-4000-8000-000000000001" })),
-  requireStaffRole: vi.fn(async () => undefined),
+  requireStaffRole: vi.fn(async () => ({
+    userId: "00000000-0000-4000-8000-000000000001",
+    role: "owner",
+    active: true,
+    organization: geardrop,
+    organizations: [geardrop],
+  })),
 }));
 vi.mock("@/lib/email/resend", async (importOriginal) => ({
   ...(await importOriginal<typeof ResendModule>()),

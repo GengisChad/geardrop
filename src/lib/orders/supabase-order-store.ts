@@ -1,5 +1,6 @@
 import "server-only";
 
+import { storefrontOrganizationId } from "@/lib/org/storefront";
 import { createPrivilegedSupabaseClient } from "@/lib/supabase/admin";
 import type { LowStockProduct, OrderStore, StoredOrder } from "./process-paid-checkout";
 import type { PaidCheckout } from "./stripe-order";
@@ -17,12 +18,18 @@ export function stripeOrderLines(checkout: PaidCheckout) {
 
 /**
  * Order storage for the Stripe webhook. It runs with the secret key because no shopper is
- * signed in when Stripe calls; the database function is granted to that key alone.
+ * signed in when Stripe calls; the database function is granted to that key alone. The key
+ * ignores row level security, so every read names the shop's company itself.
  */
-export function createSupabaseOrderStore(client = createPrivilegedSupabaseClient()): OrderStore {
+export function createSupabaseOrderStore(
+  client = createPrivilegedSupabaseClient(),
+  organization: () => Promise<number> = () => storefrontOrganizationId(),
+): OrderStore {
   return {
     async record(checkout: PaidCheckout): Promise<StoredOrder> {
+      const organizationId = await organization();
       const result = await client.rpc("record_stripe_checkout_order", {
+        p_organization_id: organizationId,
         p_session_id: checkout.sessionId,
         p_payment_intent_id: checkout.paymentIntentId ?? "",
         p_order_number: checkout.reference,
@@ -39,7 +46,8 @@ export function createSupabaseOrderStore(client = createPrivilegedSupabaseClient
       if (result.error || !row) throw new Error(`record_stripe_checkout_order: ${result.error?.message ?? "no row"}`);
       // One order line per checkout line, written in the same order. The order is already safe,
       // so an unreadable split only costs the email its pre-order flags, never the notification.
-      const items = await client.from("order_items").select("preorder_quantity").eq("order_id", row.order_id).order("id");
+      const items = await client.from("order_items").select("preorder_quantity").eq("order_id", row.order_id)
+        .eq("organization_id", organizationId).order("id");
       if (items.error) {
         console.error("[orders] pre-order split not readable:", items.error.message);
         return { id: row.order_id, orderNumber: row.order_number, created: row.created };
@@ -53,21 +61,24 @@ export function createSupabaseOrderStore(client = createPrivilegedSupabaseClient
     },
 
     async ownerNotified(orderId: number): Promise<boolean> {
-      const result = await client.from("orders").select("owner_notified_at").eq("id", orderId).single();
+      const result = await client.from("orders").select("owner_notified_at").eq("id", orderId)
+        .eq("organization_id", await organization()).single();
       if (result.error) throw new Error(`orders.owner_notified_at: ${result.error.message}`);
       return result.data.owner_notified_at !== null;
     },
 
     async markOwnerNotified(orderId: number): Promise<void> {
-      const result = await client.from("orders").update({ owner_notified_at: new Date().toISOString() }).eq("id", orderId);
+      const result = await client.from("orders").update({ owner_notified_at: new Date().toISOString() }).eq("id", orderId)
+        .eq("organization_id", await organization());
       if (result.error) throw new Error(`orders.owner_notified_at: ${result.error.message}`);
     },
 
     async lowStock(orderId: number): Promise<readonly LowStockProduct[]> {
       // Collect product ids touched by this order: regular lines and bundle components.
+      const organizationId = await organization();
       const [items, movements] = await Promise.all([
-        client.from("order_items").select("product_id").eq("order_id", orderId).not("product_id", "is", null),
-        client.from("inventory_movements").select("product_id").eq("order_id", orderId),
+        client.from("order_items").select("product_id").eq("order_id", orderId).eq("organization_id", organizationId).not("product_id", "is", null),
+        client.from("inventory_movements").select("product_id").eq("order_id", orderId).eq("organization_id", organizationId),
       ]);
       if (items.error) throw new Error(`order_items: ${items.error.message}`);
       if (movements.error) throw new Error(`inventory_movements: ${movements.error.message}`);
@@ -80,6 +91,7 @@ export function createSupabaseOrderStore(client = createPrivilegedSupabaseClient
       const { data, error } = await client
         .from("products")
         .select("slug, name, stock_quantity, stock_status, low_stock_threshold")
+        .eq("organization_id", organizationId)
         .in("id", [...productIds]);
       if (error) throw new Error(`products low_stock: ${error.message}`);
 

@@ -55,18 +55,19 @@ function failure(error: unknown): OrderActionState {
 async function clientFor(roles: typeof MANAGERS) {
   const client = await createSupabaseServerClient();
   await requireUser(client);
-  await requireStaffRole(client, roles);
+  const principal = await requireStaffRole(client, roles);
+  const organizationId = principal.organization.id;
   // Every action below calls this before any RPC, email or Stripe request, so maintenance
   // freezes them all at once — owners included, because a cut-over must hold still.
-  await assertCommerceMaintenanceOpen(client);
-  return client;
+  await assertCommerceMaintenanceOpen(client, organizationId);
+  return { client, organizationId };
 }
 
 export async function transitionOrderAction(_previous: OrderActionState, formData: FormData): Promise<OrderActionState> {
   const parsed = orderTransitionSchema.safeParse({ orderId: text(formData, "orderId"), toStatus: text(formData, "toStatus"), note: text(formData, "note") });
   if (!parsed.success) return { ok: false, message: "Transizione non valida." };
   try {
-    const client = await clientFor(MANAGERS);
+    const { client } = await clientFor(MANAGERS);
     const { error } = await client.rpc("transition_order_status", { p_order_id: parsed.data.orderId, p_to_status: parsed.data.toStatus, ...(parsed.data.note ? { p_note: parsed.data.note } : {}) });
     if (error) return failure(error);
     refresh(parsed.data.orderId);
@@ -78,7 +79,7 @@ export async function cancelOrderAction(_previous: OrderActionState, formData: F
   const parsed = orderCancellationSchema.safeParse({ orderId: text(formData, "orderId"), note: text(formData, "note"), confirmed: formData.get("confirmed") === "on" });
   if (!parsed.success) return { ok: false, message: "Conferma annullamento e motivazione." };
   try {
-    const client = await clientFor(MANAGERS);
+    const { client } = await clientFor(MANAGERS);
     const { error } = await client.rpc("cancel_order_and_restore_stock", { p_order_id: parsed.data.orderId, p_note: parsed.data.note });
     if (error) return failure(error);
     refresh(parsed.data.orderId);
@@ -90,7 +91,7 @@ export async function setOrderTrackingAction(_previous: OrderActionState, formDa
   const parsed = trackingSchema.safeParse({ orderId: text(formData, "orderId"), carrier: text(formData, "carrier"), code: text(formData, "code"), url: text(formData, "url") });
   if (!parsed.success) return { ok: false, message: "Tracking non valido. Usa un URL HTTPS." };
   try {
-    const client = await clientFor(MANAGERS);
+    const { client } = await clientFor(MANAGERS);
     const { error } = await client.rpc("set_order_tracking", { p_order_id: parsed.data.orderId, p_carrier: parsed.data.carrier, p_code: parsed.data.code, ...(parsed.data.url ? { p_url: parsed.data.url } : {}) });
     if (error) return failure(error);
     refresh(parsed.data.orderId);
@@ -102,7 +103,7 @@ export async function addOrderNoteAction(_previous: OrderActionState, formData: 
   const parsed = orderNoteSchema.safeParse({ orderId: text(formData, "orderId"), note: text(formData, "note") });
   if (!parsed.success) return { ok: false, message: "Inserisci una nota valida." };
   try {
-    const client = await clientFor(MANAGERS);
+    const { client } = await clientFor(MANAGERS);
     const { error } = await client.rpc("add_order_note", { p_order_id: parsed.data.orderId, p_note: parsed.data.note });
     if (error) return failure(error);
     refresh(parsed.data.orderId);
@@ -124,11 +125,12 @@ export async function messageCustomerAction(_previous: OrderActionState, formDat
   if (!parsed.success) return { ok: false, message: "Oggetto, messaggio e conferma sono obbligatori." };
 
   try {
-    const client = await clientFor(MANAGERS);
+    const { client, organizationId } = await clientFor(MANAGERS);
     const { data: order, error } = await client
       .from("orders")
       .select("id,order_number,email,shipping_address_snapshot")
       .eq("id", parsed.data.orderId)
+      .eq("organization_id", organizationId)
       .single();
     if (error || !order) return { ok: false, message: "Ordine non trovato." };
 
@@ -166,7 +168,7 @@ export async function prepareOrderRefundAction(_previous: OrderActionState, form
   const parsed = refundPreparationSchema.safeParse({ orderId: text(formData, "orderId"), amountCents: cents(text(formData, "amount")), reason: text(formData, "reason") });
   if (!parsed.success) return { ok: false, message: "Importo e motivazione non validi." };
   try {
-    const client = await clientFor(MANAGERS);
+    const { client } = await clientFor(MANAGERS);
     const { error } = await client.rpc("prepare_order_refund", { p_order_id: parsed.data.orderId, p_amount_cents: parsed.data.amountCents, p_reason: parsed.data.reason });
     if (error) return failure(error);
     refresh(parsed.data.orderId);
@@ -186,14 +188,15 @@ function emailFailure(reason: "not_configured" | "rejected", detail?: string): s
 }
 
 /** Emails the buyer that the order has shipped and stamps the order, so it is not sent twice. */
-async function sendShipmentEmail(client: SupabaseClient<Database>, orderId: number): Promise<ShipmentEmailResult> {
+async function sendShipmentEmail(client: SupabaseClient<Database>, organizationId: number, orderId: number): Promise<ShipmentEmailResult> {
   const [order, items] = await Promise.all([
     client
       .from("orders")
       .select("order_number,email,status,tracking_carrier,tracking_code,tracking_url,shipping_address_snapshot")
       .eq("id", orderId)
+      .eq("organization_id", organizationId)
       .single(),
-    client.from("order_items").select("product_name_snapshot,quantity").eq("order_id", orderId).order("id"),
+    client.from("order_items").select("product_name_snapshot,quantity").eq("order_id", orderId).eq("organization_id", organizationId).order("id"),
   ]);
   if (order.error || items.error) return { ok: false, message: "non riesco a leggere l'ordine." };
   if (order.data.status !== "shipped" && order.data.status !== "completed") return { ok: false, message: "l'ordine non risulta spedito." };
@@ -231,7 +234,7 @@ export async function shipOrderAction(_previous: OrderActionState, formData: For
   if (!parsed.success || !carrier) return { ok: false, message: "Scegli il corriere e controlla codice e link (solo HTTPS)." };
   const code = normalizeTrackingCode(carrier.id, parsed.data.code);
   try {
-    const client = await clientFor(MANAGERS);
+    const { client, organizationId } = await clientFor(MANAGERS);
     const { error } = await client.rpc("ship_order", {
       p_order_id: parsed.data.orderId,
       p_carrier: carrier.label,
@@ -242,7 +245,7 @@ export async function shipOrderAction(_previous: OrderActionState, formData: For
     refresh(parsed.data.orderId);
     if (!parsed.data.notify) return { ok: true, message: "Ordine segnato come spedito. Nessuna email inviata." };
 
-    const email = await sendShipmentEmail(client, parsed.data.orderId);
+    const email = await sendShipmentEmail(client, organizationId, parsed.data.orderId);
     refresh(parsed.data.orderId);
     return email.ok
       ? { ok: true, message: "Ordine spedito ed email inviata al cliente." }
@@ -287,13 +290,14 @@ export async function refundStripeAction(_previous: OrderActionState, formData: 
   if (!parsed.success) return { ok: false, message: "Importo, motivazione e conferma sono obbligatori." };
 
   try {
-    const client = await clientFor(MANAGERS);
+    const { client, organizationId } = await clientFor(MANAGERS);
 
     // Read the order to get the payment intent id and current state.
     const { data: order, error: orderError } = await client
       .from("orders")
       .select("id,order_number,email,shipping_address_snapshot,stripe_payment_intent_id,payment_status,total_cents,refunded_cents,status")
       .eq("id", parsed.data.orderId)
+      .eq("organization_id", organizationId)
       .single();
 
     if (orderError || !order) return { ok: false, message: "Ordine non trovato." };
@@ -374,10 +378,11 @@ export async function refundStripeAction(_previous: OrderActionState, formData: 
 /** Sends the shipping email to every shipped order still waiting for one. */
 export async function notifyShippedOrdersAction(_previous: OrderActionState, _formData: FormData): Promise<OrderActionState> {
   try {
-    const client = await clientFor(MANAGERS);
+    const { client, organizationId } = await clientFor(MANAGERS);
     const pending = await client
       .from("orders")
       .select("id,order_number")
+      .eq("organization_id", organizationId)
       .in("status", ["shipped", "completed"])
       .is("shipping_notified_at", null)
       .order("shipped_at", { ascending: true })
@@ -387,7 +392,7 @@ export async function notifyShippedOrdersAction(_previous: OrderActionState, _fo
 
     const failed: string[] = [];
     for (const order of pending.data) {
-      const result = await sendShipmentEmail(client, order.id);
+      const result = await sendShipmentEmail(client, organizationId, order.id);
       if (!result.ok) failed.push(`${order.order_number}: ${result.message}`);
     }
     revalidatePath("/admin/ordini");

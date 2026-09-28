@@ -19,6 +19,7 @@ export type Database = {
           entity_id: string
           entity_type: string
           id: number
+          organization_id: number | null
           request_id: string | null
           request_method: string | null
           request_path: string | null
@@ -33,6 +34,7 @@ export type Database = {
           entity_id: string
           entity_type: string
           id?: never
+          organization_id?: number | null
           request_id?: string | null
           request_method?: string | null
           request_path?: string | null
@@ -47,28 +49,40 @@ export type Database = {
           entity_id?: string
           entity_type?: string
           id?: never
+          organization_id?: number | null
           request_id?: string | null
           request_method?: string | null
           request_path?: string | null
           request_user_agent?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "audit_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       bundle_items: {
         Row: {
           bundle_id: number
+          organization_id: number
           product_id: number
           quantity: number
           sort_order: number
         }
         Insert: {
           bundle_id: number
+          organization_id: number
           product_id: number
           quantity?: number
           sort_order?: number
         }
         Update: {
           bundle_id?: number
+          organization_id?: number
           product_id?: number
           quantity?: number
           sort_order?: number
@@ -76,17 +90,24 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "bundle_items_bundle_id_fkey"
-            columns: ["bundle_id"]
+            columns: ["bundle_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "bundles"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "bundle_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "bundle_items_product_id_fkey"
-            columns: ["product_id"]
+            columns: ["product_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "products"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "organization_id"]
           },
         ]
       }
@@ -104,6 +125,7 @@ export type Database = {
           hero_product_id: number
           id: number
           media_asset_id: number | null
+          organization_id: number
           price_cents: number
           slug: string
           sort_order: number
@@ -125,6 +147,7 @@ export type Database = {
           hero_product_id: number
           id?: never
           media_asset_id?: number | null
+          organization_id: number
           price_cents: number
           slug: string
           sort_order?: number
@@ -146,6 +169,7 @@ export type Database = {
           hero_product_id?: number
           id?: never
           media_asset_id?: number | null
+          organization_id?: number
           price_cents?: number
           slug?: string
           sort_order?: number
@@ -157,16 +181,23 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "bundles_hero_product_id_fkey"
-            columns: ["hero_product_id"]
+            columns: ["hero_product_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "products"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "organization_id"]
           },
           {
             foreignKeyName: "bundles_media_asset_id_fkey"
-            columns: ["media_asset_id"]
+            columns: ["media_asset_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "media_assets"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "bundles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -179,6 +210,7 @@ export type Database = {
           id: number
           media_asset_id: number | null
           name: string
+          organization_id: number
           publication_status: Database["public"]["Enums"]["publication_status"]
           published_at: string | null
           seo_description: string | null
@@ -195,6 +227,7 @@ export type Database = {
           id?: never
           media_asset_id?: number | null
           name: string
+          organization_id: number
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
           seo_description?: string | null
@@ -211,6 +244,7 @@ export type Database = {
           id?: never
           media_asset_id?: number | null
           name?: string
+          organization_id?: number
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
           seo_description?: string | null
@@ -223,9 +257,16 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "categories_media_asset_id_fkey"
-            columns: ["media_asset_id"]
+            columns: ["media_asset_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "media_assets"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "categories_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -239,6 +280,7 @@ export type Database = {
           format: Database["public"]["Enums"]["content_format"]
           id: number
           markdown_source: string
+          organization_id: number
           publication_status: Database["public"]["Enums"]["publication_status"]
           published_at: string | null
           seo_description: string | null
@@ -257,6 +299,7 @@ export type Database = {
           format?: Database["public"]["Enums"]["content_format"]
           id?: never
           markdown_source: string
+          organization_id: number
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
           seo_description?: string | null
@@ -275,6 +318,7 @@ export type Database = {
           format?: Database["public"]["Enums"]["content_format"]
           id?: never
           markdown_source?: string
+          organization_id?: number
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
           seo_description?: string | null
@@ -285,34 +329,52 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "content_pages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       coupon_bundles: {
         Row: {
           bundle_id: number
           coupon_id: number
+          organization_id: number
         }
         Insert: {
           bundle_id: number
           coupon_id: number
+          organization_id: number
         }
         Update: {
           bundle_id?: number
           coupon_id?: number
+          organization_id?: number
         }
         Relationships: [
           {
             foreignKeyName: "coupon_bundles_bundle_id_fkey"
-            columns: ["bundle_id"]
+            columns: ["bundle_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "bundles"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "organization_id"]
           },
           {
             foreignKeyName: "coupon_bundles_coupon_id_fkey"
-            columns: ["coupon_id"]
+            columns: ["coupon_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "coupons"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "coupon_bundles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -321,28 +383,38 @@ export type Database = {
         Row: {
           category_id: number
           coupon_id: number
+          organization_id: number
         }
         Insert: {
           category_id: number
           coupon_id: number
+          organization_id: number
         }
         Update: {
           category_id?: number
           coupon_id?: number
+          organization_id?: number
         }
         Relationships: [
           {
             foreignKeyName: "coupon_categories_category_id_fkey"
-            columns: ["category_id"]
+            columns: ["category_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "categories"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "organization_id"]
           },
           {
             foreignKeyName: "coupon_categories_coupon_id_fkey"
-            columns: ["coupon_id"]
+            columns: ["coupon_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "coupons"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "coupon_categories_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -350,30 +422,40 @@ export type Database = {
       coupon_products: {
         Row: {
           coupon_id: number
+          organization_id: number
           product_id: number
         }
         Insert: {
           coupon_id: number
+          organization_id: number
           product_id: number
         }
         Update: {
           coupon_id?: number
+          organization_id?: number
           product_id?: number
         }
         Relationships: [
           {
             foreignKeyName: "coupon_products_coupon_id_fkey"
-            columns: ["coupon_id"]
+            columns: ["coupon_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "coupons"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "coupon_products_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "coupon_products_product_id_fkey"
-            columns: ["product_id"]
+            columns: ["product_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "products"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "organization_id"]
           },
         ]
       }
@@ -385,6 +467,7 @@ export type Database = {
           email_normalized: string
           id: number
           order_id: number
+          organization_id: number
           redeemed_at: string
         }
         Insert: {
@@ -394,6 +477,7 @@ export type Database = {
           email_normalized: string
           id?: never
           order_id: number
+          organization_id: number
           redeemed_at?: string
         }
         Update: {
@@ -403,21 +487,29 @@ export type Database = {
           email_normalized?: string
           id?: never
           order_id?: number
+          organization_id?: number
           redeemed_at?: string
         }
         Relationships: [
           {
             foreignKeyName: "coupon_redemptions_coupon_id_fkey"
-            columns: ["coupon_id"]
+            columns: ["coupon_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "coupons"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "organization_id"]
           },
           {
             foreignKeyName: "coupon_redemptions_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: true
+            columns: ["order_id", "organization_id"]
+            isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "coupon_redemptions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -436,6 +528,7 @@ export type Database = {
           id: number
           maximum_discount_cents: number | null
           minimum_subtotal_cents: number
+          organization_id: number
           per_customer_limit: number | null
           starts_at: string | null
           updated_at: string
@@ -455,6 +548,7 @@ export type Database = {
           id?: never
           maximum_discount_cents?: number | null
           minimum_subtotal_cents?: number
+          organization_id: number
           per_customer_limit?: number | null
           starts_at?: string | null
           updated_at?: string
@@ -474,13 +568,22 @@ export type Database = {
           id?: never
           maximum_discount_cents?: number | null
           minimum_subtotal_cents?: number
+          organization_id?: number
           per_customer_limit?: number | null
           starts_at?: string | null
           updated_at?: string
           usage_limit?: number | null
           used_count?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "coupons_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       customer_addresses: {
         Row: {
@@ -542,6 +645,7 @@ export type Database = {
         Row: {
           created_at: string
           display_name: string | null
+          organization_id: number
           phone: string | null
           updated_at: string
           user_id: string
@@ -549,6 +653,7 @@ export type Database = {
         Insert: {
           created_at?: string
           display_name?: string | null
+          organization_id: number
           phone?: string | null
           updated_at?: string
           user_id: string
@@ -556,11 +661,20 @@ export type Database = {
         Update: {
           created_at?: string
           display_name?: string | null
+          organization_id?: number
           phone?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "customer_profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       footer_columns: {
         Row: {
@@ -569,6 +683,7 @@ export type Database = {
           created_at: string
           ends_at: string | null
           id: number
+          organization_id: number
           publication_status: Database["public"]["Enums"]["publication_status"]
           published_at: string | null
           sort_order: number
@@ -582,6 +697,7 @@ export type Database = {
           created_at?: string
           ends_at?: string | null
           id?: never
+          organization_id: number
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
           sort_order: number
@@ -595,6 +711,7 @@ export type Database = {
           created_at?: string
           ends_at?: string | null
           id?: never
+          organization_id?: number
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
           sort_order?: number
@@ -602,7 +719,15 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "footer_columns_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       footer_items: {
         Row: {
@@ -648,99 +773,129 @@ export type Database = {
       homepage_section_bundles: {
         Row: {
           bundle_id: number
+          organization_id: number
           section_id: number
           sort_order: number
         }
         Insert: {
           bundle_id: number
+          organization_id: number
           section_id: number
           sort_order: number
         }
         Update: {
           bundle_id?: number
+          organization_id?: number
           section_id?: number
           sort_order?: number
         }
         Relationships: [
           {
             foreignKeyName: "homepage_section_bundles_bundle_id_fkey"
-            columns: ["bundle_id"]
+            columns: ["bundle_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "bundles"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "homepage_section_bundles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "homepage_section_bundles_section_id_fkey"
-            columns: ["section_id"]
+            columns: ["section_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "homepage_sections"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "organization_id"]
           },
         ]
       }
       homepage_section_categories: {
         Row: {
           category_id: number
+          organization_id: number
           section_id: number
           sort_order: number
         }
         Insert: {
           category_id: number
+          organization_id: number
           section_id: number
           sort_order: number
         }
         Update: {
           category_id?: number
+          organization_id?: number
           section_id?: number
           sort_order?: number
         }
         Relationships: [
           {
             foreignKeyName: "homepage_section_categories_category_id_fkey"
-            columns: ["category_id"]
+            columns: ["category_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "homepage_section_categories_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "homepage_section_categories_section_id_fkey"
-            columns: ["section_id"]
+            columns: ["section_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "homepage_sections"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "organization_id"]
           },
         ]
       }
       homepage_section_products: {
         Row: {
+          organization_id: number
           product_id: number
           section_id: number
           sort_order: number
         }
         Insert: {
+          organization_id: number
           product_id: number
           section_id: number
           sort_order: number
         }
         Update: {
+          organization_id?: number
           product_id?: number
           section_id?: number
           sort_order?: number
         }
         Relationships: [
           {
-            foreignKeyName: "homepage_section_products_product_id_fkey"
-            columns: ["product_id"]
+            foreignKeyName: "homepage_section_products_organization_id_fkey"
+            columns: ["organization_id"]
             isOneToOne: false
-            referencedRelation: "products"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "homepage_section_products_product_id_fkey"
+            columns: ["product_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
             foreignKeyName: "homepage_section_products_section_id_fkey"
-            columns: ["section_id"]
+            columns: ["section_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "homepage_sections"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "organization_id"]
           },
         ]
       }
@@ -756,6 +911,7 @@ export type Database = {
           eyebrow: string | null
           id: number
           mobile_media_asset_id: number | null
+          organization_id: number
           publication_status: Database["public"]["Enums"]["publication_status"]
           published_at: string | null
           section_key: string
@@ -777,6 +933,7 @@ export type Database = {
           eyebrow?: string | null
           id?: never
           mobile_media_asset_id?: number | null
+          organization_id: number
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
           section_key: string
@@ -798,6 +955,7 @@ export type Database = {
           eyebrow?: string | null
           id?: never
           mobile_media_asset_id?: number | null
+          organization_id?: number
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
           section_key?: string
@@ -811,16 +969,23 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "homepage_sections_desktop_media_asset_id_fkey"
-            columns: ["desktop_media_asset_id"]
+            columns: ["desktop_media_asset_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "media_assets"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "organization_id"]
           },
           {
             foreignKeyName: "homepage_sections_mobile_media_asset_id_fkey"
-            columns: ["mobile_media_asset_id"]
+            columns: ["mobile_media_asset_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "media_assets"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "homepage_sections_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -835,6 +1000,7 @@ export type Database = {
           id: number
           note: string | null
           order_id: number | null
+          organization_id: number
           product_id: number
           reason: Database["public"]["Enums"]["inventory_reason"]
           stock_after: number
@@ -848,6 +1014,7 @@ export type Database = {
           id?: never
           note?: string | null
           order_id?: number | null
+          organization_id: number
           product_id: number
           reason: Database["public"]["Enums"]["inventory_reason"]
           stock_after: number
@@ -861,6 +1028,7 @@ export type Database = {
           id?: never
           note?: string | null
           order_id?: number | null
+          organization_id?: number
           product_id?: number
           reason?: Database["public"]["Enums"]["inventory_reason"]
           stock_after?: number
@@ -868,17 +1036,24 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "inventory_movements_order_id_fkey"
-            columns: ["order_id"]
+            columns: ["order_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "inventory_movements_product_id_fkey"
-            columns: ["product_id"]
+            columns: ["product_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "products"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "organization_id"]
           },
         ]
       }
@@ -893,6 +1068,7 @@ export type Database = {
           id: number
           mime_type: string
           object_path: string
+          organization_id: number
           original_filename: string
           ready_at: string | null
           status: Database["public"]["Enums"]["media_asset_status"]
@@ -910,6 +1086,7 @@ export type Database = {
           id?: never
           mime_type: string
           object_path: string
+          organization_id: number
           original_filename: string
           ready_at?: string | null
           status?: Database["public"]["Enums"]["media_asset_status"]
@@ -927,6 +1104,7 @@ export type Database = {
           id?: never
           mime_type?: string
           object_path?: string
+          organization_id?: number
           original_filename?: string
           ready_at?: string | null
           status?: Database["public"]["Enums"]["media_asset_status"]
@@ -934,7 +1112,15 @@ export type Database = {
           uploaded_by?: string
           width?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "media_assets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       navigation_items: {
         Row: {
@@ -995,6 +1181,7 @@ export type Database = {
           id: number
           label: string
           menu_key: string
+          organization_id: number
           publication_status: Database["public"]["Enums"]["publication_status"]
           published_at: string | null
           starts_at: string | null
@@ -1007,6 +1194,7 @@ export type Database = {
           id?: never
           label: string
           menu_key: string
+          organization_id: number
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
           starts_at?: string | null
@@ -1019,18 +1207,28 @@ export type Database = {
           id?: never
           label?: string
           menu_key?: string
+          organization_id?: number
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
           starts_at?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "navigation_menus_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       order_enablement_checks: {
         Row: {
           evidence: string | null
           key: string
           label: string
+          organization_id: number
           status: Database["public"]["Enums"]["enablement_check_status"]
           updated_at: string
           verified_at: string | null
@@ -1040,6 +1238,7 @@ export type Database = {
           evidence?: string | null
           key: string
           label: string
+          organization_id: number
           status?: Database["public"]["Enums"]["enablement_check_status"]
           updated_at?: string
           verified_at?: string | null
@@ -1049,12 +1248,21 @@ export type Database = {
           evidence?: string | null
           key?: string
           label?: string
+          organization_id?: number
           status?: Database["public"]["Enums"]["enablement_check_status"]
           updated_at?: string
           verified_at?: string | null
           verified_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "order_enablement_checks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       order_items: {
         Row: {
@@ -1062,6 +1270,7 @@ export type Database = {
           image_src_snapshot: string
           line_total_cents: number
           order_id: number
+          organization_id: number
           preorder_quantity: number
           product_id: number | null
           product_name_snapshot: string
@@ -1075,6 +1284,7 @@ export type Database = {
           image_src_snapshot: string
           line_total_cents: number
           order_id: number
+          organization_id: number
           preorder_quantity?: number
           product_id?: number | null
           product_name_snapshot: string
@@ -1088,6 +1298,7 @@ export type Database = {
           image_src_snapshot?: string
           line_total_cents?: number
           order_id?: number
+          organization_id?: number
           preorder_quantity?: number
           product_id?: number | null
           product_name_snapshot?: string
@@ -1099,17 +1310,24 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "order_items_order_id_fkey"
-            columns: ["order_id"]
+            columns: ["order_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "order_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "order_items_product_id_fkey"
-            columns: ["product_id"]
+            columns: ["product_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "products"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "organization_id"]
           },
         ]
       }
@@ -1197,6 +1415,7 @@ export type Database = {
           idempotency_key: string
           notes: string | null
           order_number: string
+          organization_id: number
           owner_notified_at: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           phone: string | null
@@ -1233,6 +1452,7 @@ export type Database = {
           idempotency_key: string
           notes?: string | null
           order_number: string
+          organization_id: number
           owner_notified_at?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           phone?: string | null
@@ -1269,6 +1489,7 @@ export type Database = {
           idempotency_key?: string
           notes?: string | null
           order_number?: string
+          organization_id?: number
           owner_notified_at?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           phone?: string | null
@@ -1290,6 +1511,94 @@ export type Database = {
           tracking_carrier?: string | null
           tracking_code?: string | null
           tracking_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_members: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          organization_id: number
+          role: Database["public"]["Enums"]["staff_role"]
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          organization_id: number
+          role: Database["public"]["Enums"]["staff_role"]
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          organization_id?: number
+          role?: Database["public"]["Enums"]["staff_role"]
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          active: boolean
+          created_at: string
+          currency: string
+          id: number
+          legal_name: string | null
+          name: string
+          order_number_prefix: string
+          slug: string
+          storefront_public: boolean
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          id?: never
+          legal_name?: string | null
+          name: string
+          order_number_prefix: string
+          slug: string
+          storefront_public?: boolean
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          id?: never
+          legal_name?: string | null
+          name?: string
+          order_number_prefix?: string
+          slug?: string
+          storefront_public?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -1362,6 +1671,7 @@ export type Database = {
           id: number
           is_primary: boolean
           media_asset_id: number | null
+          organization_id: number
           product_id: number
           published: boolean
           sort_order: number
@@ -1374,6 +1684,7 @@ export type Database = {
           id?: never
           is_primary?: boolean
           media_asset_id?: number | null
+          organization_id: number
           product_id: number
           published?: boolean
           sort_order?: number
@@ -1386,6 +1697,7 @@ export type Database = {
           id?: never
           is_primary?: boolean
           media_asset_id?: number | null
+          organization_id?: number
           product_id?: number
           published?: boolean
           sort_order?: number
@@ -1395,34 +1707,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "product_images_media_asset_id_fkey"
-            columns: ["media_asset_id"]
+            columns: ["media_asset_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "media_assets"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "product_images_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "product_images_product_id_fkey"
-            columns: ["product_id"]
+            columns: ["product_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "products"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "organization_id"]
           },
         ]
       }
       product_relations: {
         Row: {
+          organization_id: number
           product_id: number
           related_product_id: number
           relation_type: Database["public"]["Enums"]["product_relation_type"]
           sort_order: number
         }
         Insert: {
+          organization_id: number
           product_id: number
           related_product_id: number
           relation_type?: Database["public"]["Enums"]["product_relation_type"]
           sort_order?: number
         }
         Update: {
+          organization_id?: number
           product_id?: number
           related_product_id?: number
           relation_type?: Database["public"]["Enums"]["product_relation_type"]
@@ -1430,18 +1752,25 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "product_relations_product_id_fkey"
-            columns: ["product_id"]
+            foreignKeyName: "product_relations_organization_id_fkey"
+            columns: ["organization_id"]
             isOneToOne: false
-            referencedRelation: "products"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "product_relations_related_product_id_fkey"
-            columns: ["related_product_id"]
+            foreignKeyName: "product_relations_product_id_fkey"
+            columns: ["product_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "products"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "product_relations_related_product_id_fkey"
+            columns: ["related_product_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id", "organization_id"]
           },
         ]
       }
@@ -1519,6 +1848,7 @@ export type Database = {
           low_stock_threshold: number
           manage_stock: boolean
           name: string
+          organization_id: number
           preorder_allocation: number
           preorder_release_date: string | null
           price_cents: number
@@ -1554,6 +1884,7 @@ export type Database = {
           low_stock_threshold?: number
           manage_stock?: boolean
           name: string
+          organization_id: number
           preorder_allocation?: number
           preorder_release_date?: string | null
           price_cents: number
@@ -1589,6 +1920,7 @@ export type Database = {
           low_stock_threshold?: number
           manage_stock?: boolean
           name?: string
+          organization_id?: number
           preorder_allocation?: number
           preorder_release_date?: string | null
           price_cents?: number
@@ -1609,9 +1941,16 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "products_category_id_fkey"
-            columns: ["category_id"]
+            columns: ["category_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "products_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1619,90 +1958,120 @@ export type Database = {
       promotion_bundles: {
         Row: {
           bundle_id: number
+          organization_id: number
           promotion_id: number
         }
         Insert: {
           bundle_id: number
+          organization_id: number
           promotion_id: number
         }
         Update: {
           bundle_id?: number
+          organization_id?: number
           promotion_id?: number
         }
         Relationships: [
           {
             foreignKeyName: "promotion_bundles_bundle_id_fkey"
-            columns: ["bundle_id"]
+            columns: ["bundle_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "bundles"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "promotion_bundles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "promotion_bundles_promotion_id_fkey"
-            columns: ["promotion_id"]
+            columns: ["promotion_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "promotions"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "organization_id"]
           },
         ]
       }
       promotion_categories: {
         Row: {
           category_id: number
+          organization_id: number
           promotion_id: number
         }
         Insert: {
           category_id: number
+          organization_id: number
           promotion_id: number
         }
         Update: {
           category_id?: number
+          organization_id?: number
           promotion_id?: number
         }
         Relationships: [
           {
             foreignKeyName: "promotion_categories_category_id_fkey"
-            columns: ["category_id"]
+            columns: ["category_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "promotion_categories_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "promotion_categories_promotion_id_fkey"
-            columns: ["promotion_id"]
+            columns: ["promotion_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "promotions"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "organization_id"]
           },
         ]
       }
       promotion_products: {
         Row: {
+          organization_id: number
           product_id: number
           promotion_id: number
         }
         Insert: {
+          organization_id: number
           product_id: number
           promotion_id: number
         }
         Update: {
+          organization_id?: number
           product_id?: number
           promotion_id?: number
         }
         Relationships: [
           {
-            foreignKeyName: "promotion_products_product_id_fkey"
-            columns: ["product_id"]
+            foreignKeyName: "promotion_products_organization_id_fkey"
+            columns: ["organization_id"]
             isOneToOne: false
-            referencedRelation: "products"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "promotion_products_product_id_fkey"
+            columns: ["product_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
             foreignKeyName: "promotion_products_promotion_id_fkey"
-            columns: ["promotion_id"]
+            columns: ["promotion_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "promotions"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "organization_id"]
           },
         ]
       }
@@ -1718,6 +2087,7 @@ export type Database = {
           minimum_quantity: number
           minimum_subtotal_cents: number
           name: string
+          organization_id: number
           priority: number
           stackable: boolean
           starts_at: string | null
@@ -1734,6 +2104,7 @@ export type Database = {
           minimum_quantity?: number
           minimum_subtotal_cents?: number
           name: string
+          organization_id: number
           priority?: number
           stackable?: boolean
           starts_at?: string | null
@@ -1750,12 +2121,21 @@ export type Database = {
           minimum_quantity?: number
           minimum_subtotal_cents?: number
           name?: string
+          organization_id?: number
           priority?: number
           stackable?: boolean
           starts_at?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "promotions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       restock_requests: {
         Row: {
@@ -1763,6 +2143,7 @@ export type Database = {
           email: string
           id: number
           notified_at: string | null
+          organization_id: number
           product_slug: string
         }
         Insert: {
@@ -1770,6 +2151,7 @@ export type Database = {
           email: string
           id?: never
           notified_at?: string | null
+          organization_id: number
           product_slug: string
         }
         Update: {
@@ -1777,9 +2159,18 @@ export type Database = {
           email?: string
           id?: never
           notified_at?: string | null
+          organization_id?: number
           product_slug?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "restock_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shipping_methods: {
         Row: {
@@ -1792,6 +2183,7 @@ export type Database = {
           free_from_cents: number | null
           id: number
           name: string
+          organization_id: number
           price_cents: number
           sort_order: number
         }
@@ -1805,6 +2197,7 @@ export type Database = {
           free_from_cents?: number | null
           id?: never
           name: string
+          organization_id: number
           price_cents: number
           sort_order?: number
         }
@@ -1818,10 +2211,19 @@ export type Database = {
           free_from_cents?: number | null
           id?: never
           name?: string
+          organization_id?: number
           price_cents?: number
           sort_order?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "shipping_methods_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       site_settings: {
         Row: {
@@ -1839,8 +2241,8 @@ export type Database = {
           maintenance_message: string | null
           maintenance_mode: boolean
           max_quantity_per_line: number
+          organization_id: number
           postal_code: string | null
-          singleton: boolean
           store_name: string
           street_address: string | null
           support_email: string | null
@@ -1868,8 +2270,8 @@ export type Database = {
           maintenance_message?: string | null
           maintenance_mode?: boolean
           max_quantity_per_line?: number
+          organization_id: number
           postal_code?: string | null
-          singleton?: boolean
           store_name?: string
           street_address?: string | null
           support_email?: string | null
@@ -1897,8 +2299,8 @@ export type Database = {
           maintenance_message?: string | null
           maintenance_mode?: boolean
           max_quantity_per_line?: number
+          organization_id?: number
           postal_code?: string | null
-          singleton?: boolean
           store_name?: string
           street_address?: string | null
           support_email?: string | null
@@ -1911,7 +2313,15 @@ export type Database = {
           vat_number?: string | null
           youtube_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "site_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       social_links: {
         Row: {
@@ -1921,6 +2331,7 @@ export type Database = {
           href: string
           id: number
           label: string
+          organization_id: number
           platform_key: string
           publication_status: Database["public"]["Enums"]["publication_status"]
           published_at: string | null
@@ -1935,6 +2346,7 @@ export type Database = {
           href: string
           id?: never
           label: string
+          organization_id: number
           platform_key: string
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
@@ -1949,6 +2361,7 @@ export type Database = {
           href?: string
           id?: never
           label?: string
+          organization_id?: number
           platform_key?: string
           publication_status?: Database["public"]["Enums"]["publication_status"]
           published_at?: string | null
@@ -1956,7 +2369,15 @@ export type Database = {
           starts_at?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "social_links_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       staff_profiles: {
         Row: {
@@ -2014,18 +2435,29 @@ export type Database = {
           count: number
           day: string
           event: string
+          organization_id: number
         }
         Insert: {
           count?: number
           day: string
           event: string
+          organization_id: number
         }
         Update: {
           count?: number
           day?: string
           event?: string
+          organization_id?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "storefront_daily_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -2040,6 +2472,7 @@ export type Database = {
         Args: {
           p_delta: number
           p_note?: string
+          p_organization_id: number
           p_reason: Database["public"]["Enums"]["inventory_reason"]
           p_sku: string
         }
@@ -2072,6 +2505,7 @@ export type Database = {
       }
       change_staff_role: {
         Args: {
+          p_organization_id: number
           p_role: Database["public"]["Enums"]["staff_role"]
           p_user_id: string
         }
@@ -2125,9 +2559,12 @@ export type Database = {
         }
         Returns: undefined
       }
-      get_admin_dashboard_metrics: { Args: never; Returns: Json }
+      get_admin_dashboard_metrics: {
+        Args: { p_organization_id: number }
+        Returns: Json
+      }
       get_inventory_restock_demand: {
-        Args: { p_slugs: string[] }
+        Args: { p_organization_id: number; p_slugs: string[] }
         Returns: {
           pending_notices: number
           preorder_demand: number
@@ -2165,7 +2602,7 @@ export type Database = {
         Returns: undefined
       }
       read_funnel_stats: {
-        Args: { p_days?: number }
+        Args: { p_days?: number; p_organization_id: number }
         Returns: {
           count: number
           day: string
@@ -2189,6 +2626,7 @@ export type Database = {
         Args: {
           p_display_name: string
           p_email: string
+          p_organization_id: number
           p_role: Database["public"]["Enums"]["staff_role"]
           p_user_id: string
         }
@@ -2203,6 +2641,7 @@ export type Database = {
           p_lines: Json
           p_notes: string
           p_order_number: string
+          p_organization_id?: number
           p_payment_intent_id: string
           p_phone: string
           p_session_id: string
@@ -2237,12 +2676,12 @@ export type Database = {
         Returns: undefined
       }
       request_restock_notice: {
-        Args: { p_email: string; p_slug: string }
+        Args: { p_email: string; p_organization_id?: number; p_slug: string }
         Returns: undefined
       }
       revoke_staff_access: { Args: { p_user_id: string }; Returns: undefined }
       save_bundle_with_items: {
-        Args: { p_bundle: Json; p_items: Json }
+        Args: { p_bundle: Json; p_items: Json; p_organization_id: number }
         Returns: number
       }
       save_coupon_with_targets: {
@@ -2250,23 +2689,32 @@ export type Database = {
           p_bundle_ids: number[]
           p_category_ids: number[]
           p_coupon: Json
+          p_organization_id: number
           p_product_ids: number[]
         }
         Returns: number
       }
       save_footer_configuration: {
-        Args: { p_configuration: Json }
+        Args: { p_configuration: Json; p_organization_id: number }
         Returns: undefined
       }
       save_homepage_section: {
-        Args: { p_section: Json; p_target_ids: number[] }
+        Args: {
+          p_organization_id: number
+          p_section: Json
+          p_target_ids: number[]
+        }
         Returns: number
       }
-      save_navigation_tree: { Args: { p_tree: Json }; Returns: number }
+      save_navigation_tree: {
+        Args: { p_organization_id: number; p_tree: Json }
+        Returns: number
+      }
       save_promotion_with_targets: {
         Args: {
           p_bundle_ids: number[]
           p_category_ids: number[]
+          p_organization_id: number
           p_product_ids: number[]
           p_promotion: Json
         }
@@ -2276,12 +2724,17 @@ export type Database = {
         Args: {
           p_evidence: string
           p_key: string
+          p_organization_id: number
           p_status: Database["public"]["Enums"]["enablement_check_status"]
         }
         Returns: undefined
       }
       set_order_acceptance: {
-        Args: { p_confirmation: string; p_enabled: boolean }
+        Args: {
+          p_confirmation: string
+          p_enabled: boolean
+          p_organization_id: number
+        }
         Returns: undefined
       }
       set_order_tracking: {
@@ -2298,7 +2751,11 @@ export type Database = {
         Returns: undefined
       }
       set_staff_active: {
-        Args: { p_active: boolean; p_user_id: string }
+        Args: {
+          p_active: boolean
+          p_organization_id: number
+          p_user_id: string
+        }
         Returns: undefined
       }
       ship_order: {
@@ -2315,7 +2772,10 @@ export type Database = {
         Args: { p_new_media_asset_id: number; p_old_media_asset_id: number }
         Returns: Json
       }
-      track_storefront_event: { Args: { p_event: string }; Returns: undefined }
+      track_storefront_event: {
+        Args: { p_event: string; p_organization_id?: number }
+        Returns: undefined
+      }
       transition_order_status: {
         Args: {
           p_note?: string
@@ -2561,3 +3021,4 @@ export const Constants = {
     },
   },
 } as const
+

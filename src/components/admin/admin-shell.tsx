@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { ExternalLink, LogOut } from "lucide-react";
 import type { StaffRole } from "@/lib/auth/roles";
+import { organizationBrand, type OrganizationMembership } from "@/lib/org/organization";
 import { AdminMobileDock, AdminNavigation } from "./admin-navigation";
 import { OrderLockBanner } from "./order-lock-banner";
+import { OrganizationSwitcher } from "./organization-switcher";
 import styles from "./admin.module.css";
 
 const ROLE_LABELS: Record<StaffRole, string> = {
@@ -16,15 +18,19 @@ type AdminShellProps = {
   readonly children: React.ReactNode;
   readonly displayName: string;
   readonly role: StaffRole;
+  readonly organization: OrganizationMembership;
+  readonly organizations: readonly OrganizationMembership[];
 };
 
-export function AdminShell({ acceptOrders, children, displayName, role }: AdminShellProps) {
+/** Gear Drop keeps its wordmark; any other company is named as it is. */
+
+export function AdminShell({ acceptOrders, children, displayName, role, organization, organizations }: AdminShellProps) {
   return (
     <div className={styles.adminCanvas}>
       <aside className={styles.sidebar}>
-        <Link className={styles.adminBrand} href="/admin" aria-label="GEAR DROP Admin — panoramica">
-          <span>GEAR//DROP</span>
-          <small>ADMIN CONSOLE</small>
+        <Link className={styles.adminBrand} href="/admin" aria-label={`${organization.name} — panoramica del gestionale`}>
+          <span>{organizationBrand(organization)}</span>
+          <small>GESTIONALE</small>
         </Link>
         <AdminNavigation />
         <p className={styles.railFootnote}>Console operativa · Catalogo e stock</p>
@@ -38,9 +44,12 @@ export function AdminShell({ acceptOrders, children, displayName, role }: AdminS
             <span>{ROLE_LABELS[role]}</span>
           </div>
           <div className={styles.topbarActions}>
-            <Link href="/" className={styles.storeLink} aria-label="Visualizza negozio">
-              <span>Visualizza negozio</span> <ExternalLink size={16} aria-hidden="true" />
-            </Link>
+            <OrganizationSwitcher current={organization} organizations={organizations} />
+            {organization.storefrontPublic ? (
+              <Link href="/" className={styles.storeLink} aria-label="Visualizza negozio">
+                <span>Visualizza negozio</span> <ExternalLink size={16} aria-hidden="true" />
+              </Link>
+            ) : null}
             <form action="/admin/logout" method="post">
               <button
                 aria-label="Esci dall’amministrazione"
