@@ -6,6 +6,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { requireStaffRole, requireUser } from "@/lib/auth/guards";
 import { sendEmail, SHOP_EMAIL } from "@/lib/email/resend";
 import { assertCommerceMaintenanceOpen, commerceWriteBlockedMessage } from "@/lib/commerce/write-guard";
+import { parseEuroCents } from "@/lib/admin/warehouse";
 import { carrierById, normalizeTrackingCode } from "@/lib/orders/carriers";
 import { customerMessageEmail } from "@/lib/orders/customer-message-email";
 import { refundNotificationEmail } from "@/lib/orders/refund-email";
@@ -36,6 +37,7 @@ function refresh(id: number) {
   revalidatePath("/admin");
   revalidatePath("/admin/ordini");
   revalidatePath(`/admin/ordini/${id}`);
+  revalidatePath("/admin/magazzino");
 }
 
 function failure(error: unknown): OrderActionState {
@@ -233,6 +235,9 @@ export async function shipOrderAction(_previous: OrderActionState, formData: For
   const carrier = parsed.success ? carrierById(parsed.data.carrierId) : undefined;
   if (!parsed.success || !carrier) return { ok: false, message: "Scegli il corriere e controlla codice e link (solo HTTPS)." };
   const code = normalizeTrackingCode(carrier.id, parsed.data.code);
+  const courierCostText = text(formData, "courierCost").trim();
+  const courierCostCents = courierCostText ? parseEuroCents(courierCostText) : null;
+  if (courierCostText && courierCostCents === null) return { ok: false, message: "Costo corriere: scrivi un importo in euro, es. 4,00." };
   try {
     const { client, organizationId } = await clientFor(MANAGERS);
     const { error } = await client.rpc("ship_order", {
@@ -242,6 +247,13 @@ export async function shipOrderAction(_previous: OrderActionState, formData: For
       ...(parsed.data.url ? { p_url: parsed.data.url } : {}),
     });
     if (error) return failure(error);
+    if (courierCostCents !== null) {
+      const costs = await client.rpc("set_order_costs", {
+        p_order_id: parsed.data.orderId,
+        p_costs: { shipping_cost_cents: courierCostCents },
+      });
+      if (costs.error) console.error("[orders] courier cost not saved:", costs.error.message);
+    }
     refresh(parsed.data.orderId);
     if (!parsed.data.notify) return { ok: true, message: "Ordine segnato come spedito. Nessuna email inviata." };
 
