@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { requireStaffRole, requireUser } from "@/lib/auth/guards";
 import { sendEmail, SHOP_EMAIL } from "@/lib/email/resend";
+import { assertCommerceMaintenanceOpen, commerceWriteBlockedMessage } from "@/lib/commerce/write-guard";
 import { carrierById, normalizeTrackingCode } from "@/lib/orders/carriers";
 import { customerMessageEmail } from "@/lib/orders/customer-message-email";
 import { refundNotificationEmail } from "@/lib/orders/refund-email";
@@ -38,6 +39,8 @@ function refresh(id: number) {
 }
 
 function failure(error: unknown): OrderActionState {
+  const blocked = commerceWriteBlockedMessage(error, "staff");
+  if (blocked) return { ok: false, message: blocked };
   // Supabase RPC errors are plain objects with a message, not Error instances.
   const message =
     error instanceof Error ? error.message : typeof error === "object" && error && "message" in error ? String(error.message) : "";
@@ -53,6 +56,9 @@ async function clientFor(roles: typeof MANAGERS) {
   const client = await createSupabaseServerClient();
   await requireUser(client);
   await requireStaffRole(client, roles);
+  // Every action below calls this before any RPC, email or Stripe request, so maintenance
+  // freezes them all at once — owners included, because a cut-over must hold still.
+  await assertCommerceMaintenanceOpen(client);
   return client;
 }
 
@@ -247,6 +253,9 @@ export async function shipOrderAction(_previous: OrderActionState, formData: For
 }
 
 function stripeRefundFailure(error: unknown): OrderActionState {
+  // A blocked write never reached Stripe: say why, instead of blaming the refund.
+  const blocked = commerceWriteBlockedMessage(error, "staff");
+  if (blocked) return { ok: false, message: blocked };
   const message = error instanceof Error ? error.message : "";
   // Stripe error messages mention permission issues in specific ways
   if (/insufficient_permissions|api_key.*permission|RefundPermission|refunds.*not.*allowed/i.test(message)) {

@@ -1,11 +1,13 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { fakeSettingsClient } from "../support/site-settings-client";
 
 const placeOrderMock = vi.hoisted(() => vi.fn());
 const quoteCartMock = vi.hoisted(() => vi.fn());
 const providerNameMock = vi.hoisted(() => vi.fn(() => "supabase"));
 const serverClientMock = vi.hoisted(() => vi.fn(async () => ({ marker: "request-scoped" })));
+const publicClientMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/commerce/order-intake", () => ({ placeOrder: placeOrderMock }));
 vi.mock("@/lib/commerce/provider", () => ({
@@ -13,6 +15,8 @@ vi.mock("@/lib/commerce/provider", () => ({
   resolveCommerceProviderName: providerNameMock,
 }));
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: serverClientMock }));
+// An open shop: these tests are about the order path itself; the switches have their own suite.
+vi.mock("@/lib/supabase/public", () => ({ createSupabasePublicClient: publicClientMock }));
 
 const { requestCartQuote, submitOrder } = await import("@/app/(storefront)/checkout/actions");
 
@@ -37,6 +41,7 @@ const order = {
 beforeEach(() => {
   vi.clearAllMocks();
   providerNameMock.mockReturnValue("supabase");
+  publicClientMock.mockReturnValue(fakeSettingsClient({ row: { maintenance_mode: false, accept_orders: true } }).client);
   placeOrderMock.mockResolvedValue({ orderNumber: "GD-00000042", total: { amount: 5488, currency: "EUR" } });
 });
 
