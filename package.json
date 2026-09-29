@@ -24,6 +24,8 @@
     "db:types": "supabase gen types typescript --local --schema public > src/lib/supabase/database.types.ts",
     "seed:supabase": "tsx scripts/generate-supabase-seed.ts",
     "stripe:products": "tsx scripts/sync-stripe-products.ts",
+    "beta:rehearse": "tsx scripts/rehearse-production-upgrade.ts",
+    "beta:fees": "tsx scripts/backfill-payment-fees.ts",
     "shots": "playwright test --config playwright.shots.config.ts",
     "assets": "python scripts/build-assets.py",
     "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",

@@ -33,6 +33,10 @@ yarn-error.log*
 .env
 .env*.local
 
+# backup and dumps of the shop database: they hold customers' personal data
+/backup/
+*.dump
+
 # vercel
 .vercel
 
