@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import type { BladeType, CategorySlug, Product } from "@/lib/commerce/types";
-import { BLADE_TYPE_LABEL, STOCK_LABEL } from "@/lib/labels";
+import { BLADE_TYPE_LABEL, STOCK_LABEL, bundleNoun } from "@/lib/labels";
 
 /**
  * Presentation helpers for the Holo Drop cards: foil colours, the short labels a card
@@ -81,7 +81,7 @@ export function availabilityLine(product: Pick<Product, "stock" | "availableQuan
   const left = product.availableQuantity;
   if (left !== undefined && left > 0 && left <= 10) {
     if (product.stock === "pre-ordine") return `Solo ${left} in pre-ordine`;
-    return product.bundleOf ? `Solo ${left} duo` : `Solo ${left} ${left === 1 ? "pezzo" : "pezzi"}`;
+    return product.bundleOf ? `Solo ${left} ${bundleNoun(product)}` : `Solo ${left} ${left === 1 ? "pezzo" : "pezzi"}`;
   }
   return STOCK_LABEL[product.stock];
 }

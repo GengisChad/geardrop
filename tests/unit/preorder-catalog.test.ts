@@ -13,7 +13,17 @@ describe("reviewed catalogue", () => {
         reviewCount,
       })),
     ).toEqual([
-      // The 2026-09-21 pre-order drop leads the shop: nine pieces each, five left of Suppress Superion.
+      // The 2026-09-29 arrival leads the shop, because it is the part of the catalogue that ships
+      // today: eight starter packs, 26 of each, €12,90 but €16,90 for the Reaper's Kick bit.
+      { slug: "sword-dran-3-60f", price: 1290, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
+      { slug: "helm-knight-3-80n", price: 1290, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
+      { slug: "arrow-wizard-4-80b", price: 1290, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
+      { slug: "scythe-incendio-4-60t", price: 1290, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
+      { slug: "courage-dran-s-6-60v", price: 1290, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
+      { slug: "reaper-incendio-t-4-70k", price: 1690, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
+      { slug: "arc-wizard-r-4-55lo", price: 1290, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
+      { slug: "dark-perseus-b-6-80w", price: 1290, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
+      // The 2026-09-21 pre-order drop follows: nine pieces each, five left of Suppress Superion.
       { slug: "cobalt-drake-4-60f", price: 2000, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
       { slug: "mirage-clock-9-65b", price: 1950, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
       { slug: "suppress-superion-0-70lp", price: 2500, stock: "pre-ordine", availableQuantity: 5, rating: 0, reviewCount: 0 },

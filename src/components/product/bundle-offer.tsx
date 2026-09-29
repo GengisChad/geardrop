@@ -6,7 +6,7 @@ import { Kicker } from "@/components/ui/kicker";
 import { cutoutSrc } from "@/data/assets";
 import { formatPrice } from "@/lib/format";
 import { availabilityLine, holoStyle, shortName } from "@/lib/holo";
-import { isPurchasable } from "@/lib/labels";
+import { bundleNoun, isPurchasable } from "@/lib/labels";
 import type { Product } from "@/lib/commerce/types";
 
 /**
@@ -58,12 +58,12 @@ export function BundleOffer({
         </div>
 
         <div className="min-w-0">
-          <Kicker>Offerta duo</Kicker>
+          <Kicker>Offerta {bundleNoun(bundle)}</Kicker>
           <h2 id="bundle-offer-title" className="gd-display-wide mt-3 text-[1.6rem] font-bold leading-[0.98] sm:text-[2.1rem]">
             Prendilo insieme a {partnerLabel}
           </h2>
           <p className="mt-2.5 max-w-xl text-body text-grey-600">
-            Con il duo {partnerNames} ti costa{" "}
+            Con il {bundleNoun(bundle)} {partnerNames} ti costa{" "}
             <strong className="text-graphite">{formatPrice({ amount: extra, currency: "EUR" })}</strong> invece di{" "}
             {formatPrice(partners.reduce((sum, partner) => ({ amount: sum.amount + partner.price.amount, currency: "EUR" }), { amount: 0, currency: "EUR" }))}.
           </p>

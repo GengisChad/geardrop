@@ -45,6 +45,15 @@ MAPPING = {
     "suppressSuperion.jpg": "suppress-superion-0-70lp",
     "dranstrike.jpg": "strike-dran-4-50ff",
     "treadcroc.jpg": "tread-croc-tq-5-50gn",
+    # The 2026-09-29 arrival from Spain: eight starter packs, 26 of each.
+    "arrowwizard.webp": "arrow-wizard-4-80b",
+    "helmknight.jpg": "helm-knight-3-80n",
+    "scytheincendio.webp": "scythe-incendio-4-60t",
+    "sworddran.jpg": "sword-dran-3-60f",
+    "darkperseus.jpg": "dark-perseus-b-6-80w",
+    "arcwizard.jpg": "arc-wizard-r-4-55lo",
+    "couragedrans.jpg": "courage-dran-s-6-60v",
+    "reaperincendio.jpg": "reaper-incendio-t-4-70k",
 }
 
 

@@ -24,6 +24,9 @@ select results_eq(
   $$select count(*)::bigint from public.products
     where stock_quantity <> 0
       and slug not in ('cobalt-dragoon-2-60c', 'soar-phoenix-9-60gf', 'saber-samurai-2-70l', 'blast-pegasus-a-tr', 'drop-attack-battle-set', 'sneak-attack-battle-set', 'glory-valkerion-lf', 'hurricane-enlil-is-7-55t', 'shatter-horus-9-65gb',
+        -- The 2026-09-29 arrival from Spain: eight starter packs, 26 of each.
+        'sword-dran-3-60f', 'helm-knight-3-80n', 'arrow-wizard-4-80b', 'scythe-incendio-4-60t',
+        'courage-dran-s-6-60v', 'reaper-incendio-t-4-70k', 'arc-wizard-r-4-55lo', 'dark-perseus-b-6-80w',
         -- The deck cases sell without a limit: the database keeps a counter the shop never shows.
         'porta-deck-giallo', 'porta-deck-verde-lime', 'porta-deck-azzurro', 'porta-deck-blu', 'porta-deck-rosa', 'porta-deck-fucsia', 'porta-deck-bianco')$$,
   array[0::bigint],
@@ -106,12 +109,12 @@ select results_eq(
 );
 select results_eq(
   $$select count(*)::bigint from public.products$$,
-  array[21::bigint],
-  'double seed keeps the twenty-one catalogue products'
+  array[29::bigint],
+  'double seed keeps the twenty-nine catalogue products'
 );
 select results_eq(
   $$select count(*)::bigint from public.product_images$$,
-  array[21::bigint],
+  array[29::bigint],
   'double seed keeps one image per catalogue product'
 );
 select results_eq(

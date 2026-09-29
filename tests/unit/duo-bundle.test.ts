@@ -55,13 +55,15 @@ describe("the Horus + Enlil duo in the catalogue", () => {
 
 describe("bundle stock", () => {
   it("is the number of complete sets the packs can still make up", () => {
-    const [resolved] = withBundles(withStock({ "shatter-horus-9-65gb": 3, "hurricane-enlil-is-7-55t": 10 }), BUNDLES);
+    const resolved = withBundles(withStock({ "shatter-horus-9-65gb": 3, "hurricane-enlil-is-7-55t": 10 }), BUNDLES).find(
+      (entry) => entry.slug === duo.slug,
+    );
     expect(resolved).toMatchObject({ slug: "duo-horus-enlil", stock: "disponibile", availableQuantity: 3 });
     expect(availabilityLine(resolved!)).toBe("Solo 3 duo");
   });
 
   it("sells out with its first sold-out pack", () => {
-    const [resolved] = withBundles(withStock({ "shatter-horus-9-65gb": 0 }), BUNDLES);
+    const resolved = withBundles(withStock({ "shatter-horus-9-65gb": 0 }), BUNDLES).find((entry) => entry.slug === duo.slug);
     expect(resolved).toMatchObject({ stock: "esaurito", availableQuantity: 0 });
   });
 
@@ -71,7 +73,9 @@ describe("bundle stock", () => {
   });
 
   it("lists bundles first and keeps every product", () => {
-    expect(STOREFRONT_CATALOGUE[0]?.slug).toBe("duo-horus-enlil");
+    expect(STOREFRONT_CATALOGUE.slice(0, BUNDLES.length).map((entry) => entry.slug)).toEqual(
+      BUNDLES.map((bundle) => bundle.slug),
+    );
     expect(STOREFRONT_CATALOGUE).toHaveLength(PRODUCTS.length + BUNDLES.length);
   });
 

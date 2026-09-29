@@ -166,6 +166,19 @@ export function shownShelf(product: { readonly availableQuantity?: number }): nu
   return shelf !== undefined && shelf <= SHELF_COUNT_SHOWN_UP_TO ? shelf : undefined;
 }
 
+/**
+ * What the shop calls a bundle. Two packs are a duo, which is how the Horus x Enlil offer has
+ * always read; three or more is a kit, because "duo" on a four-piece box is simply wrong.
+ */
+export function bundleNoun(bundle: { readonly bundleOf?: readonly { readonly quantity: number }[] }): string {
+  return bundlePacks(bundle) > 2 ? "kit" : "duo";
+}
+
+/** How many packs a bundle ships, counting a pack taken twice twice. */
+export function bundlePacks(bundle: { readonly bundleOf?: readonly { readonly quantity: number }[] }): number {
+  return (bundle.bundleOf ?? []).reduce((total, part) => total + part.quantity, 0);
+}
+
 /** Units of a quote line that ship as a pre-order; a pre-order line without a split waits whole. */
 export function preorderUnits(line: { readonly quantity: number; readonly stock: StockStatus; readonly preorderQuantity?: number }): number {
   return line.preorderQuantity ?? (line.stock === "pre-ordine" ? line.quantity : 0);
