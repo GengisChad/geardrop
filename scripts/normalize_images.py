@@ -46,7 +46,7 @@ MAPPING = {
     "dranstrike.jpg": "strike-dran-4-50ff",
     "treadcroc.jpg": "tread-croc-tq-5-50gn",
     # The 2026-09-29 arrival from Spain: eight starter packs, 26 of each.
-    "arrowwizard.jpg": "arrow-wizard-4-80b",
+    "arrowwizard.webp": "arrow-wizard-4-80b",
     "helmknight.jpg": "helm-knight-3-80n",
     "scytheincendio.webp": "scythe-incendio-4-60t",
     "sworddran.jpg": "sword-dran-3-60f",
