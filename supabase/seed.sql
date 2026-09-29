@@ -45,10 +45,10 @@ with seed(category_slug, slug, sku, stock_quantity, availability_override, preor
   ('beyblade-x', 'shatter-horus-9-65gb', 'SHATTER-HORUS-9-65GB', 8, null::public.availability_override, 0, 'Shatter Horus 9-65GB', 'Stamina BX. Metallo oltre i ganci.', 'Shatter Horus 9-65GB è una trottola stamina della linea BX: la blade dalla forma rotonda estende il metallo oltre i ganci del lanciatore e riveste di metallo anche il bordo del gear chip, che raffigura il dio egizio Horus. Monta il Ratchet 9-65 e il Bit GB. Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).', 1800, null, 'stamina', 0, 0, 7),
   ('beyblade-x', 'cobalt-dragoon-2-60c', 'COBALT-DRAGOON-2-60C', 0, null::public.availability_override, 0, 'Cobalt Dragoon 2-60C', 'Attacco left-spin. Smash devastante.', 'Cobalt Dragoon 2-60C è una trottola d''attacco a rotazione sinistra (left-spin): quattro lame inclinate verso l''alto concentrano uno Smash Attack estremo, mentre il Ratchet 2-60 e il Bit Cyclone bilanciano velocità e stabilità. Lo starter include il lanciatore a corda left-spin dedicato.', 2550, null, 'attacco', 0, 0, 8),
   ('beyblade-x', 'soar-phoenix-9-60gf', 'SOAR-PHOENIX-9-60GF', 0, null::public.availability_override, 0, 'Soar Phoenix 9-60GF', 'Upper attack. Colpisci verso l''alto.', 'Soar Phoenix 9-60GF è una trottola d''attacco a tre lame che salgono verso l''alto per un Upper Attack capace di sollevare l''avversario, unito allo Smash che lo spinge fuori arena. Tra le blade più pesanti della serie. Lo starter include il lanciatore a corda.', 3200, null, 'attacco', 0, 0, 9),
-  ('beyblade-x', 'saber-samurai-2-70l', 'SABER-SAMURAI-2-70L', 0, null::public.availability_override, 0, 'Saber Samurai 2-70L', 'Doppia lama. Colpi da katana.', 'Saber Samurai 2-70L (linea UX) è una trottola d''attacco: le due protuberanze si ritraggono a metà battaglia, passando da colpi ripetuti in stile katana a un singolo impatto "tachi" per KO improvvisi. Lo starter include il lanciatore con impugnatura (grip).', 2790, null, 'attacco', 0, 0, 10),
-  ('beyblade-x', 'blast-pegasus-a-tr', 'BLAST-PEGASUS-A-TR', 0, null::public.availability_override, 0, 'Blast Pegasus A Tr', 'Attacco portatile. Clip & Rip Launcher.', 'Blast Pegasus A Tr è una trottola d''attacco a rotazione destra della linea CX, venduta con il Clip & Rip Launcher: un lanciatore portatile che si aggancia a cintura e zaino e ripone il ripcord all''interno. Richiede un Beystadium Beyblade X (venduto separatamente).', 2950, null, 'attacco', 0, 0, 11),
-  ('stadi', 'drop-attack-battle-set', 'DROP-ATTACK-BATTLE-SET', 0, null::public.availability_override, 0, 'Drop Attack Battle Set', 'Stadio + 2 trottole + 2 lanciatori.', 'Il Drop Attack Battle Set include tutto per giocare: il Beystadium con X-Celerator Rail rialzato che porta le trottole in alto per farle piombare sull''avversario, due trottole (Impact Drake 9-60LR d''attacco e Hover Wyvern 3-85N di difesa) e due lanciatori a corda.', 4650, null, null, 0, 0, 12),
-  ('stadi', 'sneak-attack-battle-set', 'SNEAK-ATTACK-BATTLE-SET', 0, null::public.availability_override, 0, 'Sneak Attack Battle Set', 'Stadio verde + 2 trottole + 2 lanciatori.', 'Il Sneak Attack Battle Set mette in scatola tutto per il primo scontro: il Beystadium con rail a scomparsa che devia le trottole in una nuova direzione, due trottole (Rampart Aegis GB di stamina e Cutter Shinobi LF d''attacco) e due lanciatori a corda.', 4500, null, null, 0, 0, 13),
+  ('beyblade-x', 'saber-samurai-2-70l', 'SABER-SAMURAI-2-70L', 16, null::public.availability_override, 0, 'Saber Samurai 2-70L', 'Doppia lama. Colpi da katana.', 'Saber Samurai 2-70L (linea UX) è una trottola d''attacco: le due protuberanze si ritraggono a metà battaglia, passando da colpi ripetuti in stile katana a un singolo impatto "tachi" per KO improvvisi. Lo starter include il lanciatore con impugnatura (grip).', 2590, null, 'attacco', 0, 0, 10),
+  ('beyblade-x', 'blast-pegasus-a-tr', 'BLAST-PEGASUS-A-TR', 56, null::public.availability_override, 0, 'Blast Pegasus A Tr', 'Attacco portatile. Clip & Rip Launcher.', 'Blast Pegasus A Tr è una trottola d''attacco a rotazione destra della linea CX, venduta con il Clip & Rip Launcher: un lanciatore portatile che si aggancia a cintura e zaino e ripone il ripcord all''interno. Richiede un Beystadium Beyblade X (venduto separatamente).', 2690, null, 'attacco', 0, 0, 11),
+  ('stadi', 'drop-attack-battle-set', 'DROP-ATTACK-BATTLE-SET', 102, null::public.availability_override, 0, 'Drop Attack Battle Set', 'Stadio + 2 trottole + 2 lanciatori.', 'Il Drop Attack Battle Set include tutto per giocare: il Beystadium con X-Celerator Rail rialzato che porta le trottole in alto per farle piombare sull''avversario, due trottole (Impact Drake 9-60LR d''attacco e Hover Wyvern 3-85N di difesa) e due lanciatori a corda.', 3990, null, null, 0, 0, 12),
+  ('stadi', 'sneak-attack-battle-set', 'SNEAK-ATTACK-BATTLE-SET', 51, null::public.availability_override, 0, 'Sneak Attack Battle Set', 'Stadio verde + 2 trottole + 2 lanciatori.', 'Il Sneak Attack Battle Set mette in scatola tutto per il primo scontro: il Beystadium con rail a scomparsa che devia le trottole in una nuova direzione, due trottole (Rampart Aegis GB di stamina e Cutter Shinobi LF d''attacco) e due lanciatori a corda.', 4490, null, null, 0, 0, 13),
   ('accessori', 'porta-deck-giallo', 'PORTA-DECK-GIALLO', 9999, null::public.availability_override, 0, 'Porta Deck Giallo', 'Tre trottole al sicuro. Anche Expanded e Infinity.', 'Il porta deck tiene un deck completo di Beyblade X: tre scomparti, uno per trottola, ognuno con la sua chiusura a clip. Entrano anche i bey Expanded e Infinity. Stampato in 3D. Accessorio non ufficiale: non è prodotto né certificato da Hasbro.', 2450, null, null, 0, 0, 14),
   ('accessori', 'porta-deck-verde-lime', 'PORTA-DECK-VERDE-LIME', 9999, null::public.availability_override, 0, 'Porta Deck Verde lime', 'Tre trottole al sicuro. Anche Expanded e Infinity.', 'Il porta deck tiene un deck completo di Beyblade X: tre scomparti, uno per trottola, ognuno con la sua chiusura a clip. Entrano anche i bey Expanded e Infinity. Stampato in 3D. Accessorio non ufficiale: non è prodotto né certificato da Hasbro.', 2450, null, null, 0, 0, 15),
   ('accessori', 'porta-deck-azzurro', 'PORTA-DECK-AZZURRO', 9999, null::public.availability_override, 0, 'Porta Deck Azzurro', 'Tre trottole al sicuro. Anche Expanded e Infinity.', 'Il porta deck tiene un deck completo di Beyblade X: tre scomparti, uno per trottola, ognuno con la sua chiusura a clip. Entrano anche i bey Expanded e Infinity. Stampato in 3D. Accessorio non ufficiale: non è prodotto né certificato da Hasbro.', 2450, null, null, 0, 0, 16),
@@ -665,7 +665,7 @@ Gli accessori compatibili, come i porta deck, non sono prodotti da Hasbro: la lo
 
 ## Quanto costa la spedizione?
 
-La spedizione standard è gratuita per ordini superiori a 59€. Sotto questa soglia si applica una tariffa fissa di 4,90€.
+La spedizione standard è gratuita per ordini superiori a 100€. Sotto questa soglia si applica una tariffa fissa di 4,90€.
 
 Spediamo solo in Italia.
 
@@ -696,7 +696,7 @@ Spediamo solo in Italia.
 
 ## Costi
 
-Spedizione gratuita per ordini superiori a 59€.
+Spedizione gratuita per ordini superiori a 100€.
 
 Sotto la soglia, la spedizione standard costa 4,90€. Le opzioni disponibili sono mostrate prima della conferma.
 
@@ -837,7 +837,7 @@ where singleton
   and default_seo_description is null;
 
 insert into public.shipping_methods (code, name, price_cents, free_from_cents, active, sort_order)
-values ('standard', 'Spedizione standard', 490, 5900, false, 0)
+values ('standard', 'Spedizione standard', 490, 10000, false, 0)
 on conflict (code) do update set
   name = excluded.name,
   price_cents = excluded.price_cents,

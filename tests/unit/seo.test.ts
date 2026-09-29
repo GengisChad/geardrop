@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
-import { BUNDLES, CATEGORIES, PRODUCTS } from "@/data/catalog";
+import { BUNDLES, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS } from "@/data/catalog";
 import { oneCardPerFamily } from "@/lib/commerce/variants";
 import { breadcrumbJsonLd, jsonLd, productDescription, productJsonLd, productTitle, siteJsonLd } from "@/lib/seo";
 
@@ -91,7 +91,10 @@ describe("structured data", () => {
 
   it("marks sold-out stock and free shipping from the threshold", () => {
     expect(productJsonLd({ ...glory, stock: "esaurito" }).offers.availability).toBe("https://schema.org/OutOfStock");
-    expect(productJsonLd({ ...glory, price: { amount: 5900, currency: "EUR" } }).offers.shippingDetails.shippingRate.value).toBe("0.00");
+    expect(
+      productJsonLd({ ...glory, price: { amount: FREE_SHIPPING_THRESHOLD, currency: "EUR" } }).offers.shippingDetails
+        .shippingRate.value,
+    ).toBe("0.00");
   });
 
   it("publishes the shop, its search and breadcrumbs", () => {

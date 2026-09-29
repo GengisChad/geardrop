@@ -172,8 +172,9 @@ describe("stripe checkout session", () => {
   });
 
   it("ships free above the threshold", async () => {
+    // Two arenas and a pack clear the threshold whatever the owner sets it to.
     const quote = await quoteFor([
-      { slug: "drop-attack-battle-set", quantity: 1 },
+      { slug: "drop-attack-battle-set", quantity: 2 },
       { slug: "cobalt-dragoon-2-60c", quantity: 1 },
     ]);
     const fields = buildCheckoutSessionFields({ quote, order, origin: ORIGIN }, matchStripePrices(quote, catalogPrices)!);

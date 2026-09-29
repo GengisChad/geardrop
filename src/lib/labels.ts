@@ -5,7 +5,19 @@
  * different colours across the app. (audit §5)
  */
 
+import { FREE_SHIPPING_THRESHOLD, SHIPPING_FLAT_RATE } from "@/data/catalog";
+import { formatPrice } from "@/lib/format";
 import type { BladeType, CategorySlug, PromoTag, SortKey, StockStatus } from "@/lib/commerce/types";
+
+/** "€100" for a round figure, "€4,90" otherwise: the copy never writes a pointless ",00". */
+const eur = (amount: number) => formatPrice({ amount, currency: "EUR" }).replace(/,00$/, "");
+
+/**
+ * The two shipping numbers as the shop writes them. Derived from the catalogue so a threshold the
+ * owner moves can never leave a stale figure behind in the copy.
+ */
+export const SHIPPING_FLAT_LABEL = eur(SHIPPING_FLAT_RATE);
+export const FREE_SHIPPING_FROM_LABEL = eur(FREE_SHIPPING_THRESHOLD);
 
 export const STOCK_LABEL: Record<StockStatus, string> = {
   disponibile: "Disponibile",
@@ -139,6 +151,19 @@ export function stockHint(product: Availability): string {
   if (product.stock === "pre-ordine") return preorderDelivery(product.releasePreorder);
   if (product.stock === "esaurito" && product.releasePreorder) return "Pre-ordini chiusi: ti avvisiamo appena riaprono";
   return STOCK_HINT[product.stock];
+}
+
+/**
+ * The shelf is only worth naming while it is short enough to press the buyer. Above this the count
+ * says the opposite of what it is for ("102 pezzi disponibili" reads as nobody wants it), so the
+ * status badge carries availability on its own and the number stays in the admin.
+ */
+export const SHELF_COUNT_SHOWN_UP_TO = 12;
+
+/** The shelf the product page may name, or undefined when it is too deep to be scarcity. */
+export function shownShelf(product: { readonly availableQuantity?: number }): number | undefined {
+  const shelf = product.availableQuantity;
+  return shelf !== undefined && shelf <= SHELF_COUNT_SHOWN_UP_TO ? shelf : undefined;
 }
 
 /** Units of a quote line that ship as a pre-order; a pre-order line without a split waits whole. */

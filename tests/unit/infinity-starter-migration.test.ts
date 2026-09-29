@@ -28,10 +28,14 @@ describe("infinity starter preorder migration", () => {
     }
   });
 
-  /** Prices the owner changed later (2026-09-22); the migration keeps the price of its own day. */
+  /** Prices the owner changed later (2026-09-22 and 2026-09-29); the migration keeps the price of its own day. */
   const PRICE_THEN: Readonly<Record<string, number>> = {
     "shatter-horus-9-65gb": 2000,
     "hurricane-enlil-is-7-55t": 2000,
+    "saber-samurai-2-70l": 2790,
+    "blast-pegasus-a-tr": 2950,
+    "drop-attack-battle-set": 4650,
+    "sneak-attack-battle-set": 4500,
   };
 
   it("keeps every product it published at the price and allocation of its day", () => {

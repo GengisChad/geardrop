@@ -6,7 +6,7 @@ import { ArrowRight, ShoppingCart } from "lucide-react";
 import { Emblem } from "@/components/layout/logo";
 import { ProductCard } from "@/components/product/product-card";
 import { Kicker } from "@/components/ui/kicker";
-import { BLADE_TYPE_LABEL, CATEGORY_LABEL } from "@/lib/labels";
+import { BLADE_TYPE_LABEL, CATEGORY_LABEL, FREE_SHIPPING_FROM_LABEL } from "@/lib/labels";
 import { selectCartCount, useCart } from "@/lib/store/cart";
 import type { Product } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
@@ -129,7 +129,7 @@ export function Arsenal({
               className="pointer-events-none absolute -right-12 -top-10 w-40 opacity-35 animate-[gd-spin_20s_linear_infinite] sm:w-64"
             />
             <span className="gd-mono relative text-[0.625rem] uppercase tracking-[0.12em] text-lime sm:text-[0.6875rem]">
-              Spedizione gratis da €59
+              Spedizione gratis da {FREE_SHIPPING_FROM_LABEL}
             </span>
             <span className="gd-display-wide relative text-[1.45rem] font-bold leading-[0.95] sm:text-[2.1rem]">
               Vedi tutto il negozio

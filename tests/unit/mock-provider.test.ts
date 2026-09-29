@@ -162,8 +162,9 @@ describe("quoteCart", () => {
   });
 
   it("gives free shipping exactly at the threshold, not just above it", async () => {
-    // 3 x 25,50 = 76,50 clears 59,00; check the boundary explicitly.
-    const quote = await provider.quoteCart({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 3 }] });
+    // The smallest number of packs that clears the threshold, whatever the owner sets it to.
+    const quantity = Math.ceil(FREE_SHIPPING_THRESHOLD / 2550);
+    const quote = await provider.quoteCart({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity }] });
     expect(quote.totals.subtotal.amount).toBeGreaterThanOrEqual(FREE_SHIPPING_THRESHOLD);
     expect(quote.totals.shipping.amount).toBe(0);
     expect(quote.totals.freeShippingRemaining).toBe(0);
