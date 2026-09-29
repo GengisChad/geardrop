@@ -25,10 +25,12 @@ describe("reviewed catalogue", () => {
       { slug: "shatter-horus-9-65gb", price: 1800, stock: "disponibile", availableQuantity: 8, rating: 0, reviewCount: 0 },
       { slug: "cobalt-dragoon-2-60c", price: 2550, stock: "pre-ordine", availableQuantity: undefined, rating: 0, reviewCount: 0 },
       { slug: "soar-phoenix-9-60gf", price: 3200, stock: "pre-ordine", availableQuantity: undefined, rating: 0, reviewCount: 0 },
-      { slug: "saber-samurai-2-70l", price: 2790, stock: "pre-ordine", availableQuantity: undefined, rating: 0, reviewCount: 0 },
-      { slug: "blast-pegasus-a-tr", price: 2950, stock: "pre-ordine", availableQuantity: undefined, rating: 0, reviewCount: 0 },
-      { slug: "drop-attack-battle-set", price: 4650, stock: "pre-ordine", availableQuantity: undefined, rating: 0, reviewCount: 0 },
-      { slug: "sneak-attack-battle-set", price: 4500, stock: "pre-ordine", availableQuantity: undefined, rating: 0, reviewCount: 0 },
+      // The shipment from Spain landed on 2026-09-29: these four are on the shelf, at the prices
+      // that undercut every Italian shop still holding them.
+      { slug: "saber-samurai-2-70l", price: 2590, stock: "disponibile", availableQuantity: 16, rating: 0, reviewCount: 0 },
+      { slug: "blast-pegasus-a-tr", price: 2690, stock: "disponibile", availableQuantity: 56, rating: 0, reviewCount: 0 },
+      { slug: "drop-attack-battle-set", price: 3990, stock: "disponibile", availableQuantity: 102, rating: 0, reviewCount: 0 },
+      { slug: "sneak-attack-battle-set", price: 4490, stock: "disponibile", availableQuantity: 51, rating: 0, reviewCount: 0 },
       // The deck case: one product per colour, €24,50, no stock limit (2026-09-21).
       { slug: "porta-deck-giallo", price: 2450, stock: "disponibile", availableQuantity: undefined, rating: 0, reviewCount: 0 },
       { slug: "porta-deck-verde-lime", price: 2450, stock: "disponibile", availableQuantity: undefined, rating: 0, reviewCount: 0 },

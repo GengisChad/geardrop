@@ -141,6 +141,19 @@ export function stockHint(product: Availability): string {
   return STOCK_HINT[product.stock];
 }
 
+/**
+ * The shelf is only worth naming while it is short enough to press the buyer. Above this the count
+ * says the opposite of what it is for ("102 pezzi disponibili" reads as nobody wants it), so the
+ * status badge carries availability on its own and the number stays in the admin.
+ */
+export const SHELF_COUNT_SHOWN_UP_TO = 12;
+
+/** The shelf the product page may name, or undefined when it is too deep to be scarcity. */
+export function shownShelf(product: { readonly availableQuantity?: number }): number | undefined {
+  const shelf = product.availableQuantity;
+  return shelf !== undefined && shelf <= SHELF_COUNT_SHOWN_UP_TO ? shelf : undefined;
+}
+
 /** Units of a quote line that ship as a pre-order; a pre-order line without a split waits whole. */
 export function preorderUnits(line: { readonly quantity: number; readonly stock: StockStatus; readonly preorderQuantity?: number }): number {
   return line.preorderQuantity ?? (line.stock === "pre-ordine" ? line.quantity : 0);
