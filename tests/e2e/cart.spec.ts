@@ -54,7 +54,7 @@ test.describe("cart", () => {
     await expect(page.getByTestId("cart-subtotal")).toHaveText("€51,00");
   });
 
-  test("shipping is charged below 59€ and free at or above it", async ({ page }) => {
+  test("shipping is charged below the free-shipping threshold and free at or above it", async ({ page }) => {
     await page.goto("/prodotto/cobalt-dragoon-2-60c");
     await buyPanel(page).getByTestId("add-to-cart").click();
     await page.goto("/carrello");
@@ -63,11 +63,12 @@ test.describe("cart", () => {
     await expect(page.getByTestId("cart-shipping")).toHaveText("€4,90");
     await expect(page.getByTestId("cart-total")).toHaveText("€30,40");
 
-    // 3 x 25,50 = 76,50 -> free shipping
+    // 4 x 25,50 = 102,00 -> free shipping
+    await page.getByTestId("qty-increase").click();
     await page.getByTestId("qty-increase").click();
     await page.getByTestId("qty-increase").click();
     await expect(page.getByTestId("cart-shipping")).toHaveText("Gratis");
-    await expect(page.getByTestId("cart-total")).toHaveText("€76,50");
+    await expect(page.getByTestId("cart-total")).toHaveText("€102,00");
   });
 
   test("removing the last line shows the empty state", async ({ page }) => {

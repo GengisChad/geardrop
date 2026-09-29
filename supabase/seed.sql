@@ -665,7 +665,7 @@ Gli accessori compatibili, come i porta deck, non sono prodotti da Hasbro: la lo
 
 ## Quanto costa la spedizione?
 
-La spedizione standard è gratuita per ordini superiori a 59€. Sotto questa soglia si applica una tariffa fissa di 4,90€.
+La spedizione standard è gratuita per ordini superiori a 100€. Sotto questa soglia si applica una tariffa fissa di 4,90€.
 
 Spediamo solo in Italia.
 
@@ -696,7 +696,7 @@ Spediamo solo in Italia.
 
 ## Costi
 
-Spedizione gratuita per ordini superiori a 59€.
+Spedizione gratuita per ordini superiori a 100€.
 
 Sotto la soglia, la spedizione standard costa 4,90€. Le opzioni disponibili sono mostrate prima della conferma.
 
@@ -837,7 +837,7 @@ where singleton
   and default_seo_description is null;
 
 insert into public.shipping_methods (code, name, price_cents, free_from_cents, active, sort_order)
-values ('standard', 'Spedizione standard', 490, 5900, false, 0)
+values ('standard', 'Spedizione standard', 490, 10000, false, 0)
 on conflict (code) do update set
   name = excluded.name,
   price_cents = excluded.price_cents,

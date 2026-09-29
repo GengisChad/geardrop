@@ -1,6 +1,6 @@
 import { Lock, RotateCcw, Truck } from "lucide-react";
 import { cn } from "@/lib/cn";
-import { STANDARD_DELIVERY } from "@/lib/labels";
+import { FREE_SHIPPING_FROM_LABEL, SHIPPING_FLAT_LABEL, STANDARD_DELIVERY } from "@/lib/labels";
 
 type TrustItem = { readonly Icon: typeof Truck; readonly title: string; readonly sub: string };
 
@@ -11,7 +11,7 @@ type TrustItem = { readonly Icon: typeof Truck; readonly title: string; readonly
 function trustItems(delivery: string): readonly TrustItem[] {
   return [
     { Icon: Lock, title: "Pagamento sicuro", sub: "Paghi sulla pagina protetta di Stripe." },
-    { Icon: Truck, title: "Spedizione €4,90", sub: `${delivery}. Gratis da €59. Solo in Italia.` },
+    { Icon: Truck, title: `Spedizione ${SHIPPING_FLAT_LABEL}`, sub: `${delivery}. Gratis da ${FREE_SHIPPING_FROM_LABEL}. Solo in Italia.` },
     { Icon: RotateCcw, title: "Reso gratuito", sub: "30 giorni per ripensarci: la spedizione del reso la paghiamo noi." },
   ];
 }

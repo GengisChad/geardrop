@@ -1,3 +1,4 @@
+import { FREE_SHIPPING_FROM_LABEL } from "@/lib/labels";
 import type { AppHref } from "@/lib/routes";
 
 export type NavItem = {
@@ -19,7 +20,7 @@ export const MAIN_NAV: readonly NavItem[] = [
 ];
 
 export const ANNOUNCEMENTS = [
-  { icon: "package", text: "Spedizione gratuita sopra 59€" },
+  { icon: "package", text: `Spedizione gratuita sopra ${FREE_SHIPPING_FROM_LABEL}` },
   { icon: "zap", text: "Nuovi drop ogni settimana" },
   { icon: "crown", text: "Club GEAR//DROP" },
 ] as const;

@@ -3,6 +3,7 @@ import type { Route } from "next";
 import { Lock, RotateCcw, Truck } from "lucide-react";
 import { Wordmark } from "@/components/layout/logo";
 import type { StorefrontChrome } from "@/lib/content/types";
+import { FREE_SHIPPING_FROM_LABEL, SHIPPING_FLAT_LABEL } from "@/lib/labels";
 
 /**
  * VAT number of the business that sells and collects payments on GEAR//DROP.
@@ -14,7 +15,7 @@ const SELLER_NAME = "Alessia Brunetti";
 /** Standing promises. Card wallets are not named here: Stripe decides which appear at checkout. */
 const PROMISES = [
   { Icon: Lock, text: "Pagamento sicuro con Stripe" },
-  { Icon: Truck, text: "Spedizione €4,90 · gratis da €59" },
+  { Icon: Truck, text: `Spedizione ${SHIPPING_FLAT_LABEL} · gratis da ${FREE_SHIPPING_FROM_LABEL}` },
   { Icon: RotateCcw, text: "Reso gratuito entro 30 giorni" },
 ] as const;
 

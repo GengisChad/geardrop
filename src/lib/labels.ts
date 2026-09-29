@@ -5,7 +5,19 @@
  * different colours across the app. (audit §5)
  */
 
+import { FREE_SHIPPING_THRESHOLD, SHIPPING_FLAT_RATE } from "@/data/catalog";
+import { formatPrice } from "@/lib/format";
 import type { BladeType, CategorySlug, PromoTag, SortKey, StockStatus } from "@/lib/commerce/types";
+
+/** "€100" for a round figure, "€4,90" otherwise: the copy never writes a pointless ",00". */
+const eur = (amount: number) => formatPrice({ amount, currency: "EUR" }).replace(/,00$/, "");
+
+/**
+ * The two shipping numbers as the shop writes them. Derived from the catalogue so a threshold the
+ * owner moves can never leave a stale figure behind in the copy.
+ */
+export const SHIPPING_FLAT_LABEL = eur(SHIPPING_FLAT_RATE);
+export const FREE_SHIPPING_FROM_LABEL = eur(FREE_SHIPPING_THRESHOLD);
 
 export const STOCK_LABEL: Record<StockStatus, string> = {
   disponibile: "Disponibile",

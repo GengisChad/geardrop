@@ -214,5 +214,12 @@ export const BUNDLE: Bundle = {
   heroSlug: "shatter-horus-9-65gb", includes: ["shatter-horus-9-65gb", "hurricane-enlil-is-7-55t"],
 };
 
-export const FREE_SHIPPING_THRESHOLD = 5900;
+/**
+ * Shipping stops being charged only once the order can carry it. The stadium box is 45×45×15, so
+ * every carrier bills it at its 6 kg volumetric weight and Poste adds a €5 out-of-format fee: a
+ * parcel that costs far more than the €4,90 collected. At €59 a single arena plus one small piece
+ * cleared the threshold and shipped a bulky box for free, so the owner raised it to €100 on
+ * 2026-09-29.
+ */
+export const FREE_SHIPPING_THRESHOLD = 10000;
 export const SHIPPING_FLAT_RATE = 490;
