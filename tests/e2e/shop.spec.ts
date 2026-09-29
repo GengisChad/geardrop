@@ -69,7 +69,21 @@ test.describe("catalogue", () => {
     await expect(page.getByTestId("product-grid")).toBeVisible();
     const count = Number(await page.getByTestId("result-count").innerText());
     expect(count).toBeGreaterThan(0);
-    await expect(page.getByTestId("product-card")).toHaveCount(count);
+
+    // The count is the whole result, the grid is one page of it. Since the Spain arrival the
+    // catalogue no longer fits on a single page, so the rest has to be reachable, not lost.
+    const onPage = await page.getByTestId("product-card").count();
+    if (onPage === count) {
+      await expect(page.getByTestId("pagination")).toHaveCount(0);
+      return;
+    }
+
+    expect(onPage).toBeLessThan(count);
+    await expect(page.getByTestId("pagination")).toBeVisible();
+    await page.goto("/negozio?page=2");
+    const onSecond = await page.getByTestId("product-card").count();
+    expect(onSecond).toBeGreaterThan(0);
+    expect(onPage + onSecond).toBeLessThanOrEqual(count);
   });
 
   test("sorting by price ascending actually reorders the grid", async ({ page }) => {
