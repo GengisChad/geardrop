@@ -8,7 +8,7 @@ import { RestockForm } from "@/components/product/restock-form";
 import { Button } from "@/components/ui/button";
 import { useWishlist } from "@/lib/store/wishlist";
 import { MAX_QUANTITY_PER_LINE } from "@/lib/store/cart";
-import { PREORDER_DELIVERY, deliveryClause, isPurchasable, shownShelf, stockHint, stockLabel } from "@/lib/labels";
+import { PREORDER_DELIVERY, bundleNoun, deliveryClause, isPurchasable, shownShelf, stockHint, stockLabel } from "@/lib/labels";
 import type { Product, StockStatus } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
 
@@ -70,7 +70,7 @@ export function BuyPanel({ product }: { product: Product }) {
           {product.stock === "disponibile" && namedShelf !== undefined ? (
             <p className="mt-1 tabular text-[0.6875rem] font-bold text-available" data-testid="stock-remaining">
               {namedShelf}{" "}
-              {product.bundleOf ? "duo disponibili" : namedShelf === 1 ? "pezzo disponibile" : "pezzi disponibili"}
+              {product.bundleOf ? `${bundleNoun(product)} disponibili` : namedShelf === 1 ? "pezzo disponibile" : "pezzi disponibili"}
             </p>
           ) : null}
         </div>

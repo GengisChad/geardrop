@@ -49,10 +49,13 @@ describe("storefront artwork", () => {
 
   it("keeps every catalogue slug in a cut-out generator", () => {
     const script = readFileSync(join(ROOT, "scripts/cutout_products.py"), "utf8");
+    // A bundle has no photograph of its own: its packshot is assembled from its components'
+    // cut-outs by scripts/compose_bundle_images.py.
+    const bundles = readFileSync(join(ROOT, "scripts/compose_bundle_images.py"), "utf8");
     for (const slug of Object.keys(productImages)) {
       // The deck cases share one picture, built by scripts/cut_deck_cases.py and render-deck-image.mjs.
       if (slug.startsWith("porta-deck-")) continue;
-      expect(script).toContain(`"${slug}"`);
+      expect(script.includes(`"${slug}"`) || bundles.includes(`"${slug}"`), slug).toBe(true);
     }
     expect(readFileSync(join(ROOT, "scripts/render-deck-image.mjs"), "utf8")).toContain("public/products/cutout/porta-deck.webp");
     expect(cutoutSrc("/products/porta-deck.webp")).toBe("/products/cutout/porta-deck.webp");

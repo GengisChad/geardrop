@@ -257,6 +257,38 @@ export const productImages = {
       alt: "Confezione Beyblade X Shatter Horus 9-65GB con lanciatore e trottola argento e rossa",
     },
   ],
+  "kit-doppio-starter-deck": [
+    {
+      src: "/products/kit-doppio-starter-deck.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Kit con gli starter Sword Dran 3-60F e Helm Knight 3-80N e il porta deck",
+    },
+  ],
+  "kit-arena-drop-completo": [
+    {
+      src: "/products/kit-arena-drop-completo.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Kit con il Drop Attack Battle Set, due starter Beyblade X e il porta deck",
+    },
+  ],
+  "kit-arena-sneak-completo": [
+    {
+      src: "/products/kit-arena-sneak-completo.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Kit con il Sneak Attack Battle Set, due starter Beyblade X e il porta deck",
+    },
+  ],
+  "duo-pegasus-samurai": [
+    {
+      src: "/products/duo-pegasus-samurai.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Duo con gli starter Blast Pegasus A Tr e Saber Samurai 2-70L e i loro lanciatori",
+    },
+  ],
   "porta-deck-giallo": [DECK_IMAGE],
   "porta-deck-verde-lime": [DECK_IMAGE],
   "porta-deck-azzurro": [DECK_IMAGE],

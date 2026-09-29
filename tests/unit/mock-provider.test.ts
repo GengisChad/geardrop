@@ -100,8 +100,12 @@ describe("an item sold in several colours", () => {
   it("is found by any of its colours, still as one card", async () => {
     const page = await provider.listProducts({ search: "fucsia" });
     expect(page.items.map((product) => product.slug)).toEqual(["porta-deck-fucsia"]);
+    // Bundles that ship a case match the words too; what matters is that the seven colours
+    // still collapse into the one card that leads the family.
     const all = await provider.listProducts({ search: "porta deck" });
-    expect(all.items.map((product) => product.slug)).toEqual(["porta-deck-giallo"]);
+    expect(all.items.map((product) => product.slug).filter((slug) => slug.startsWith("porta-deck"))).toEqual([
+      "porta-deck-giallo",
+    ]);
   });
 
   it("keeps a page for every colour, sold with no stock limit", async () => {
@@ -140,8 +144,9 @@ describe("getFacets", () => {
 
   it("exposes the real price range", async () => {
     const facets = await provider.getFacets();
-    expect(facets.priceRange.min).toBe(Math.min(...PRODUCTS.map((p) => p.price.amount)));
-    expect(facets.priceRange.max).toBe(Math.max(...PRODUCTS.map((p) => p.price.amount)));
+    // Bundles are sold like any other card, so the range has to cover them too.
+    expect(facets.priceRange.min).toBe(Math.min(...STOREFRONT_CATALOGUE.map((p) => p.price.amount)));
+    expect(facets.priceRange.max).toBe(Math.max(...STOREFRONT_CATALOGUE.map((p) => p.price.amount)));
   });
 });
 
