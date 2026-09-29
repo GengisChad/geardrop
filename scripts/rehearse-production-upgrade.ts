@@ -63,13 +63,75 @@ export function localMigrationVersions(files: readonly string[]): readonly strin
   return files.flatMap((name) => /^(\d{14})_.*\.sql$/.exec(name)?.[1] ?? []).sort();
 }
 
+/**
+ * Toglie la password da qualunque testo: i comandi falliti stampano la riga che hanno eseguito,
+ * connessione compresa, e quel testo finisce nei log.
+ */
+export function redact(text: string): string {
+  // Greedy fino all'ultima @ del pezzo senza spazi: regge anche una password che contiene @.
+  return text.replace(/(postgres(?:ql)?:\/\/[^:\s]+:)[^\s]*@/gi, "$1***@");
+}
+
+function run<T>(label: string, action: () => T): T {
+  try {
+    return action();
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`${label}: ${redact(detail)}`);
+  }
+}
+
+/**
+ * Dati che la copia deve ricevere: tutto il negozio (public e private) e gli utenti a cui gli
+ * ordini sono legati. Il resto di auth e tutto storage appartengono alla piattaforma, che in
+ * produzione gira una versione più recente di quella locale: le loro tabelle non coincidono e
+ * non servono alla prova (le immagini restano sul sito, il gestionale legge public.media_assets).
+ */
+export function isRestorableTable(schema: string, table: string): boolean {
+  if (schema === "public" || schema === "private") return true;
+  return schema === "auth" && (table === "users" || table === "identities");
+}
+
+/**
+ * Le policy sullo schema storage non entrano nel dump di Supabase: sono della piattaforma. In
+ * produzione ci sono, sulla copia no, e una migration che le sostituisce le cerca. Si ricreano
+ * come segnaposto (nessun permesso) e la migration le rimpiazza con quelle vere.
+ */
+export function storagePoliciesToRecreate(migrations: readonly string[]): readonly string[] {
+  const names = migrations.flatMap((sql) => [
+    ...sql.matchAll(/drop policy\s+(?:if exists\s+)?"([a-z0-9_]+)"\s+on\s+storage\.objects/gi),
+  ].map((match) => match[1]!));
+  return [...new Set(names)];
+}
+
+/** Tiene solo i blocchi COPY delle tabelle ripristinabili; il resto del file passa invariato. */
+export function filterDataDump(dump: string): string {
+  const kept: string[] = [];
+  let skipping = false;
+  for (const line of dump.split("\n")) {
+    if (skipping) {
+      if (line.trimEnd() === "\\.") skipping = false;
+      continue;
+    }
+    const copy = /^COPY "?([a-z_]+)"?\."?([a-z_]+)"?/i.exec(line);
+    if (copy && !isRestorableTable(copy[1]!.toLowerCase(), copy[2]!.toLowerCase())) {
+      skipping = true;
+      continue;
+    }
+    kept.push(line);
+  }
+  return kept.join("\n");
+}
+
 function supabase(args: readonly string[], options: { readonly quiet?: boolean } = {}): string {
   const cli = require.resolve("supabase/dist/supabase.js");
-  return execFileSync(process.execPath, [cli, ...args], {
-    encoding: "utf8",
-    stdio: options.quiet ? ["ignore", "pipe", "pipe"] : ["ignore", "pipe", "inherit"],
-    maxBuffer: 64 * 1024 * 1024,
-  });
+  return run(`supabase ${args[0]} ${args[1] ?? ""}`.trim(), () =>
+    execFileSync(process.execPath, [cli, ...args], {
+      encoding: "utf8",
+      stdio: options.quiet ? ["ignore", "pipe", "pipe"] : ["ignore", "pipe", "inherit"],
+      maxBuffer: 64 * 1024 * 1024,
+    }),
+  );
 }
 
 /** psql dentro il container del database locale: non serve un client Postgres sul PC. */
@@ -82,12 +144,14 @@ function psql(connectionString: string, args: readonly string[], input?: string)
   })();
   // Dentro il container lo stack locale risponde su 5432, non sulla porta esposta al PC.
   const url = connectionString === LOCAL_COPY_URL ? "postgresql://postgres:postgres@127.0.0.1:5432/postgres" : connectionString;
-  return execFileSync("docker", ["exec", "-i", container, "psql", url, "--set", "ON_ERROR_STOP=1", ...args], {
-    encoding: "utf8",
-    input,
-    stdio: ["pipe", "pipe", "inherit"],
-    maxBuffer: 64 * 1024 * 1024,
-  });
+  return run("psql", () =>
+    execFileSync("docker", ["exec", "-i", container, "psql", url, "--set", "ON_ERROR_STOP=1", ...args], {
+      encoding: "utf8",
+      input,
+      stdio: ["pipe", "pipe", "inherit"],
+      maxBuffer: 64 * 1024 * 1024,
+    }),
+  );
 }
 
 function countRows(connectionString: string): Counts {
@@ -154,7 +218,9 @@ async function main(argv: readonly string[]): Promise<void> {
 
   console.log("2/6 Migration già applicate in produzione…");
   const applied = appliedVersions(production);
-  const local = localMigrationVersions(require("node:fs").readdirSync(join("supabase", "migrations")) as string[]);
+  const files = require("node:fs").readdirSync(join("supabase", "migrations")) as string[];
+  const migrationFile = (version: string) => files.find((name) => name.startsWith(`${version}_`))?.slice(version.length + 1) ?? "";
+  const local = localMigrationVersions(files);
   const pending = pendingMigrations(applied, local);
   console.log(`     applicate ${applied.length} · da applicare ${pending.length}`);
   for (const version of pending) console.log(`     · ${version}`);
@@ -164,17 +230,31 @@ async function main(argv: readonly string[]): Promise<void> {
   }
 
   console.log("3/6 Ripristino del backup sulla copia…");
+  // Si svuotano gli schemi che il dump ricrea (public e private): il resto — auth, storage,
+  // realtime — è gestito dalla piattaforma e resta com'è.
   psql(copy, ["--quiet", "--command", [
     "drop schema if exists public cascade;",
+    "drop schema if exists private cascade;",
     "create schema public;",
     "grant usage on schema public to postgres, anon, authenticated, service_role;",
     "grant all on schema public to postgres, service_role;",
     "truncate supabase_migrations.schema_migrations;",
+    // La copia può avere utenti e file di prove precedenti: si riparte da quelli della produzione.
+    "truncate auth.users cascade;",
+    "truncate storage.objects cascade;",
+    "truncate storage.buckets cascade;",
   ].join(" ")]);
   psql(copy, ["--quiet", "--file", "-"], readFileSync(schemaFile, "utf8"));
-  psql(copy, ["--quiet", "--file", "-"], readFileSync(dataFile, "utf8"));
+  psql(copy, ["--quiet", "--file", "-"], filterDataDump(readFileSync(dataFile, "utf8")));
   // La storia delle migration non è nel dump: la si riallinea a quella della produzione.
   psql(copy, ["--quiet", "--command", `insert into supabase_migrations.schema_migrations (version) values ${applied.map((version) => `('${version}')`).join(",")} on conflict do nothing`]);
+
+  const placeholders = storagePoliciesToRecreate(
+    pending.map((version) => readFileSync(join("supabase", "migrations", `${version}_${migrationFile(version)}`), "utf8")),
+  );
+  for (const name of placeholders) {
+    psql(copy, ["--quiet", "--command", `do $$ begin create policy "${name}" on storage.objects for select to authenticated using (false); exception when duplicate_object then null; end $$;`]);
+  }
 
   const before = countRows(copy);
   console.log("4/6 Applico le migration mancanti sulla copia…");
@@ -214,5 +294,8 @@ async function main(argv: readonly string[]): Promise<void> {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  await main(process.argv.slice(2));
+  main(process.argv.slice(2)).catch((error: unknown) => {
+    console.error(redact(error instanceof Error ? error.message : String(error)));
+    process.exitCode = 1;
+  });
 }

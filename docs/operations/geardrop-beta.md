@@ -38,6 +38,22 @@ ordini e prodotti veri: ordini, "Da spedire", etichette, previsioni.
 ⚠️ Il backup contiene dati personali dei clienti: resta sul PC, non si carica su GitHub
 (`backup/` è già escluso) e si cancella dopo il rilascio.
 
+### Cosa ha detto la prova del 29 settembre 2026
+
+- Produzione: **48 migration applicate, 10 da applicare** (aziende, magazzino a costo, previsioni,
+  agente prezzi).
+- Nessuna riga persa: 27 prodotti, 21 ordini, 25 righe d'ordine, 29 movimenti, 42 eventi.
+  Tutto risulta di Gear Drop, ogni ordine ha la sua aliquota IVA, i due owner ci sono.
+- Sulla copia non si ripristinano `storage` e le tabelle interne di `auth`: in produzione girano
+  una versione più recente e non servono alla prova. Le immagini dei prodotti quindi non si vedono
+  nella copia; il resto sì.
+- **Da spedire mostra 18 ordini**: sono ordini pagati mai marcati come spediti nell'admin. Dopo il
+  rilascio vanno chiusi (Spedisci, anche senza email) o restano lì per sempre.
+- **Previsioni**: 5 prodotti da riordinare per pre-ordini già venduti — 15 Suppress Superion,
+  7 Glory Valkerion, 2 Cobalt Drake, 2 Mirage Clock, 1 Tread Croc.
+- Profitto di tutti gli ordini "incompleto" finché non si caricano costi e commissioni: è il
+  primo giorno di beta, punti 3 e 4 più sotto.
+
 ## 2. Rilascio in produzione (con approvazione)
 
 Solo dopo una prova generale riuscita, in un orario di poco traffico:
