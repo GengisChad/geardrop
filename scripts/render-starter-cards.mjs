@@ -23,16 +23,13 @@ import sharp from "sharp";
 const ROOT = resolve(import.meta.dirname, "..");
 const SIZE = 1000;
 
-const SLUGS = [
-  "arrow-wizard-4-80b",
-  "helm-knight-3-80n",
-  "scythe-incendio-4-60t",
-  "sword-dran-3-60f",
-  "dark-perseus-b-6-80w",
-  "arc-wizard-r-4-55lo",
-  "courage-dran-s-6-60v",
-  "reaper-incendio-t-4-70k",
-];
+/**
+ * The products waiting for a photograph. Empty is the healthy state: every product in the shop
+ * has its own packshot. Add a slug here only while its photo is missing, and take it out again
+ * once normalize_images.py has written the real tile — a slug left behind would overwrite a
+ * photograph with a drawing on the next run.
+ */
+const SLUGS = [];
 
 /** The accent each combat type already wears in the shop (src/styles/globals.css). */
 const TYPE_ACCENT = {
@@ -57,7 +54,8 @@ function entry(slug) {
   return {
     slug,
     name: read(/name: "([^"]+)"/, "name"),
-    type: read(/bladeType: "([^"]+)"/, "bladeType"),
+    // Optional: a product whose combat type the shop does not claim simply gets the house accent.
+    type: (block.match(/bladeType: "([^"]+)"/) ?? [])[1] ?? null,
     line: read(/\{ label: "Linea", value: "([^"]+)" \}/, 'the "Linea" spec'),
     code: read(/\{ label: "Codice", value: "([^"]+)" \}/, 'the "Codice" spec'),
   };
@@ -80,7 +78,7 @@ function page(product, theme) {
   const kicker = dark ? accent : "#4a4858";
   const ring = dark ? "rgba(255,255,255,0.14)" : "rgba(7,6,11,0.10)";
   const [head, code] = split(product.name, product.code);
-  const type = product.type.charAt(0).toUpperCase() + product.type.slice(1);
+  const type = product.type ? `${product.type.charAt(0).toUpperCase()}${product.type.slice(1)} · ` : "";
 
   return `<!doctype html><html><head><meta charset="utf-8">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -108,7 +106,7 @@ function page(product, theme) {
   <p class="kicker">${product.line} · Starter Pack</p>
   <div class="mark"><span class="code">${code || "X"}</span></div>
   <h1>${head}</h1>
-  <p class="type"><span class="dot"></span>${type} · Trottola + lanciatore</p>
+  <p class="type"><span class="dot"></span>${type}Trottola + lanciatore</p>
 </main></body></html>`;
 }
 
