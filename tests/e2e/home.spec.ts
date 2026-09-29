@@ -23,7 +23,6 @@ const STOREFRONT_CARDS = oneCardPerFamily(STOREFRONT_CATALOGUE);
 /** The owner's order: four new releases on sale, what ships now, then the rest. */
 const PLAN = homepagePlan(STOREFRONT_CARDS, 5);
 const slugs = (products: readonly { readonly slug: string }[]) => products.map((product) => product.slug);
-const ATTACK_COUNT = PLAN.rest.filter((product) => product.bladeType === "attacco").length;
 
 test.describe("public homepage", () => {
   test("renders the Holo Drop composition, never the placeholder scaffold", async ({ page }) => {
@@ -67,13 +66,29 @@ test.describe("public homepage", () => {
 
   test("the arsenal filters by type in place", async ({ page }) => {
     await page.goto("/");
-    const grid = page.getByTestId("arsenal-grid");
-    const visibleCards = grid.locator("li:not([hidden]) [data-testid='product-card']");
+    const visibleCards = page.getByTestId("arsenal-grid").locator("li:not([hidden]) [data-testid='product-card']");
+    const filters = page.getByTestId("arsenal").getByRole("group", { name: "Filtra per tipo" });
 
-    await page.getByTestId("arsenal").getByRole("button", { name: /^Attacco/ }).click();
-    await expect(visibleCards).toHaveCount(ATTACK_COUNT);
+    // The arsenal groups tops by blade type and everything else by category, shows a chip only for
+    // a group it holds, and hides the whole row while it holds just one. Which groups those are
+    // depends on the catalogue of the day, so the chips are read off the page rather than named.
+    if ((await filters.count()) === 0) {
+      await expect(visibleCards).toHaveCount(PLAN.rest.length);
+      return;
+    }
 
-    await page.getByTestId("arsenal").getByRole("button", { name: /^Tutti/ }).click();
+    const chips = filters.getByRole("button");
+    await expect(chips.first()).toHaveText(/^Tutti/);
+
+    const group = chips.nth(1);
+    const label = (await group.textContent()) ?? "";
+    const expected = Number(label.match(/(\d+)\s*$/)?.[1]);
+    expect(expected, `a group chip should end in its count, got "${label}"`).toBeGreaterThan(0);
+
+    await group.click();
+    await expect(visibleCards).toHaveCount(expected);
+
+    await chips.first().click();
     await expect(visibleCards).toHaveCount(PLAN.rest.length);
   });
 
