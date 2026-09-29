@@ -10,6 +10,8 @@ import { parseEuroCents } from "@/lib/admin/warehouse";
 import { carrierById, normalizeTrackingCode } from "@/lib/orders/carriers";
 import { customerMessageEmail } from "@/lib/orders/customer-message-email";
 import { refundNotificationEmail } from "@/lib/orders/refund-email";
+import { preorderReadyEmail } from "@/lib/orders/preorder-ready-email";
+import { buyerFirstName } from "@/lib/orders/shipping-email";
 import { shippingNotificationEmail } from "@/lib/orders/shipping-email";
 import type { Database } from "@/lib/supabase/database.types";
 import {
@@ -388,6 +390,49 @@ export async function refundStripeAction(_previous: OrderActionState, formData: 
 }
 
 /** Sends the shipping email to every shipped order still waiting for one. */
+/**
+ * Avvisa chi ha pagato un pre-ordine che la merce è arrivata. Si manda solo se il magazzino copre
+ * davvero i pezzi che quell'ordine aspetta (lo dice la coda) e una volta sola per ordine.
+ */
+export async function notifyPreorderReadyAction(_previous: OrderActionState, formData: FormData): Promise<OrderActionState> {
+  const orderId = Number(text(formData, "orderId"));
+  if (!Number.isSafeInteger(orderId) || orderId <= 0) return { ok: false, message: "Ordine non valido." };
+  try {
+    const { client, organizationId } = await clientFor(MANAGERS);
+    const queue = await client.rpc("get_preorder_queue", { p_organization_id: organizationId });
+    if (queue.error) return failure(queue.error);
+    const waiting = (queue.data ?? []).find((row) => row.order_id === orderId);
+    if (!waiting) return { ok: false, message: "Questo ordine non aspetta più merce." };
+    if (!waiting.ready) return { ok: false, message: "La merce non basta ancora per questo ordine: registra prima il carico." };
+    if (waiting.notified_at) return { ok: false, message: "Il cliente è già stato avvisato." };
+
+    const [order, items] = await Promise.all([
+      client.from("orders").select("order_number,email,shipping_address_snapshot").eq("id", orderId)
+        .eq("organization_id", organizationId).single(),
+      client.from("order_items").select("product_name_snapshot,quantity,preorder_quantity").eq("order_id", orderId)
+        .eq("organization_id", organizationId).gt("preorder_quantity", 0).order("id"),
+    ]);
+    if (order.error || items.error) return { ok: false, message: "Non riesco a leggere l'ordine." };
+
+    const content = preorderReadyEmail({
+      orderNumber: order.data.order_number,
+      email: order.data.email,
+      buyerName: buyerFirstName(order.data.shipping_address_snapshot),
+      items: (items.data ?? []).map((item) => ({ name: item.product_name_snapshot, quantity: item.preorder_quantity })),
+    });
+    const sent = await sendEmail({ ...content, replyTo: SHOP_EMAIL, idempotencyKey: `gd-preorder-ready-${orderId}` });
+    if (!sent.ok) return { ok: false, message: `Email non inviata: ${emailFailure(sent.reason, sent.detail)}` };
+
+    const marked = await client.rpc("mark_preorder_ready_notified", { p_order_id: orderId });
+    if (marked.error) return { ok: false, message: "Email inviata, ma non sono riuscito a segnarla sull'ordine." };
+    refresh(orderId);
+    revalidatePath("/admin/magazzino");
+    return { ok: true, message: `Avvisato ${order.data.email}: la merce è arrivata.` };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
 export async function notifyShippedOrdersAction(_previous: OrderActionState, _formData: FormData): Promise<OrderActionState> {
   try {
     const { client, organizationId } = await clientFor(MANAGERS);

@@ -47,8 +47,10 @@ ordini e prodotti veri: ordini, "Da spedire", etichette, previsioni.
 - Sulla copia non si ripristinano `storage` e le tabelle interne di `auth`: in produzione girano
   una versione più recente e non servono alla prova. Le immagini dei prodotti quindi non si vedono
   nella copia; il resto sì.
-- **Da spedire mostra 18 ordini**: sono ordini pagati mai marcati come spediti nell'admin. Dopo il
-  rilascio vanno chiusi (Spedisci, anche senza email) o restano lì per sempre.
+- **Da spedire**: 4 ordini davvero preparabili e 14 pre-ordini in attesa della merce, separati in
+  due colonne. I pre-ordini restano in attesa finché il carico merce non copre i loro pezzi;
+  allora compare "Avvisa che è arrivato" (email al cliente, una sola volta) e dopo l'avviso
+  l'ordine passa tra quelli da preparare.
 - **Previsioni**: 5 prodotti da riordinare per pre-ordini già venduti — 15 Suppress Superion,
   7 Glory Valkerion, 2 Cobalt Drake, 2 Mirage Clock, 1 Tread Croc.
 - Profitto di tutti gli ordini "incompleto" finché non si caricano costi e commissioni: è il
@@ -86,16 +88,19 @@ progetto Vercel del negozio, che serve sia il sito sia `/admin`. Variabili da ag
 2. **Spedizioni**: per ogni metodo, "Costo corriere per noi" (es. 4,00). Ritiro a mano: 0.
 3. **Carichi merce → Carico di apertura**: incollare `SKU;costo` (i porta deck a 14,00 sono già
    pronti in `outputs/2026-09-28-costi-apertura-geardrop.md`).
-4. **Commissioni Stripe degli ordini passati**, così anche i vecchi ordini mostrano il profitto:
+4. **Pre-ordini in attesa**: quando arriva la merce, registrare il carico e poi, in **Da spedire →
+   In attesa di merce**, premere "Avvisa che è arrivato" per ogni ordine ora coperto. Il cliente
+   riceve l'email "è arrivato, parte a breve"; la spedizione manda poi la sua.
+5. **Commissioni Stripe degli ordini passati**, così anche i vecchi ordini mostrano il profitto:
 
 ```powershell
 pnpm beta:fees             # anteprima
 pnpm beta:fees --apply     # scrive le commissioni lette da Stripe
 ```
 
-5. **Prezzi IA → Fonti e politica**: approvare i negozi concorrenti da monitorare (Amazon escluso)
+6. **Prezzi IA → Fonti e politica**: approvare i negozi concorrenti da monitorare (Amazon escluso)
    e controllare margine minimo, variazione massima e arrotondamento.
-6. Installare l'app: da `geardropshop.it/admin`, "Installa" nel browser su PC, "Aggiungi a Home"
+7. Installare l'app: da `geardropshop.it/admin`, "Installa" nel browser su PC, "Aggiungi a Home"
    su iPhone.
 
 ## 4. Cosa guardare durante la beta

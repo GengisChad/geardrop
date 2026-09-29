@@ -1780,6 +1780,7 @@ export type Database = {
           payment_fee_source: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           phone: string | null
+          preorder_ready_notified_at: string | null
           refund_amount_cents: number | null
           refund_prepared_at: string | null
           refund_reason: string | null
@@ -1822,6 +1823,7 @@ export type Database = {
           payment_fee_source?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           phone?: string | null
+          preorder_ready_notified_at?: string | null
           refund_amount_cents?: number | null
           refund_prepared_at?: string | null
           refund_reason?: string | null
@@ -1864,6 +1866,7 @@ export type Database = {
           payment_fee_source?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           phone?: string | null
+          preorder_ready_notified_at?: string | null
           refund_amount_cents?: number | null
           refund_prepared_at?: string | null
           refund_reason?: string | null
@@ -3442,6 +3445,20 @@ export type Database = {
           product_slug: string
         }[]
       }
+      get_preorder_queue: {
+        Args: { p_organization_id: number }
+        Returns: {
+          covered_units: number
+          created_at: string
+          email: string
+          notified_at: string
+          order_id: number
+          order_number: string
+          preorder_units: number
+          ready: boolean
+          waiting: Json
+        }[]
+      }
       get_warehouse_summary: {
         Args: { p_days?: number; p_organization_id: number }
         Returns: Json
@@ -3460,6 +3477,10 @@ export type Database = {
         }[]
       }
       mark_order_shipping_notified: {
+        Args: { p_order_id: number }
+        Returns: undefined
+      }
+      mark_preorder_ready_notified: {
         Args: { p_order_id: number }
         Returns: undefined
       }

@@ -2,10 +2,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import styles from "@/components/admin/fulfillment/fulfillment.module.css";
+import { PreorderQueue } from "@/components/admin/fulfillment/preorder-queue";
 import { ClaimOrderButton } from "@/components/admin/fulfillment/station-controls";
 import { requireAdminAccess } from "@/lib/admin/access";
-import { waitsForGoods, type PickableLine } from "@/lib/admin/fulfillment";
-import { listOrdersToFulfil, type FulfilmentOrder } from "@/lib/admin/fulfillment-repository";
+import type { PickableLine } from "@/lib/admin/fulfillment";
+import { listOrdersToFulfil, loadPreorderQueue, type FulfilmentOrder } from "@/lib/admin/fulfillment-repository";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -15,9 +16,8 @@ const dateTime = new Intl.DateTimeFormat("it-IT", { dateStyle: "short", timeStyl
 const pieces = (lines: readonly PickableLine[]) => lines.reduce((sum, line) => sum + line.quantity, 0);
 
 function OrderCard({ order, claimable }: { readonly order: FulfilmentOrder; readonly claimable: boolean }) {
-  const waiting = waitsForGoods(order.lines);
   return (
-    <article className={styles.order} data-testid="station-order" data-waiting={waiting || undefined}>
+    <article className={styles.order} data-testid="station-order">
       <div className={styles.orderHead}>
         <label>
           <input aria-label={`Seleziona ${order.orderNumber}`} form="print-selection" name="ordini" type="checkbox" value={order.id} />
@@ -26,7 +26,7 @@ function OrderCard({ order, claimable }: { readonly order: FulfilmentOrder; read
             <small>{dateTime.format(new Date(order.createdAt))} · {order.shippingMethodCode} · {pieces(order.lines)} pz</small>
           </span>
         </label>
-        {waiting ? <span className={styles.badge} data-tone="warning">Attende merce</span> : null}
+
       </div>
       <ul className={styles.lines}>
         {order.lines.map((line, index) => (
@@ -55,9 +55,17 @@ export default async function WarehouseStationPage() {
   const client = await createSupabaseServerClient();
   const principal = await requireAdminAccess(client);
   if (principal.role === "editor") redirect("/admin");
-  const orders = await listOrdersToFulfil(client, principal.organization.id);
-  const fresh = orders.filter((order) => order.status === "confirmed");
-  const inWork = orders.filter((order) => order.status === "processing");
+  const [orders, preorders] = await Promise.all([
+    listOrdersToFulfil(client, principal.organization.id),
+    loadPreorderQueue(client, principal.organization.id),
+  ]);
+  // Un pre-ordine si prepara quando la merce è arrivata E il cliente è stato avvisato: fino ad
+  // allora resta nella sua colonna, così la coda di oggi contiene solo pacchi che si possono fare.
+  const heldBack = new Set(preorders.filter((wait) => !wait.ready || !wait.notifiedAt).map((wait) => wait.orderId));
+  const packable = orders.filter((order) => !heldBack.has(order.id));
+  const fresh = packable.filter((order) => order.status === "confirmed");
+  const inWork = packable.filter((order) => order.status === "processing");
+  const toNotify = preorders.filter((wait) => wait.ready && !wait.notifiedAt).length;
 
   return (
     <div className={styles.page}>
@@ -65,7 +73,10 @@ export default async function WarehouseStationPage() {
         <div>
           <p>Magazzino / Stazione</p>
           <h1>Da spedire</h1>
-          <span>Ordini pagati non ancora spediti, dal più vecchio · {orders.length} ordini</span>
+          <span>
+            {packable.length} da preparare · {preorders.length} in attesa di merce
+            {toNotify > 0 ? ` · ${toNotify} da avvisare` : ""}
+          </span>
         </div>
       </header>
 
@@ -82,8 +93,8 @@ export default async function WarehouseStationPage() {
       ) : (
         <div className={styles.columns}>
           <section className={styles.column} aria-labelledby="nuovi-title">
-            <h2 id="nuovi-title">Nuovi · {fresh.length}</h2>
-            {fresh.length === 0 ? <p>Nessun ordine nuovo.</p> : fresh.map((order) => <OrderCard claimable key={order.id} order={order} />)}
+            <h2 id="nuovi-title">Da preparare · {fresh.length}</h2>
+            {fresh.length === 0 ? <p>Nessun ordine da preparare.</p> : fresh.map((order) => <OrderCard claimable key={order.id} order={order} />)}
           </section>
           <section className={styles.column} aria-labelledby="lavorazione-title">
             <h2 id="lavorazione-title">In lavorazione · {inWork.length}</h2>
@@ -91,6 +102,8 @@ export default async function WarehouseStationPage() {
           </section>
         </div>
       )}
+
+      {preorders.length > 0 ? <PreorderQueue waits={preorders} /> : null}
     </div>
   );
 }

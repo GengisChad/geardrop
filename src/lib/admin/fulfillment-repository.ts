@@ -19,6 +19,18 @@ export type FulfilmentOrder = {
   readonly lines: readonly (PickableLine & { readonly imageSrc: string; readonly productId: number | null })[];
 };
 
+export type PreorderWait = {
+  readonly orderId: number;
+  readonly orderNumber: string;
+  readonly createdAt: string;
+  readonly email: string;
+  readonly preorderUnits: number;
+  readonly coveredUnits: number;
+  readonly ready: boolean;
+  readonly notifiedAt: string | null;
+  readonly lines: readonly { readonly sku: string; readonly name: string; readonly expected: number; readonly covered: number }[];
+};
+
 export type SenderAddress = {
   readonly name: string;
   readonly street: string;
@@ -79,6 +91,38 @@ export async function loadOrdersForPrint(client: Client, organizationId: number,
     .in("id", [...ids]).order("created_at", { ascending: true }).order("id", { ascending: true });
   if (error) throw new Error("Impossibile caricare gli ordini da stampare");
   return withLines(client, organizationId, data ?? []);
+}
+
+/**
+ * Orders paid for goods that have not arrived yet: how many pieces each one waits for, how many
+ * today's stock already covers, and whether the buyer has been told.
+ */
+export async function loadPreorderQueue(client: Client, organizationId: number): Promise<readonly PreorderWait[]> {
+  const { data, error } = await client.rpc("get_preorder_queue", { p_organization_id: organizationId });
+  if (error) throw new Error("Impossibile caricare i pre-ordini in attesa");
+  return (data ?? []).map((row) => ({
+    orderId: row.order_id,
+    orderNumber: row.order_number,
+    createdAt: row.created_at,
+    email: row.email,
+    preorderUnits: row.preorder_units,
+    coveredUnits: row.covered_units,
+    ready: row.ready,
+    notifiedAt: row.notified_at,
+    lines: Array.isArray(row.waiting)
+      ? row.waiting.flatMap((line) => {
+          const value = line && typeof line === "object" && !Array.isArray(line) ? line as Record<string, unknown> : null;
+          return value
+            ? [{
+                sku: String(value["sku"] ?? ""),
+                name: String(value["nome"] ?? ""),
+                expected: Number(value["attesi"] ?? 0),
+                covered: Number(value["coperti"] ?? 0),
+              }]
+            : [];
+        })
+      : [],
+  }));
 }
 
 /** The sender block of the label: the company's own contact settings. */
