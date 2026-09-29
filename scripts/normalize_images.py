@@ -48,7 +48,7 @@ MAPPING = {
     # The 2026-09-29 arrival from Spain: eight starter packs, 26 of each.
     "arrowwizard.jpg": "arrow-wizard-4-80b",
     "helmknight.jpg": "helm-knight-3-80n",
-    "scytheincendio.jpg": "scythe-incendio-4-60t",
+    "scytheincendio.webp": "scythe-incendio-4-60t",
     "sworddran.jpg": "sword-dran-3-60f",
     "darkperseus.jpg": "dark-perseus-b-6-80w",
     "arcwizard.jpg": "arc-wizard-r-4-55lo",
