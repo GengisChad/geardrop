@@ -25,8 +25,8 @@ function withStock(stock: Partial<Record<string, number>>): readonly Product[] {
 }
 
 describe("the Horus + Enlil duo in the catalogue", () => {
-  it("costs €33 against €36 for the two packs it ships", () => {
-    expect(duo.price.amount).toBe(3300);
+  it("costs less than the two packs it ships, and says exactly how much they cost", () => {
+    expect(duo.price.amount).toBeLessThan(horus.price.amount + enlil.price.amount);
     expect(duo.compareAtPrice?.amount).toBe(horus.price.amount + enlil.price.amount);
     expect(duo.bundleOf).toEqual([
       { slug: "shatter-horus-9-65gb", quantity: 1 },
@@ -93,10 +93,10 @@ describe("bundle stock", () => {
 describe("pricing a cart with the duo", () => {
   const provider = createMockProvider(withBundles(withStock({ "shatter-horus-9-65gb": 4, "hurricane-enlil-is-7-55t": 10 }), BUNDLES));
 
-  it("prices the duo as one €33 line with shipping on top", async () => {
+  it("prices the duo as one line with shipping on top", async () => {
     const quote = await provider.quoteCart({ lines: [{ slug: "duo-horus-enlil", quantity: 1 }] });
-    expect(quote.lines[0]).toMatchObject({ slug: "duo-horus-enlil", unitPrice: { amount: 3300 }, availableQuantity: 4, issue: null });
-    expect(quote.totals.subtotal.amount).toBe(3300);
+    expect(quote.lines[0]).toMatchObject({ slug: "duo-horus-enlil", unitPrice: { amount: duo.price.amount }, availableQuantity: 4, issue: null });
+    expect(quote.totals.subtotal.amount).toBe(duo.price.amount);
     expect(quote.totals.shipping.amount).toBe(490);
   });
 
@@ -124,22 +124,22 @@ describe("pricing a cart with the duo", () => {
   });
 
   it("matches the duo's own Stripe price, not its packs'", () => {
-    const quoteLine = { slug: "duo-horus-enlil", unitPrice: { amount: 3300, currency: "EUR" } };
+    const quoteLine = { slug: "duo-horus-enlil", unitPrice: { amount: duo.price.amount, currency: "EUR" } };
     const matched = matchStripePrices({ lines: [quoteLine] } as never, [
-      { id: "price_duo", lookup_key: "gd_duo_horus_enlil", unit_amount: 3300, currency: "eur", active: true },
+      { id: "price_duo", lookup_key: "gd_duo_horus_enlil", unit_amount: duo.price.amount, currency: "eur", active: true },
     ]);
     expect(matched?.get("duo-horus-enlil")).toBe("price_duo");
   });
 });
 
 describe("the duo on Stripe", () => {
-  it("is synced as its own €33 product that names what it ships", () => {
+  it("is synced as its own product that names what it ships", () => {
     expect(STRIPE_CATALOGUE.map((item) => item.slug)).toContain("duo-horus-enlil");
     const payload = buildStripeProduct(duo);
     expect(payload.id).toBe("gd_duo_horus_enlil");
     expect(payload.images[0]).toBe("https://geardropshop.it/products/duo-horus-enlil.webp");
     expect(payload.metadata["bundle_of"]).toBe("shatter-horus-9-65gb x1, hurricane-enlil-is-7-55t x1");
-    expect(buildStripePrice(duo)).toEqual({ unitAmount: 3300, currency: "eur", lookupKey: "gd_duo_horus_enlil" });
+    expect(buildStripePrice(duo)).toEqual({ unitAmount: duo.price.amount, currency: "eur", lookupKey: "gd_duo_horus_enlil" });
   });
 
   it("comes back from a paid session with the packs whose stock it takes", () => {
@@ -155,13 +155,13 @@ describe("the duo on Stripe", () => {
         total_details: { amount_shipping: 490 },
         payment_intent: { id: "pi_duo", shipping: { name: "Duo", address: { line1: "Via 1", postal_code: "00100", city: "Roma", state: "RM", country: "IT" } } },
       },
-      [{ description: "Duo Shatter Horus + Hurricane Enlil", quantity: 1, price: { lookup_key: "gd_duo_horus_enlil", unit_amount: 3300 } }],
+      [{ description: "Duo Shatter Horus + Hurricane Enlil", quantity: 1, price: { lookup_key: "gd_duo_horus_enlil", unit_amount: duo.price.amount } }],
     );
     expect(checkout?.lines[0]).toEqual({
       slug: "duo-horus-enlil",
       name: "Duo Shatter Horus + Hurricane Enlil",
       quantity: 1,
-      unitPriceCents: 3300,
+      unitPriceCents: duo.price.amount,
       components: [
         { slug: "shatter-horus-9-65gb", quantity: 1 },
         { slug: "hurricane-enlil-is-7-55t", quantity: 1 },
@@ -172,7 +172,7 @@ describe("the duo on Stripe", () => {
         slug: "duo-horus-enlil",
         name: "Duo Shatter Horus + Hurricane Enlil",
         quantity: 1,
-        unit_price_cents: 3300,
+        unit_price_cents: duo.price.amount,
         components: [
           { slug: "shatter-horus-9-65gb", quantity: 1 },
           { slug: "hurricane-enlil-is-7-55t", quantity: 1 },
@@ -207,7 +207,7 @@ describe("duo orders for the owner and the cart", () => {
         total_details: { amount_shipping: 490 },
         payment_intent: { id: "pi_duo2", shipping: { name: "Duo", address: { line1: "Via 1", postal_code: "00100", city: "Roma", state: "RM", country: "IT" } } },
       },
-      [{ description: "Duo Shatter Horus + Hurricane Enlil", quantity: 2, price: { lookup_key: "gd_duo_horus_enlil", unit_amount: 3300 } }],
+      [{ description: "Duo Shatter Horus + Hurricane Enlil", quantity: 2, price: { lookup_key: "gd_duo_horus_enlil", unit_amount: duo.price.amount } }],
     )!;
     const email = ownerOrderEmail(checkout, { id: 7, orderNumber: "GD-DUO" });
     for (const body of [email.html, email.text]) {

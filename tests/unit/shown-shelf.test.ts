@@ -18,15 +18,14 @@ describe("the shelf the product page names", () => {
     expect(shownShelf({ availableQuantity: 0 })).toBe(0);
   });
 
-  it("keeps the 2026-09-29 arrival off the scarcity line and the small shelves on it", () => {
-    const shelf = (slug: string) => shownShelf(PRODUCTS.find((product) => product.slug === slug) ?? {});
-
-    expect(shelf("drop-attack-battle-set")).toBeUndefined();
-    expect(shelf("sneak-attack-battle-set")).toBeUndefined();
-    expect(shelf("blast-pegasus-a-tr")).toBeUndefined();
-    // Sixteen Saber Samurai is still a warehouse, not a last-pieces warning.
-    expect(shelf("saber-samurai-2-70l")).toBeUndefined();
-    expect(shelf("shatter-horus-9-65gb")).toBe(8);
-    expect(shelf("hurricane-enlil-is-7-55t")).toBe(10);
+  it("names a shelf only while it is short, whatever the catalogue holds today", () => {
+    for (const product of PRODUCTS) {
+      const named = shownShelf(product);
+      if (product.availableQuantity === undefined || product.availableQuantity > SHELF_COUNT_SHOWN_UP_TO) {
+        expect(named, product.slug).toBeUndefined();
+      } else {
+        expect(named, product.slug).toBe(product.availableQuantity);
+      }
+    }
   });
 });

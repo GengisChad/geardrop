@@ -5,6 +5,9 @@ import { FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_FLAT_RATE } from "@/data/ca
 
 const provider = createMockProvider();
 
+/** The fixture cart everywhere below is one Cobalt Dragoon; its price is read, never typed. */
+const DRAGOON = PRODUCTS.find((product) => product.slug === "cobalt-dragoon-2-60c")!.price.amount;
+
 describe("getProduct", () => {
   it("returns a product by slug", async () => {
     const product = await provider.getProduct("cobalt-dragoon-2-60c");
@@ -46,8 +49,8 @@ describe("listProducts", () => {
   });
 
   it("applies price bounds inclusively", async () => {
-    const page = await provider.listProducts({ minPrice: 2550, maxPrice: 2550 });
-    expect(page.items.every((p) => p.price.amount === 2550)).toBe(true);
+    const page = await provider.listProducts({ minPrice: DRAGOON, maxPrice: DRAGOON });
+    expect(page.items.every((p) => p.price.amount === DRAGOON)).toBe(true);
   });
 
   it("sorts by price ascending and descending", async () => {
@@ -160,15 +163,15 @@ describe("quoteCart", () => {
 
   it("charges flat-rate shipping below the threshold", async () => {
     const quote = await provider.quoteCart({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }] });
-    expect(quote.totals.subtotal.amount).toBe(2550);
+    expect(quote.totals.subtotal.amount).toBe(DRAGOON);
     expect(quote.totals.shipping.amount).toBe(SHIPPING_FLAT_RATE);
-    expect(quote.totals.total.amount).toBe(2550 + SHIPPING_FLAT_RATE);
-    expect(quote.totals.freeShippingRemaining).toBe(FREE_SHIPPING_THRESHOLD - 2550);
+    expect(quote.totals.total.amount).toBe(DRAGOON + SHIPPING_FLAT_RATE);
+    expect(quote.totals.freeShippingRemaining).toBe(FREE_SHIPPING_THRESHOLD - DRAGOON);
   });
 
   it("gives free shipping exactly at the threshold, not just above it", async () => {
     // The smallest number of packs that clears the threshold, whatever the owner sets it to.
-    const quantity = Math.ceil(FREE_SHIPPING_THRESHOLD / 2550);
+    const quantity = Math.ceil(FREE_SHIPPING_THRESHOLD / DRAGOON);
     const quote = await provider.quoteCart({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity }] });
     expect(quote.totals.subtotal.amount).toBeGreaterThanOrEqual(FREE_SHIPPING_THRESHOLD);
     expect(quote.totals.shipping.amount).toBe(0);
@@ -177,9 +180,9 @@ describe("quoteCart", () => {
 
   it("multiplies by quantity", async () => {
     const quote = await provider.quoteCart({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 2 }] });
-    expect(quote.totals.subtotal.amount).toBe(2550 * 2);
-    expect(quote.lines[0]?.unitPrice.amount).toBe(2550);
-    expect(quote.lines[0]?.lineTotal.amount).toBe(5100);
+    expect(quote.totals.subtotal.amount).toBe(DRAGOON * 2);
+    expect(quote.lines[0]?.unitPrice.amount).toBe(DRAGOON);
+    expect(quote.lines[0]?.lineTotal.amount).toBe(DRAGOON * 2);
   });
 
   it("reports lines whose product no longer exists instead of pricing them", async () => {
@@ -190,7 +193,7 @@ describe("quoteCart", () => {
         { slug: "prodotto-rimosso" as never, quantity: 5 },
       ],
     });
-    expect(quote.totals.subtotal.amount).toBe(2550);
+    expect(quote.totals.subtotal.amount).toBe(DRAGOON);
     expect(quote.missingSlugs).toEqual(["prodotto-rimosso"]);
     expect(quote.lines).toHaveLength(1);
   });

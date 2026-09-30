@@ -51,9 +51,13 @@ MAPPING = {
     "scytheincendio.webp": "scythe-incendio-4-60t",
     "sworddran.jpg": "sword-dran-3-60f",
     "darkperseus.jpg": "dark-perseus-b-6-80w",
+    # The 2026-09-30 Hasbro shipment: four UX starter packs, 26 of each.
+    "hammerincendio.jpg": "hammer-incendio-3-70h",
+    "busterdran.jpg": "buster-dran-5-70db",
+    "shadowshinobi.jpg": "shadow-shinobi-1-80mn",
+    "wandwizard.jpg": "wand-wizard-1-60r",
     "arcwizard.jpg": "arc-wizard-r-4-55lo",
     "couragedrans.jpg": "courage-dran-s-6-60v",
-    "reaperincendio.jpg": "reaper-incendio-t-4-70k",
 }
 
 

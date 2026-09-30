@@ -39,20 +39,20 @@ DECK_CASE_BAND = (60, 150, 940, 600)
 # bundle slug -> its component cut-outs, in the order they are staged, each with a relative weight.
 BUNDLES: dict[str, tuple[tuple[str, float], ...]] = {
     "kit-doppio-starter-deck": (
-        ("sword-dran-3-60f", 1.0),
-        ("helm-knight-3-80n", 1.0),
+        ("shadow-shinobi-1-80mn", 1.0),
+        ("hammer-incendio-3-70h", 1.0),
         ("porta-deck-case", 0.8),
     ),
     "kit-arena-drop-completo": (
         ("drop-attack-battle-set", 1.25),
-        ("sword-dran-3-60f", 1.0),
-        ("helm-knight-3-80n", 1.0),
+        ("shadow-shinobi-1-80mn", 1.0),
+        ("hammer-incendio-3-70h", 1.0),
         ("porta-deck-case", 0.8),
     ),
     "kit-arena-sneak-completo": (
         ("sneak-attack-battle-set", 1.25),
-        ("sword-dran-3-60f", 1.0),
-        ("helm-knight-3-80n", 1.0),
+        ("shadow-shinobi-1-80mn", 1.0),
+        ("hammer-incendio-3-70h", 1.0),
         ("porta-deck-case", 0.8),
     ),
     "duo-pegasus-samurai": (
