@@ -1,12 +1,12 @@
 # Fondazione cloud e collegamento sicuro a Gear Drop Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Obiettivo:** Consegnare la prima versione utilizzabile del gestionale cloud indipendente: un deployment privato separato che autentica i soci e lo staff tramite Supabase, impone l'MFA ai proprietari, mostra i dati live di Gear Drop attraverso una superficie prodotto fail-closed e di sola lettura, permette il cambio organizzazione e può essere installato come PWA senza alterare la disponibilità dello storefront.
 
-**Architettura:** Un solo repository e un solo progetto Supabase autorevole alimentano due superfici applicative selezionate esplicitamente. Lo storefront continua a possedere commercio e webhook Stripe; il deployment gestionale espone soltanto route e asset propri e importa contratti di dominio/query condivisi, non pagine `/admin`. Membership, RLS, RPC in `management_api`, controlli AAL2 e flag per organizzazione proteggono i nuovi accessi. Prima di qualsiasi migrazione additiva o deployment remoto, la produzione viene provata mediante credenziali sorgente dimostrabilmente read-only, backup cifrato e copia locale sanificata.
+**Architettura:** Un monorepo pnpm contiene due applicazioni Next indipendenti e un progetto Supabase autorevole condiviso. Lo storefront esistente resta alla root e continua a possedere commercio, checkout, `/admin` legacy e webhook Stripe; `apps/management` possiede una build, un App Router, una configurazione e un deployment separati. Le due app condividono soltanto package workspace neutrali e dichiarati, a partire da `packages/runtime-contract`; l'app management non importa route, configurazione o componenti root. Membership, RLS, RPC in `management_api`, controlli AAL2 e flag per organizzazione proteggono i nuovi accessi. Prima di qualsiasi migrazione additiva o deployment remoto, la produzione viene provata mediante credenziali sorgente dimostrabilmente read-only, backup cifrato e copia locale sanificata.
 
-**Stack tecnico:** Next.js 16 App Router, React 19, TypeScript 5.9, Supabase Auth/Postgres/RLS/pgTAP, Vitest 4, Playwright 1.61, pnpm 11, Docker/Supabase CLI, GitHub Actions, Vercel.
+**Stack tecnico:** Next.js 16 App Router, React 19, TypeScript 5.9, Supabase Auth/Postgres/RLS/pgTAP, Vitest 4, Playwright 1.61, pnpm 10.34.6 tramite Corepack, Docker/Supabase CLI, GitHub Actions, Vercel.
 
 **Specifica:** `docs/superpowers/specs/2026-09-30-gestionale-cloud-operativo-design.md`
 
@@ -17,7 +17,7 @@ Questo piano realizza il sottoprogetto 1 della specifica approvata: **fondazione
 Incluso:
 
 - baseline verde e riproducibile su Windows e CI;
-- contratto esplicito di build/deployment per storefront e gestionale;
+- contratto esplicito di deployment/runtime e build fisicamente indipendenti per storefront e gestionale;
 - route, shell, autenticazione, selettore organizzazione e PWA indipendenti;
 - MFA obbligatoria per gli owner e controllo AAL2;
 - tabella dei feature flag in `public`, helper in `private` ed entrypoint minimi in `management_api`;
@@ -38,12 +38,19 @@ In questa fase `LEGACY_ADMIN_MODE=enabled` resta obbligatorio sul deployment sto
 
 **Caveat del confine di sicurezza:** lo stesso token Supabase Auth conserva i permessi legacy indipendentemente dal dominio, perché l'origine non è una claim di autorizzazione. Questa fase garantisce il read-only della **superficie prodotto gestionale**, non un confine database per origine. Il primo accesso di produzione è quindi limitato ai soci e allo staff Gear Drop già fidati. L'hardening di tutti i writer/RPC legacy è un piano successivo obbligatorio prima di allargare l'accesso o attivare moduli operativi.
 
+## Correzione architetturale dopo review Task 2
+
+Il confine runtime del Task 2 è stato implementato nei commit `5c46e7c` e `d8ac70e`: classificazione route, target Supabase fail-closed, rewrite e proxy bloccano a runtime gli ingressi non ammessi. La review successiva ha però verificato che una build root con `NEXT_PUBLIC_APP_SURFACE=management` continua a compilare e generare 57 route, incluse `/admin`, checkout, webhook e pagine storefront. Rewrite e proxy non costituiscono quindi isolamento di compilazione.
+
+La decisione vincolante è mantenere lo storefront alla root e creare `apps/management` come seconda app Next. Il Task 2 resta il contratto deployment/runtime già realizzato; il Task 3 aggiunge il confine fisico e di build mancante. Da quel momento la root rifiuta di presentarsi come build management, mentre l'app management compila soltanto le proprie route. Un errore esclusivo di una app non deve rompere la build dell'altra; un errore in un package neutrale condiviso può correttamente romperle entrambe.
+
 ## Vincoli globali
 
 - Solo migrazioni additive; nessun rollback distruttivo dei dati di produzione.
-- Storefront e gestionale devono compilare, distribuire e fallire indipendentemente. Un outage Supabase resta una dipendenza condivisa nota.
+- Storefront e gestionale devono compilare, distribuire e fallire indipendentemente come due app Next. Un errore esclusivo di una app non entra nel typecheck/build dell'altra; un errore in un package workspace condiviso può fallire entrambe. Un outage Supabase resta una dipendenza condivisa nota.
 - Il gestionale non deve servire pagine storefront, checkout, webhook Stripe, endpoint preview o handler legacy `/admin`.
-- Pagine e componenti gestionali non importano `src/app/admin/**`, `src/components/admin/**` o configurazione admin. La logica dati condivisa vive in moduli neutrali `src/lib/operations/**`.
+- `apps/management/**` non importa route, configurazione, API, pagine o componenti dalla root. I soli import cross-app ammessi passano da package workspace neutrali con dipendenze esplicite e regola di confine eseguibile.
+- Lo storefront resta alla root: questo piano non esegue una migrazione wholesale verso `apps/storefront`.
 - Nel browser arrivano soltanto URL Supabase e publishable key. Secret Supabase, Stripe, email e AI sono esclusi dall'ambiente del web server gestionale finché un workflow server revisionato non li richiede.
 - Una build gestionale remota deve combaciare con il project ref Supabase atteso. Ref assente/malformato, mismatch o loopback in produzione fermano l'app prima di una query di business.
 - `read_access` e tutti i flag write/external partono `false`. In questa fase solo `read_access` dispone di un setter, riservato a owner+AAL2; gli altri flag sono deliberatamente non attivabili.
@@ -56,14 +63,14 @@ In questa fase `LEGACY_ADMIN_MODE=enabled` resta obbligatorio sul deployment sto
 - Le risposte con dati aziendali/personali usano `Cache-Control: private, no-store`; il service worker può memorizzare soltanto pagina offline statica e asset shell privi di dati di business.
 - La sorgente del rehearsal deve essere provata read-only anche nei privilegi effettivi e nelle impostazioni di transazione. Un ruolo `postgres`, superuser, owner, service-role-equivalent o capace di scrivere/eseguire codice mutabile viene rifiutato.
 - I dati grezzi di produzione non diventano artifact Git né file persistenti in chiaro. La sanificazione avviene solo su una copia locale verificata; staging riceve esclusivamente un artifact sanificato.
-- Nessuna migrazione produzione, attivazione flag, modifica DNS o restore staging/produzione avviene senza lo stop gate corrispondente del Task 9. Il redirect del legacy admin resta fuori fase.
+- Nessuna migrazione produzione, attivazione flag, modifica DNS o restore staging/produzione avviene senza lo stop gate corrispondente del Task 10. Il redirect del legacy admin resta fuori fase.
 - Ogni task segue red-green-refactor: prima il test nominato in errore, poi l'implementazione minima completa, infine gate focalizzati e regressione prima del commit.
 
 ## Focus della revisione
 
 La revisione finale deve provare esplicitamente queste cinque classi di errore:
 
-1. **Target dati errato:** project ref remoto assente/non coincidente o loopback in build production fermano il gestionale prima di leggere dati.
+1. **Artifact o target errato:** una route storefront nel manifest management, un output directory condiviso, un project ref remoto assente/non coincidente o loopback in build production fermano il gestionale prima di leggere dati.
 2. **Downgrade MFA:** owner in AAL1 o staff con fattore verificato non ancora sfidato non raggiungono overview o azioni control-plane.
 3. **Richiesta cross-organizzazione:** cookie forgiato/stale e ruoli diversi tra Gear Drop/Oryvenne non ampliano mai membership o ruolo.
 4. **Errore feature:** `read_access` disabilitato, assente, malformato o illeggibile impedisce tutte le query di business e qualsiasi rendering di valori.
@@ -128,7 +135,9 @@ git commit -m "test: make scoped contract line-ending safe"
 
 ---
 
-### Task 2: Stabilire il confine indipendente di deployment e route
+### Task 2: Definire il contratto deployment e il confine runtime
+
+**Stato verificato:** implementato nei commit `5c46e7c` e `d8ac70e`. Questo task garantisce classificazione e blocco runtime, non isolamento della compilazione; tale garanzia appartiene al Task 3.
 
 **File:**
 
@@ -149,7 +158,7 @@ git commit -m "test: make scoped contract line-ending safe"
 Sostituire le attese “tutto verso `/admin`” con casi tabellari per:
 
 - storefront di default e `NEXT_PUBLIC_APP_SURFACE=storefront`;
-- gestionale solo con `NEXT_PUBLIC_APP_SURFACE=management`;
+- contratto management selezionabile con `NEXT_PUBLIC_APP_SURFACE=management`, destinato dal Task 3 esclusivamente a `apps/management`;
 - rifiuto di superficie o modalità sconosciuta;
 - modalità `read_only` e `active`;
 - project ref remoto coincidente/non coincidente;
@@ -218,7 +227,7 @@ NEXT_PUBLIC_EXPECTED_SUPABASE_PROJECT_REF=
 LEGACY_ADMIN_MODE=enabled
 ```
 
-`readPublicSupabaseEnv()` invoca la validazione target per la superficie management. Non registra key, query dell'URL o secret. Le build mock storefront senza ambiente Supabase restano supportate.
+`readPublicSupabaseEnv()` invoca la validazione target per il contratto management. Non registra key, query dell'URL o secret. Le build mock storefront senza ambiente Supabase restano supportate. Il Task 3 sposta il consumo del contratto management nella seconda app e impedisce alla root di usarlo come modalità di build.
 
 - [ ] **Step 3: Implementare la mappa pubblica delle route gestionali**
 
@@ -238,7 +247,7 @@ Supportare anche `/mfa/:path*`. La allowlist comprende solo queste route, `/auth
 
 - [ ] **Step 4: Imporre il confine in configurazione e proxy**
 
-`next.config.ts` pubblica le route pulite via rewrite e applica `X-Robots-Tag: noindex, nofollow` e `Cache-Control: private, no-store` alle route applicative gestionali.
+`next.config.ts` pubblica le route pulite via rewrite e applica `X-Robots-Tag: noindex, nofollow` e `Cache-Control: private, no-store` alle route applicative gestionali durante la fase runtime iniziale.
 
 In `src/proxy.ts`, classificare prima del refresh sessione:
 
@@ -259,6 +268,8 @@ pnpm typecheck
 
 Atteso: PASS, incluso POST `/api/stripe/webhook` → 404 in management e comportamento storefront invariato.
 
+Questa prova non è sufficiente per dichiarare una build indipendente: la presenza delle route nel manifest root viene trattata come RED del Task 3, non come eccezione accettabile.
+
 - [ ] **Step 6: Committare il confine**
 
 ```bash
@@ -268,7 +279,271 @@ git commit -m "feat: isolate management deployment surface"
 
 ---
 
-### Task 3: Aggiungere feature flag fail-closed e API gestionale dedicata
+### Task 3: Separare fisicamente l'app management e provarne la build indipendente
+
+**File:**
+
+- Crea: `pnpm-workspace.yaml`
+- Modifica: `package.json`
+- Modifica: `pnpm-lock.yaml`
+- Modifica: `tsconfig.json`
+- Modifica: `next.config.ts`
+- Modifica: `src/proxy.ts`
+- Modifica: `src/lib/app-mode.ts`
+- Elimina: `src/lib/management/routes.ts`
+- Modifica: `src/lib/supabase/env.ts`
+- Crea: `packages/runtime-contract/package.json`
+- Crea: `packages/runtime-contract/tsconfig.json`
+- Crea: `packages/runtime-contract/src/index.ts`
+- Crea: `packages/data-contract/package.json`
+- Crea: `packages/data-contract/tsconfig.json`
+- Crea: `packages/data-contract/src/index.ts`
+- Crea: `packages/data-contract/src/database.types.ts`
+- Modifica: `src/lib/supabase/database.types.ts`
+- Crea: `apps/management/package.json`
+- Crea: `apps/management/tsconfig.json`
+- Crea: `apps/management/next-env.d.ts`
+- Crea: `apps/management/next.config.ts`
+- Crea: `apps/management/eslint.config.mjs`
+- Crea: `apps/management/src/proxy.ts`
+- Crea: `apps/management/src/lib/supabase/env.ts`
+- Crea: `apps/management/src/lib/supabase/client.ts`
+- Crea: `apps/management/src/lib/supabase/server.ts`
+- Crea: `apps/management/src/lib/supabase/proxy.ts`
+- Crea: `apps/management/src/app/layout.tsx`
+- Crea: `apps/management/src/app/page.tsx`
+- Crea: `apps/management/src/app/error.tsx`
+- Crea: `apps/management/src/app/global-error.tsx`
+- Crea: `apps/management/src/app/not-found.tsx`
+- Crea: `apps/management/src/app/robots.ts`
+- Crea: `apps/management/src/app/globals.css`
+- Crea: `apps/management/public/management-offline.html`
+- Crea: `scripts/check-workspace-boundaries.ts`
+- Crea: `scripts/verify-management-build-manifest.ts`
+- Crea: `scripts/verify-build-manifest-isolation.ts`
+- Crea: `scripts/verify-build-independence.ts`
+- Crea: `tests/unit/workspace-app-isolation.test.ts`
+- Crea: `tests/unit/workspace-import-boundary.test.ts`
+- Crea: `tests/unit/management-build-manifest.test.ts`
+- Crea: `tests/unit/build-manifest-isolation.test.ts`
+- Crea: `tests/unit/build-independence.test.ts`
+- Crea: `tests/unit/management-supabase-ssr.test.ts`
+- Modifica: `.github/workflows/supabase-database-ci.yml`
+- Modifica: `tests/unit/supabase-ci-workflow.test.ts`
+- Modifica: `tests/unit/app-mode.test.ts`
+- Modifica: `tests/unit/supabase-env.test.ts`
+- Modifica: `tests/unit/management-route-boundary.test.ts`
+- Modifica: `tests/unit/scoped-queries-contract.test.ts`
+- Crea: `tests/fixtures/workspace-boundary/allowed-package-import.ts`
+- Crea: `tests/fixtures/workspace-boundary/forbidden-root-route-import.ts`
+- Crea: `tests/fixtures/workspace-boundary/forbidden-root-config-import.ts`
+
+- [ ] **Step 1: Scrivere il contratto RED del workspace**
+
+I test devono fallire finché non risultano vere tutte queste condizioni:
+
+- `pnpm-workspace.yaml` include esattamente la root implicita, `apps/*` e `packages/*`;
+- `apps/management` possiede `package.json`, `next.config.ts`, `tsconfig.json`, App Router e proxy propri;
+- lo storefront continua a vivere alla root e non esiste una migrazione artificiale in `apps/storefront`;
+- gli script root espongono comandi distinti per dev, typecheck e build di ciascuna app;
+- il root `package.json` dichiara esattamente `"packageManager": "pnpm@10.34.6"` e il lockfile è prodotto dalla stessa versione;
+- `.github/workflows/supabase-database-ci.yml` non contiene `pnpm@11.13.1` né una versione implicita: attiva con Corepack esattamente pnpm 10.34.6, verifica `pnpm --version` e installa con `--frozen-lockfile`;
+- il workflow genera i tipi dello schema `public` in `artifacts/database.types.ts` e confronta il drift con il canonico `packages/data-contract/src/database.types.ts`, mai con il re-export root; il Task 4 estenderà questo stesso comando a `public,management_api`;
+- il workflow esegue il lint aggregato, che copre una sola volta root/storefront, package condivisi e app management;
+- una build root con `NEXT_PUBLIC_APP_SURFACE=management` fallisce con `GD_ROOT_MANAGEMENT_BUILD_UNSUPPORTED` invece di fingersi gestionale;
+- il child tsconfig include soltanto `apps/management/src/**`, `next-env.d.ts` e `.next/types/**` e non ingloba `src/app`, `src/pages`, `src/components`, `src/lib` o `.next/types` della root;
+- il root tsconfig non include per glob `apps/management/**` o i sorgenti dei package; i package importati vengono comunque verificati tramite dipendenza esplicita e script dedicato;
+- la build management usa una directory `.next` interna a `apps/management` e un App Router posseduto dalla seconda app;
+- il manifest management applica una allowlist di route proprie e non contiene `/admin`, `/api`, checkout o route shop.
+
+Eseguire:
+
+```bash
+pnpm exec vitest run tests/unit/workspace-app-isolation.test.ts tests/unit/workspace-import-boundary.test.ts tests/unit/management-build-manifest.test.ts tests/unit/build-manifest-isolation.test.ts tests/unit/build-independence.test.ts tests/unit/management-supabase-ssr.test.ts tests/unit/supabase-ci-workflow.test.ts
+```
+
+Atteso: FAIL perché la root è ancora l'unica app Next, una build in modalità management genera le 57 route root e il workflow usa ancora pnpm 11.13.1 con drift confrontato al file tipi root.
+
+- [ ] **Step 2: Creare il workspace e il package runtime neutrale**
+
+Creare:
+
+```yaml
+packages:
+  - "apps/*"
+  - "packages/*"
+```
+
+`packages/runtime-contract` deve chiamarsi `@geardrop/runtime-contract`, essere `private`, side-effect free e pubblicare soltanto contratti puri per:
+
+- parsing di `AppSurface`, `ManagementMode` e `LegacyAdminMode`;
+- validazione `MANAGEMENT_ORIGIN`, `STOREFRONT_ORIGIN` e project ref Supabase;
+- allowlist nominativa delle route clean management e classificatore che restituisce `{ kind: "allow" }` per route proprie, senza rewrite interni;
+- assertion app-specifiche `assertStorefrontApplicationSurface()` e `assertManagementApplicationSurface()`.
+
+Spostare l'implementazione neutrale da `src/lib/app-mode.ts` nel package e mantenere dalla root un re-export compatibile per non rompere i consumer storefront già esistenti. Sostituire `MANAGEMENT_REWRITES` con `MANAGEMENT_ROUTE_ALLOWLIST` e `classifyManagementRequest()`: `/`, `/login`, `/logout`, `/account`, `/settings/security`, `/mfa/**` e `/auth/callback` sono route possedute direttamente e ricevono `allow`; path storefront/API ricevono la disposizione fail-closed prevista. Eliminare `src/lib/management/routes.ts` e aggiornare i test legacy: nessun consumer finale può riscrivere verso `/gestionale`. Il package non importa Next, React, Supabase client, route o configurazioni di una delle app.
+
+Creare inoltre `@geardrop/data-contract` come package neutrale per i tipi database correnti, senza Next o UI. Spostare il file generato canonico in `packages/data-contract/src/database.types.ts`; `src/lib/supabase/database.types.ts` diventa un re-export compatibile e `tests/unit/scoped-queries-contract.test.ts` legge il file canonico. In questa fase `db:types` genera `--schema public` nel package; il Task 4 aggiornerà lo stesso comando a `--schema public,management_api`.
+
+Il `package.json` root e `apps/management/package.json` dichiarano `@geardrop/runtime-contract: "workspace:*"` e `@geardrop/data-contract: "workspace:*"`; entrambe le app configurano `transpilePackages` per i due package. Un errore condiviso deve quindi emergere nei typecheck/build di entrambe.
+
+- [ ] **Step 3: Creare la seconda app Next minima e assegnarle le route management**
+
+`apps/management` possiede fisicamente le route pubbliche pulite. In questa fase minima crea `/` e `/robots.txt`; i Task 5 e 6 aggiungeranno `/login`, `/logout`, `/account`, `/settings/security`, `/mfa/enroll`, `/mfa/challenge` e `/auth/callback` direttamente sotto il suo App Router. Non creare route `/admin`, `/api`, checkout o storefront e non importare l'albero root.
+
+`apps/management/next.config.ts`:
+
+- richiede `assertManagementApplicationSurface()`;
+- applica `X-Robots-Tag: noindex, nofollow` e `Cache-Control: private, no-store` alle route applicative;
+- usa target Supabase remoto fail-closed in production;
+- non carica né estende il `next.config.ts` root;
+- non definisce alcun rewrite verso `/gestionale` o verso la root: le route clean sono file reali dell'app.
+
+`apps/management/src/proxy.ts` applica il classificatore neutrale prima del refresh sessione e restituisce 404 per metodi/path non ammessi. `apps/management/src/lib/supabase/env.ts` convalida URL/key/ref prima di creare client o query. La pagina iniziale è dinamica, non interroga il database durante `next build` e mostra soltanto uno stato fondazione privo di dati.
+
+Trasferire nella seconda app i rami management di header, classificazione e validazione implementati nel Task 2. Alla root, `next.config.ts` chiama `assertStorefrontApplicationSurface()` e rifiuta esplicitamente `NEXT_PUBLIC_APP_SURFACE=management`; `src/proxy.ts` resta soltanto storefront e conserva `/admin`, checkout e webhook con `LEGACY_ADMIN_MODE=enabled`. `src/lib/app-mode.ts` può mantenere re-export compatibili del package per test/consumer storefront, ma `MANAGEMENT_REWRITES` e il modulo route legacy vengono rimossi. Aggiornare i test del Task 2 affinché esercitino allowlist/classificatore condivisi e i due consumer app-specifici.
+
+- [ ] **Step 4: Creare helper Supabase SSR posseduti dall'app management**
+
+`apps/management/package.json` dichiara direttamente, con le versioni allineate alla root:
+
+```json
+"@supabase/ssr": "0.12.3",
+"@supabase/supabase-js": "2.110.7"
+```
+
+Implementare helper locali senza importare `src/lib/supabase/**` dalla root:
+
+```ts
+export function createManagementBrowserClient(): SupabaseClient<Database>;
+export async function createManagementServerClient(): Promise<SupabaseClient<Database>>;
+export async function updateManagementSession(request: NextRequest): Promise<NextResponse>;
+```
+
+`client.ts` legge soltanto URL e publishable key già validati. `server.ts` usa `cookies()` con adapter `getAll`/`setAll`, preserva attributi cookie e gestisce il vincolo di scrittura dei Server Component senza nascondere errori di configurazione. `proxy.ts` crea il client SSR con cookie request/response, propaga ogni cookie aggiornato su entrambi gli oggetti e verifica l'utente con `auth.getUser()`; non autorizza tramite il solo `getSession()`. `apps/management/src/proxy.ts` classifica prima la route e chiama l'helper sessione soltanto sulle route ammesse.
+
+`tests/unit/management-supabase-ssr.test.ts` usa factory/cookie store mock per provare: validazione target prima di creare il client; nessun secret server nel browser; forwarding completo dei cookie; refresh su request e response; errore fail-closed; assenza di import dagli helper Supabase root. Il Task 5 deve consumare questi helper, non crearne copie.
+
+- [ ] **Step 5: Rendere i tsconfig e gli import boundary eseguibili**
+
+Il root `tsconfig.json` esclude `apps/**/*` e `packages/**/*` dai glob automatici; `apps/management/tsconfig.json` ha `baseUrl` locale, alias locali e include soltanto il proprio albero e `.next/types`. Nessun child config estende il tsconfig root se ciò reintroduce include/path alias della root.
+
+Implementare `scripts/check-workspace-boundaries.ts` usando l'API del compilatore TypeScript, non una ricerca testuale. Per ogni `ImportDeclaration`, export-from, `import()` e `require()` con specifier statico in `apps/management`, risolvere il realpath del file e accettare soltanto:
+
+- file dentro `apps/management`;
+- dipendenze esterne dichiarate in `apps/management/package.json`;
+- package workspace presenti nella allowlist esplicita: `@geardrop/runtime-contract` e `@geardrop/data-contract`.
+
+Rifiutare path relativi che escono dall'app, alias root, import di `src/app/admin/**`, `src/app/api/**`, `src/components/admin/**`, `next.config.ts`, configurazioni storefront e deep import dentro `packages/**`. Le fixture provano un import package ammesso e import root vietati anche quando usano alias o traversal relativi.
+
+- [ ] **Step 6: Fissare pnpm ed esporre script app-specifici**
+
+Nel `package.json` root fissare esattamente:
+
+```json
+"packageManager": "pnpm@10.34.6"
+```
+
+Vercel documenta il supporto pnpm nelle versioni 6–10; pnpm 11 non è quindi un target di deployment accettabile ([documentazione Vercel sui package manager](https://vercel.com/docs/package-managers)). Rigenerare `pnpm-lock.yaml` con pnpm 10.34.6 e fare fallire test/CI se `pnpm --version` non restituisce esattamente `10.34.6`.
+
+Aggiungere alla root:
+
+```json
+"dev": "pnpm dev:storefront",
+"lint": "pnpm lint:storefront && pnpm lint:shared && pnpm lint:management",
+"build": "pnpm build:storefront",
+"typecheck": "pnpm typecheck:storefront",
+"dev:storefront": "next dev",
+"lint:storefront": "eslint src tests scripts next.config.ts playwright.config.ts playwright.admin.config.ts playwright.storefront.config.ts",
+"lint:shared": "eslint packages/runtime-contract/src packages/data-contract/src",
+"build:storefront": "pnpm --filter @geardrop/runtime-contract --filter @geardrop/data-contract typecheck && next build",
+"typecheck:storefront": "pnpm --filter @geardrop/runtime-contract --filter @geardrop/data-contract typecheck && next typegen && tsc --noEmit",
+"dev:management": "pnpm --dir apps/management dev",
+"lint:management": "pnpm --dir apps/management lint",
+"build:management": "pnpm --dir apps/management build",
+"typecheck:management": "pnpm --dir apps/management typecheck",
+"check:workspace-boundaries": "tsx scripts/check-workspace-boundaries.ts",
+"verify:management-manifest": "tsx scripts/verify-management-build-manifest.ts",
+"verify:manifest-isolation": "tsx scripts/verify-build-manifest-isolation.ts",
+"verify:build-independence": "tsx scripts/verify-build-independence.ts"
+```
+
+In `apps/management/package.json`, `dev` e `lint` invocano `next dev` ed `eslint .`; `build` e `typecheck` eseguono prima il typecheck di entrambi i package workspace, poi rispettivamente `next build` e `next typegen && tsc --noEmit`. In questo modo anche Vercel con Root Directory `apps/management` verifica i package condivisi. Per compatibilità, gli omonimi root continuano a significare storefront e delegano agli script espliciti. `lint:storefront` possiede soltanto root `src`, test, script e config elencati; `lint:shared` possiede soltanto `packages/runtime-contract/src` e `packages/data-contract/src`; `lint:management` possiede soltanto `apps/management`. `lint` li aggrega una volta ciascuno, in quell'ordine, senza glob sovrapposti. Aggiornare `pnpm-lock.yaml` tramite pnpm; non duplicare versioni Next/React e non introdurre dipendenze non necessarie nell'app management.
+
+Aggiornare nello stesso task `.github/workflows/supabase-database-ci.yml`, senza rinviare la compatibilità iniziale ai task successivi: rimuovere `pnpm/action-setup` con `version: 11.13.1`, configurare Node senza `cache: pnpm`, quindi eseguire `corepack enable`, `corepack prepare pnpm@10.34.6 --activate` e un'asserzione esatta su `pnpm --version` prima di `pnpm install --frozen-lockfile`; un eventuale cache del pnpm store va configurato soltanto dopo l'attivazione. Il workflow esegue `pnpm lint` — che copre le tre superfici senza duplicarle —, i typecheck/build app-specifici e il drift dei tipi. In questa fase il comando di generazione resta `supabase gen types typescript --local --schema public`, scrive l'artifact temporaneo e usa `diff --unified packages/data-contract/src/database.types.ts artifacts/database.types.ts`. `tests/unit/supabase-ci-workflow.test.ts` deve verificare versione, ordine setup Node/Corepack/install, assenza di pnpm 11, destinazione canonica del diff, composizione del lint e comandi distinti delle due app. Il Task 4 estende lo schema generato; il Task 9 estende lo stesso workflow con E2E e gate di deploy.
+
+- [ ] **Step 7: Verificare il manifest reale della build management**
+
+`scripts/verify-management-build-manifest.ts` legge almeno `apps/management/.next/routes-manifest.json`, `apps/management/.next/server/app-paths-manifest.json` e gli altri manifest route prodotti dalla versione Next installata. Normalizza route dinamiche e applica un'allowlist esplicita:
+
+```text
+/
+/login
+/logout
+/account
+/settings/security
+/mfa/enroll
+/mfa/challenge
+/auth/callback
+/robots.txt
+```
+
+Sono ammessi soltanto artifact interni Next documentati. Qualsiasi altra route applicativa fallisce, con controlli espliciti per `/admin`, `/api`, `/checkout`, `/carrello`, `/negozio`, `/prodotti` e webhook. Il test unitario usa manifest fixture positivi/negativi; il comando GREEN ispeziona il manifest realmente generato, non il solo sorgente.
+
+`scripts/verify-build-manifest-isolation.ts` apre sia `.next/**` root sia `apps/management/.next/**`, verifica path canonici distinti e presenza del rispettivo `BUILD_ID` senza presumere che i valori debbano differire, richiede `/admin` e `/api/stripe/webhook` soltanto nel manifest storefront, riapplica l'allowlist management e ammette come intersezione soltanto route infrastrutturali/pubbliche dichiarate. Il test fixture deve fallire se un manifest viene letto dalla directory sbagliata o se una route proprietaria attraversa il confine.
+
+- [ ] **Step 8: Provare l'indipendenza nelle due direzioni**
+
+`scripts/verify-build-independence.ts` esegue in seriale una prova distruttiva soltanto su file sentinella temporanei e garantisce il ripristino byte-for-byte in `finally`. Il command runner fornisce internamente al build management gli stessi URL/ref remoti fittizi concordanti del gate CI, senza leggere target reali:
+
+1. acquisisce un lock locale e registra hash/status dei path sentinella;
+2. crea un errore TypeScript deliberato in `src/app/__build_isolation_probe__/page.tsx`;
+3. prova che `pnpm build:management` PASS e `pnpm build:storefront` FAIL;
+4. rimuove la sentinella root, crea l'errore in `apps/management/src/app/__build_isolation_probe__/page.tsx`;
+5. prova che `pnpm build:storefront` PASS e `pnpm build:management` FAIL;
+6. rimuove la sentinella management, crea un errore nel file incluso dal tsconfig `packages/runtime-contract/src/__build_isolation_probe__.ts` e prova che entrambi i comandi build FAIL;
+7. rimuove sempre tutte le sentinelle, verifica assenza di residui e stato Git identico a quello iniziale.
+
+Il runner rifiuta di partire se uno dei path sentinella esiste già, non gira in parallelo e redige l'output degli errori intenzionali. `tests/unit/build-independence.test.ts` usa un command runner iniettato per provare ordine, codici attesi, profilo env fittizio e cleanup anche su eccezione. In CI viene eseguito il runner reale. La terza fase dimostra che un errore nel package condiviso fallisce correttamente entrambe le build.
+
+- [ ] **Step 9: Eseguire i gate GREEN della separazione**
+
+```bash
+corepack enable
+corepack prepare pnpm@10.34.6 --activate
+pnpm --version
+pnpm install --lockfile-only
+pnpm install --frozen-lockfile
+pnpm exec vitest run tests/unit/app-mode.test.ts tests/unit/supabase-env.test.ts tests/unit/management-route-boundary.test.ts tests/unit/workspace-app-isolation.test.ts tests/unit/workspace-import-boundary.test.ts tests/unit/management-build-manifest.test.ts tests/unit/build-manifest-isolation.test.ts tests/unit/build-independence.test.ts tests/unit/management-supabase-ssr.test.ts tests/unit/supabase-ci-workflow.test.ts
+pnpm check:workspace-boundaries
+pnpm lint
+pnpm typecheck:storefront
+pnpm typecheck:management
+pnpm db:reset
+pnpm db:types
+git diff --exit-code -- packages/data-contract/src/database.types.ts
+pnpm build:storefront
+NEXT_PUBLIC_APP_SURFACE=management NEXT_PUBLIC_SUPABASE_URL=https://ci-management.supabase.co NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=ci-publishable-key NEXT_PUBLIC_EXPECTED_SUPABASE_PROJECT_REF=ci-management MANAGEMENT_ORIGIN=https://management-ci.invalid STOREFRONT_ORIGIN=https://storefront-ci.invalid MANAGEMENT_MODE=read_only pnpm build:management
+pnpm verify:management-manifest
+pnpm verify:manifest-isolation
+pnpm verify:build-independence
+pnpm test
+```
+
+Su PowerShell impostare le stesse variabili con sintassi `$env:` oppure tramite il wrapper CI documentato; i valori e le attese non cambiano.
+
+Atteso: `pnpm --version` stampa `10.34.6`; install frozen, contratto workflow, test focalizzati, lint aggregato delle tre superfici, typecheck, drift tipi sul package canonico, build e regressione completa PASS; la prova sentinella dimostra l'indipendenza bidirezionale; il manifest management contiene solo route allowlisted; una build root con surface management fallisce col codice stabile previsto.
+
+- [ ] **Step 10: Committare il confine fisico**
+
+```bash
+git add pnpm-workspace.yaml package.json pnpm-lock.yaml tsconfig.json next.config.ts src/proxy.ts src/lib/app-mode.ts src/lib/management/routes.ts src/lib/supabase/env.ts src/lib/supabase/database.types.ts packages/runtime-contract packages/data-contract apps/management scripts/check-workspace-boundaries.ts scripts/verify-management-build-manifest.ts scripts/verify-build-manifest-isolation.ts scripts/verify-build-independence.ts .github/workflows/supabase-database-ci.yml tests/unit/supabase-ci-workflow.test.ts tests/unit/app-mode.test.ts tests/unit/supabase-env.test.ts tests/unit/management-route-boundary.test.ts tests/unit/scoped-queries-contract.test.ts tests/unit/workspace-app-isolation.test.ts tests/unit/workspace-import-boundary.test.ts tests/unit/management-build-manifest.test.ts tests/unit/build-manifest-isolation.test.ts tests/unit/build-independence.test.ts tests/unit/management-supabase-ssr.test.ts tests/fixtures/workspace-boundary
+git commit -m "feat: split management into independent app"
+```
+
+---
+
+### Task 4: Aggiungere feature flag fail-closed e API gestionale dedicata
 
 **File:**
 
@@ -278,10 +553,15 @@ git commit -m "feat: isolate management deployment surface"
 - Modifica: `supabase/tests/upgrades/organizations_after.sql.in`
 - Modifica: `supabase/config.toml`
 - Modifica: `src/lib/supabase/database.types.ts`
+- Modifica: `packages/data-contract/package.json`
+- Modifica: `packages/data-contract/src/index.ts`
+- Modifica: `packages/data-contract/src/database.types.ts`
+- Crea: `packages/data-contract/src/management/features.ts`
+- Modifica: `apps/management/package.json`
+- Modifica: `scripts/check-workspace-boundaries.ts`
 - Modifica: `package.json:7-31`
 - Modifica: `.github/workflows/supabase-database-ci.yml`
 - Modifica: `tests/unit/supabase-ci-workflow.test.ts`
-- Crea: `src/lib/management/features.ts`
 - Crea: `tests/unit/management-features.test.ts`
 
 - [ ] **Step 1: Scrivere i contratti pgTAP in errore**
@@ -301,6 +581,10 @@ Il test deve restare rosso finché:
 - funzioni con search path vuoto non concedono `EXECUTE` a `PUBLIC`.
 
 ```bash
+corepack enable
+corepack prepare pnpm@10.34.6 --activate
+pnpm --version
+pnpm install --frozen-lockfile
 pnpm db:reset
 pnpm db:test
 ```
@@ -362,7 +646,9 @@ Revocare `CREATE` e privilegi impliciti su `management_api`, concedere soltanto 
 schemas = ["public", "graphql_public", "management_api"]
 ```
 
-- [ ] **Step 3: Aggiungere adapter TypeScript fail-closed**
+- [ ] **Step 3: Estendere il package dati neutrale con l'adapter fail-closed**
+
+Estendere `@geardrop/data-contract`, creato nel Task 3, con l'adapter feature. Può dipendere da `@supabase/supabase-js`, ma non da Next, dalle app o da componenti UI. Pubblica tipi database generati e adapter/query senza conoscenza di route; restano vietati deep import e accessi diretti alla root.
 
 ```ts
 export type ManagementFeature = Database["public"]["Enums"]["management_feature"];
@@ -379,17 +665,26 @@ export function requireManagementFeature(
 ): void;
 ```
 
-L'implementazione invoca esclusivamente `client.schema("management_api").rpc("list_management_features", { p_organization_id: organizationId })`; l'azione control-plane usa `client.schema("management_api").rpc("set_management_read_access", { p_organization_id, p_enabled, p_expected_updated_at, p_reason })`. Errore RPC, duplicato, riga assente o enum sconosciuto genera `ManagementFeatureUnavailableError` e non sostituisce mai `true`.
+L'implementazione vive in `packages/data-contract/src/management/features.ts` e invoca esclusivamente `client.schema("management_api").rpc("list_management_features", { p_organization_id: organizationId })`; l'azione control-plane usa `client.schema("management_api").rpc("set_management_read_access", { p_organization_id, p_enabled, p_expected_updated_at, p_reason })`. Errore RPC, duplicato, riga assente o enum sconosciuto genera `ManagementFeatureUnavailableError` e non sostituisce mai `true`.
 
 - [ ] **Step 4: Allineare generazione tipi e CI**
 
 Aggiornare lo script `db:types`, il test di contratto workflow e la CI affinché falliscano sul drift di entrambi gli schema:
 
 ```json
-"db:types": "supabase gen types typescript --local --schema public,management_api > src/lib/supabase/database.types.ts"
+"db:types": "supabase gen types typescript --local --schema public,management_api > packages/data-contract/src/database.types.ts"
 ```
 
-Le firme generate devono includere le due funzioni `management_api` e nessun setter generico pubblico.
+`packages/data-contract/src/database.types.ts` resta la fonte generata canonica e `src/lib/supabase/database.types.ts` il re-export di compatibilità già introdotto. Le firme generate devono includere le due funzioni `management_api` e nessun setter generico pubblico. Il typecheck di `@geardrop/data-contract` resta in entrambe le pipeline, così un errore condiviso fallisce entrambe le app.
+
+Confermare gli script introdotti nel Task 3:
+
+```json
+"typecheck:storefront": "pnpm --filter @geardrop/runtime-contract --filter @geardrop/data-contract typecheck && next typegen && tsc --noEmit",
+"build:storefront": "pnpm --filter @geardrop/runtime-contract --filter @geardrop/data-contract typecheck && next build"
+```
+
+In `apps/management/package.json`, `build` e `typecheck` continuano a filtrare entrambi `@geardrop/runtime-contract` e `@geardrop/data-contract` prima del comando Next/TypeScript locale; gli script root `build:management` e `typecheck:management` restano semplici deleghe alla directory `apps/management`.
 
 ```bash
 pnpm db:reset
@@ -397,7 +692,10 @@ pnpm db:test
 pnpm db:test:upgrades
 pnpm db:lint
 pnpm db:types
-pnpm exec vitest run tests/unit/management-features.test.ts tests/unit/scoped-queries-contract.test.ts tests/unit/supabase-ci-workflow.test.ts
+pnpm exec vitest run tests/unit/management-features.test.ts tests/unit/scoped-queries-contract.test.ts tests/unit/supabase-ci-workflow.test.ts tests/unit/workspace-import-boundary.test.ts
+pnpm check:workspace-boundaries
+pnpm typecheck:storefront
+pnpm typecheck:management
 git diff --exit-code --check
 ```
 
@@ -406,32 +704,36 @@ Atteso: PASS; l'upgrade popolato conserva i dati esistenti e aggiunge flag disab
 - [ ] **Step 5: Committare flag e API**
 
 ```bash
-git add supabase/migrations/20260930110000_add_management_feature_flags.sql supabase/tests/049_management_feature_flags.test.sql supabase/tests/044_organization_tier_registry.test.sql supabase/tests/upgrades/organizations_after.sql.in supabase/config.toml src/lib/supabase/database.types.ts src/lib/management/features.ts tests/unit/management-features.test.ts package.json .github/workflows/supabase-database-ci.yml tests/unit/supabase-ci-workflow.test.ts
+git add supabase/migrations/20260930110000_add_management_feature_flags.sql supabase/tests/049_management_feature_flags.test.sql supabase/tests/044_organization_tier_registry.test.sql supabase/tests/upgrades/organizations_after.sql.in supabase/config.toml packages/data-contract apps/management/package.json scripts/check-workspace-boundaries.ts src/lib/supabase/database.types.ts tests/unit/management-features.test.ts tests/unit/scoped-queries-contract.test.ts package.json pnpm-lock.yaml .github/workflows/supabase-database-ci.yml tests/unit/supabase-ci-workflow.test.ts
 git commit -m "feat: add organization management feature gates"
 ```
 
 ---
 
-### Task 4: Costruire autenticazione gestionale e MFA owner obbligatoria
+### Task 5: Costruire autenticazione gestionale e MFA owner obbligatoria
 
 **File:**
 
 - Modifica: `supabase/config.toml:296-309`
-- Crea: `src/lib/management/access.ts`
-- Crea: `src/lib/management/auth-redirect.ts`
+- Crea: `packages/data-contract/src/auth/staff-principal.ts`
+- Modifica: `packages/data-contract/src/index.ts`
+- Modifica: `src/lib/auth/guards.ts`
+- Crea: `apps/management/src/lib/management/access.ts`
+- Crea: `apps/management/src/lib/management/auth-redirect.ts`
 - Crea: `tests/unit/management-access.test.ts`
 - Crea: `tests/unit/management-auth-redirect.test.ts`
-- Crea: `src/app/gestionale/layout.tsx`
-- Crea: `src/app/gestionale/login/page.tsx`
-- Crea: `src/app/gestionale/login/actions.ts`
-- Crea: `src/components/management/login-form.tsx`
-- Crea: `src/app/gestionale/logout/route.ts`
-- Crea: `src/app/gestionale/mfa/enroll/page.tsx`
-- Crea: `src/app/gestionale/mfa/challenge/page.tsx`
-- Crea: `src/components/management/mfa-enrollment.tsx`
-- Crea: `src/components/management/mfa-challenge.tsx`
-- Crea: `src/app/gestionale/(protected)/account/page.tsx`
-- Modifica: `src/app/auth/callback/route.ts:1-39`
+- Modifica: `apps/management/src/app/layout.tsx`
+- Crea: `apps/management/src/app/login/page.tsx`
+- Crea: `apps/management/src/app/login/actions.ts`
+- Crea: `apps/management/src/components/login-form.tsx`
+- Crea: `apps/management/src/app/logout/route.ts`
+- Crea: `apps/management/src/app/mfa/enroll/page.tsx`
+- Crea: `apps/management/src/app/mfa/challenge/page.tsx`
+- Crea: `apps/management/src/components/mfa-enrollment.tsx`
+- Crea: `apps/management/src/components/mfa-challenge.tsx`
+- Crea: `apps/management/src/app/(protected)/layout.tsx`
+- Crea: `apps/management/src/app/(protected)/account/page.tsx`
+- Crea: `apps/management/src/app/auth/callback/route.ts`
 - Modifica: `src/app/admin/actions/team.ts:1-16`
 
 - [ ] **Step 1: Specificare la macchina a stati di accesso**
@@ -461,13 +763,13 @@ Atteso: FAIL perché il layer management non esiste.
 
 - [ ] **Step 2: Implementare accesso server-side e redirect sicuri**
 
-Comporre `requireStaffRole()` con `auth.mfa.getAuthenticatorAssuranceLevel()`. Non fidarsi mai di ruolo/fattore forniti da form, cookie, metadata utente o client component.
+Estrarre la risoluzione neutrale di staff, membership e ruolo in `packages/data-contract/src/auth/staff-principal.ts`; il guard root mantiene un adapter/re-export compatibile per il legacy admin. Nell'app management ottenere il client esclusivamente da `createManagementServerClient()` del Task 3 e comporre quel contratto con `auth.mfa.getAuthenticatorAssuranceLevel()`. Non importare `src/lib/auth/guards.ts` o helper Supabase root dalla seconda app e non fidarsi mai di ruolo/fattore forniti da form, cookie, metadata utente o client component.
 
-`managementStaffRedirectUrl(path)` usa `MANAGEMENT_ORIGIN` HTTPS in remoto, accetta l'origine loopback corrente solo in locale/test, permette solo path assoluti della stessa app e fallisce in chiusura senza origin in produzione. Il callback condiviso rimanda inviti/recovery staff a management, conservando `/account` per i clienti storefront.
+`managementStaffRedirectUrl(path)` usa `MANAGEMENT_ORIGIN` HTTPS in remoto, accetta l'origine loopback corrente solo in locale/test, permette solo path assoluti della stessa app e fallisce in chiusura senza origin in produzione. `apps/management/src/app/auth/callback/route.ts` gestisce inviti/recovery staff; il callback root resta proprietario dei clienti e conserva `/account` sullo storefront.
 
 - [ ] **Step 3: Implementare login e logout indipendenti**
 
-Il login autentica con password, verifica staff e membership attivi, registra l'accesso, valuta la destinazione MFA e reindirizza solo a route gestionali pulite. Credenziali errate, staff inattivo o membership assente producono lo stesso messaggio generico. Nessun link di registrazione. Logout esegue sign-out, pulisce la cache PWA nominata e torna a `/login`.
+Il login autentica con password attraverso l'helper server management, verifica staff e membership attivi, registra l'accesso, valuta la destinazione MFA e reindirizza solo a route gestionali pulite. I componenti MFA usano `createManagementBrowserClient()`; non istanziano client paralleli. Credenziali errate, staff inattivo o membership assente producono lo stesso messaggio generico. Nessun link di registrazione. Il layout `(protected)` richiama il guard server-side e applica enrollment/challenge prima di rendere qualunque figlio. Logout esegue sign-out, pulisce la cache PWA nominata e torna a `/login`.
 
 - [ ] **Step 4: Implementare enrollment e challenge TOTP**
 
@@ -489,8 +791,9 @@ Passare `redirectTo` esplicito per `/auth/callback?next=/mfa/enroll` nell'azione
 
 ```bash
 pnpm exec vitest run tests/unit/management-access.test.ts tests/unit/management-auth-redirect.test.ts tests/unit/customer-auth.test.ts tests/unit/site-url.test.ts
-pnpm lint
-pnpm typecheck
+pnpm check:workspace-boundaries
+pnpm typecheck:storefront
+pnpm typecheck:management
 ```
 
 Atteso: PASS; login e callback cliente sono invariati.
@@ -498,41 +801,43 @@ Atteso: PASS; login e callback cliente sono invariati.
 - [ ] **Step 7: Committare l'autenticazione**
 
 ```bash
-git add supabase/config.toml src/lib/management/access.ts src/lib/management/auth-redirect.ts src/app/gestionale src/components/management/login-form.tsx src/components/management/mfa-enrollment.tsx src/components/management/mfa-challenge.tsx src/app/auth/callback/route.ts src/app/admin/actions/team.ts tests/unit/management-access.test.ts tests/unit/management-auth-redirect.test.ts
+git add supabase/config.toml packages/data-contract/src/auth/staff-principal.ts packages/data-contract/src/index.ts src/lib/auth/guards.ts apps/management/src/lib/management/access.ts apps/management/src/lib/management/auth-redirect.ts apps/management/src/app apps/management/src/components/login-form.tsx apps/management/src/components/mfa-enrollment.tsx apps/management/src/components/mfa-challenge.tsx src/app/admin/actions/team.ts tests/unit/management-access.test.ts tests/unit/management-auth-redirect.test.ts
 git commit -m "feat: require secure management authentication"
 ```
 
 ---
 
-### Task 5: Consegnare overview Gear Drop read-only e PWA sicura
+### Task 6: Consegnare overview Gear Drop read-only e PWA sicura
 
 **File:**
 
-- Crea: `src/lib/operations/dashboard.ts`
-- Crea: `src/lib/operations/warehouse.ts`
+- Crea: `packages/data-contract/src/operations/dashboard.ts`
+- Crea: `packages/data-contract/src/operations/warehouse.ts`
+- Crea: `packages/data-contract/src/management/overview.ts`
+- Modifica: `packages/data-contract/src/index.ts`
 - Modifica: `src/lib/admin/dashboard.ts`
 - Modifica: `src/lib/admin/warehouse-repository.ts`
-- Crea: `src/lib/management/overview.ts`
 - Crea: `tests/unit/management-overview.test.ts`
 - Crea: `tests/unit/management-ui-boundary.test.ts`
-- Crea: `src/app/gestionale/(protected)/layout.tsx`
-- Crea: `src/app/gestionale/(protected)/page.tsx`
-- Crea: `src/app/gestionale/(protected)/settings/security/page.tsx`
-- Crea: `src/app/gestionale/actions/organization.ts`
-- Crea: `src/app/gestionale/actions/features.ts`
-- Crea: `src/components/management/management-shell.tsx`
-- Crea: `src/components/management/organization-switcher.tsx`
-- Crea: `src/components/management/feature-controls.tsx`
-- Crea: `src/components/management/management-pwa.tsx`
-- Crea: `src/components/management/management.module.css`
-- Crea: `public/management.webmanifest`
-- Crea: `public/management-sw.js`
-- Crea: `public/management-offline.html`
+- Elimina: `apps/management/src/app/page.tsx`
+- Modifica: `apps/management/src/app/(protected)/layout.tsx`
+- Crea: `apps/management/src/app/(protected)/page.tsx`
+- Crea: `apps/management/src/app/(protected)/settings/security/page.tsx`
+- Crea: `apps/management/src/app/actions/organization.ts`
+- Crea: `apps/management/src/app/actions/features.ts`
+- Crea: `apps/management/src/components/management-shell.tsx`
+- Crea: `apps/management/src/components/organization-switcher.tsx`
+- Crea: `apps/management/src/components/feature-controls.tsx`
+- Crea: `apps/management/src/components/management-pwa.tsx`
+- Crea: `apps/management/src/app/management.module.css`
+- Crea: `apps/management/public/management.webmanifest`
+- Crea: `apps/management/public/management-sw.js`
+- Modifica: `apps/management/public/management-offline.html`
 - Crea: `tests/unit/management-pwa.test.ts`
 
 - [ ] **Step 1: Scrivere i contratti read-only**
 
-I test provano che accesso e `read_access` precedono ogni query di business; un errore flag invoca zero loader; l'ID organizzazione viene da `StaffPrincipal`; l'output rispetta il ruolo; l'albero management non importa admin e non contiene form/azioni operative né metodi mutanti; l'unica azione feature invoca `set_management_read_access`; le pagine dati sono dinamiche con `dynamic = "force-dynamic"` e `fetchCache = "force-no-store"`.
+I test provano che accesso e `read_access` precedono ogni query di business; un errore flag invoca zero loader; l'ID organizzazione viene da `StaffPrincipal`; l'output rispetta il ruolo; `apps/management` non importa la root e non contiene form/azioni operative né metodi mutanti; l'unica azione feature invoca `set_management_read_access`; le pagine dati sono dinamiche con `dynamic = "force-dynamic"` e `fetchCache = "force-no-store"`.
 
 I test non devono sostenere che il JWT non possa invocare writer legacy: verificano esclusivamente la superficie management, coerentemente col caveat di sicurezza.
 
@@ -544,7 +849,7 @@ Atteso: FAIL perché UI e loader neutrali non esistono.
 
 - [ ] **Step 2: Estrarre i contratti read neutrali**
 
-Spostare mapping/query da `src/lib/admin/dashboard.ts` a `src/lib/operations/dashboard.ts` e repository/tipi riepilogo da `src/lib/admin/warehouse-repository.ts` a `src/lib/operations/warehouse.ts`, mantenendo re-export compatibili per il pannello legacy. Il gestionale non importa così alcun modulo `src/lib/admin/**`; la formattazione monetaria resta un dettaglio della sua UI.
+Spostare mapping/query da `src/lib/admin/dashboard.ts` a `packages/data-contract/src/operations/dashboard.ts` e repository/tipi riepilogo da `src/lib/admin/warehouse-repository.ts` a `packages/data-contract/src/operations/warehouse.ts`, mantenendo adapter/re-export compatibili nei moduli legacy. `packages/data-contract/src/management/overview.ts` orchestra i reader neutrali. Il gestionale importa soltanto `@geardrop/data-contract`; la formattazione monetaria resta un dettaglio della sua UI. Il package non importa Next, cookie, componenti o route di nessuna app.
 
 ```ts
 export type ManagementOverview = Readonly<{
@@ -585,9 +890,12 @@ Il service worker installa soltanto `management-offline.html` in una cache versi
 
 ```bash
 pnpm exec vitest run tests/unit/management-overview.test.ts tests/unit/management-ui-boundary.test.ts tests/unit/management-pwa.test.ts tests/unit/admin-dashboard.test.ts tests/unit/admin-shell-contract.test.ts tests/unit/warehouse.test.ts
-pnpm lint
-pnpm typecheck
-pnpm build
+pnpm check:workspace-boundaries
+pnpm typecheck:storefront
+pnpm typecheck:management
+pnpm build:storefront
+pnpm build:management
+pnpm verify:management-manifest
 ```
 
 Atteso: PASS; build storefront e legacy admin restano verdi.
@@ -595,13 +903,13 @@ Atteso: PASS; build storefront e legacy admin restano verdi.
 - [ ] **Step 7: Committare la slice read-only**
 
 ```bash
-git add src/lib/operations/dashboard.ts src/lib/operations/warehouse.ts src/lib/admin/dashboard.ts src/lib/admin/warehouse-repository.ts src/lib/management/overview.ts src/app/gestionale src/components/management public/management.webmanifest public/management-sw.js public/management-offline.html tests/unit/management-overview.test.ts tests/unit/management-ui-boundary.test.ts tests/unit/management-pwa.test.ts
+git add packages/data-contract/src/operations packages/data-contract/src/management/overview.ts packages/data-contract/src/index.ts src/lib/admin/dashboard.ts src/lib/admin/warehouse-repository.ts apps/management/src/app apps/management/src/components apps/management/public/management.webmanifest apps/management/public/management-sw.js apps/management/public/management-offline.html tests/unit/management-overview.test.ts tests/unit/management-ui-boundary.test.ts tests/unit/management-pwa.test.ts
 git commit -m "feat: add independent read-only management app"
 ```
 
 ---
 
-### Task 6: Rendere il rehearsal realmente read-only, separato e cifrato
+### Task 7: Rendere il rehearsal realmente read-only, separato e cifrato
 
 **File:**
 
@@ -691,7 +999,7 @@ git commit -m "feat: secure production upgrade rehearsal"
 
 ---
 
-### Task 7: Produrre una copia staging sanificata e verificata
+### Task 8: Produrre una copia staging sanificata e verificata
 
 **File:**
 
@@ -721,7 +1029,7 @@ Non creare staff sintetico nell'artifact: le identità staging vengono create do
 
 - [ ] **Step 3: Aggiungere verifier indipendente ed export fail-closed**
 
-`verify-sanitized-copy.sql` termina non-zero se restano identità produzione, PII, note libere, ID Stripe, contatti fiscali/fornitore, payload audit, `accept_orders=true` o flag write/external attivo. Il runner esegue sanitizer, verifier e solo dopo esporta con la busta cifrata del Task 6.
+`verify-sanitized-copy.sql` termina non-zero se restano identità produzione, PII, note libere, ID Stripe, contatti fiscali/fornitore, payload audit, `accept_orders=true` o flag write/external attivo. Il runner esegue sanitizer, verifier e solo dopo esporta con la busta cifrata del Task 7.
 
 - [ ] **Step 4: Provare con canary deterministici**
 
@@ -746,7 +1054,7 @@ git commit -m "feat: add verified staging data sanitization"
 
 ---
 
-### Task 8: Aggiungere E2E management, doppia build CI e runbook
+### Task 9: Aggiungere E2E management, doppia build CI e runbook
 
 **File:**
 
@@ -757,6 +1065,8 @@ git commit -m "feat: add verified staging data sanitization"
 - Crea: `tests/e2e/management/route-boundary.spec.ts`
 - Crea: `tests/e2e/management/organization-readonly.spec.ts`
 - Crea: `tests/e2e/management/pwa.spec.ts`
+- Modifica: `scripts/verify-management-build-manifest.ts`
+- Modifica: `scripts/verify-build-manifest-isolation.ts`
 - Modifica: `.github/workflows/supabase-database-ci.yml`
 - Modifica: `tests/unit/supabase-ci-workflow.test.ts`
 - Modifica: `package.json:7-31`
@@ -768,15 +1078,19 @@ git commit -m "feat: add verified staging data sanitization"
 
 - [ ] **Step 1: Estendere prima il contratto CI**
 
-Il test workflow deve provare:
+Il test workflow estende il contratto introdotto nel Task 3 e deve provare:
 
+- restano invariati Corepack con `pnpm@10.34.6`, asserzione esatta della versione, install `--frozen-lockfile`, drift contro `packages/data-contract/src/database.types.ts` e `pnpm lint` aggregato; nessun job reintroduce pnpm 11, tipi root canonici o lint parziali/duplicati;
 - E2E management contro Supabase locale, `NEXT_PUBLIC_APP_SURFACE=management`, ref `local`, `MANAGEMENT_MODE=read_only`;
 - nessun `SUPABASE_SECRET_KEY`, secret Stripe/Resend/AI nel web server;
 - credenziale admin locale soltanto al global setup, che rifiuta non-loopback;
 - suite seriale su porta dedicata;
-- build storefront e management in production mode con ambienti espliciti;
+- il web server Playwright management parte con `pnpm dev:management` e non con il server root;
+- build storefront e management in production mode tramite `build:storefront` e `build:management`, con working directory/output distinti e ambienti espliciti;
 - build management con `NEXT_PUBLIC_SUPABASE_URL=https://ci-management.supabase.co`, `NEXT_PUBLIC_EXPECTED_SUPABASE_PROJECT_REF=ci-management`, `MANAGEMENT_ORIGIN=https://management-ci.invalid` e `STOREFRONT_ORIGIN=https://storefront-ci.invalid`, senza eccezioni loopback;
 - pagine dinamiche gestionali che non interrogano il DB durante la build;
+- boundary checker, manifest reale management, confronto dei due manifest e prova bidirezionale `verify:build-independence` sono gate CI obbligatori;
+- un job build storefront e un job build management invocano soltanto il proprio comando; gli errori sentinella dimostrano che i sorgenti esclusivi non attraversano il confine;
 - workflow senza credenziali Supabase remote né comandi link/push.
 
 ```bash
@@ -800,21 +1114,36 @@ Gli E2E provano: assenza signup; customer/inattivo escluso; enrollment e challen
 "test:e2e:management": "playwright test --config playwright.management.config.ts"
 ```
 
-Se il nome del config storefront esistente differisce, usare il path reale mantenendo il nome script richiesto. Eseguire il browser gate management dopo reset vuoto e setup fixture. Costruire una volta storefront e una volta management con i valori remoti fittizi concordanti sopra; nessun override loopback in `NODE_ENV=production`.
+`playwright.management.config.ts` usa `pnpm dev:management`, base URL/porta dedicate e non carica config root. Eseguire il browser gate management dopo reset vuoto e setup fixture. Costruire una volta storefront e una volta management con i valori remoti fittizi concordanti sopra; nessun override loopback in `NODE_ENV=production`. Dopo entrambe le build eseguire `verify:management-manifest` e `verify:manifest-isolation`.
 
 - [ ] **Step 5: Sostituire la guida di deployment obsoleta**
 
-I runbook separano variabili per storefront, client/server management, workstation rehearsal e CI; dichiarano un unico progetto Supabase produttivo e nessuna sincronizzazione DB. Il rollout comprende staging sanificato, owner sintetici, MFA, rehearsal/backup, migrazione additiva con flag false, esposizione remota del solo schema `management_api` nelle impostazioni Data API (verificando che `private` resti escluso), deploy separato, smoke test, attivazione esplicita di `read_access` e riconciliazione.
+I runbook separano variabili per storefront, client/server management, workstation rehearsal e CI; dichiarano un unico progetto Supabase produttivo e nessuna sincronizzazione DB. Vercel storefront usa la root del repository e `pnpm build:storefront`; Vercel management usa `apps/management` come Root Directory e lo script locale `pnpm build`. La CI dalla root usa `pnpm build:management`; nessun progetto può usare il comando dell'altra app.
+
+Poiché `apps/management` importa `packages/runtime-contract` e `packages/data-contract` esterni alla propria Root Directory, il runbook richiede di abilitare nel progetto Vercel management **Include source files outside of the Root Directory** e di conservarne evidenza nello smoke test. Senza questa opzione il deploy deve fermarsi, non copiare i package dentro l'app. La procedura segue la [FAQ ufficiale Vercel per monorepo](https://vercel.com/docs/monorepos/monorepo-faq) e fissa `pnpm@10.34.6` in accordo con la [documentazione Vercel sui package manager](https://vercel.com/docs/package-managers).
+
+Il rollout comprende staging sanificato, owner sintetici, MFA, rehearsal/backup, migrazione additiva con flag false, esposizione remota del solo schema `management_api` nelle impostazioni Data API (verificando che `private` resti escluso), deploy separato, smoke test, attivazione esplicita di `read_access` e riconciliazione.
 
 Il runbook impone `LEGACY_ADMIN_MODE=enabled` per tutta questa fase e descrive `redirect` soltanto come gate futuro, dopo parità dei moduli e un piano dedicato. Il rollback disabilita `read_access` e ferma il deployment gestionale senza toccare `/admin` o il commercio storefront.
 
 - [ ] **Step 6: Eseguire il contratto CI/E2E**
 
 ```bash
+corepack enable
+corepack prepare pnpm@10.34.6 --activate
+pnpm --version
+pnpm install --frozen-lockfile
 pnpm exec vitest run tests/unit/supabase-ci-workflow.test.ts
+pnpm check:workspace-boundaries
+pnpm lint
+pnpm verify:build-independence
 pnpm test:e2e:management
 pnpm test:e2e:admin
 pnpm test:e2e:storefront
+pnpm build:storefront
+pnpm build:management
+pnpm verify:management-manifest
+pnpm verify:manifest-isolation
 ```
 
 Atteso: PASS sullo stack Docker locale e fixture pulite al termine.
@@ -822,55 +1151,65 @@ Atteso: PASS sullo stack Docker locale e fixture pulite al termine.
 - [ ] **Step 7: Committare CI e runbook**
 
 ```bash
-git add playwright.management.config.ts tests/e2e/management .github/workflows/supabase-database-ci.yml tests/unit/supabase-ci-workflow.test.ts package.json docs/operations/management-cloud-environment.md docs/operations/management-cloud-rollout.md docs/operations/management-cloud-smoke-test.md docs/operations/gestionale-online.md docs/operations/geardrop-beta.md
+git add playwright.management.config.ts tests/e2e/management scripts/verify-management-build-manifest.ts scripts/verify-build-manifest-isolation.ts .github/workflows/supabase-database-ci.yml tests/unit/supabase-ci-workflow.test.ts package.json docs/operations/management-cloud-environment.md docs/operations/management-cloud-rollout.md docs/operations/management-cloud-smoke-test.md docs/operations/gestionale-online.md docs/operations/geardrop-beta.md
 git commit -m "test: gate independent management deployment"
 ```
 
 ---
 
-### Task 9: Verifica finale, review e stop gate di rollout
+### Task 10: Verifica finale, review e stop gate di rollout
 
 **File:**
 
-- Verifica: tutti i file modificati nei Task 1–8
+- Verifica: tutti i file modificati nei Task 1–9
 - Aggiorna se cambiano le evidenze: `docs/operations/management-cloud-rollout.md`
 - Crea solo localmente, non committare: `artifacts/management-foundation-verification/`
 
 - [ ] **Step 1: Eseguire il gate database completo da stato pulito**
 
 ```bash
+corepack enable
+corepack prepare pnpm@10.34.6 --activate
+pnpm --version
+pnpm install --frozen-lockfile
 pnpm db:reset
 pnpm db:test
 pnpm db:test:upgrades
 pnpm db:lint
 pnpm db:types
-git diff --exit-code -- src/lib/supabase/database.types.ts
+git diff --exit-code -- packages/data-contract/src/database.types.ts src/lib/supabase/database.types.ts
 ```
 
-Atteso: pgTAP incluso 049, upgrade, lint e type drift tutti verdi per `public,management_api`.
+Atteso: `pnpm --version` restituisce `10.34.6`; install frozen, pgTAP incluso 049, upgrade, lint e type drift sono tutti verdi per `public,management_api`.
 
 - [ ] **Step 2: Eseguire il gate applicativo completo**
 
 ```bash
-pnpm lint
-pnpm typecheck
 pnpm test
+pnpm check:workspace-boundaries
+pnpm lint
+pnpm typecheck:storefront
+pnpm typecheck:management
 pnpm test:e2e:public
 pnpm exec playwright test --config playwright.supabase-public.config.ts
 pnpm test:e2e:admin
 pnpm test:e2e:storefront
 pnpm test:e2e:management
-pnpm build
+pnpm build:storefront
+pnpm build:management
+pnpm verify:management-manifest
+pnpm verify:manifest-isolation
+pnpm verify:build-independence
 ```
 
-Eseguire inoltre la build management production-mode documentata con URL/ref remoti fittizi concordanti e origin `.invalid`. Atteso: nessun failure ignorato, pass dipendente da retry o secret in output.
+`pnpm lint` deve espandersi esattamente in `lint:storefront`, `lint:shared` e `lint:management`, senza sovrapposizioni: il gate finale copre quindi anche `packages/runtime-contract` e `packages/data-contract`. La build management usa il profilo production-mode documentato con URL/ref remoti fittizi concordanti e origin `.invalid`; la build storefront usa il proprio profilo e mantiene `LEGACY_ADMIN_MODE=enabled`. Atteso: nessun failure ignorato, pass dipendente da retry o secret in output. I due manifest provengono da output distinti, il manifest management rispetta l'allowlist e la prova sentinella passa in entrambe le direzioni.
 
 - [ ] **Step 3: Ripetere i controlli negativi sicurezza/privacy**
 
 Ripetere i cinque Focus della revisione e i negativi dei sei flag non attivabili. Conservare soltanto riepiloghi redatti e hash.
 
 ```bash
-rg -n "(service_role|SUPABASE_SECRET_KEY|STRIPE_SECRET_KEY|REHEARSAL_BACKUP_PASSPHRASE|postgresql://[^:]+:[^*])" src public docs tests scripts .github
+rg -n "(service_role|SUPABASE_SECRET_KEY|STRIPE_SECRET_KEY|REHEARSAL_BACKUP_PASSPHRASE|postgresql://[^:]+:[^*])" src apps packages public docs tests scripts .github
 git diff --check
 git status --short
 ```
@@ -879,7 +1218,7 @@ Atteso: soltanto nomi variabile/riferimenti documentali intenzionali; nessuna cr
 
 - [ ] **Step 4: Richiedere code review fresca**
 
-Usare `superpowers:requesting-code-review` con specifica e piano. Il reviewer verifica copertura, Focus, RLS/AAL2, `management_api`, confine deployment, privacy staging e assenza di mutazioni nella superficie prodotto. Correggere i finding e ripetere gate focalizzati e completi.
+Usare `superpowers:requesting-code-review` con specifica e piano. Il reviewer verifica copertura, Focus, RLS/AAL2, `management_api`, confine runtime e fisico, package neutrali, manifest isolati, privacy staging e assenza di mutazioni nella superficie prodotto. Correggere i finding e ripetere gate focalizzati e completi.
 
 - [ ] **Step 5: Passare le evidenze al sub-agente `editor`**
 
@@ -887,15 +1226,15 @@ Prima di qualsiasi consegna all'utente, delegare all'`editor` il gate finale su 
 
 - [ ] **Step 6: Fermarsi prima delle operazioni remote e presentare evidenze**
 
-Non creare ruolo produzione, applicare migrazioni remote, modificare gli schema esposti della Data API, importare staging, distribuire Vercel, modificare DNS o attivare `read_access`. Presentare matrice verde, diff migrazione e conteggio pgTAP, prova target/route fence, hash drill backup/restore, report sanitizer, rischi residui e input operatore. Specificare che `/admin` rimane abilitato.
+Non creare ruolo produzione, applicare migrazioni remote, modificare gli schema esposti della Data API, importare staging, distribuire Vercel, modificare DNS o attivare `read_access`. Presentare matrice verde, diff migrazione e conteggio pgTAP, prova target/route fence, manifest delle due app, prova sentinella bidirezionale, hash drill backup/restore, report sanitizer, rischi residui e input operatore. Specificare che `/admin` rimane abilitato.
 
 - [ ] **Step 7: Eseguire il gate staging remoto solo dopo approvazione esplicita**
 
-Seguire il runbook: ruolo produzione read-only autorizzato, backup cifrato verificato, restore locale, sanificazione, verifica, import sul ref staging confermato, esposizione del solo `management_api`, owner sintetici, deploy staging e smoke/E2E. Ogni mismatch ferma il rollout.
+Seguire il runbook: ruolo produzione read-only autorizzato, backup cifrato verificato, restore locale, sanificazione, verifica, import sul ref staging confermato, esposizione del solo `management_api`, owner sintetici, deploy staging dall'app `apps/management` e smoke/E2E. Prima della build remota verificare dalle impostazioni/evidenze Vercel che **Include source files outside of the Root Directory** sia attivo e che i log usino pnpm 10.34.6 risolvendo entrambi i package workspace esterni. Verificare nuovamente il manifest dell'artifact distribuito; ogni mismatch ferma il rollout.
 
 - [ ] **Step 8: Fermarsi di nuovo prima dell'attivazione produzione**
 
-Dopo nuova approvazione: backup fresco, migrazione additiva con flag false, configurazione Data API con `management_api` esposto e `private` escluso, deploy management in `read_only`, smoke login/MFA/organizzazione/route fence, attivazione `read_access` owner+AAL2 e riconciliazione campione al 100%. `LEGACY_ADMIN_MODE` resta `enabled`; non eseguire il ramo `redirect`.
+Dopo nuova approvazione: backup fresco, migrazione additiva con flag false, configurazione Data API con `management_api` esposto e `private` escluso, conferma dell'opzione Vercel **Include source files outside of the Root Directory**, deploy management con Root Directory `apps/management` e pnpm 10.34.6 in `read_only`, verifica manifest artifact, smoke login/MFA/organizzazione/route fence, attivazione `read_access` owner+AAL2 e riconciliazione campione al 100%. `LEGACY_ADMIN_MODE` resta `enabled`; non eseguire il ramo `redirect`.
 
 Se un controllo fallisce, disabilitare `read_access` e fermare il deployment gestionale. Lasciare commercio e `/admin` invariati; non eliminare migrazioni additive o audit.
 
@@ -911,8 +1250,17 @@ Non committare evidenze con identificativi ambiente, contenuti database, manifes
 ## Definizione di completamento
 
 - Storefront, autenticazione cliente, checkout e webhook restano verdi.
-- Il gestionale è un deployment separato con URL puliti e nessuna dipendenza da pagine/componenti legacy admin.
+- Lo storefront resta una app Next alla root; il gestionale è una seconda app Next in `apps/management`, con package, App Router, config, tsconfig, build output e deployment propri.
+- Il monorepo dichiara `packageManager: pnpm@10.34.6`; install locali, CI e build Vercel verificano la stessa versione tramite Corepack e lockfile frozen.
+- Il lint aggregato copre una sola volta root/storefront, `packages/runtime-contract`, `packages/data-contract` e `apps/management`; la CI non può saltare i package condivisi.
+- Vercel management usa Root Directory `apps/management` con **Include source files outside of the Root Directory** abilitato e verificato, così i package workspace esterni fanno parte dell'artifact.
+- La root rifiuta `NEXT_PUBLIC_APP_SURFACE=management` con `GD_ROOT_MANAGEMENT_BUILD_UNSUPPORTED` e non può più produrre un artifact che si dichiara gestionale.
+- Un errore esclusivo storefront non fallisce `build:management` e un errore esclusivo management non fallisce `build:storefront`; un errore in un package condiviso può fallire entrambi.
+- Il boundary checker risolve gli import e impedisce a `apps/management` di importare route, configurazione, API o componenti root; sono ammessi soltanto package workspace neutrali dichiarati.
 - Il deployment management non serve storefront, `/admin` o route business API/webhook.
+- Le clean routes sono file reali di `apps/management/src/app`; il target non contiene `MANAGEMENT_REWRITES`, `/gestionale` o import degli helper Supabase root.
+- Client browser, server e proxy Supabase SSR sono posseduti dall'app management, validano l'ambiente prima dell'uso e propagano correttamente i cookie request/response.
+- I manifest reali sono distinti: management contiene soltanto route allowlisted, mentre `/admin`, checkout e webhook appartengono esclusivamente all'artifact storefront.
 - Il mismatch del target remoto fallisce prima di qualsiasi query dati.
 - L'accesso richiede profilo e membership attivi; il ruolo è specifico dell'organizzazione.
 - Owner e staff con fattore verificato non possono aggirare AAL2/challenge.
@@ -926,6 +1274,6 @@ Non committare evidenze con identificativi ambiente, contenuti database, manifes
 - Backup sempre eseguito anche senza migrazioni pendenti, cifrato, autenticato, verificato, ripristinato e gestito per retention.
 - L'artifact staging supera la verifica zero-PII/zero-outbound prima dell'export.
 - Global setup E2E crea e pulisce fixture business deterministiche dopo reset no-seed.
-- Unit, pgTAP, upgrade, lint, typecheck, E2E storefront/admin/management e doppia build production-mode passano.
+- Unit, pgTAP, upgrade, lint/typecheck app-specifici, E2E storefront/admin/management, prova sentinella bidirezionale e doppia build production-mode passano.
 - Code review e gate finale del sub-agente `editor` risultano PASS prima della consegna utente.
 - I runbook documentano deploy, smoke test, rollback, perdita MFA, retention, caveat JWT condiviso e futura soglia per il redirect legacy.
