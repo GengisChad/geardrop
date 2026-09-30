@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
-import { gestionaleRedirectSource, isGestionaleOnly } from "./src/lib/app-mode";
+import { readDeploymentContract } from "./src/lib/app-mode";
+import { MANAGEMENT_REWRITES } from "./src/lib/management/routes";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -12,19 +13,31 @@ const nextConfig: NextConfig = {
   },
   typedRoutes: true,
   async redirects() {
-    // The management app on its own deployment answers /admin only: every shop page leads there.
-    if (isGestionaleOnly()) {
-      return [{ source: gestionaleRedirectSource(), destination: "/admin", permanent: false }];
-    }
+    if (readDeploymentContract().surface === "management") return [];
     // Glory Valkerion LF was briefly renamed "Glory Valkyrie"; keep those links working. Temporary, so
     // browsers that cached the earlier opposite redirect do not keep a permanent loop.
     return [
       { source: "/prodotto/glory-valkyrie-lf", destination: "/prodotto/glory-valkerion-lf", permanent: false },
     ];
   },
+  async rewrites() {
+    if (readDeploymentContract().surface !== "management") return [];
+    return [
+      ...Object.entries(MANAGEMENT_REWRITES).map(([source, destination]) => ({ source, destination })),
+      { source: "/mfa/:path*", destination: "/gestionale/mfa/:path*" },
+    ];
+  },
   async headers() {
-    // A private tool: never in a search engine.
-    return isGestionaleOnly() ? [{ source: "/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] }] : [];
+    if (readDeploymentContract().surface !== "management") return [];
+    const privateHeaders = [
+      { key: "X-Robots-Tag", value: "noindex, nofollow" },
+      { key: "Cache-Control", value: "private, no-store" },
+    ];
+    return [
+      ...Object.keys(MANAGEMENT_REWRITES).map((source) => ({ source, headers: privateHeaders })),
+      { source: "/mfa/:path*", headers: privateHeaders },
+      { source: "/auth/callback", headers: privateHeaders },
+    ];
   },
   experimental: {
     optimizePackageImports: ["lucide-react", "framer-motion"],
