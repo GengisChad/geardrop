@@ -45,7 +45,7 @@ function origin(value: string | undefined, error: string): string {
 }
 
 export function readDeploymentContract(env: Env = process.env): DeploymentContract {
-  const rawSurface = env.NEXT_PUBLIC_APP_SURFACE?.trim() || "storefront";
+  const rawSurface = env.NEXT_PUBLIC_APP_SURFACE === undefined ? "storefront" : env.NEXT_PUBLIC_APP_SURFACE.trim();
   if (rawSurface !== "storefront" && rawSurface !== "management") throw new Error("GD_APP_SURFACE_INVALID");
 
   const rawMode = env.MANAGEMENT_MODE?.trim() || "read_only";
@@ -59,7 +59,8 @@ export function readDeploymentContract(env: Env = process.env): DeploymentContra
     ? origin(env.MANAGEMENT_ORIGIN?.trim(), "GD_MANAGEMENT_ORIGIN_REQUIRED")
     : null;
   const expectedSupabaseProjectRef = env.NEXT_PUBLIC_EXPECTED_SUPABASE_PROJECT_REF?.trim() || null;
-  if (rawSurface === "management" && !expectedSupabaseProjectRef) {
+  if (rawSurface === "management" &&
+      (!expectedSupabaseProjectRef || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(expectedSupabaseProjectRef))) {
     throw new Error("GD_MANAGEMENT_PROJECT_REF_REQUIRED");
   }
 

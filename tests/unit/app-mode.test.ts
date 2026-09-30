@@ -32,9 +32,12 @@ describe("deployment contract", () => {
 
   it.each([
     [{ NEXT_PUBLIC_APP_SURFACE: "internal" }, "GD_APP_SURFACE_INVALID"],
+    [{ NEXT_PUBLIC_APP_SURFACE: "" }, "GD_APP_SURFACE_INVALID"],
+    [{ NEXT_PUBLIC_APP_SURFACE: "  " }, "GD_APP_SURFACE_INVALID"],
     [{ ...managementEnv, MANAGEMENT_MODE: "disabled" }, "GD_MANAGEMENT_MODE_INVALID"],
     [{ ...managementEnv, MANAGEMENT_ORIGIN: "" }, "GD_MANAGEMENT_ORIGIN_REQUIRED"],
     [{ ...managementEnv, NEXT_PUBLIC_EXPECTED_SUPABASE_PROJECT_REF: "" }, "GD_MANAGEMENT_PROJECT_REF_REQUIRED"],
+    [{ ...managementEnv, NEXT_PUBLIC_EXPECTED_SUPABASE_PROJECT_REF: "foo.bar" }, "GD_MANAGEMENT_PROJECT_REF_REQUIRED"],
   ])("rejects invalid deployment input with %s", (env, error) => {
     expect(() => deployment.readDeploymentContract(env)).toThrow(error);
   });
