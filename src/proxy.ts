@@ -1,9 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { classifyRequest, readDeploymentContract } from "@/lib/app-mode";
+import { classifyRequest, assertStorefrontApplicationSurface } from "@/lib/app-mode";
 import { refreshSupabaseSession } from "@/lib/supabase/proxy";
 
 export function proxy(request: NextRequest) {
-  const contract = readDeploymentContract();
+  const contract = assertStorefrontApplicationSurface();
   const disposition = classifyRequest(request.nextUrl.pathname, request.method, contract);
 
   if (disposition.kind === "not_found") return new NextResponse(null, { status: 404 });
@@ -14,15 +14,13 @@ export function proxy(request: NextRequest) {
   }
 
   const pathname = request.nextUrl.pathname;
-  const refresh = contract.surface === "management"
-    ? disposition.kind === "rewrite" || pathname === "/auth/callback"
-    : pathname === "/admin" || pathname.startsWith("/admin/") ||
+  const refresh = pathname === "/admin" || pathname.startsWith("/admin/") ||
       pathname === "/account" || pathname.startsWith("/account/") ||
       pathname === "/auth" || pathname.startsWith("/auth/") || pathname === "/api/preview";
   return refresh ? refreshSupabaseSession(request) : NextResponse.next({ request });
 }
 
 export const config = {
-  // Classification must run before the session refresh for every management request.
+  // Storefront owns legacy admin, account, checkout and webhooks.
   matcher: ["/:path*"],
 };

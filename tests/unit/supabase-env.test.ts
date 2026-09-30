@@ -22,7 +22,7 @@ describe("Supabase environment", () => {
     );
   });
 
-  it("validates the management target when reading public Supabase settings", () => {
+  it("refuses management clients from the storefront environment reader", () => {
     const source = {
       NEXT_PUBLIC_APP_SURFACE: "management",
       MANAGEMENT_ORIGIN: "https://management.example",
@@ -31,7 +31,7 @@ describe("Supabase environment", () => {
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_never-print-this",
       NODE_ENV: "production",
     };
-    expect(() => readPublicSupabaseEnv(source)).toThrow(/^GD_MANAGEMENT_PROJECT_MISMATCH$/);
+    expect(() => readPublicSupabaseEnv(source)).toThrow(/^GD_ROOT_MANAGEMENT_BUILD_UNSUPPORTED$/);
   });
 
   it("keeps a mock storefront free of Supabase deployment requirements", () => {

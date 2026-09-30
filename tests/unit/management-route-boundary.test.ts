@@ -1,113 +1,60 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import * as deployment from "@/lib/app-mode";
-import * as routes from "@/lib/management/routes";
-import { proxy } from "@/proxy";
+import { proxy as storefrontProxy } from "@/proxy";
 import robots from "@/app/robots";
 import nextConfig from "../../next.config";
 
 const managementEnv = {
-  NEXT_PUBLIC_APP_SURFACE: "management",
-  MANAGEMENT_ORIGIN: "https://management.example",
-  STOREFRONT_ORIGIN: "https://shop.example",
-  NEXT_PUBLIC_EXPECTED_SUPABASE_PROJECT_REF: "project-abc",
+  NEXT_PUBLIC_APP_SURFACE: "management", MANAGEMENT_ORIGIN: "https://management-ci.invalid",
+  STOREFRONT_ORIGIN: "https://storefront-ci.invalid", NEXT_PUBLIC_EXPECTED_SUPABASE_PROJECT_REF: "ci-management",
+  NEXT_PUBLIC_SUPABASE_URL: "https://ci-management.supabase.co", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "ci-publishable-key",
 };
+const contract = () => deployment.readDeploymentContract(managementEnv);
+afterEach(() => { vi.unstubAllEnvs(); vi.resetModules(); });
 
-function managementContract() {
-  return deployment.readDeploymentContract(managementEnv);
-}
-
-afterEach(() => vi.unstubAllEnvs());
-
-describe("management route classification", () => {
-  it.each([
-    ["/", "/gestionale"],
-    ["/login", "/gestionale/login"],
-    ["/logout", "/gestionale/logout"],
-    ["/account", "/gestionale/account"],
-    ["/settings/security", "/gestionale/settings/security"],
-    ["/mfa/enroll", "/gestionale/mfa/enroll"],
-    ["/mfa/challenge", "/gestionale/mfa/challenge"],
-  ])("rewrites clean %s to internal %s", (pathname, internal) => {
-    expect(routes.managementInternalPath(pathname)).toBe(internal);
-    expect(deployment.classifyRequest(pathname, "GET", managementContract())).toEqual({ kind: "rewrite", destination: internal });
+describe("direct management route ownership", () => {
+  it.each(["/", "/login", "/logout", "/account", "/settings/security", "/mfa/enroll", "/mfa/challenge", "/auth/callback"])("allows clean %s without rewriting", path => {
+    expect(deployment.classifyManagementRequest(path, "GET", contract())).toEqual({ kind: "allow" });
   });
-
-  it.each(["/auth/callback", "/_next/static/chunks/app.js", "/_next/image", "/management.webmanifest",
-    "/management-sw.js", "/management-offline.html", "/icons/gestionale-192.png", "/favicon.ico", "/robots.txt"])
-  ("allows only needed shared/management assets: %s", (pathname) => {
-    expect(deployment.classifyRequest(pathname, "GET", managementContract())).toEqual({ kind: "allow" });
+  it.each(["/_next/static/chunks/app.js", "/_next/image", "/management.webmanifest", "/management-sw.js", "/management-offline.html", "/icons/gestionale-192.png", "/favicon.ico", "/robots.txt"])("allows management infrastructure: %s", path => {
+    expect(deployment.classifyManagementRequest(path, "GET", contract())).toEqual({ kind: "allow" });
+    expect(deployment.classifyManagementRequest(path, "POST", contract())).toEqual({ kind: "not_found" });
   });
-
-  it.each(["/negozio", "/negozio/beyblade-x", "/prodotto/cobalt-drake", "/carrello", "/ricerca", "/assistenza"])
-  ("sends explicit shop GET/HEAD paths to the storefront: %s", (pathname) => {
-    for (const method of ["GET", "HEAD"]) {
-      expect(deployment.classifyRequest(pathname, method, managementContract())).toEqual({
-        kind: "redirect", destination: `https://shop.example${pathname}`,
-      });
-    }
+  it.each(["/negozio", "/prodotto/item", "/carrello", "/ricerca", "/assistenza"])("redirects readable shop paths: %s", path => {
+    expect(deployment.classifyManagementRequest(path, "HEAD", contract())).toEqual({ kind: "redirect", destination: "https://storefront-ci.invalid" + path });
+    expect(deployment.classifyManagementRequest(path, "POST", contract())).toEqual({ kind: "not_found" });
   });
-
-  it.each([
-    ["/admin", "GET", { kind: "redirect", destination: "https://management.example/" }],
-    ["/admin/ordini", "HEAD", { kind: "redirect", destination: "https://management.example/" }],
-    ["/api/stripe/webhook", "POST", { kind: "not_found" }],
-    ["/api/preview", "GET", { kind: "not_found" }],
-    ["/checkout", "GET", { kind: "not_found" }],
-    ["/checkout/successo", "HEAD", { kind: "not_found" }],
-    ["/unknown", "POST", { kind: "not_found" }],
-    ["/products/x.webp", "GET", { kind: "not_found" }],
-    ["/manifest.webmanifest", "GET", { kind: "not_found" }],
-    ["/gestionale", "GET", { kind: "not_found" }],
-    ["/sitemap.xml", "GET", { kind: "not_found" }],
-  ] as const)("blocks or redirects %s %s", (pathname, method, expected) => {
-    expect(deployment.classifyRequest(pathname, method, managementContract())).toEqual(expected);
+  it.each(["/api/stripe/webhook", "/api/preview", "/checkout", "/unknown", "/gestionale", "/products/x.webp", "/sitemap.xml"])("blocks application paths not owned here: %s", path => {
+    for (const method of ["GET", "POST"]) expect(deployment.classifyManagementRequest(path, method, contract())).toEqual({ kind: "not_found" });
+  });
+  it("keeps admin GET redirects and blocks writes on the management origin", () => {
+    expect(deployment.classifyManagementRequest("/admin/orders", "GET", contract())).toEqual({ kind: "redirect", destination: "https://management-ci.invalid/" });
+    expect(deployment.classifyManagementRequest("/admin/orders", "POST", contract())).toEqual({ kind: "not_found" });
+  });
+  it("allows application POST except callback and rejects unsupported methods", () => {
+    expect(deployment.classifyManagementRequest("/logout", "POST", contract())).toEqual({ kind: "allow" });
+    expect(deployment.classifyManagementRequest("/auth/callback", "POST", contract())).toEqual({ kind: "not_found" });
+    expect(deployment.classifyManagementRequest("/login", "DELETE", contract())).toEqual({ kind: "not_found" });
   });
 });
 
-describe("deployment configuration and proxy", () => {
-  it("keeps storefront redirects and robots when no surface is selected", async () => {
-    expect(await nextConfig.redirects?.()).toEqual([
-      { source: "/prodotto/glory-valkyrie-lf", destination: "/prodotto/glory-valkerion-lf", permanent: false },
-    ]);
-    expect(await nextConfig.headers?.()).toEqual([]);
+describe("application-specific config consumers", () => {
+  it("preserves storefront redirects, robots and its legacy routes", async () => {
+    expect(await nextConfig.redirects?.()).toEqual([{ source: "/prodotto/glory-valkyrie-lf", destination: "/prodotto/glory-valkerion-lf", permanent: false }]);
+    expect(nextConfig.rewrites).toBeUndefined();
     expect(robots()).toHaveProperty("sitemap");
+    for (const path of ["/admin", "/checkout", "/api/stripe/webhook"]) expect((await storefrontProxy(new NextRequest("https://storefront-ci.invalid" + path))).status).toBe(200);
   });
-
-  it("registers management rewrites and private noindex headers", async () => {
+  it("enforces private noindex headers in the independent config", async () => {
     for (const [name, value] of Object.entries(managementEnv)) vi.stubEnv(name, value);
-    const rewrites = await nextConfig.rewrites?.();
-    expect(rewrites).toEqual(expect.arrayContaining([
-      { source: "/", destination: "/gestionale" },
-      { source: "/login", destination: "/gestionale/login" },
-      { source: "/mfa/:path*", destination: "/gestionale/mfa/:path*" },
-    ]));
-    expect(await nextConfig.headers?.()).toEqual(expect.arrayContaining([
-      { source: "/", headers: [
-        { key: "X-Robots-Tag", value: "noindex, nofollow" },
-        { key: "Cache-Control", value: "private, no-store" },
-      ] },
-      { source: "/mfa/:path*", headers: [
-        { key: "X-Robots-Tag", value: "noindex, nofollow" },
-        { key: "Cache-Control", value: "private, no-store" },
-      ] },
-    ]));
-    expect(robots()).toEqual({ rules: [{ userAgent: "*", disallow: "/" }] });
-  });
-
-  it("returns 404 before Supabase refresh on the management webhook", async () => {
-    for (const [name, value] of Object.entries(managementEnv)) vi.stubEnv(name, value);
-    const response = await proxy(new NextRequest("https://management.example/api/stripe/webhook", { method: "POST" }));
-    expect(response.status).toBe(404);
-  });
-
-  it("redirects management shop paths and keeps the storefront admin available", async () => {
-    for (const [name, value] of Object.entries(managementEnv)) vi.stubEnv(name, value);
-    const managementResponse = await proxy(new NextRequest("https://management.example/negozio", { method: "HEAD" }));
-    expect(managementResponse.status).toBe(307);
-    expect(managementResponse.headers.get("location")).toBe("https://shop.example/negozio");
-    vi.stubEnv("NEXT_PUBLIC_APP_SURFACE", "storefront");
-    const storefrontResponse = await proxy(new NextRequest("https://shop.example/admin"));
-    expect(storefrontResponse.status).toBe(200);
+    const { default: config } = await import("../../apps/management/next.config");
+    expect(config.rewrites).toBeUndefined();
+    expect(await config.headers?.()).toEqual([{ source: "/:path*", headers: [
+      { key: "X-Robots-Tag", value: "noindex, nofollow" }, { key: "Cache-Control", value: "private, no-store" },
+    ] }]);
+    const { default: managementRobots } = await import("../../apps/management/src/app/robots");
+    expect(managementRobots()).toEqual({ rules: [{ userAgent: "*", disallow: "/" }] });
+    expect(() => storefrontProxy(new NextRequest("https://storefront-ci.invalid/admin"))).toThrow("GD_ROOT_MANAGEMENT_BUILD_UNSUPPORTED");
   });
 });

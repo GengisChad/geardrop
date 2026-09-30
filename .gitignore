@@ -6,7 +6,8 @@ node_modules/
 # next
 /.next/
 /out/
-next-env.d.ts
+/next-env.d.ts
+/apps/management/.next/
 
 # production
 /build

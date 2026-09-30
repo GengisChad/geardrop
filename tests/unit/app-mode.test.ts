@@ -10,6 +10,12 @@ const managementEnv = {
 };
 
 describe("deployment contract", () => {
+  it("asserts application identity independently from deployment parsing", () => {
+    expect(deployment.assertStorefrontApplicationSurface({}).surface).toBe("storefront");
+    expect(() => deployment.assertStorefrontApplicationSurface(managementEnv)).toThrow("GD_ROOT_MANAGEMENT_BUILD_UNSUPPORTED");
+    expect(() => deployment.assertManagementApplicationSurface({})).toThrow("GD_MANAGEMENT_SURFACE_REQUIRED");
+    expect(deployment.assertManagementApplicationSurface(managementEnv).surface).toBe("management");
+  });
   it("keeps the existing admin component's surface helper compatible", () => {
     expect(deployment.isGestionaleOnly(managementEnv)).toBe(true);
     expect(deployment.isGestionaleOnly({})).toBe(false);

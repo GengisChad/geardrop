@@ -40,7 +40,7 @@ function optionalOrganizationRpcsFrom(source: string): ReadonlySet<string> {
 }
 
 function optionalOrganizationRpcs(): ReadonlySet<string> {
-  return optionalOrganizationRpcsFrom(read("src/lib/supabase/database.types.ts"));
+  return optionalOrganizationRpcsFrom(read("packages/data-contract/src/database.types.ts"));
 }
 
 function sourceFiles(directory: string): string[] {

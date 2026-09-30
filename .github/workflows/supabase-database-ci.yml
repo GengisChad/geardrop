@@ -22,17 +22,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 11.13.1
-          run_install: false
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24.16.0
-          cache: pnpm
+
+      - name: Activate exact pnpm version
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.34.6 --activate
+          test "$(pnpm --version)" = "10.34.6"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -81,7 +80,7 @@ jobs:
           if-no-files-found: error
 
       - name: Verify committed database types
-        run: diff --unified src/lib/supabase/database.types.ts artifacts/database.types.ts
+        run: diff --unified packages/data-contract/src/database.types.ts artifacts/database.types.ts
 
       - name: Run unit tests
         run: pnpm test
@@ -128,11 +127,33 @@ jobs:
       - name: Lint application
         run: pnpm lint
 
-      - name: Typecheck application
-        run: pnpm typecheck
+      - name: Check workspace boundaries
+        run: pnpm check:workspace-boundaries
 
-      - name: Build application
-        run: pnpm build
+      - name: Typecheck and build storefront
+        run: |
+          pnpm typecheck:storefront
+          pnpm build:storefront
+
+      - name: Typecheck and build management using a fictitious remote target
+        env:
+          NEXT_PUBLIC_APP_SURFACE: management
+          NEXT_PUBLIC_SUPABASE_URL: https://ci-management.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-publishable-key
+          NEXT_PUBLIC_EXPECTED_SUPABASE_PROJECT_REF: ci-management
+          MANAGEMENT_ORIGIN: https://management-ci.invalid
+          STOREFRONT_ORIGIN: https://storefront-ci.invalid
+          MANAGEMENT_MODE: read_only
+          SUPABASE_SECRET_KEY: ""
+        run: |
+          pnpm typecheck:management
+          pnpm build:management
+
+      - name: Verify manifests and bidirectional build independence
+        run: |
+          pnpm verify:management-manifest
+          pnpm verify:manifest-isolation
+          pnpm verify:build-independence
 
       - name: Stop local Supabase stack
         if: always()

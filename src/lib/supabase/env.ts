@@ -1,4 +1,4 @@
-import { assertManagementSupabaseTarget, readDeploymentContract } from "@/lib/app-mode";
+import { assertStorefrontApplicationSurface } from "@/lib/app-mode";
 
 type EnvSource = Record<string, string | undefined>;
 
@@ -42,6 +42,6 @@ export function readPublicSupabaseEnv(source?: EnvSource) {
   };
   const url = requireEnv(resolved, "NEXT_PUBLIC_SUPABASE_URL");
   const publishableKey = requireEnv(resolved, "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
-  assertManagementSupabaseTarget(readDeploymentContract(resolved), url, resolved.NODE_ENV ?? process.env.NODE_ENV);
+  assertStorefrontApplicationSurface(resolved);
   return { url, publishableKey };
 }
