@@ -3,7 +3,7 @@
 --   * Four UX pieces arrive: Hammer Incendio 3-70H, Shadow Shinobi 1-80MN and Wand Wizard 1-60R
 --     as starter packs at 14,90, and Buster Dran 5-70DB as a booster at 12,90 — that one holds
 --     the top alone, with no launcher, which its page states three times over.
---   * Seven starter packs never came and go back to being open pre-orders.
+--   * Seven starter packs never came and leave the catalogue: none of them had sold.
 --   * Reaper Incendio T 4-70K is archived: the shop cannot get it at all. Two buyers had paid for
 --     one and the owner refunded both in Stripe.
 --   * Shatter Horus and Hurricane Enlil come in at 39 each and fall to 12,50, Cobalt Dragoon at 56
@@ -199,21 +199,25 @@ from (values
 ) as seed(slug, price_cents)
 where target.slug = seed.slug;
 
--- The seven that never arrived go back to selling as open pre-orders: no shelf, no allocation,
--- allow_backorder carrying the sale (migration 20260917140000). Their unsold stock is written
--- off so the ledger still explains every number.
+-- The seven that never arrived leave the shop with it. They had been published on 2026-09-29
+-- against an assortment that turned out to be a different one, and none of them ever sold, so
+-- offering them as pre-orders would only advertise goods with no date. Their unsold stock is
+-- written off first, so the ledger still explains every number, and the rows are archived rather
+-- than deleted: a product row is what an order reads back to name what it sold.
 create temporary table hasbro_shortfall on commit drop as
 select id, stock_quantity from public.products
-where slug in ('sword-dran-3-60f', 'helm-knight-3-80n', 'arrow-wizard-4-80b', 'scythe-incendio-4-60t', 'courage-dran-s-6-60v', 'arc-wizard-r-4-55lo', 'dark-perseus-b-6-80w') and stock_quantity > 0;
+where slug in ('sword-dran-3-60f', 'helm-knight-3-80n', 'arrow-wizard-4-80b', 'scythe-incendio-4-60t', 'courage-dran-s-6-60v', 'arc-wizard-r-4-55lo', 'dark-perseus-b-6-80w')
+  and stock_quantity > 0;
 
 insert into public.inventory_movements (product_id, delta, stock_after, reason, note)
 select id, -stock_quantity, 0, 'manual_adjustment'::public.inventory_reason,
-  'Mai arrivati con la spedizione Hasbro del 30/09/2026: tornano in pre-ordine'
+  'Mai arrivati con la spedizione Hasbro del 30/09/2026: ritirati dal catalogo'
 from hasbro_shortfall;
 
 update public.products
-set stock_quantity = 0, availability_override = null, preorder_allocation = 0
-where id in (select id from hasbro_shortfall);
+set publication_status = 'archived'::public.publication_status, active = false, stock_quantity = 0,
+    availability_override = null, preorder_allocation = 0, allow_backorder = false
+where slug in ('sword-dran-3-60f', 'helm-knight-3-80n', 'arrow-wizard-4-80b', 'scythe-incendio-4-60t', 'courage-dran-s-6-60v', 'arc-wizard-r-4-55lo', 'dark-perseus-b-6-80w');
 
 -- Reaper Incendio leaves the shop. Archived rather than deleted: two orders reference it, and
 -- an order must always be able to name what it sold.

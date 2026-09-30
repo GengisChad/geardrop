@@ -173,62 +173,6 @@ export const productImages = {
       alt: "Confezione Beyblade X Shatter Horus 9-65GB con lanciatore e trottola argento e rossa",
     },
   ],
-  "arrow-wizard-4-80b": [
-    {
-      src: "/products/arrow-wizard-4-80b.webp",
-      width: 1000,
-      height: 1000,
-      alt: "Confezione Beyblade X Arrow Wizard 4-80B con trottola dorata e lanciatore",
-    },
-  ],
-  "helm-knight-3-80n": [
-    {
-      src: "/products/helm-knight-3-80n.webp",
-      width: 1000,
-      height: 1000,
-      alt: "Confezione Beyblade X Helm Knight 3-80N con trottola verde e lanciatore",
-    },
-  ],
-  "scythe-incendio-4-60t": [
-    {
-      src: "/products/scythe-incendio-4-60t.webp",
-      width: 1000,
-      height: 1000,
-      alt: "Confezione Beyblade X Scythe Incendio 4-60T con trottola rossa e argento e lanciatore",
-    },
-  ],
-  "sword-dran-3-60f": [
-    {
-      src: "/products/sword-dran-3-60f.webp",
-      width: 1000,
-      height: 1000,
-      alt: "Confezione Beyblade X Sword Dran 3-60F con trottola blu e lanciatore",
-    },
-  ],
-  "dark-perseus-b-6-80w": [
-    {
-      src: "/products/dark-perseus-b-6-80w.webp",
-      width: 1000,
-      height: 1000,
-      alt: "Confezione Beyblade X Dark Perseus B 6-80W con trottola viola e lanciatore",
-    },
-  ],
-  "arc-wizard-r-4-55lo": [
-    {
-      src: "/products/arc-wizard-r-4-55lo.webp",
-      width: 1000,
-      height: 1000,
-      alt: "Confezione Beyblade X Arc Wizard R 4-55LO con trottola giallo lime e lanciatore",
-    },
-  ],
-  "courage-dran-s-6-60v": [
-    {
-      src: "/products/courage-dran-s-6-60v.webp",
-      width: 1000,
-      height: 1000,
-      alt: "Confezione Beyblade X Courage Dran S 6-60V con trottola blu e lanciatore",
-    },
-  ],
   "duo-horus-enlil": [
     {
       src: "/products/duo-horus-enlil.webp",
