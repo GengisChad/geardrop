@@ -29,14 +29,18 @@ function scopedTables(): ReadonlySet<string> {
   return new Set([...registry.matchAll(/\('([a-z_]+)', '([ABCG])'\)/g)].filter((match) => match[2] === "A" || match[2] === "B").map((match) => match[1]!));
 }
 
-function optionalOrganizationRpcs(): ReadonlySet<string> {
-  const types = read("src/lib/supabase/database.types.ts");
-  const functions = types.slice(types.indexOf("Functions: {"));
+function optionalOrganizationRpcsFrom(source: string): ReadonlySet<string> {
+  const normalized = source.replace(/\r\n?/g, "\n");
+  const functions = normalized.slice(normalized.indexOf("Functions: {"));
   return new Set(
     [...functions.matchAll(/\n {6}([a-z_]+): \{\n {8}Args:([\s\S]*?)\n {8}Returns/g)]
       .filter((match) => match[2]!.includes("p_organization_id?:"))
       .map((match) => match[1]!),
   );
+}
+
+function optionalOrganizationRpcs(): ReadonlySet<string> {
+  return optionalOrganizationRpcsFrom(read("src/lib/supabase/database.types.ts"));
 }
 
 function sourceFiles(directory: string): string[] {
@@ -66,7 +70,7 @@ function scan() {
 
   for (const path of sourceFiles("src")) {
     const file = relative(root, join(root, path)).replaceAll("\\", "/");
-    const source = read(path);
+    const source = read(path).replace(/\r\n?/g, "\n");
     const line = (index: number) => source.slice(0, index).split("\n").length;
 
     for (const match of source.matchAll(/\.from\(\s*"([a-z_]+)"\s*\)/g)) {
@@ -96,6 +100,12 @@ function scan() {
 
 describe("organization-scoped queries", () => {
   const result = scan();
+
+  it("parses the optional-company RPC signature with either line ending", () => {
+    const signature = "Functions: {\n      track_storefront_event: {\n        Args: { p_organization_id?: string }\n        Returns: undefined\n      }\n    }";
+    expect([...optionalOrganizationRpcsFrom(signature)]).toEqual(["track_storefront_event"]);
+    expect([...optionalOrganizationRpcsFrom(signature.replace(/\n/g, "\r\n"))]).toEqual(["track_storefront_event"]);
+  });
 
   it("reads the tier registry and the optional-company RPCs", () => {
     expect(result.tables.has("products")).toBe(true);
