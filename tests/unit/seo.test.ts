@@ -63,7 +63,10 @@ describe("search metadata", () => {
       expect(description.length).toBeLessThanOrEqual(160);
       expect(description).toContain("€");
     }
-    expect(productDescription(glory)).toContain("€30,00, pre-ordine");
+    // Whatever the catalogue is selling as a pre-order today, its snippet has to say so.
+    const preorder = PRODUCTS.find((product) => product.stock === "pre-ordine");
+    expect(preorder, "the catalogue has no pre-order to check the wording against").toBeDefined();
+    expect(productDescription(preorder!)).toContain(", pre-ordine");
   });
 });
 
@@ -71,14 +74,15 @@ describe("structured data", () => {
   const glory = PRODUCTS.find((product) => product.slug === "glory-valkerion-lf")!;
 
   it("describes the offer as Google's merchant listings expect", () => {
-    const data = productJsonLd(glory);
+    // Pinned to a pre-order so the availability line is exercised whatever Glory is selling as.
+    const data = productJsonLd({ ...glory, stock: "pre-ordine" });
     expect(data).toMatchObject({
       "@type": "Product",
       url: "https://geardropshop.it/prodotto/glory-valkerion-lf",
       image: ["https://geardropshop.it/products/glory-valkerion-lf.webp"],
       brand: { name: "Hasbro" },
       offers: {
-        price: "30.00",
+        price: (glory.price.amount / 100).toFixed(2),
         priceCurrency: "EUR",
         availability: "https://schema.org/PreOrder",
         itemCondition: "https://schema.org/NewCondition",

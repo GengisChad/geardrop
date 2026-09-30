@@ -33,6 +33,9 @@ describe("infinity starter preorder migration", () => {
     "shatter-horus-9-65gb": 2000,
     "hurricane-enlil-is-7-55t": 2000,
     "saber-samurai-2-70l": 2790,
+    // Halved on 2026-09-30 with the Hasbro shipment; Glory came down the same day.
+    "glory-valkerion-lf": 3000,
+    "cobalt-dragoon-2-60c": 2550,
     "blast-pegasus-a-tr": 2950,
     "drop-attack-battle-set": 4650,
     "sneak-attack-battle-set": 4500,

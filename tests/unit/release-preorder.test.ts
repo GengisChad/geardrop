@@ -96,8 +96,9 @@ describe("prices of 2026-09-22", () => {
   it("carries the owner's new prices", () => {
     const price = (slug: string) => PRODUCTS.find((product) => product.slug === slug)!.price.amount;
     expect(price("strike-dran-4-50ff")).toBe(2300);
-    expect(price("shatter-horus-9-65gb")).toBe(1800);
-    expect(price("hurricane-enlil-is-7-55t")).toBe(1800);
+    // Halved on 2026-09-30, when the Hasbro shipment brought them in at a third of the old cost.
+    expect(price("shatter-horus-9-65gb")).toBe(1250);
+    expect(price("hurricane-enlil-is-7-55t")).toBe(1250);
   });
 
   it("keeps every bundle cheaper than the packs it ships", () => {

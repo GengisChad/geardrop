@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { PRODUCTS } from "@/data/catalog";
+import { PRODUCTS, SHIPPING_FLAT_RATE } from "@/data/catalog";
 import { CHECKOUT_UNAVAILABLE, checkoutErrorMessage } from "@/lib/commerce/checkout-errors";
 import { MAX_QUANTITY_PER_LINE } from "@/lib/commerce/limits";
 import { STRIPE_BLOCKED_NOTICE } from "@/lib/payments/stripe-checkout";
@@ -71,7 +71,9 @@ describe("checkout with Stripe and no order database", () => {
     const [input] = createStripeCheckoutMock.mock.calls[0]!;
     expect(input.origin).toBe("http://localhost:3000");
     expect(input.order).toEqual(order);
-    expect(input.quote.totals.total).toEqual({ amount: 3040, currency: "EUR" });
+    // The cart is one Cobalt Dragoon plus flat shipping; both numbers come from the catalogue.
+    const dragoon = PRODUCTS.find((product) => product.slug === "cobalt-dragoon-2-60c")!.price.amount;
+    expect(input.quote.totals.total).toEqual({ amount: dragoon + SHIPPING_FLAT_RATE, currency: "EUR" });
   });
 
   it("pins the return URL to the canonical origin in production", async () => {
