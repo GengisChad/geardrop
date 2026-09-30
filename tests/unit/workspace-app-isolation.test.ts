@@ -47,7 +47,7 @@ describe("physical Next application ownership", () => {
       }
     }
     for (const pkg of ["next", "react", "react-dom", "@supabase/ssr", "@supabase/supabase-js"]) expect(management.dependencies[pkg]).toBe(root.dependencies[pkg]);
-    expect(root.scripts["db:types"]).toContain("--schema public > packages/data-contract/src/database.types.ts");
+    expect(root.scripts["db:types"]).toContain("--schema public,management_api > packages/data-contract/src/database.types.ts");
   });
   it("rejects a root management deployment before building root routes", async () => {
     const contract = await import("@/lib/app-mode");

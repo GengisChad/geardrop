@@ -34,7 +34,7 @@
     "db:test": "supabase test db --local supabase/tests",
     "db:test:upgrades": "tsx scripts/test-supabase-upgrades.ts",
     "db:lint": "supabase db lint --local --level error --fail-on error",
-    "db:types": "supabase gen types typescript --local --schema public > packages/data-contract/src/database.types.ts && node -e \"const fs = require('node:fs'); const path = 'packages/data-contract/src/database.types.ts'; fs.writeFileSync(path, fs.readFileSync(path, 'utf8').trimEnd() + '\\n');\"",
+    "db:types": "supabase gen types typescript --local --schema public,management_api > packages/data-contract/src/database.types.ts && node -e \"const fs = require('node:fs'); const path = 'packages/data-contract/src/database.types.ts'; fs.writeFileSync(path, fs.readFileSync(path, 'utf8').trimEnd() + '\\n');\"",
     "seed:supabase": "tsx scripts/generate-supabase-seed.ts",
     "stripe:products": "tsx scripts/sync-stripe-products.ts",
     "beta:rehearse": "tsx scripts/rehearse-production-upgrade.ts",

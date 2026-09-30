@@ -70,7 +70,7 @@ jobs:
       - name: Generate database types
         run: |
           mkdir -p artifacts
-          supabase gen types typescript --local --schema public | sed '${/^$/d;}' > artifacts/database.types.ts
+          supabase gen types typescript --local --schema public,management_api | sed '${/^$/d;}' > artifacts/database.types.ts
 
       - name: Upload generated database types
         uses: actions/upload-artifact@v4

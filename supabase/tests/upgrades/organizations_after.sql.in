@@ -1,7 +1,15 @@
 -- Run by scripts/test-supabase-upgrades.ts after organizations_before.sql.in has populated the
 -- pre-organization schema and every later migration has been applied on top of it.
 begin;
-select plan(13);
+select plan(14);
+
+select results_eq(
+  $$select o.slug, count(f.feature)::integer, bool_and(not f.enabled)
+    from public.organizations o join public.organization_management_features f on f.organization_id=o.id
+    group by o.slug order by o.slug$$,
+  $$values ('geardrop'::text,7,true), ('oryvenne'::text,7,true)$$,
+  'populated upgrade adds all seven disabled management flags to both organizations'
+);
 
 create function pg_temp.rows_outside_geardrop(p_table text)
 returns bigint

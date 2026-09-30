@@ -7,6 +7,45 @@ export type Json =
   | Json[]
 
 export type Database = {
+  management_api: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      list_management_features: {
+        Args: { p_organization_id: number }
+        Returns: {
+          enabled: boolean
+          feature: Database["public"]["Enums"]["management_feature"]
+          updated_at: string
+        }[]
+      }
+      set_management_read_access: {
+        Args: {
+          p_enabled: boolean
+          p_expected_updated_at: string
+          p_organization_id: number
+          p_reason: string
+        }
+        Returns: Database["public"]["Tables"]["organization_management_features"]["Row"]
+        SetofOptions: {
+          from: "*"
+          to: "organization_management_features"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       agent_runs: {
@@ -1899,6 +1938,38 @@ export type Database = {
           },
         ]
       }
+      organization_management_features: {
+        Row: {
+          enabled: boolean
+          feature: Database["public"]["Enums"]["management_feature"]
+          organization_id: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          enabled?: boolean
+          feature: Database["public"]["Enums"]["management_feature"]
+          organization_id: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          enabled?: boolean
+          feature?: Database["public"]["Enums"]["management_feature"]
+          organization_id?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_management_features_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           active: boolean
@@ -3781,6 +3852,14 @@ export type Database = {
         | "damage"
         | "receipt"
         | "receipt_reversal"
+      management_feature:
+        | "read_access"
+        | "inventory_writes"
+        | "purchasing_writes"
+        | "fulfillment_writes"
+        | "pricing_writes"
+        | "marketing_writes"
+        | "external_effects"
       media_asset_status: "pending" | "ready" | "failed"
       order_status:
         | "pending"
@@ -3925,6 +4004,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  management_api: {
+    Enums: {},
+  },
   public: {
     Enums: {
       availability_override: ["preorder", "incoming"],
@@ -3960,6 +4042,15 @@ export const Constants = {
         "damage",
         "receipt",
         "receipt_reversal",
+      ],
+      management_feature: [
+        "read_access",
+        "inventory_writes",
+        "purchasing_writes",
+        "fulfillment_writes",
+        "pricing_writes",
+        "marketing_writes",
+        "external_effects",
       ],
       media_asset_status: ["pending", "ready", "failed"],
       order_status: [

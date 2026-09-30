@@ -32,7 +32,7 @@ describe("Supabase database CI workflow", () => {
       "supabase test db --local supabase/tests",
       "pnpm db:test:upgrades",
       "supabase db lint --local --level error --fail-on error",
-      "supabase gen types typescript --local --schema public",
+      "supabase gen types typescript --local --schema public,management_api",
       "diff --unified",
       "pnpm lint",
       "pnpm typecheck",

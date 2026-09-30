@@ -14,7 +14,10 @@ const inside = (file: string, directory: string) => {
 
 /** Resolve the compiler's actual target, including symlinks, rather than checking spelling. */
 export function checkSourceImports(source: string, filename: string, root: string): string[] {
-  const app = realpathSync(resolve(root, "apps/management"));
+  const dataPath = resolve(root, "packages/data-contract");
+  const dataPackage = existsSync(dataPath) ? realpathSync(dataPath) : dataPath;
+  const neutral = inside(resolve(filename), dataPackage);
+  const app = neutral ? dataPackage : realpathSync(resolve(root, "apps/management"));
   const configFile = ts.readConfigFile(join(app, "tsconfig.json"), ts.sys.readFile);
   if (configFile.error) throw new Error("GD_BOUNDARY_CONFIG_INVALID");
   const config = ts.parseJsonConfigFileContent(configFile.config, ts.sys, app);
@@ -43,7 +46,7 @@ export function checkSourceImports(source: string, filename: string, root: strin
         const expected = realpathSync(resolve(root, workspacePackages.get(dependency)!));
         valid = declared.has(dependency) && specifier === dependency && inside(target, expected);
       } else {
-        valid = declared.has(dependency) && target.replaceAll("\\", "/").includes("/node_modules/");
+        valid = declared.has(dependency) && (!neutral || dependency === "@supabase/supabase-js") && target.replaceAll("\\", "/").includes("/node_modules/");
       }
     }
     if (!valid) errors.push(`${relative(root, filename)}: GD_WORKSPACE_IMPORT_FORBIDDEN ${specifier}`);
@@ -74,6 +77,7 @@ export function checkWorkspaceBoundaries(root: string): string[] {
     }
   }
   walk(app);
+  walk(resolve(root, "packages/data-contract/src"));
   return errors;
 }
 
