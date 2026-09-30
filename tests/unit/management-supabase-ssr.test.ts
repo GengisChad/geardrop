@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { NextRequest } from "next/server";
 import type { CookieOptions } from "@supabase/ssr";
+import { AuthApiError } from "@supabase/supabase-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 type Cookie = { name: string; value: string; options?: CookieOptions };
@@ -81,6 +82,30 @@ describe("management-owned Supabase SSR", () => {
   it("fails closed on unexpected authentication failure", async () => {
     const h = await helpers(); mocks.getUser.mockRejectedValue(new Error("auth unavailable"));
     await expect(h.updateManagementSession(new NextRequest("https://management-ci.invalid/"))).rejects.toThrow("auth unavailable");
+  });
+  it.each(["refresh_token_not_found", "refresh_token_already_used", "session_not_found", "session_expired"] as const)
+  ("keeps anonymous login and cleanup cookies for terminal session error %s", async code => {
+    const h = await helpers();
+    mocks.server.mockImplementation((_url, _key, { cookies }) => ({ auth: { getUser: async () => {
+      expect(cookies.getAll()).toEqual([{ name: "sb-session", value: "expired" }]);
+      cookies.setAll([{ name: "sb-session", value: "", options: { maxAge: 0, path: "/", secure: true, sameSite: "lax" } }]);
+      return { data: { user: null }, error: new AuthApiError("Session is no longer valid", 400, code) };
+    } } }));
+    const request = new NextRequest("https://management-ci.invalid/login", { headers: { cookie: "sb-session=expired" } });
+    const response = await h.updateManagementSession(request);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    expect(response.cookies.get("sb-session")).toMatchObject({ value: "", maxAge: 0, path: "/", secure: true, sameSite: "lax" });
+    expect(response.headers.get("set-cookie")).toContain("Max-Age=0");
+    expect(request.cookies.get("sb-session")?.value).toBe("");
+  });
+  it.each([
+    ["unexpected_failure", 500], ["request_timeout", 504], ["over_request_rate_limit", 429],
+  ] as const)("fails closed for returned infrastructure or unexpected auth error %s", async (code, status) => {
+    const h = await helpers();
+    mocks.getUser.mockResolvedValue({ data: { user: null }, error: new AuthApiError("Auth unavailable", status, code) });
+    await expect(h.updateManagementSession(new NextRequest("https://management-ci.invalid/login"))).rejects.toThrow("GD_MANAGEMENT_SESSION_UNAVAILABLE");
   });
   it("classifies forbidden requests before session refresh and serves static assets without auth", async () => {
     await helpers();

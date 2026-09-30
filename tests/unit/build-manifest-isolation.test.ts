@@ -17,6 +17,17 @@ function build(root: string, paths: string[]) {
   writeFileSync(join(root, "app-path-routes-manifest.json"), "{}");
 }
 describe("real build directories and route ownership", () => {
+  it.each(["/logout", "/settings/security", "/mfa/enroll", "/mfa/challenge"])
+  ("rejects management-only route %s in storefront before the child implements it", async route => {
+    const { verifyBuildManifestIsolation } = await verifier();
+    const root = mkdtempSync(join(tmpdir(), "gd-manifest-"));
+    try {
+      const store = join(root, ".next"); const management = join(root, "apps/management/.next");
+      build(store, ["/", "/admin", "/api/stripe/webhook", "/robots.txt", route]);
+      build(management, ["/", "/robots.txt"]);
+      expect(() => verifyBuildManifestIsolation(store, management)).toThrow(`GD_ROUTE_OWNERSHIP_COLLISION: ${route}`);
+    } finally { rmSync(root, { recursive: true, force: true }); }
+  });
   it("requires distinct canonical directories and build IDs, but not different ID values", async () => {
     const { verifyBuildManifestIsolation } = await verifier();
     const root = mkdtempSync(join(tmpdir(), "gd-manifest-"));

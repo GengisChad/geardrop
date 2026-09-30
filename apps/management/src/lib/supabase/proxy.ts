@@ -3,6 +3,10 @@ import type { Database } from "@geardrop/data-contract";
 import { NextResponse, type NextRequest } from "next/server";
 import { readManagementSupabaseEnv } from "./env";
 
+const invalidSessionCodes = new Set([
+  "refresh_token_not_found", "refresh_token_already_used", "session_not_found", "session_expired",
+]);
+
 export async function updateManagementSession(request: NextRequest): Promise<NextResponse> {
   const { url, publishableKey } = readManagementSupabaseEnv();
   let response = NextResponse.next({ request });
@@ -19,8 +23,11 @@ export async function updateManagementSession(request: NextRequest): Promise<Nex
     },
   });
   const { error } = await client.auth.getUser();
-  // Anonymous requests can reach the foundation/login; no authorization is granted here.
-  if (error && error.name !== "AuthSessionMissingError") throw new Error("GD_MANAGEMENT_SESSION_UNAVAILABLE");
+  // Terminal session errors are anonymous: preserve the SDK's cleanup cookies so
+  // the browser can sign in again. This refresh helper never grants authorization.
+  const invalidSession = error?.name === "AuthSessionMissingError" ||
+    (error?.name === "AuthApiError" && invalidSessionCodes.has(error.code ?? ""));
+  if (error && !invalidSession) throw new Error("GD_MANAGEMENT_SESSION_UNAVAILABLE");
   response.headers.set("Cache-Control", "private, no-store");
   return response;
 }
