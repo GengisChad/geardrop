@@ -25,7 +25,7 @@ describe("reviewed catalogue", () => {
       { slug: "suppress-superion-0-70lp", price: 2500, stock: "pre-ordine", availableQuantity: 5, rating: 0, reviewCount: 0 },
       { slug: "strike-dran-4-50ff", price: 2300, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
       { slug: "tread-croc-tq-5-50gn", price: 2500, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
-      { slug: "glory-valkerion-lf", price: 2500, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
+      { slug: "glory-valkerion-lf", price: 2300, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
       { slug: "hurricane-enlil-is-7-55t", price: 1250, stock: "disponibile", availableQuantity: 49, rating: 0, reviewCount: 0 },
       { slug: "shatter-horus-9-65gb", price: 1250, stock: "disponibile", availableQuantity: 47, rating: 0, reviewCount: 0 },
       { slug: "cobalt-dragoon-2-60c", price: 2300, stock: "disponibile", availableQuantity: 56, rating: 0, reviewCount: 0 },
