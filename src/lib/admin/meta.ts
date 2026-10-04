@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { BUNDLES, PRODUCTS } from "@/data/catalog";
-import { META_TIERS, PERIOD } from "@/lib/meta/types";
+import { META_TIERS, META_TRENDS, PERIOD } from "@/lib/meta/types";
 
 /**
  * Schemas for the META ATTUALE panel.
@@ -46,6 +46,7 @@ export const metaRankingEntrySchema = z.object({
   pieceName: z.string().trim().min(1).max(200),
   archetype: z.string().trim().min(1).max(100),
   reason: z.string().trim().min(1).max(2000),
+  trend: z.union([z.enum(META_TRENDS), z.literal("")]).transform((value) => value || null).nullable(),
   productSlug: productSlugSchema,
   videoUrl: z.union([z.url({ protocol: /^https$/ }), z.literal("")]).transform((value) => value || null).nullable(),
 });

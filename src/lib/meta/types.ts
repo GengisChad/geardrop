@@ -8,6 +8,29 @@ export type MetaVideoRow = Database["public"]["Tables"]["meta_videos"]["Row"];
 export const META_TIERS = ["blade", "ratchet", "bit"] as const;
 export type MetaTier = (typeof META_TIERS)[number];
 
+/** Where a piece moved since the previous list — the owner's own four words. */
+export const META_TRENDS = ["stabile", "sale", "boom", "scende"] as const;
+export type MetaTrend = (typeof META_TRENDS)[number];
+
+export const TREND_LABEL: Record<MetaTrend, string> = {
+  stabile: "Stabile",
+  sale: "Sale",
+  boom: "Boom",
+  scende: "Scende",
+};
+
+/** The arrow that carries the movement at a glance, before anyone reads the word. */
+export const TREND_MARK: Record<MetaTrend, string> = {
+  stabile: "→",
+  sale: "↑",
+  boom: "↑↑",
+  scende: "↓",
+};
+
+export function isMetaTrend(value: string | null): value is MetaTrend {
+  return value !== null && (META_TRENDS as readonly string[]).includes(value);
+}
+
 export const TIER_LABEL: Record<MetaTier, string> = {
   blade: "Blade",
   ratchet: "Ratchet",

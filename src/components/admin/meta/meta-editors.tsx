@@ -8,7 +8,7 @@ import {
   type MetaActionState,
 } from "@/app/admin/actions/meta";
 import type { MetaRankingRow, MetaSnapshotRow, MetaTier, MetaVideoRow } from "@/lib/meta/types";
-import { TIER_LABEL } from "@/lib/meta/types";
+import { META_TRENDS, TIER_LABEL, TREND_LABEL, TREND_MARK } from "@/lib/meta/types";
 import styles from "@/components/admin/content/content.module.css";
 
 const initialState: MetaActionState = { ok: false, message: "" };
@@ -96,6 +96,7 @@ type EditableEntry = {
   pieceName: string;
   archetype: string;
   reason: string;
+  trend: string;
   productSlug: string;
   videoUrl: string;
 };
@@ -105,6 +106,7 @@ const fromRow = (row: MetaRankingRow): EditableEntry => ({
   pieceName: row.piece_name,
   archetype: row.archetype,
   reason: row.reason,
+  trend: row.trend ?? "",
   productSlug: row.product_slug ?? "",
   videoUrl: row.video_url ?? "",
 });
@@ -126,10 +128,11 @@ export function MetaRankingEditor({
     setEntries(entries.map((current, at) => (at === index ? entry : current)));
 
   const payload = JSON.stringify(
-    entries.map(({ pieceName, archetype, reason, productSlug, videoUrl }) => ({
+    entries.map(({ pieceName, archetype, reason, trend, productSlug, videoUrl }) => ({
       pieceName,
       archetype,
       reason,
+      trend,
       productSlug,
       videoUrl,
     })),
@@ -147,7 +150,7 @@ export function MetaRankingEditor({
         </div>
         <button
           onClick={() =>
-            setEntries([...entries, { key: key(), pieceName: "", archetype: "", reason: "", productSlug: "", videoUrl: "" }])
+            setEntries([...entries, { key: key(), pieceName: "", archetype: "", reason: "", trend: "", productSlug: "", videoUrl: "" }])
           }
           type="button"
         >
@@ -185,6 +188,20 @@ export function MetaRankingEditor({
                     rows={2}
                     value={entry.reason}
                   />
+                </label>
+                <label>
+                  Tendenza
+                  <select
+                    onChange={(event) => update(index, { ...entry, trend: event.target.value })}
+                    value={entry.trend}
+                  >
+                    <option value="">— nessuna —</option>
+                    {META_TRENDS.map((trend) => (
+                      <option key={trend} value={trend}>
+                        {TREND_MARK[trend]} {TREND_LABEL[trend]}
+                      </option>
+                    ))}
+                  </select>
                 </label>
                 <label>
                   Dove si trova a catalogo

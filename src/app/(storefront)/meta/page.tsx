@@ -15,7 +15,7 @@ import {
  */
 
 const DESCRIPTION =
-  "I migliori Blade, Ratchet e Bit di Beyblade X, aggiornati ogni mese dai risultati dei tornei. Diciamo anche quali pezzi non vendiamo.";
+  "I migliori Blade, Ratchet e Bit di Beyblade X, aggiornati a ogni nuova classifica dai risultati dei tornei. Diciamo anche quali pezzi non vendiamo.";
 
 export const metadata: Metadata = {
   title: "Meta attuale Beyblade X: i migliori Blade, Ratchet e Bit",

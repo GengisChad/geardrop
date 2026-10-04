@@ -56,6 +56,10 @@ create table public.meta_rankings (
   piece_name text not null,
   archetype text not null,
   reason text not null,
+  -- Where the piece moved since the previous period. Null on the first list, and on any
+  -- piece whose movement the owner does not want to claim. This is what brings a reader
+  -- back: a ranking answers "where is the meta", a movement answers "what changed".
+  trend text,
   -- Null means the catalogue cannot supply this piece; the page says so in as many words.
   product_slug text,
   -- The owner's own test of this piece, so a reader can watch it rather than take our word.
@@ -66,6 +70,7 @@ create table public.meta_rankings (
   constraint meta_rankings_piece_length check (char_length(piece_name) between 1 and 200),
   constraint meta_rankings_archetype_length check (char_length(archetype) between 1 and 100),
   constraint meta_rankings_reason_length check (char_length(reason) between 1 and 2000),
+  constraint meta_rankings_trend check (trend is null or trend in ('stabile', 'sale', 'boom', 'scende')),
   constraint meta_rankings_product_slug_format check (product_slug is null or product_slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
   constraint meta_rankings_video_https check (video_url is null or video_url ~ '^https://'),
   constraint meta_rankings_rank_unique unique (snapshot_id, tier_type, rank)

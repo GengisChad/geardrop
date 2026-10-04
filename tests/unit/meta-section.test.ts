@@ -34,6 +34,7 @@ const row = (over: Partial<MetaRankingRow>): MetaRankingRow => ({
   piece_name: "Low Flat (LF)",
   archetype: "Attacco",
   reason: "Perché sì.",
+  trend: null,
   product_slug: null,
   video_url: null,
   created_at: "2026-10-05T00:00:00.000Z",
@@ -62,19 +63,23 @@ describe("product slug validation", () => {
 });
 
 describe("ranking entry", () => {
+  const entry = { pieceName: "Low Flat (LF)", archetype: "Attacco", reason: "x", trend: "", productSlug: "", videoUrl: "" };
+
   it("keeps an https video link and drops an empty one", () => {
-    expect(metaRankingEntrySchema.parse({
-      pieceName: "Low Flat (LF)", archetype: "Attacco", reason: "x", productSlug: "", videoUrl: "",
-    }).videoUrl).toBeNull();
-    expect(metaRankingEntrySchema.parse({
-      pieceName: "Low Flat (LF)", archetype: "Attacco", reason: "x", productSlug: "", videoUrl: "https://youtu.be/abc",
-    }).videoUrl).toBe("https://youtu.be/abc");
+    expect(metaRankingEntrySchema.parse(entry).videoUrl).toBeNull();
+    expect(metaRankingEntrySchema.parse({ ...entry, videoUrl: "https://youtu.be/abc" }).videoUrl).toBe("https://youtu.be/abc");
   });
 
   it("refuses a video link that is not https", () => {
-    expect(metaRankingEntrySchema.safeParse({
-      pieceName: "x", archetype: "y", reason: "z", productSlug: "", videoUrl: "http://youtu.be/abc",
-    }).success).toBe(false);
+    expect(metaRankingEntrySchema.safeParse({ ...entry, videoUrl: "http://youtu.be/abc" }).success).toBe(false);
+  });
+
+  it("takes the four movements the owner's own graphics use, and nothing else", () => {
+    for (const trend of ["stabile", "sale", "boom", "scende"]) {
+      expect(metaRankingEntrySchema.parse({ ...entry, trend }).trend).toBe(trend);
+    }
+    expect(metaRankingEntrySchema.parse(entry).trend).toBeNull();
+    expect(metaRankingEntrySchema.safeParse({ ...entry, trend: "crolla" }).success).toBe(false);
   });
 });
 

@@ -117,6 +117,7 @@ export async function saveMetaRankingsAction(_state: MetaActionState, formData: 
       piece_name: entry.pieceName,
       archetype: entry.archetype,
       reason: entry.reason,
+      trend: entry.trend,
       product_slug: entry.productSlug,
       video_url: entry.videoUrl,
     }));

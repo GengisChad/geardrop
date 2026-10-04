@@ -947,6 +947,7 @@ export type Database = {
           reason: string
           snapshot_id: number
           tier_type: string
+          trend: string | null
           video_url: string | null
         }
         Insert: {
@@ -959,6 +960,7 @@ export type Database = {
           reason: string
           snapshot_id: number
           tier_type: string
+          trend?: string | null
           video_url?: string | null
         }
         Update: {
@@ -971,6 +973,7 @@ export type Database = {
           reason?: string
           snapshot_id?: number
           tier_type?: string
+          trend?: string | null
           video_url?: string | null
         }
         Relationships: [

@@ -1,7 +1,28 @@
 import Link from "next/link";
 import { formatPrice } from "@/lib/format";
 import { STOCK_CHIP, STOCK_LABEL } from "@/lib/labels";
-import { META_TIERS, monthLabel, TIER_LABEL, TIER_LEAD, type MetaEntry, type MetaArchiveItem, type MetaSnapshot, type MetaVideoRow } from "@/lib/meta/types";
+import {
+  isMetaTrend,
+  META_TIERS,
+  monthLabel,
+  TIER_LABEL,
+  TIER_LEAD,
+  TREND_LABEL,
+  TREND_MARK,
+  type MetaArchiveItem,
+  type MetaEntry,
+  type MetaSnapshot,
+  type MetaTrend,
+  type MetaVideoRow,
+} from "@/lib/meta/types";
+
+/** Green for what is climbing, red for what is falling: the grid's own language. */
+const TREND_CHIP: Record<MetaTrend, string> = {
+  stabile: "bg-grey-200/10 text-grey-600",
+  sale: "bg-available-bg text-available",
+  boom: "bg-lime-ink/15 text-lime-ink",
+  scende: "bg-soldout-bg text-soldout",
+};
 
 /**
  * The tier list as the reader meets it.
@@ -28,6 +49,14 @@ function PieceRow({ entry }: { readonly entry: MetaEntry }) {
             <span className="rounded-full bg-violet/12 px-2.5 py-0.5 text-caption font-semibold text-violet">
               {entry.archetype}
             </span>
+            {isMetaTrend(entry.trend) ? (
+              <span
+                className={`rounded-full px-2.5 py-0.5 text-caption font-semibold ${TREND_CHIP[entry.trend]}`}
+                title={`${TREND_LABEL[entry.trend]} rispetto alla classifica precedente`}
+              >
+                {TREND_MARK[entry.trend]} {TREND_LABEL[entry.trend]}
+              </span>
+            ) : null}
           </div>
           <p className="mt-2 text-small text-grey-600">{entry.reason}</p>
 
@@ -117,7 +146,7 @@ function Archive({ archive, current }: { readonly archive: readonly MetaArchiveI
   return (
     <section aria-labelledby="meta-archivio" className="mt-16">
       <h2 className="gd-display-wide text-h3 font-extrabold leading-tight text-graphite" id="meta-archivio">
-        I mesi precedenti
+        Le classifiche precedenti
       </h2>
       <p className="mt-2 max-w-2xl text-small text-grey-600">
         Le classifiche vecchie restano online: il meta si capisce guardando come cambia.
