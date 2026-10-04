@@ -7,7 +7,7 @@ import { TrustBandDark } from "@/components/home/trust";
 import { CATEGORIES } from "@/data/catalog";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { parseProductQuery, type RawSearchParams } from "@/lib/search-params";
-import { breadcrumbJsonLd, categoryTitle, jsonLd } from "@/lib/seo";
+import { breadcrumbJsonLd, categoryTitle, collectionJsonLd, jsonLd } from "@/lib/seo";
 
 type Params = { categoria: string };
 
@@ -55,9 +55,12 @@ export default async function CategoriaPage({
     { name: category.name, path: `/negozio/${category.slug}` },
   ]);
 
+  const collectionData = collectionJsonLd(category.name, `/negozio/${category.slug}`, page.items);
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbData) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(collectionData) }} />
       <CatalogHero
         title={category.name}
         tagline={category.tagline}
