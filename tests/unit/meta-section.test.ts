@@ -79,12 +79,18 @@ describe("ranking entry", () => {
 });
 
 describe("snapshot form", () => {
-  it("insists on a YYYY-MM month, because the month is the archive URL", () => {
-    const base = { month: "2026-10", title: "T", sourceNote: "S", intro: "", publicationStatus: "draft" as const, active: false, seoTitle: "", seoDescription: "" };
+  const base = { month: "2026-10", title: "T", sourceNote: "S", intro: "", publicationStatus: "draft" as const, active: false, seoTitle: "", seoDescription: "" };
+
+  it("takes a month or a single day, because the meta is revised weekly", () => {
     expect(metaSnapshotSchema.safeParse(base).success).toBe(true);
-    expect(metaSnapshotSchema.safeParse({ ...base, month: "ottobre" }).success).toBe(false);
-    expect(metaSnapshotSchema.safeParse({ ...base, month: "2026-13" }).success).toBe(false);
-    expect(metaSnapshotSchema.safeParse({ ...base, month: "2026-1" }).success).toBe(false);
+    expect(metaSnapshotSchema.safeParse({ ...base, month: "2026-10-05" }).success).toBe(true);
+    expect(metaSnapshotSchema.safeParse({ ...base, month: "2026-10-31" }).success).toBe(true);
+  });
+
+  it("refuses anything that would not make a sane archive URL", () => {
+    for (const month of ["ottobre", "2026-13", "2026-1", "2026-10-00", "2026-10-32", "2026-10-5"]) {
+      expect(metaSnapshotSchema.safeParse({ ...base, month }).success).toBe(false);
+    }
   });
 });
 
@@ -120,6 +126,11 @@ describe("monthLabel", () => {
   it("writes the month the way the page says it", () => {
     expect(monthLabel("2026-10")).toBe("ottobre 2026");
     expect(monthLabel("2027-01")).toBe("gennaio 2027");
+  });
+
+  it("names the day when the period is a single week's update", () => {
+    expect(monthLabel("2026-10-05")).toBe("5 ottobre 2026");
+    expect(monthLabel("2026-10-12")).toBe("12 ottobre 2026");
   });
 
   it("falls back to the raw value rather than inventing a month", () => {

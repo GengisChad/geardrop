@@ -44,13 +44,18 @@ export type MetaArchiveItem = {
   readonly updatedAt: string;
 };
 
-/** "2026-10" as the page says it: "ottobre 2026". */
+/** A period is a month the whole way through, or a single day when the meta moves weekly. */
+export const PERIOD = /^\d{4}-(0[1-9]|1[0-2])(-(0[1-9]|[12]\d|3[01]))?$/;
+
+const MONTH_NAMES = [
+  "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno",
+  "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre",
+] as const;
+
+/** "2026-10" reads "ottobre 2026"; "2026-10-05" reads "5 ottobre 2026". */
 export function monthLabel(month: string): string {
-  const [year, index] = month.split("-");
-  const names = [
-    "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno",
-    "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre",
-  ];
-  const name = names[Number(index) - 1];
-  return name ? `${name} ${year}` : month;
+  const [year, index, day] = month.split("-");
+  const name = MONTH_NAMES[Number(index) - 1];
+  if (!name) return month;
+  return day ? `${Number(day)} ${name} ${year}` : `${name} ${year}`;
 }

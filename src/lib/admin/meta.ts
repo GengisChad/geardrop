@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { BUNDLES, PRODUCTS } from "@/data/catalog";
-import { META_TIERS } from "@/lib/meta/types";
+import { META_TIERS, PERIOD } from "@/lib/meta/types";
 
 /**
  * Schemas for the META ATTUALE panel.
@@ -29,7 +29,10 @@ export const productSlugSchema = z
 
 export const metaSnapshotSchema = z.object({
   id: metaSnapshotIdSchema.optional(),
-  month: z.string().trim().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Usa il formato AAAA-MM, per esempio 2026-10"),
+  month: z
+    .string()
+    .trim()
+    .regex(PERIOD, "Usa AAAA-MM per un mese (2026-10) o AAAA-MM-GG per una settimana (2026-10-05)"),
   title: z.string().trim().min(1).max(160),
   sourceNote: z.string().trim().min(1).max(400),
   intro: nullableText(2000),

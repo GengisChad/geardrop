@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CatalogHero } from "@/components/catalog/catalog-hero";
 import { MetaView } from "@/components/meta/meta-view";
-import { META_TIERS, monthLabel, TIER_LABEL } from "@/lib/meta/types";
+import { META_TIERS, monthLabel, PERIOD, TIER_LABEL } from "@/lib/meta/types";
 import { breadcrumbJsonLd, jsonLd, metaPageJsonLd } from "@/lib/seo";
 import {
   getStorefrontMetaArchive,
@@ -10,15 +10,13 @@ import {
   getStorefrontMetaVideos,
 } from "@/lib/storefront/meta-repository";
 
-/** A month's permanent URL: what /meta showed when that month was current. */
+/** A period's permanent URL: what /meta showed while that period was current. */
 
 type Params = { readonly params: Promise<{ readonly month: string }> };
 
-const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
-
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { month } = await params;
-  if (!MONTH.test(month)) return {};
+  if (!PERIOD.test(month)) return {};
   const snapshot = await getStorefrontMetaSnapshot(month);
   if (!snapshot) return {};
   const description =
@@ -34,7 +32,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 export default async function MetaMonthPage({ params }: Params) {
   const { month } = await params;
-  if (!MONTH.test(month)) notFound();
+  if (!PERIOD.test(month)) notFound();
 
   const [snapshot, videos, archive] = await Promise.all([
     getStorefrontMetaSnapshot(month),

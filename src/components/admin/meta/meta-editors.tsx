@@ -38,8 +38,8 @@ export function MetaSnapshotForm({ snapshot }: { readonly snapshot: MetaSnapshot
       {snapshot ? <input name="id" type="hidden" value={snapshot.id} /> : null}
       <div className={styles.grid}>
         <label>
-          Mese (AAAA-MM)
-          <input defaultValue={snapshot?.month ?? ""} name="month" placeholder="2026-10" required />
+          Periodo
+          <input defaultValue={snapshot?.month ?? ""} name="month" placeholder="2026-10 per il mese, 2026-10-05 per la settimana" required />
         </label>
         <label>
           Titolo

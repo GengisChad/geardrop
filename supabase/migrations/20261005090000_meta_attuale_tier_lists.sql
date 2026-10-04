@@ -23,7 +23,9 @@
 
 create table public.meta_snapshots (
   id bigint primary key generated always as identity,
-  -- Doubles as the archive slug: /meta/2026-10.
+  -- Doubles as the archive slug: /meta/2026-10 for a month, /meta/2026-10-05 for a single
+  -- week. The owner updates the meta weekly and the stock changes under it, so a key that
+  -- only held a month would refuse the second update of the same one.
   month text not null unique,
   title text not null,
   -- Where the numbers come from, in the owner's words: "podi top 3 di 153 tornei WBO,
@@ -37,7 +39,7 @@ create table public.meta_snapshots (
   seo_description text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  constraint meta_snapshots_month_format check (month ~ '^[0-9]{4}-(0[1-9]|1[0-2])$'),
+  constraint meta_snapshots_month_format check (month ~ '^[0-9]{4}-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?$'),
   constraint meta_snapshots_title_length check (char_length(title) between 1 and 160),
   constraint meta_snapshots_source_length check (char_length(source_note) between 1 and 400),
   constraint meta_snapshots_intro_length check (intro is null or char_length(intro) <= 2000),
