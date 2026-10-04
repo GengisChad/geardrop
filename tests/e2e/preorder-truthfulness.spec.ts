@@ -1,17 +1,32 @@
 import { expect, test } from "@playwright/test";
+import { PRODUCTS } from "../../src/data/catalog";
+import { MAX_QUANTITY_PER_LINE } from "../../src/lib/commerce/limits";
+import { SHELF_COUNT_SHOWN_UP_TO } from "../../src/lib/labels";
+
+const ENLIL = PRODUCTS.find((product) => product.slug === "hurricane-enlil-is-7-55t")!.availableQuantity!;
+/** A deep shelf is availability, not scarcity: past this the page shows no count at all. */
+const SHOWS_COUNT = ENLIL <= SHELF_COUNT_SHOWN_UP_TO;
+const CAP = String(Math.min(MAX_QUANTITY_PER_LINE, ENLIL));
 
 test.describe("truthful preorder storefront", () => {
   test("shows the current stock on the product page and caps the cart", async ({ page }) => {
-    // Hurricane Enlil still sells from a shelf; the rest of the catalogue is on pre-order.
+    // Hurricane Enlil sells from a real shelf, so the page must state what it can promise:
+    // the count while it is short enough to matter, and a cart that never exceeds it.
     await page.goto("/prodotto/hurricane-enlil-is-7-55t");
     const buyPanel = page.locator("#buy-panel");
-    await expect(buyPanel.getByTestId("stock-remaining")).toHaveText("10 pezzi disponibili");
+    if (SHOWS_COUNT) {
+      await expect(buyPanel.getByTestId("stock-remaining")).toHaveText(
+        `${ENLIL} ${ENLIL === 1 ? "pezzo disponibile" : "pezzi disponibili"}`,
+      );
+    } else {
+      await expect(buyPanel.getByTestId("stock-remaining")).toHaveCount(0);
+    }
     await expect(buyPanel.getByTestId("preorder-remaining")).toHaveCount(0);
-    await expect(buyPanel.getByTestId("qty-input")).toHaveAttribute("max", "10");
+    await expect(buyPanel.getByTestId("qty-input")).toHaveAttribute("max", CAP);
     await buyPanel.getByTestId("add-to-cart").click();
 
     await page.goto("/carrello");
-    await expect(page.getByTestId("qty-input")).toHaveAttribute("max", "10");
+    await expect(page.getByTestId("qty-input")).toHaveAttribute("max", CAP);
   });
 
   test("omits fabricated home, footer, and zero-review presentation", async ({ page }) => {

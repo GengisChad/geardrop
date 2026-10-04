@@ -306,7 +306,16 @@ def main() -> None:
     # Left as-is they render as a light box on any non-white surface. The checkerboard
     # is removed to give real transparency; the logo artwork itself is untouched — no
     # recolouring, no redrawing, no outline. (brief rules 2-5)
+    # The owner later supplied the same artwork with a real alpha channel. Where one exists it is
+    # used verbatim: the flood fill reads the logo's light silver outline as background and eats it,
+    # which is what left "GEAR" as flat graphite that vanished on the dark ground.
     for name in LOGOS.values():
+        supplied_alpha = RAW / f"logo-{name}-alpha.png"
+        if supplied_alpha.exists():
+            cut = trim(Image.open(supplied_alpha).convert("RGBA"), pad=0)
+            save(cut, PUB / "brand" / f"{name}.png")
+            print(f"brand/{name:14s} -> {cut.size} (alpha fornito, nessun ritocco)")
+            continue
         raw = Image.open(RAW / f"logo-{name}.png").convert("RGB")
         cut = trim(flood_bg(raw, tol=14, floor=234), pad=0)
         save(cut, PUB / "brand" / f"{name}.png")

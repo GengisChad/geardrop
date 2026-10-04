@@ -149,7 +149,8 @@ test.describe("product page", () => {
   test("shows price, availability and gallery", async ({ page }) => {
     await page.goto("/prodotto/cobalt-dragoon-2-60c");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Cobalt Dragoon 2-60C");
-    await expect(page.getByTestId("pdp-price")).toHaveText("€25,50");
+    const dragoon = PRODUCTS.find((product) => product.slug === "cobalt-dragoon-2-60c")!.price.amount;
+    await expect(page.getByTestId("pdp-price")).toHaveText(`€${(dragoon / 100).toFixed(2).replace(".", ",")}`);
     await expect(buyPanel(page).getByTestId("add-to-cart")).toBeVisible();
   });
 

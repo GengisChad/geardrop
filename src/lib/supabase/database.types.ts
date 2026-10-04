@@ -1191,6 +1191,7 @@ export type Database = {
           currency: string
           customer_id: string | null
           delivered_at: string | null
+          delivery_notified_at: string | null
           discount_cents: number
           email: string
           id: number
@@ -1227,6 +1228,7 @@ export type Database = {
           currency?: string
           customer_id?: string | null
           delivered_at?: string | null
+          delivery_notified_at?: string | null
           discount_cents?: number
           email: string
           id?: never
@@ -1263,6 +1265,7 @@ export type Database = {
           currency?: string
           customer_id?: string | null
           delivered_at?: string | null
+          delivery_notified_at?: string | null
           discount_cents?: number
           email?: string
           id?: never
@@ -2081,6 +2084,10 @@ export type Database = {
         Args: { p_media_asset_id: number }
         Returns: undefined
       }
+      complete_order: {
+        Args: { p_note?: string; p_order_id: number }
+        Returns: undefined
+      }
       create_order: {
         Args: {
           p_billing_address: Json
@@ -2146,6 +2153,10 @@ export type Database = {
           tracking_code: string
           tracking_url: string
         }[]
+      }
+      mark_order_delivery_notified: {
+        Args: { p_order_id: number }
+        Returns: undefined
       }
       mark_order_shipping_notified: {
         Args: { p_order_id: number }
@@ -2561,3 +2572,4 @@ export const Constants = {
     },
   },
 } as const
+

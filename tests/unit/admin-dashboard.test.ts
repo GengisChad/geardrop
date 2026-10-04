@@ -32,6 +32,19 @@ describe("admin dashboard metric behavior", () => {
     });
   });
 
+  it("carries the refund figures the revenue card subtracts", () => {
+    const mapped = mapDashboardPayload({ products: { total: 0, published: 0, draft: 0, archived: 0, sold_out: 0, low_stock: 0, preorder: 0 }, active_coupons: 0, active_promotions: 0, commerce: { order_count: 3, revenue_cents: 6000, gross_revenue_cents: 11000, refunded_cents: 5000, refunded_order_count: 2, unpaid_order_count: 1, average_order_value_cents: 2000, latest_orders: [] }, stock_movements: [], staff_activity: [] });
+    expect(mapped.commerce).toMatchObject({ orderCount: 3, revenueCents: 6000, grossRevenueCents: 11000, refundedCents: 5000, refundedOrderCount: 2, unpaidOrderCount: 1, averageOrderValueCents: 2000 });
+    // The three cards have to stay one story: net revenue over the orders that produced it.
+    expect(mapped.commerce?.grossRevenueCents).toBe((mapped.commerce?.revenueCents ?? 0) + (mapped.commerce?.refundedCents ?? 0));
+    expect(mapped.commerce?.averageOrderValueCents).toBe(Math.round((mapped.commerce?.revenueCents ?? 0) / (mapped.commerce?.orderCount ?? 1)));
+  });
+
+  it("reads a legacy aggregate without the refund fields as zero instead of guessing", () => {
+    const mapped = mapDashboardPayload({ products: { total: 0, published: 0, draft: 0, archived: 0, sold_out: 0, low_stock: 0, preorder: 0 }, active_coupons: 0, active_promotions: 0, commerce: { order_count: 2, revenue_cents: 4000, average_order_value_cents: 2000, latest_orders: [] }, stock_movements: [], staff_activity: [] });
+    expect(mapped.commerce).toMatchObject({ grossRevenueCents: 0, refundedCents: 0, refundedOrderCount: 0, unpaidOrderCount: 0 });
+  });
+
   it("preserves editor redaction instead of inventing commerce zeros", () => {
     const mapped=mapDashboardPayload({ products: { total: 0, published: 0, draft: 0, archived: 0, sold_out: 0, low_stock: 0, preorder: 0 }, active_coupons: 0, active_promotions: 0, commerce: null, stock_movements: [], staff_activity: null });
     expect(mapped.commerce).toBeNull();expect(mapped.staffActivity).toBeNull();
