@@ -33,9 +33,9 @@ export const brand = {
  * trims to the artwork. Keep in sync with the script's output.
  */
 export const brandSize = {
-  lockup: { width: 2362, height: 399 },
+  lockup: { width: 2000, height: 594 },
   wordmark: { width: 2159, height: 194 },
-  emblem: { width: 1017, height: 940 },
+  emblem: { width: 1206, height: 1161 },
 } as const;
 
 export type ProductImage = {
