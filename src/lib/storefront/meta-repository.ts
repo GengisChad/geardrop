@@ -36,6 +36,26 @@ async function previewEnabled() {
   return (await draftMode()).isEnabled;
 }
 
+/**
+ * A read that fails leaves the section empty instead of taking the page down.
+ *
+ * Migrations are applied by hand here, so there is a window between a deploy and the
+ * tables existing in which every one of these queries fails. The shop is not broken in
+ * that window — the meta simply has nothing to show yet, and that is what a visitor
+ * should see. The error still goes to the server log so the gap is not silent.
+ *
+ * Only the public reads degrade. `src/lib/meta/repository.ts` still throws, because the
+ * panel's job is to tell the owner when something is wrong.
+ */
+async function soft<T>(what: string, fallback: T, read: () => Promise<T>): Promise<T> {
+  try {
+    return await read();
+  } catch (error) {
+    console.error(`[meta] ${what} non disponibile:`, error instanceof Error ? error.message : error);
+    return fallback;
+  }
+}
+
 export async function getStorefrontMetaSnapshot(month?: string): Promise<MetaSnapshot | null> {
   // The mock storefront runs with no Supabase at all; /meta then shows its empty state
   // rather than failing the whole route on a missing environment variable.
@@ -50,21 +70,27 @@ export async function getStorefrontMetaSnapshot(month?: string): Promise<MetaSna
     return { snapshot, rows: await listRankingRows(client, snapshot.id) };
   };
 
-  const loaded = (await previewEnabled())
-    ? await read(true)
-    : await cacheStorefrontRead(["meta", month ?? "latest"], [STOREFRONT_CACHE_TAGS.meta], () => read(false));
+  return soft("il meta", null, async () => {
+    const loaded = (await previewEnabled())
+      ? await read(true)
+      : await cacheStorefrontRead(["meta", month ?? "latest"], [STOREFRONT_CACHE_TAGS.meta], () => read(false));
 
-  return loaded ? resolveSnapshot(loaded.snapshot, loaded.rows) : null;
+    return loaded ? await resolveSnapshot(loaded.snapshot, loaded.rows) : null;
+  });
 }
 
 export async function getStorefrontMetaVideos(): Promise<readonly MetaVideoRow[]> {
   if (!hasPublicSupabaseEnv()) return [];
-  if (await previewEnabled()) return listMetaVideos(await previewClient(), { includeDrafts: true });
-  return cacheStorefrontRead(["meta", "videos"], [STOREFRONT_CACHE_TAGS.meta], () => listMetaVideos(createSupabasePublicClient()));
+  return soft<readonly MetaVideoRow[]>("i video del meta", [], async () => {
+    if (await previewEnabled()) return listMetaVideos(await previewClient(), { includeDrafts: true });
+    return cacheStorefrontRead(["meta", "videos"], [STOREFRONT_CACHE_TAGS.meta], () => listMetaVideos(createSupabasePublicClient()));
+  });
 }
 
 export async function getStorefrontMetaArchive(): Promise<readonly MetaArchiveItem[]> {
   if (!hasPublicSupabaseEnv()) return [];
-  if (await previewEnabled()) return listArchive(await previewClient(), { includeDrafts: true });
-  return cacheStorefrontRead(["meta", "archive"], [STOREFRONT_CACHE_TAGS.meta], () => listArchive(createSupabasePublicClient()));
+  return soft<readonly MetaArchiveItem[]>("l'archivio del meta", [], async () => {
+    if (await previewEnabled()) return listArchive(await previewClient(), { includeDrafts: true });
+    return cacheStorefrontRead(["meta", "archive"], [STOREFRONT_CACHE_TAGS.meta], () => listArchive(createSupabasePublicClient()));
+  });
 }
