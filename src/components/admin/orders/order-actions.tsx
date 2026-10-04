@@ -5,6 +5,7 @@ import {
   addOrderNoteAction,
   messageCustomerAction,
   cancelOrderAction,
+  deliverOrderAction,
   prepareOrderRefundAction,
   refundStripeAction,
   setOrderTrackingAction,
@@ -24,10 +25,11 @@ function Feedback({ state }: { readonly state: OrderActionState }) {
   return state.message ? <p className={state.ok ? styles.success : styles.error} role="status">{state.message}</p> : null;
 }
 
-export function OrderActions({ orderId, status, paymentStatus, role, tracking, shippingNotifiedAt, stripePaymentIntentId, totalCents, refundedCents = 0 }: {
+export function OrderActions({ orderId, status, paymentStatus, role, tracking, shippingNotifiedAt, deliveryNotifiedAt, stripePaymentIntentId, totalCents, refundedCents = 0 }: {
   readonly orderId: number; readonly status: OrderStatus; readonly paymentStatus: PaymentStatus; readonly role: StaffRole;
   readonly tracking: { readonly carrier: string | null; readonly code: string | null; readonly url: string | null };
   readonly shippingNotifiedAt: string | null;
+  readonly deliveryNotifiedAt: string | null;
   readonly stripePaymentIntentId: string | null;
   readonly totalCents: number;
   readonly refundedCents?: number;
@@ -38,7 +40,9 @@ export function OrderActions({ orderId, status, paymentStatus, role, tracking, s
   const refundable = manager && ["authorized", "paid"].includes(paymentStatus);
   const stripeRefundable = refundable && Boolean(stripePaymentIntentId) && totalCents - refundedCents > 0;
   const shippable = manager && ["confirmed", "processing", "shipped"].includes(status);
+  const deliverable = manager && ["shipped", "completed"].includes(status);
   const [shipState, shipAction, shipPending] = useActionState(shipOrderAction, initial);
+  const [deliverState, deliverAction, deliverPending] = useActionState(deliverOrderAction, initial);
   const [transitionState, transitionAction, transitionPending] = useActionState(transitionOrderAction, initial);
   const [trackingState, trackingAction, trackingPending] = useActionState(setOrderTrackingAction, initial);
   const [noteState, noteAction, notePending] = useActionState(addOrderNoteAction, initial);
@@ -67,6 +71,17 @@ export function OrderActions({ orderId, status, paymentStatus, role, tracking, s
       <label>Link di tracciamento (solo se il corriere è “Altro”)<input defaultValue={carrierByLabel(tracking.carrier)?.trackingUrl ? "" : tracking.url ?? ""} name="url" placeholder="https://" type="url"/></label>
       <label className={styles.confirm}><input defaultChecked={!shippingNotifiedAt} name="notify" type="checkbox"/> Invia l’email al cliente</label>
       <button disabled={shipPending} type="submit">{shipPending ? "Invio…" : status === "shipped" ? "Aggiorna" : "Spedisci"}</button><Feedback state={shipState}/>
+    </form> : null}
+
+    {deliverable ? <form action={deliverAction} className={styles.actionCard}>
+      <h3>{status === "completed" ? "Consegna e email al cliente" : "Conferma la consegna"}</h3>
+      <p>{deliveryNotifiedAt
+        ? `Email di consegna già inviata il ${new Intl.DateTimeFormat("it-IT", { dateStyle: "medium", timeStyle: "short" }).format(new Date(deliveryNotifiedAt))}.`
+        : "Chiudi l’ordine e conferma al cliente che il pacco è arrivato, con i giorni che ha per il reso."}</p>
+      <input name="orderId" type="hidden" value={orderId}/>
+      <label>Nota operativa<textarea maxLength={1000} name="note" rows={3}/></label>
+      <label className={styles.confirm}><input defaultChecked={!deliveryNotifiedAt} name="notify" type="checkbox"/> Invia l’email di consegna al cliente</label>
+      <button disabled={deliverPending} type="submit">{deliverPending ? "Invio…" : status === "completed" ? "Invia di nuovo" : "Conferma consegna"}</button><Feedback state={deliverState}/>
     </form> : null}
 
     {manager && transitions.length > 0 ? <form action={transitionAction} className={styles.actionCard}>

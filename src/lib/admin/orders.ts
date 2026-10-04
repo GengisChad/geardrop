@@ -70,6 +70,12 @@ export const shipOrderSchema = z.object({
   url: z.union([z.url({ protocol: /^https$/ }), z.literal("")]).transform((value) => value || null),
   notify: z.boolean(),
 });
+export const deliverOrderSchema = z.object({
+  orderId,
+  note: z.string().trim().max(1000).transform((value) => value || null),
+  notify: z.boolean(),
+});
+
 export const refundPreparationSchema = z.object({ orderId, amountCents: z.coerce.number().int().positive(), reason: z.string().trim().min(3).max(1000) });
 export const refundStripeSchema = z.object({
   orderId,
