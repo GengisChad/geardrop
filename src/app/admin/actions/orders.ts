@@ -7,10 +7,12 @@ import { requireStaffRole, requireUser } from "@/lib/auth/guards";
 import { sendEmail, SHOP_EMAIL } from "@/lib/email/resend";
 import { carrierById, normalizeTrackingCode } from "@/lib/orders/carriers";
 import { customerMessageEmail } from "@/lib/orders/customer-message-email";
+import { deliveryConfirmationEmail } from "@/lib/orders/delivery-email";
 import { refundNotificationEmail } from "@/lib/orders/refund-email";
 import { shippingNotificationEmail } from "@/lib/orders/shipping-email";
 import type { Database } from "@/lib/supabase/database.types";
 import {
+  deliverOrderSchema,
   messageCustomerSchema,
   orderCancellationSchema,
   orderNoteSchema,
@@ -246,6 +248,67 @@ export async function shipOrderAction(_previous: OrderActionState, formData: For
   }
 }
 
+/** Emails the buyer that the parcel arrived and stamps the order, so it is not sent twice. */
+async function sendDeliveryEmail(client: SupabaseClient<Database>, orderId: number): Promise<ShipmentEmailResult> {
+  const [order, items] = await Promise.all([
+    client
+      .from("orders")
+      .select("order_number,email,status,tracking_carrier,tracking_code,tracking_url,shipping_address_snapshot")
+      .eq("id", orderId)
+      .single(),
+    client.from("order_items").select("product_name_snapshot,quantity").eq("order_id", orderId).order("id"),
+  ]);
+  if (order.error || items.error) return { ok: false, message: "non riesco a leggere l'ordine." };
+  if (order.data.status !== "completed") return { ok: false, message: "l'ordine non risulta consegnato." };
+
+  const content = deliveryConfirmationEmail({
+    orderNumber: order.data.order_number,
+    email: order.data.email,
+    carrier: order.data.tracking_carrier,
+    trackingCode: order.data.tracking_code,
+    trackingUrl: order.data.tracking_url,
+    shippingAddress: order.data.shipping_address_snapshot,
+    items: (items.data ?? []).map((item) => ({ name: item.product_name_snapshot, quantity: item.quantity })),
+  });
+  const sent = await sendEmail({
+    ...content,
+    replyTo: SHOP_EMAIL,
+    idempotencyKey: `gd-order-delivered-${orderId}`,
+  });
+  if (!sent.ok) return { ok: false, message: emailFailure(sent.reason, sent.detail) };
+
+  const { error } = await client.rpc("mark_order_delivery_notified", { p_order_id: orderId });
+  if (error) return { ok: false, message: "email inviata, ma non sono riuscito a segnarla sull'ordine." };
+  return { ok: true };
+}
+
+export async function deliverOrderAction(_previous: OrderActionState, formData: FormData): Promise<OrderActionState> {
+  const parsed = deliverOrderSchema.safeParse({
+    orderId: text(formData, "orderId"),
+    note: text(formData, "note"),
+    notify: formData.get("notify") === "on",
+  });
+  if (!parsed.success) return { ok: false, message: "Conferma consegna non valida." };
+  try {
+    const client = await clientFor(MANAGERS);
+    const { error } = await client.rpc("complete_order", {
+      p_order_id: parsed.data.orderId,
+      ...(parsed.data.note ? { p_note: parsed.data.note } : {}),
+    });
+    if (error) return failure(error);
+    refresh(parsed.data.orderId);
+    if (!parsed.data.notify) return { ok: true, message: "Ordine segnato come consegnato. Nessuna email inviata." };
+
+    const email = await sendDeliveryEmail(client, parsed.data.orderId);
+    refresh(parsed.data.orderId);
+    return email.ok
+      ? { ok: true, message: "Consegna confermata ed email inviata al cliente." }
+      : { ok: false, message: `Ordine segnato come consegnato, ma l'email non è partita: ${email.message}` };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
 function stripeRefundFailure(error: unknown): OrderActionState {
   const message = error instanceof Error ? error.message : "";
   // Stripe error messages mention permission issues in specific ways
@@ -385,6 +448,35 @@ export async function notifyShippedOrdersAction(_previous: OrderActionState, _fo
     const sent = pending.data.length - failed.length;
     return failed.length === 0
       ? { ok: true, message: `Email di spedizione inviate: ${sent}.` }
+      : { ok: sent > 0, message: `Inviate ${sent} di ${pending.data.length}. ${failed.join(" · ")}` };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
+/** Sends the delivery confirmation to every completed order still waiting for one. */
+export async function notifyDeliveredOrdersAction(_previous: OrderActionState, _formData: FormData): Promise<OrderActionState> {
+  try {
+    const client = await clientFor(MANAGERS);
+    const pending = await client
+      .from("orders")
+      .select("id,order_number")
+      .eq("status", "completed")
+      .is("delivery_notified_at", null)
+      .order("delivered_at", { ascending: true })
+      .limit(50);
+    if (pending.error) return { ok: false, message: "Non riesco a leggere gli ordini consegnati." };
+    if (!pending.data.length) return { ok: true, message: "Tutti gli ordini consegnati hanno già ricevuto l'email." };
+
+    const failed: string[] = [];
+    for (const order of pending.data) {
+      const result = await sendDeliveryEmail(client, order.id);
+      if (!result.ok) failed.push(`${order.order_number}: ${result.message}`);
+    }
+    revalidatePath("/admin/ordini");
+    const sent = pending.data.length - failed.length;
+    return failed.length === 0
+      ? { ok: true, message: `Email di consegna inviate: ${sent}.` }
       : { ok: sent > 0, message: `Inviate ${sent} di ${pending.data.length}. ${failed.join(" · ")}` };
   } catch (error) {
     return failure(error);
