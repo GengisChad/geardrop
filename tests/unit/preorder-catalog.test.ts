@@ -16,7 +16,7 @@ describe("reviewed catalogue", () => {
       // Shop order, 2026-09-30: what sells and ships leads, and everything that cannot ship today
       // sits at the bottom. Glory Valkerion is first because it is the best seller the shop can
       // actually send — nine pieces, second only to the sold-out Suppress Superion.
-      { slug: "glory-valkerion-lf", price: 2500, stock: "disponibile", availableQuantity: 25, rating: 0, reviewCount: 0 },
+      { slug: "glory-valkerion-lf", price: 2300, stock: "disponibile", availableQuantity: 25, rating: 0, reviewCount: 0 },
       { slug: "shatter-horus-9-65gb", price: 1250, stock: "disponibile", availableQuantity: 47, rating: 0, reviewCount: 0 },
       { slug: "hurricane-enlil-is-7-55t", price: 1250, stock: "disponibile", availableQuantity: 49, rating: 0, reviewCount: 0 },
       { slug: "hammer-incendio-3-70h", price: 1490, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
