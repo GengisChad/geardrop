@@ -69,6 +69,9 @@ const organization = {
   url: PRODUCTION_ORIGIN,
   logo: absoluteUrl(brand.emblem512),
   email: SHOP_EMAIL,
+  // Ties the shop's own profiles to this Organization, so a search engine treats them as one business
+  // instead of three strangers that happen to share a name.
+  sameAs: ["https://www.instagram.com/geardropshop/"],
   contactPoint: {
     "@type": "ContactPoint",
     contactType: "customer service",
@@ -97,6 +100,35 @@ export function siteJsonLd() {
         },
       },
     ],
+  };
+}
+
+/**
+ * A catalogue page as a list of the products on it. The shop and its categories were the only pages
+ * saying nothing about what they hold, so a crawler had to guess the listing from the markup.
+ */
+export function collectionJsonLd(
+  name: string,
+  path: string,
+  products: readonly { readonly slug: string; readonly name: string }[],
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "@id": absoluteUrl(path),
+    name,
+    url: absoluteUrl(path),
+    isPartOf: { "@id": absoluteUrl("/#website") },
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: products.length,
+      itemListElement: products.map((product, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: product.name,
+        url: absoluteUrl(`/prodotto/${product.slug}`),
+      })),
+    },
   };
 }
 
