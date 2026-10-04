@@ -99,8 +99,9 @@ select results_eq(
 );
 select results_eq(
   $$select count(*)::bigint from pg_catalog.pg_policies where schemaname = 'public'$$,
-  array[90::bigint],
-  'exactly 90 public RLS policies exist'
+  -- 90 before META ATTUALE; its three tables each carry a public read and a staff write.
+  array[96::bigint],
+  'exactly 96 public RLS policies exist'
 );
 select results_eq(
   $$select count(*)::bigint from public.categories$$,
