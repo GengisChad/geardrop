@@ -13,6 +13,7 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { label: "Media", href: "/admin/media", disabled: false },
   { label: "Homepage", href: "/admin/homepage", disabled: false },
   { label: "Pagine", href: "/admin/pagine", disabled: false },
+  { label: "Meta", href: "/admin/meta", disabled: false },
   { label: "Navigazione", href: "/admin/navigazione", disabled: false },
   { label: "Footer", href: "/admin/footer", disabled: false },
   { label: "Promozioni", href: "/admin/promozioni", disabled: false },
