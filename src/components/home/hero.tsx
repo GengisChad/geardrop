@@ -40,10 +40,13 @@ export function Hero({
   products,
   content,
   isNewRelease = true,
+  heading,
 }: {
   readonly products: readonly Product[];
   readonly content?: HeroContent;
   readonly isNewRelease?: boolean;
+  /** What the dealt cards are, for screen readers; defaults from `isNewRelease`. */
+  readonly heading?: string;
 }) {
   const shown = products.slice(0, HERO_CARDS);
   if (shown.length === 0) return null;
@@ -92,7 +95,7 @@ export function Hero({
           </div>
         </div>
 
-        <h2 className="sr-only">{isNewRelease ? "Nuove uscite" : "In evidenza"}</h2>
+        <h2 className="sr-only">{heading ?? (isNewRelease ? "Nuove uscite" : "In evidenza")}</h2>
         <ul data-testid="hero-products" className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5 xl:gap-5">
           {shown.map((product, index) => (
             <li key={product.slug}>

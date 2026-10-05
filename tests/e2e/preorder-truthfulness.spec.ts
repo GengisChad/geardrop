@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { PRODUCTS } from "../../src/data/catalog";
 import { MAX_QUANTITY_PER_LINE } from "../../src/lib/commerce/limits";
+import { BESTSELLER_SLUGS } from "../../src/lib/home/product-selection";
 import { SHELF_COUNT_SHOWN_UP_TO } from "../../src/lib/labels";
 
 const ENLIL = PRODUCTS.find((product) => product.slug === "hurricane-enlil-is-7-55t")!.availableQuantity!;
@@ -31,14 +32,18 @@ test.describe("truthful preorder storefront", () => {
 
   test("omits fabricated home, footer, and zero-review presentation", async ({ page }) => {
     await page.goto("/");
-    // The homepage: the new releases lead the hero, what ships now follows, then the rest.
-    await expect(page.getByRole("heading", { name: "Nuove uscite", exact: true })).toHaveCount(1);
+    // The homepage: the best sellers lead the hero, the pre-order drop follows, then what
+    // ships now, then the rest (owner, 2026-10-05).
+    await expect(page.getByRole("heading", { name: "I più venduti", exact: true })).toHaveCount(1);
+    await expect(page.getByRole("heading", { name: "Pre-ordini aperti", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Pronti da spedire" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Tutto il resto" })).toBeVisible();
     await expect(page.getByTestId("product-carousel")).toHaveCount(0);
-    // The hero says what it deals: the 2026-09-21 drop is a pre-order.
-    await expect(page.locator("body")).toContainText("Pre-ordini aperti");
-    await expect(page.locator("body")).not.toContainText("Più venduti");
+    // "I più venduti" is truthful only while it deals the sales record and nothing else: the
+    // label was forbidden outright when the shop had no sales to back it.
+    const hero = await page.getByTestId("hero-products").getByTestId("product-card")
+      .evaluateAll((cards) => cards.map((card) => card.getAttribute("data-slug")));
+    expect(hero).toEqual(BESTSELLER_SLUGS);
     await expect(page.locator("body")).not.toContainText("GEAR//DROP Club");
     await expect(page.locator("body")).not.toContainText("45.000");
     await expect(page.getByTestId("newsletter-email")).toHaveCount(0);

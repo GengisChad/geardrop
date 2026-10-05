@@ -20,7 +20,7 @@ const VIEWPORTS = [
 
 /** Every card of the storefront: an item sold in several colours (the deck case) is one card. */
 const STOREFRONT_CARDS = oneCardPerFamily(STOREFRONT_CATALOGUE);
-/** The owner's order: four new releases on sale, what ships now, then the rest. */
+/** The owner's order (2026-10-05): the best sellers, the pre-order drop, what ships now, the rest. */
 const PLAN = homepagePlan(STOREFRONT_CARDS, 5);
 const slugs = (products: readonly { readonly slug: string }[]) => products.map((product) => product.slug);
 
@@ -40,10 +40,11 @@ test.describe("public homepage", () => {
     await expect(lines.last()).toHaveText("disponibili in Italia.");
     await expect(lines.last()).toHaveClass(/gd-holo-text/);
 
-    // The hero deals the new releases on sale as product cards, right under the pitch.
+    // The hero deals the best sellers as product cards right under the pitch, then the drop.
     const cardSlugs = (testId: string) =>
       page.getByTestId(testId).getByTestId("product-card").evaluateAll((cards) => cards.map((card) => card.getAttribute("data-slug")));
     expect(await cardSlugs("hero-products")).toEqual(slugs(PLAN.hero));
+    expect(await cardSlugs("preorder-drop")).toEqual(slugs(PLAN.drop));
     expect(await cardSlugs("ready-to-ship")).toEqual(slugs(PLAN.ready));
     expect(await cardSlugs("arsenal-grid")).toEqual(slugs(PLAN.rest));
 
@@ -92,7 +93,7 @@ test.describe("public homepage", () => {
     await expect(visibleCards).toHaveCount(PLAN.rest.length);
   });
 
-  test("a new release goes to the cart straight from the hero", async ({ page }) => {
+  test("a best seller goes to the cart straight from the hero", async ({ page }) => {
     await page.goto("/");
     await page.getByTestId("hero-products").getByTestId("add-to-cart").first().click();
     await expect(page.getByTestId("cart-count")).toHaveText("1");

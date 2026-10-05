@@ -8,7 +8,7 @@ import { Reveal } from "@/components/ui/reveal";
 import { ManagedHomepage, type ManagedHomepageFallback } from "@/components/content/managed-homepage";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { storefrontContent } from "@/lib/content/provider";
-import { STANDARD_DELIVERY } from "@/lib/labels";
+import { RELEASE_DELIVERY, STANDARD_DELIVERY } from "@/lib/labels";
 import { HOME_FEATURED_LIMIT, homepagePlan } from "@/lib/home/product-selection";
 import { jsonLd, siteJsonLd } from "@/lib/seo";
 import { resolveHomepageSections } from "@/lib/storefront/homepage-resolver";
@@ -66,13 +66,28 @@ export default async function HomePage() {
     );
   }
 
-  // The owner's order (2026-09-21): the drop on the first screen, what ships now right under
-  // it, then everything else. Clean on purpose: no fight animation, no banner in between.
+  // The owner's order (2026-10-05): the best sellers on the first screen, the pre-order drop
+  // right under them, then what ships now, then everything else. It used to open on the drop
+  // (2026-09-21); a shopper who arrives wanting what everyone buys now finds it first.
+  // Clean on purpose: no fight animation, no banner in between.
   return (
     <>
       {structuredData}
       {/* The hero holds the LCP image, so it is never revealed on scroll: it paints at once. */}
-      <Hero products={plan.hero} isNewRelease={plan.heroIsNewRelease} />
+      <Hero
+        products={plan.hero}
+        isNewRelease={plan.heroIsNewRelease}
+        {...(plan.heroIsBestsellers
+          ? {
+              heading: "I più venduti",
+              content: {
+                eyebrow: "I più venduti · Pronti da spedire",
+                description: "I pezzi che si vendono di più, pronti da spedire oggi.",
+              },
+            }
+          : {})}
+      />
+      <ProductShelf testId="preorder-drop" kicker="Nuove uscite" title="Pre-ordini aperti" note={RELEASE_DELIVERY} products={plan.drop} />
       <ProductShelf testId="ready-to-ship" kicker="Disponibili subito" title="Pronti da spedire" note={STANDARD_DELIVERY} products={plan.ready} />
       <Arsenal products={plan.rest} title="Tutto il resto" kicker="Catalogo" />
       <Reveal>
