@@ -59,6 +59,9 @@ export default defineConfig({
     env: {
       NEXT_PUBLIC_SUPABASE_URL: "",
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "",
+      // See next.config.ts: the catalogue's two dozen cards otherwise each wait on a first
+      // AVIF encode before `load` fires, which is what kept timing /negozio out.
+      NEXT_IMAGE_UNOPTIMIZED: "1",
     },
   },
 });
