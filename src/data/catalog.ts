@@ -116,7 +116,7 @@ export const PRODUCTS: readonly Product[] = [
   {
     slug: "impact-drake-9-60lr", name: "Impact Drake 9-60LR", tagline: "Il Low Rush al prezzo di un booster.",
     description: "Impact Drake 9-60LR è la trottola d'attacco del Drop Attack Battle Set, qui venduta da sola: Ratchet 9-60 e Bit LR (Low Rush), due pezzi che nelle classifiche dei tornei compaiono spesso sotto blade diverse. Arriva imbustata e sigillata, estratta dal set e senza confezione singola. Non include il lanciatore. Richiede lanciatore e Beystadium Beyblade X (venduti separatamente).",
-    price: eur(1300), category: "beyblade-x", stock: "disponibile", availableQuantity: 6, tags: [], rating: 0, reviewCount: 0,
+    price: eur(1300), category: "beyblade-x", stock: "disponibile", availableQuantity: 100, tags: [], rating: 0, reviewCount: 0,
     images: productImages["impact-drake-9-60lr"],
     specs: [{ label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codice", value: "9-60LR" }, { label: "Componenti", value: "1 trottola" }, { label: "Confezione", value: "Imbustata e sigillata, estratta dal Battle Set" }, { label: "Nota", value: "Richiede lanciatore e Beystadium (venduti a parte)" }],
     features: [{ title: "Ratchet 9-60", description: "Assetto basso a 6,0 mm, nove punti di contatto" }, { title: "Bit Low Rush", description: "Punta bassa che scatta e riprende quota" }, { title: "Solo la trottola", description: "Il lanciatore non è incluso" }, { title: "Da sapere prima di comprare", description: "Estratta dal Drop Attack Battle Set: imbustata e sigillata, senza la sua confezione" }],
@@ -126,7 +126,7 @@ export const PRODUCTS: readonly Product[] = [
   {
     slug: "hover-wyvern-3-85n", name: "Hover Wyvern 3-85N", tagline: "Difesa alta. Resta in piedi.",
     description: "Hover Wyvern 3-85N è la trottola da difesa del Drop Attack Battle Set, qui venduta da sola: blade Hover Wyvern, Ratchet 3-85 fra i più alti della serie e Bit N (Needle). Arriva imbustata e sigillata, estratta dal set e senza confezione singola. Non include il lanciatore. Richiede lanciatore e Beystadium Beyblade X (venduti separatamente).",
-    price: eur(1300), category: "beyblade-x", stock: "disponibile", availableQuantity: 6, tags: [], rating: 0, reviewCount: 0,
+    price: eur(1300), category: "beyblade-x", stock: "disponibile", availableQuantity: 100, tags: [], rating: 0, reviewCount: 0,
     images: productImages["hover-wyvern-3-85n"],
     specs: [{ label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codice", value: "3-85N" }, { label: "Componenti", value: "1 trottola" }, { label: "Confezione", value: "Imbustata e sigillata, estratta dal Battle Set" }, { label: "Nota", value: "Richiede lanciatore e Beystadium (venduti a parte)" }],
     features: [{ title: "Ratchet 3-85", description: "Fra gli assetti più alti: tiene la trottola lontana dai colpi" }, { title: "Bit Needle", description: "Punta sottile, attrito minimo" }, { title: "Solo la trottola", description: "Il lanciatore non è incluso" }, { title: "Da sapere prima di comprare", description: "Estratta dal Drop Attack Battle Set: imbustata e sigillata, senza la sua confezione" }],
@@ -312,7 +312,7 @@ export const BUNDLES: readonly Product[] = [
   {
     slug: "deck-completo-meta", name: "Deck Completo", tagline: "Tre ruoli, un deck. Attacco, difesa, Low Rush.",
     description: "Tre trottole che coprono i tre ruoli di un deck: Cobalt Dragoon 2-60C, l'unico attacco a rotazione sinistra del catalogo; Shadow Shinobi 1-80MN, che devia il colpo invece di rimbalzarlo; e Impact Drake 9-60LR, che porta il Ratchet 9-60 e il Bit Low Rush. I due starter includono il proprio lanciatore; Impact Drake arriva imbustato, estratto dal Battle Set e senza lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).",
-    price: eur(3990), compareAtPrice: eur(5090), category: "beyblade-x", stock: "disponibile", availableQuantity: 6, tags: ["offerta"], rating: 0, reviewCount: 0,
+    price: eur(3990), compareAtPrice: eur(5090), category: "beyblade-x", stock: "disponibile", availableQuantity: 26, tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["deck-completo-meta"],
     specs: [{ label: "Tipo", value: "Attacco + Difesa + Attacco basso" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codici", value: "2-60C · 1-80MN · 9-60LR" }, { label: "Componenti", value: "3 trottole, 2 lanciatori" }],
     features: [{ title: "Un deck intero", description: "Tre ruoli diversi, non tre trottole a caso" }, { title: "Ratchet 9-60 e Bit Low Rush", description: "Due pezzi che girano spesso nelle build da torneo" }, { title: "Risparmi €11,00", description: "€39,90 invece di €50,90 comprandoli separati" }, { title: "Da sapere prima di comprare", description: "Impact Drake è imbustato, estratto dal Battle Set e senza lanciatore" }],
@@ -323,7 +323,7 @@ export const BUNDLES: readonly Product[] = [
   {
     slug: "trio-starter-arena", name: "Trio Starter", tagline: "Stamina, bilanciata, difesa. Si parte da qui.",
     description: "Tre trottole per chi comincia e vuole già tre assetti diversi: Shatter Horus 9-65GB, stamina BX con il metallo esteso oltre i ganci; Hurricane Enlil IS 7-55T, bilanciata CX con la blade Infinity scomponibile; e Hover Wyvern 3-85N, difesa con il Ratchet 3-85 fra i più alti della serie. I due starter includono il proprio lanciatore; Hover Wyvern arriva imbustato, estratto dal Battle Set e senza lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).",
-    price: eur(2990), compareAtPrice: eur(3800), category: "beyblade-x", stock: "disponibile", availableQuantity: 6, tags: ["offerta"], rating: 0, reviewCount: 0,
+    price: eur(2990), compareAtPrice: eur(3800), category: "beyblade-x", stock: "disponibile", availableQuantity: 47, tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["trio-starter-arena"],
     specs: [{ label: "Tipo", value: "Stamina + Bilanciata + Difesa" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codici", value: "9-65GB · IS 7-55T · 3-85N" }, { label: "Componenti", value: "3 trottole, 2 lanciatori" }],
     features: [{ title: "Tre assetti opposti", description: "Stamina, bilanciata e difesa in un colpo solo" }, { title: "Blade Infinity scomponibile", description: "Hurricane Enlil si smonta per costruire l'assetto su misura" }, { title: "Risparmi €8,10", description: "€29,90 invece di €38,00 comprandoli separati" }, { title: "Da sapere prima di comprare", description: "Hover Wyvern è imbustato, estratto dal Battle Set e senza lanciatore" }],

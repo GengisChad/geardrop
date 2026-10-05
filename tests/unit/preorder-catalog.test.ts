@@ -24,10 +24,11 @@ describe("reviewed catalogue", () => {
       { slug: "wand-wizard-1-60r", price: 1490, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
       { slug: "buster-dran-5-70db", price: 1290, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
       // Sold loose out of the Drop Attack Battle Set, next to the other top that ships
-      // without a launcher. The owner opened six sets and sold them by hand before they
-      // were ever listed.
-      { slug: "impact-drake-9-60lr", price: 1300, stock: "disponibile", availableQuantity: 6, rating: 0, reviewCount: 0 },
-      { slug: "hover-wyvern-3-85n", price: 1300, stock: "disponibile", availableQuantity: 6, rating: 0, reviewCount: 0 },
+      // without a launcher. A hundred of each, because the goods sit inside 102 unopened
+      // sets and a set takes seconds to open — and a hundred clears the shelf count, so
+      // neither reads as scarce when it is not.
+      { slug: "impact-drake-9-60lr", price: 1300, stock: "disponibile", availableQuantity: 100, rating: 0, reviewCount: 0 },
+      { slug: "hover-wyvern-3-85n", price: 1300, stock: "disponibile", availableQuantity: 100, rating: 0, reviewCount: 0 },
       { slug: "cobalt-dragoon-2-60c", price: 2300, stock: "disponibile", availableQuantity: 56, rating: 0, reviewCount: 0 },
       { slug: "blast-pegasus-a-tr", price: 2690, stock: "disponibile", availableQuantity: 56, rating: 0, reviewCount: 0 },
       { slug: "saber-samurai-2-70l", price: 2590, stock: "disponibile", availableQuantity: 16, rating: 0, reviewCount: 0 },

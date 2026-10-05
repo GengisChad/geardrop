@@ -9,7 +9,10 @@
 -- The two bundles built around them (Deck Completo, Trio Starter) need no rows: a bundle
 -- in this catalogue is a storefront composite whose stock derives from its pieces.
 --
--- Six pieces each, entered as a goods-in movement rather than appearing from nowhere.
+-- A hundred of each, entered as a goods-in movement rather than appearing from nowhere: the
+-- goods are real and already paid for, sitting inside 102 unopened Drop Attack Battle Sets,
+-- and a set takes seconds to open while packing an order. A hundred also clears the shelf
+-- count the product page shows, so neither top reads as scarce when it is not.
 
 begin;
 select pg_advisory_xact_lock(hashtext('20261005140000_loose_tops_from_the_battle_set'));
@@ -96,12 +99,12 @@ select product.id, seed.content, seed.sort_order
 from seed join public.products as product on product.slug = seed.product_slug
 on conflict (product_id, sort_order) do update set content = excluded.content;
 
--- Six of each, from the six Battle Sets already opened. Through the ledger, so the stock
+-- Through the ledger, so the stock
 -- has a reason rather than a number someone typed. stock_after is the running total the
 -- table records for every movement; here the product starts at zero, so it is the delta.
 insert into public.inventory_movements (product_id, delta, stock_after, reason, note)
-select product.id, 6, product.stock_quantity + 6, 'initial'::public.inventory_reason,
-       'Sei Drop Attack Battle Set aperti: le due trottole passano a vendita singola'
+select product.id, 100, product.stock_quantity + 100, 'initial'::public.inventory_reason,
+       'Trottole del Drop Attack Battle Set in vendita singola: 102 set a magazzino, aperti su ordine'
 from public.products as product
 where product.slug in ('impact-drake-9-60lr', 'hover-wyvern-3-85n')
   and not exists (
