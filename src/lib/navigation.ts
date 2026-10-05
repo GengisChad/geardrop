@@ -15,6 +15,7 @@ export const MAIN_NAV: readonly NavItem[] = [
   { label: "Lanciatori", href: "/negozio/lanciatori" },
   { label: "Stadi", href: "/negozio/stadi" },
   { label: "Accessori", href: "/negozio/accessori" },
+  { label: "Meta", href: "/meta" },
   { label: "Nuovi arrivi", href: "/negozio?sort=novita", tone: "violet" },
   { label: "Offerte", href: "/prodotto/duo-horus-enlil", tone: "lime" },
 ];
@@ -34,6 +35,7 @@ export const FOOTER_NAV: readonly { title: string; links: readonly NavItem[] }[]
       { label: "Lanciatori", href: "/negozio/lanciatori" },
       { label: "Stadi", href: "/negozio/stadi" },
       { label: "Accessori", href: "/negozio/accessori" },
+      { label: "Meta attuale", href: "/meta" },
       { label: "Nuovi arrivi", href: "/negozio?sort=novita" },
     ],
   },

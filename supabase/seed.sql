@@ -849,8 +849,9 @@ with seed(menu_key, label, href, sort_order) as (
   ('main', 'Lanciatori', '/negozio/lanciatori', 2),
   ('main', 'Stadi', '/negozio/stadi', 3),
   ('main', 'Accessori', '/negozio/accessori', 4),
-  ('main', 'Nuovi arrivi', '/negozio?sort=novita', 5),
-  ('main', 'Offerte', '/prodotto/duo-horus-enlil', 6)
+  ('main', 'Meta', '/meta', 5),
+  ('main', 'Nuovi arrivi', '/negozio?sort=novita', 6),
+  ('main', 'Offerte', '/prodotto/duo-horus-enlil', 7)
 )
 insert into public.navigation_items(menu_id, parent_id, label, href, active, sort_order)
 select menu.id, null, seed.label, seed.href, true, seed.sort_order
@@ -876,7 +877,8 @@ with seed(column_key, label, href, sort_order) as (
   ('shop', 'Lanciatori', '/negozio/lanciatori', 1),
   ('shop', 'Stadi', '/negozio/stadi', 2),
   ('shop', 'Accessori', '/negozio/accessori', 3),
-  ('shop', 'Nuovi arrivi', '/negozio?sort=novita', 4),
+  ('shop', 'Meta attuale', '/meta', 4),
+  ('shop', 'Nuovi arrivi', '/negozio?sort=novita', 5),
   ('help', 'FAQ', '/assistenza/faq', 0),
   ('help', 'Spedizioni', '/assistenza/spedizioni', 1),
   ('help', 'Resi e rimborsi', '/assistenza/resi', 2),
