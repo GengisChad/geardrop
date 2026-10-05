@@ -9,6 +9,23 @@ begin;
 select pg_advisory_xact_lock(hashtext('20261005110000_meta_enters_the_navigation'));
 
 -- Header: Meta sits after the categories and before the promotional entries.
+--
+-- The two promotional entries move first and Meta goes in after. (menu, parent, position) is
+-- unique, and in production "Nuovi arrivi" already holds 5: inserting before shifting is a
+-- duplicate key. Each moves on its own statement, the higher one first, so no step ever
+-- lands on a position another entry still holds.
+update public.navigation_items as item
+set sort_order = 7
+from public.navigation_menus as menu
+where item.menu_id = menu.id and menu.menu_key = 'main' and item.parent_id is null
+  and item.href = '/prodotto/duo-horus-enlil';
+
+update public.navigation_items as item
+set sort_order = 6
+from public.navigation_menus as menu
+where item.menu_id = menu.id and menu.menu_key = 'main' and item.parent_id is null
+  and item.href = '/negozio?sort=novita';
+
 with menu as (
   select id from public.navigation_menus where menu_key = 'main'
 )
@@ -19,14 +36,6 @@ where not exists (
   select 1 from public.navigation_items as item
   where item.menu_id = menu.id and item.href = '/meta'
 );
-
-update public.navigation_items as item
-set sort_order = case item.href when '/negozio?sort=novita' then 6 else 7 end
-from public.navigation_menus as menu
-where item.menu_id = menu.id
-  and menu.menu_key = 'main'
-  and item.href in ('/negozio?sort=novita', '/prodotto/duo-horus-enlil')
-  and item.parent_id is null;
 
 -- Footer, shop column: last under the categories, above "Nuovi arrivi".
 with column_row as (
