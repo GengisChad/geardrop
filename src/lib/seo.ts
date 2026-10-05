@@ -132,6 +132,46 @@ export function collectionJsonLd(
   };
 }
 
+/**
+ * The monthly meta tier list as a dated Article carrying its three rankings.
+ *
+ * `dateModified` is the point of it: "meta" is a question about now, and a page that can
+ * show when it was last revised is the one a search engine can tell is still current.
+ */
+export function metaPageJsonLd(input: {
+  readonly path: string;
+  readonly title: string;
+  readonly description: string;
+  readonly datePublished: string | null;
+  readonly dateModified: string;
+  readonly rankings: readonly { readonly tier: string; readonly pieces: readonly string[] }[];
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "@id": absoluteUrl(input.path),
+    url: absoluteUrl(input.path),
+    headline: input.title,
+    description: input.description,
+    inLanguage: "it-IT",
+    ...(input.datePublished ? { datePublished: input.datePublished } : {}),
+    dateModified: input.dateModified,
+    author: { "@id": absoluteUrl("/#organization") },
+    publisher: { "@id": absoluteUrl("/#organization") },
+    isPartOf: { "@id": absoluteUrl("/#website") },
+    hasPart: input.rankings.map((ranking) => ({
+      "@type": "ItemList",
+      name: ranking.tier,
+      numberOfItems: ranking.pieces.length,
+      itemListElement: ranking.pieces.map((piece, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: piece,
+      })),
+    })),
+  };
+}
+
 export function breadcrumbJsonLd(items: readonly { readonly name: string; readonly path: string }[]) {
   return {
     "@context": "https://schema.org",

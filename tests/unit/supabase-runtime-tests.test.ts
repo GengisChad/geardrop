@@ -21,7 +21,8 @@ describe("Supabase runtime test coverage", () => {
     const sql = pgTap("002_commerce_schema.test.sql");
 
     // The catalogue count travels with the catalogue: fourteen products since the 2026-09-21 drop.
-    for (const expected of ["schema_migrations", "32::bigint", "90::bigint", "array[14::bigint]"]) {
+    // 96 policies since META ATTUALE: three tables, each with a public read and a staff write.
+    for (const expected of ["schema_migrations", "32::bigint", "96::bigint", "array[14::bigint]"]) {
       expect(sql).toContain(expected);
     }
   });

@@ -52,10 +52,16 @@ describe("storefront artwork", () => {
     // A bundle has no photograph of its own: its packshot is assembled from its components'
     // cut-outs by scripts/compose_bundle_images.py.
     const bundles = readFileSync(join(ROOT, "scripts/compose_bundle_images.py"), "utf8");
+    // The tops sold loose out of the Battle Set start as bare renders rather than
+    // packshots, and the bundles built around them are composed, not photographed.
+    const looseTops = readFileSync(join(ROOT, "scripts/build-loose-tops.mjs"), "utf8");
     for (const slug of Object.keys(productImages)) {
       // The deck cases share one picture, built by scripts/cut_deck_cases.py and render-deck-image.mjs.
       if (slug.startsWith("porta-deck-")) continue;
-      expect(script.includes(`"${slug}"`) || bundles.includes(`"${slug}"`), slug).toBe(true);
+      expect(
+        script.includes(`"${slug}"`) || bundles.includes(`"${slug}"`) || looseTops.includes(`"${slug}"`),
+        slug,
+      ).toBe(true);
     }
     expect(readFileSync(join(ROOT, "scripts/render-deck-image.mjs"), "utf8")).toContain("public/products/cutout/porta-deck.webp");
     expect(cutoutSrc("/products/porta-deck.webp")).toBe("/products/cutout/porta-deck.webp");

@@ -23,4 +23,7 @@ export type AppHref =
   // Sold-out product cards lead to the availability-notice form on the product page.
   | `/prodotto/${string}#restock-form`
   | `/assistenza/${SupportSlug}`
+  // A meta month is a YYYY-MM the owner typed into the panel, so there is no union to key
+  // this off; the route itself rejects anything that is not a month it has published.
+  | `/meta/${string}`
   | `/legale/${LegalSlug}`;

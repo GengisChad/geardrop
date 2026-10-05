@@ -15,8 +15,18 @@ export const MAIN_NAV: readonly NavItem[] = [
   { label: "Lanciatori", href: "/negozio/lanciatori" },
   { label: "Stadi", href: "/negozio/stadi" },
   { label: "Accessori", href: "/negozio/accessori" },
+  { label: "Meta", href: "/meta" },
   { label: "Nuovi arrivi", href: "/negozio?sort=novita", tone: "violet" },
   { label: "Offerte", href: "/prodotto/duo-horus-enlil", tone: "lime" },
+];
+
+/**
+ * The row under the footer columns. The shop's own account comes first; the channel is
+ * where the catalogue is actually explained, so it earns its place beside it.
+ */
+export const SOCIAL_LINKS: readonly { readonly key: string; readonly label: string; readonly href: string }[] = [
+  { key: "instagram", label: "Instagram", href: "https://www.instagram.com/geardropshop/" },
+  { key: "youtube", label: "YouTube", href: "https://www.youtube.com/@GengisChadBBX" },
 ];
 
 export const ANNOUNCEMENTS = [
@@ -34,6 +44,7 @@ export const FOOTER_NAV: readonly { title: string; links: readonly NavItem[] }[]
       { label: "Lanciatori", href: "/negozio/lanciatori" },
       { label: "Stadi", href: "/negozio/stadi" },
       { label: "Accessori", href: "/negozio/accessori" },
+      { label: "Meta attuale", href: "/meta" },
       { label: "Nuovi arrivi", href: "/negozio?sort=novita" },
     ],
   },

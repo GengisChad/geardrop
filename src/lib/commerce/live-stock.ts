@@ -16,6 +16,16 @@ import type { Product } from "./types";
  * the products tag, which the webhook expires after each order. Without a Supabase project, or
  * if the read fails, the catalogue's own numbers are served rather than an error page.
  */
+/**
+ * How long the stock read may take before the catalogue's own numbers are served instead.
+ *
+ * Without a bound, a database that stalls rather than fails — a restarting container, an
+ * exhausted pool — holds every catalogue request open until the visitor gives up: the
+ * catch below only ever sees errors, never silence. The read is one small query; four
+ * seconds is generous for it and short enough that a shopper still gets a page.
+ */
+const LIVE_STOCK_TIMEOUT_MS = 4_000;
+
 export async function loadLiveCatalogue(): Promise<readonly Product[]> {
   if (!hasPublicSupabaseEnv()) return PRODUCTS;
   try {
@@ -26,7 +36,8 @@ export async function loadLiveCatalogue(): Promise<readonly Product[]> {
         .in(
           "slug",
           PRODUCTS.map((product) => product.slug),
-        );
+        )
+        .abortSignal(AbortSignal.timeout(LIVE_STOCK_TIMEOUT_MS));
       if (result.error) throw new Error(result.error.message);
       return result.data as readonly LiveStockRow[];
     });
