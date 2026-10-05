@@ -85,7 +85,11 @@ describe("bundle stock", () => {
       { slug: "hurricane-enlil-is-7-55t", quantity: 2 },
     ]);
     expect(piecesOf(horus, 3)).toEqual([{ slug: "shatter-horus-9-65gb", quantity: 3 }]);
-    expect(bundlesContaining("hurricane-enlil-is-7-55t", BUNDLES).map((bundle) => bundle.slug)).toEqual(["duo-horus-enlil"]);
+    // Hurricane Enlil is now in two bundles, so a line of it has to decrement against both.
+    expect(bundlesContaining("hurricane-enlil-is-7-55t", BUNDLES).map((bundle) => bundle.slug)).toEqual([
+      "duo-horus-enlil",
+      "trio-starter-arena",
+    ]);
     expect(bundlesContaining("glory-valkerion-lf", BUNDLES)).toHaveLength(0);
   });
 });

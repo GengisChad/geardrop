@@ -26,6 +26,7 @@
     "stripe:products": "tsx scripts/sync-stripe-products.ts",
     "shots": "playwright test --config playwright.shots.config.ts",
     "assets": "python scripts/build-assets.py",
+    "assets:tops": "node scripts/build-loose-tops.mjs",
     "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "typegen": "next typegen"
   },
