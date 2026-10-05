@@ -202,10 +202,14 @@ test.describe("product page", () => {
 
 test.describe("search", () => {
   test("finds a product by name", async ({ page }) => {
-    // Two Cobalts in the catalogue since the 2026-09-21 drop: the search must return both.
+    // Two Cobalts in the catalogue since the 2026-09-21 drop, and since 2026-10-05 the Deck
+    // Completo that contains one. The search finds all three; the two actually named Cobalt
+    // rank above the bundle that only lists one among its contents.
     await page.goto("/ricerca?q=cobalt");
     await expect(page.getByTestId("search-results")).toBeVisible();
-    await expect(page.getByTestId("product-card")).toHaveCount(2);
+    await expect(page.getByTestId("product-card")).toHaveCount(3);
+    await expect(page.getByTestId("product-card").nth(0)).toContainText("Cobalt");
+    await expect(page.getByTestId("product-card").nth(1)).toContainText("Cobalt");
     await expect(page.getByTestId("search-results")).toContainText("Cobalt Dragoon");
     await expect(page.getByTestId("search-results")).toContainText("Cobalt Drake");
   });

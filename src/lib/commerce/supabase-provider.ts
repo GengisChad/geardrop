@@ -155,6 +155,22 @@ const SORTERS: Record<SortKey, (left: Product, right: Product) => number> = {
   nome: (left, right) => left.name.localeCompare(right.name, "it"),
 };
 
+/**
+ * A name match outranks a description match, so a bundle that merely lists Cobalt
+ * Dragoon among its contents cannot sit above the Cobalt Dragoon itself. Mirrors the
+ * mock provider: the two have to agree or the shop ranks differently from its tests.
+ */
+function rank(query: ProductQuery, sorter: (left: Product, right: Product) => number) {
+  const needle = normalise(query.search ?? "").trim();
+  if (!needle) return sorter;
+  const tokens = needle.split(/s+/);
+  const named = (product: Product) => {
+    const name = normalise(product.name);
+    return Number(tokens.every((token) => name.includes(token)));
+  };
+  return (left: Product, right: Product) => named(right) - named(left) || sorter(left, right);
+}
+
 function count<T extends string>(values: readonly T[]): Map<T, number> {
   const result = new Map<T, number>();
   for (const value of values) result.set(value, (result.get(value) ?? 0) + 1);
@@ -196,7 +212,7 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>)
     async listProducts(query = {}): Promise<ProductPage> {
       const perPage = query.perPage ?? DEFAULT_PER_PAGE;
       const filtered = oneCardPerFamily((await allProducts()).filter((product) => matches(product, query)));
-      const sorted = [...filtered].sort(SORTERS[query.sort ?? "popolari"]);
+      const sorted = [...filtered].sort(rank(query, SORTERS[query.sort ?? "popolari"]));
       const pageCount = Math.max(1, Math.ceil(sorted.length / perPage));
       const page = Math.min(Math.max(1, query.page ?? 1), pageCount);
       const start = (page - 1) * perPage;
