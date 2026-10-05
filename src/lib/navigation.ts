@@ -20,6 +20,15 @@ export const MAIN_NAV: readonly NavItem[] = [
   { label: "Offerte", href: "/prodotto/duo-horus-enlil", tone: "lime" },
 ];
 
+/**
+ * The row under the footer columns. The shop's own account comes first; the channel is
+ * where the catalogue is actually explained, so it earns its place beside it.
+ */
+export const SOCIAL_LINKS: readonly { readonly key: string; readonly label: string; readonly href: string }[] = [
+  { key: "instagram", label: "Instagram", href: "https://www.instagram.com/geardropshop/" },
+  { key: "youtube", label: "YouTube", href: "https://www.youtube.com/@GengisChadBBX" },
+];
+
 export const ANNOUNCEMENTS = [
   { icon: "package", text: `Spedizione gratuita sopra ${FREE_SHIPPING_FROM_LABEL}` },
   { icon: "zap", text: "Nuovi drop ogni settimana" },

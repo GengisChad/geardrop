@@ -927,6 +927,15 @@ insert into public.footer_items(column_id, label, href, active, sort_order)
 select column_row.id, seed.label, seed.href, true, seed.sort_order
 from seed join public.footer_columns as column_row on column_row.column_key = seed.column_key;
 
+insert into public.social_links(platform_key, label, href, publication_status, published_at, active, sort_order)
+values
+  ('instagram', 'Instagram', 'https://www.instagram.com/geardropshop/', 'published'::public.publication_status, now(), true, 0),
+  ('youtube', 'YouTube', 'https://www.youtube.com/@GengisChadBBX', 'published'::public.publication_status, now(), true, 1)
+-- Only the wording and the address are refreshed. Whether a link is published and visible
+-- is operational state the owner sets from the panel, and the seed never takes it back.
+on conflict (platform_key) do update set
+  label = excluded.label, href = excluded.href;
+
 -- Fill reviewed public identity only while migration defaults are still blank.
 -- Later admin/runtime changes always win and are never reset by this seed.
 update public.site_settings set
