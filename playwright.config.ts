@@ -19,7 +19,13 @@ export default defineConfig({
   // and omitting it lets Playwright pick its own default locally.
   workers: isCI ? 1 : 2,
   reporter: isCI ? [["github"], ["html", { open: "never" }]] : [["list"], ["html", { open: "never" }]],
-  timeout: 60_000,
+  // The runner shares its two cores with the whole local Supabase stack — Postgres,
+  // PostgREST, GoTrue, Kong and the rest stay up for the gates that need them, and this
+  // one inherits the contention. A production server that reports "Ready in 129ms" and
+  // then takes over a minute to answer a navigation is a starved machine, not a slow
+  // page: the same routes serve in under 200ms locally. The budget is raised on CI only,
+  // so a genuine regression still fails fast on a developer's machine.
+  timeout: isCI ? 120_000 : 60_000,
   expect: { timeout: 7_000 },
 
   use: {
@@ -28,6 +34,7 @@ export default defineConfig({
     screenshot: "only-on-failure",
     locale: "it-IT",
     timezoneId: "Europe/Rome",
+    ...(isCI ? { navigationTimeout: 90_000, actionTimeout: 30_000 } : {}),
   },
 
   projects: [
