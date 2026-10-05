@@ -48,11 +48,20 @@ async function previewEnabled() {
  * panel's job is to tell the owner when something is wrong.
  */
 async function soft<T>(what: string, fallback: T, read: () => Promise<T>): Promise<T> {
+  // A stalled database never throws, it just never answers; without a bound the section
+  // would hold the whole page open instead of rendering empty.
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const stalled = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error("nessuna risposta entro 4 secondi")), 4_000);
+  });
   try {
-    return await read();
+    return await Promise.race([read(), stalled]);
   } catch (error) {
     console.error(`[meta] ${what} non disponibile:`, error instanceof Error ? error.message : error);
     return fallback;
+  } finally {
+    // A read that answers in time must not leave the timer holding the process open.
+    clearTimeout(timer);
   }
 }
 

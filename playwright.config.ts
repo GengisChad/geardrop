@@ -50,5 +50,15 @@ export default defineConfig({
     reuseExistingServer: !isCI,
     timeout: 240_000,
     stdout: "pipe",
+    // This gate exercises the mock provider, but CI exports the local Supabase URL and key
+    // into the job environment for the gates that need them, and they reach this server
+    // too. The live-stock overlay asks whether Supabase is configured rather than which
+    // provider is selected, so the "mock" catalogue was quietly reading a database that an
+    // earlier step had reset and the admin gates had since rewritten. Blanking the two
+    // public variables makes this gate test what it says it tests, on CI and locally alike.
+    env: {
+      NEXT_PUBLIC_SUPABASE_URL: "",
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "",
+    },
   },
 });
