@@ -27,6 +27,8 @@ select results_eq(
         -- The 2026-09-29 arrival from Spain: eight starter packs, 26 of each.
         -- The 2026-09-30 Hasbro shipment.
         'buster-dran-5-70db', 'hammer-incendio-3-70h', 'shadow-shinobi-1-80mn', 'wand-wizard-1-60r',
+        -- Sold loose out of six opened Drop Attack Battle Sets.
+        'impact-drake-9-60lr', 'hover-wyvern-3-85n',
         -- The deck cases sell without a limit: the database keeps a counter the shop never shows.
         'porta-deck-giallo', 'porta-deck-verde-lime', 'porta-deck-azzurro', 'porta-deck-blu', 'porta-deck-rosa', 'porta-deck-fucsia', 'porta-deck-bianco')$$,
   array[0::bigint],
@@ -99,8 +101,9 @@ select results_eq(
 );
 select results_eq(
   $$select count(*)::bigint from pg_catalog.pg_policies where schemaname = 'public'$$,
-  array[90::bigint],
-  'exactly 90 public RLS policies exist'
+  -- 90 before META ATTUALE; its three tables each carry a public read and a staff write.
+  array[96::bigint],
+  'exactly 96 public RLS policies exist'
 );
 select results_eq(
   $$select count(*)::bigint from public.categories$$,
@@ -109,12 +112,12 @@ select results_eq(
 );
 select results_eq(
   $$select count(*)::bigint from public.products$$,
-  array[25::bigint],
+  array[27::bigint],
   'double seed keeps the catalogue products'
 );
 select results_eq(
   $$select count(*)::bigint from public.product_images$$,
-  array[25::bigint],
+  array[27::bigint],
   'double seed keeps one image per catalogue product'
 );
 select results_eq(

@@ -1,15 +1,32 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
 import { BUNDLES, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS } from "@/data/catalog";
 import { oneCardPerFamily } from "@/lib/commerce/variants";
 import { breadcrumbJsonLd, jsonLd, productDescription, productJsonLd, productTitle, siteJsonLd } from "@/lib/seo";
 
+// The sitemap reads the published meta months from Supabase; the unit test stands in for
+// it so the file's own shape is what is under test.
+vi.mock("@/lib/storefront/meta-repository", () => ({
+  getStorefrontMetaArchive: async () => [
+    { month: "2026-10", title: "Meta ottobre 2026", publishedAt: "2026-10-05T00:00:00.000Z", updatedAt: "2026-10-05T00:00:00.000Z" },
+  ],
+}));
+
 afterEach(() => vi.unstubAllEnvs());
 
 describe("sitemap", () => {
-  const entries = sitemap();
-  const urls = entries.map((entry) => entry.url);
+  let entries: Awaited<ReturnType<typeof sitemap>>;
+  let urls: string[];
+  beforeAll(async () => {
+    entries = await sitemap();
+    urls = entries.map((entry) => entry.url);
+  });
+
+  it("lists the meta page and every published month", () => {
+    expect(urls).toContain("https://geardropshop.it/meta");
+    expect(urls).toContain("https://geardropshop.it/meta/2026-10");
+  });
 
   it("lists the home, the shop, every category and every product on the production domain", () => {
     expect(urls).toContain("https://geardropshop.it/");

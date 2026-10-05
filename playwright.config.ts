@@ -19,7 +19,13 @@ export default defineConfig({
   // and omitting it lets Playwright pick its own default locally.
   workers: isCI ? 1 : 2,
   reporter: isCI ? [["github"], ["html", { open: "never" }]] : [["list"], ["html", { open: "never" }]],
-  timeout: 60_000,
+  // The runner shares its two cores with the whole local Supabase stack — Postgres,
+  // PostgREST, GoTrue, Kong and the rest stay up for the gates that need them, and this
+  // one inherits the contention. A production server that reports "Ready in 129ms" and
+  // then takes over a minute to answer a navigation is a starved machine, not a slow
+  // page: the same routes serve in under 200ms locally. The budget is raised on CI only,
+  // so a genuine regression still fails fast on a developer's machine.
+  timeout: isCI ? 120_000 : 60_000,
   expect: { timeout: 7_000 },
 
   use: {
@@ -28,6 +34,7 @@ export default defineConfig({
     screenshot: "only-on-failure",
     locale: "it-IT",
     timezoneId: "Europe/Rome",
+    ...(isCI ? { navigationTimeout: 90_000, actionTimeout: 30_000 } : {}),
   },
 
   projects: [
@@ -43,5 +50,18 @@ export default defineConfig({
     reuseExistingServer: !isCI,
     timeout: 240_000,
     stdout: "pipe",
+    // This gate exercises the mock provider, but CI exports the local Supabase URL and key
+    // into the job environment for the gates that need them, and they reach this server
+    // too. The live-stock overlay asks whether Supabase is configured rather than which
+    // provider is selected, so the "mock" catalogue was quietly reading a database that an
+    // earlier step had reset and the admin gates had since rewritten. Blanking the two
+    // public variables makes this gate test what it says it tests, on CI and locally alike.
+    env: {
+      NEXT_PUBLIC_SUPABASE_URL: "",
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "",
+      // See next.config.ts: the catalogue's two dozen cards otherwise each wait on a first
+      // AVIF encode before `load` fires, which is what kept timing /negozio out.
+      NEXT_IMAGE_UNOPTIMIZED: "1",
+    },
   },
 });

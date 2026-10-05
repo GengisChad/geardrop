@@ -257,6 +257,43 @@ export const productImages = {
       alt: "Duo con gli starter Blast Pegasus A Tr e Saber Samurai 2-70L e i loro lanciatori",
     },
   ],
+  /**
+   * The two tops that come inside the Drop Attack Battle Set. We sell them loose because
+   * the pieces inside are wanted on their own — a 9-60 ratchet and a Low Rush bit for the
+   * price of a booster — and the sets were sitting unsold whole.
+   */
+  "impact-drake-9-60lr": [
+    {
+      src: "/products/impact-drake-9-60lr.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Trottola Beyblade X Impact Drake 9-60LR rossa e argento con il gear chip del drago azzurro",
+    },
+  ],
+  "hover-wyvern-3-85n": [
+    {
+      src: "/products/hover-wyvern-3-85n.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Trottola Beyblade X Hover Wyvern 3-85N argento con la blade verde trasparente e il gear chip del wyvern",
+    },
+  ],
+  "deck-completo-meta": [
+    {
+      src: "/products/deck-completo-meta.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Gli starter Shadow Shinobi 1-80MN e Cobalt Dragoon 2-60C con la trottola Impact Drake 9-60LR",
+    },
+  ],
+  "trio-starter-arena": [
+    {
+      src: "/products/trio-starter-arena.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Gli starter Shatter Horus 9-65GB e Hurricane Enlil IS 7-55T con la trottola Hover Wyvern 3-85N",
+    },
+  ],
   "porta-deck-giallo": [DECK_IMAGE],
   "porta-deck-verde-lime": [DECK_IMAGE],
   "porta-deck-azzurro": [DECK_IMAGE],

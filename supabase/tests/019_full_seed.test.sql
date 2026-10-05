@@ -1,16 +1,16 @@
 begin;
 select plan(17);
 
-select results_eq($$select count(*)::integer from public.products$$, array[25], 'seed has the reviewed products');
+select results_eq($$select count(*)::integer from public.products$$, array[27], 'seed has the reviewed products');
 select results_eq($$select count(*)::integer from public.categories$$, array[4], 'seed has the four reviewed categories');
-select results_eq($$select count(*)::integer from public.product_images where is_primary and published$$, array[25], 'seed has one reviewed primary image per product');
+select results_eq($$select count(*)::integer from public.product_images where is_primary and published$$, array[27], 'seed has one reviewed primary image per product');
 select results_eq($$select count(*)::integer from public.bundles$$, array[1], 'seed has the reviewed bundle');
 select results_eq($$select count(*)::integer from public.homepage_sections$$, array[8], 'seed has the current homepage sections');
 select results_eq($$select count(*)::integer from public.content_pages$$, array[5], 'seed has only reviewed public informational pages');
 select results_eq($$select count(*)::integer from public.navigation_menus$$, array[1], 'seed has the main navigation');
-select results_eq($$select count(*)::integer from public.navigation_items$$, array[7], 'seed has the current main navigation items');
+select results_eq($$select count(*)::integer from public.navigation_items$$, array[8], 'seed has the current main navigation items');
 select results_eq($$select count(*)::integer from public.footer_columns$$, array[4], 'seed has the current footer columns');
-select results_eq($$select count(*)::integer from public.footer_items$$, array[16], 'seed has the current footer links');
+select results_eq($$select count(*)::integer from public.footer_items$$, array[17], 'seed has the current footer links');
 -- Every published product is sellable the day the seed runs, in one of the three honest ways:
 -- from a shelf, from a funded pre-order allocation (the 2026-09-21 drop), or as an open
 -- pre-order with no shelf at all (allow_backorder).
