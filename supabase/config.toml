@@ -299,9 +299,13 @@ auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
 max_enrolled_factors = 10
 
 # Control MFA via App Authenticator (TOTP)
+# Abilitato per lo stack Supabase locale: necessario per testare il Task 5 (MFA owner).
+# Il progetto Supabase REMOTO è condiviso con i clienti dello storefront: abilitare TOTP
+# in remoto è un passo separato, soggetto ad approvazione esplicita (Fase 4 del README),
+# e non deve alterare il flusso di login dei clienti Gear Drop.
 [auth.mfa.totp]
-enroll_enabled = false
-verify_enabled = false
+enroll_enabled = true
+verify_enabled = true
 
 # Configure MFA via Phone Messaging
 [auth.mfa.phone]

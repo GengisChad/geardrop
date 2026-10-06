@@ -64,6 +64,13 @@ describe("management feature control plane", () => {
     const pkg = JSON.parse(readFileSync(resolve("package.json"), "utf8"));
     expect(pkg.scripts["db:types"]).toContain("--schema public,management_api");
   });
+  it("ha TOTP abilitato nel profilo Supabase locale per i test MFA owner (Task 5)", () => {
+    const config = readFileSync(resolve("supabase/config.toml"), "utf8");
+    // Estrae la sezione [auth.mfa.totp] fino al prossimo header di sezione
+    const totpSection = config.match(/\[auth\.mfa\.totp\]([\s\S]*?)(?=\n\[|$)/)?.[1] ?? "";
+    expect(totpSection, "[auth.mfa.totp] enroll_enabled deve essere true").toMatch(/enroll_enabled\s*=\s*true/);
+    expect(totpSection, "[auth.mfa.totp] verify_enabled deve essere true").toMatch(/verify_enabled\s*=\s*true/);
+  });
   it("allows neutral package imports but rejects app, Next and undeclared dependencies", () => {
     const file = resolve("packages/data-contract/src/probe.ts");
     expect(checkSourceImports('import type { SupabaseClient } from "@supabase/supabase-js"; import type { Database } from "./database.types";', file, process.cwd())).toEqual([]);
