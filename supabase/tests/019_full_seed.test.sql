@@ -1,7 +1,8 @@
 begin;
 select plan(17);
 
-select results_eq($$select count(*)::integer from public.products$$, array[27], 'seed has the reviewed products');
+-- The 27 catalogue products and the Drop Attack stadium alone, a stock item kept off the site.
+select results_eq($$select count(*)::integer from public.products$$, array[28], 'seed has the reviewed products');
 select results_eq($$select count(*)::integer from public.categories$$, array[4], 'seed has the four reviewed categories');
 select results_eq($$select count(*)::integer from public.product_images where is_primary and published$$, array[27], 'seed has one reviewed primary image per product');
 select results_eq($$select count(*)::integer from public.bundles$$, array[1], 'seed has the reviewed bundle');

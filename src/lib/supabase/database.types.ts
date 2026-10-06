@@ -54,6 +54,39 @@ export type Database = {
         }
         Relationships: []
       }
+      battle_set_parts: {
+        Row: {
+          loose: number
+          part_product_id: number
+          set_product_id: number
+        }
+        Insert: {
+          loose?: number
+          part_product_id: number
+          set_product_id: number
+        }
+        Update: {
+          loose?: number
+          part_product_id?: number
+          set_product_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "battle_set_parts_part_product_id_fkey"
+            columns: ["part_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "battle_set_parts_set_product_id_fkey"
+            columns: ["set_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bundle_items: {
         Row: {
           bundle_id: number
@@ -2316,6 +2349,10 @@ export type Database = {
         Args: { p_note?: string; p_order_id: number }
         Returns: undefined
       }
+      count_battle_set: {
+        Args: { p_loose: Json; p_sealed: number; p_set_slug: string }
+        Returns: Json
+      }
       create_order: {
         Args: {
           p_billing_address: Json
@@ -2412,6 +2449,10 @@ export type Database = {
       mark_restock_notices_sent: {
         Args: { p_request_ids: number[] }
         Returns: undefined
+      }
+      open_battle_sets: {
+        Args: { p_count: number; p_set_slug: string }
+        Returns: number
       }
       prepare_order_refund: {
         Args: { p_amount_cents: number; p_order_id: number; p_reason: string }
@@ -2629,6 +2670,8 @@ export type Database = {
         | "return"
         | "damage"
         | "vinted_sale"
+        | "set_opened"
+        | "set_linked"
       media_asset_status: "pending" | "ready" | "failed"
       order_status:
         | "pending"
@@ -2805,6 +2848,8 @@ export const Constants = {
         "return",
         "damage",
         "vinted_sale",
+        "set_opened",
+        "set_linked",
       ],
       media_asset_status: ["pending", "ready", "failed"],
       order_status: [

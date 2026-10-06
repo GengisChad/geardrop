@@ -1,6 +1,7 @@
 import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { BUNDLES, PRODUCTS } from "@/data/catalog";
+import { STOCK_ONLY_PRODUCTS } from "@/data/stock-only";
 import { orderNotificationRecipient, sendEmail } from "@/lib/email/resend";
 import { STOREFRONT_CACHE_TAGS } from "@/lib/storefront/cache";
 import { aiReaderConfigured, readSaleWithClaude, type CatalogueEntry } from "@/lib/vinted/ai-reader";
@@ -24,11 +25,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
+/** What a Vinted sale can take off the shelf: the site's products and the goods sold only off it. */
+const SHELF = [...PRODUCTS.map((product) => ({ slug: product.slug, name: product.name })), ...STOCK_ONLY_PRODUCTS];
 const CATALOGUE: readonly CatalogueEntry[] = [
-  ...PRODUCTS.map((product) => ({ slug: product.slug, name: product.name })),
+  ...SHELF,
   ...BUNDLES.map((bundle) => ({ slug: bundle.slug, name: bundle.name, ships: bundle.bundleOf ?? [] })),
 ];
-const NAMES = new Map(PRODUCTS.map((product) => [product.slug, product.name]));
+const NAMES = new Map(SHELF.map((product) => [product.slug, product.name]));
 
 export async function POST(request: Request) {
   const webhookSecret = process.env["RESEND_WEBHOOK_SECRET"]?.trim();
@@ -64,7 +67,7 @@ export async function POST(request: Request) {
     const email = await fetchReceivedEmail(event.emailId, apiKey);
     const result = await processInboundEmail(email, {
       store: createSupabaseInboundStore(),
-      products: PRODUCTS,
+      products: SHELF,
       catalogue: CATALOGUE,
       ...(aiReaderConfigured() ? { readWithAi: readSaleWithClaude } : {}),
       notifyOwner: async (notice) => {

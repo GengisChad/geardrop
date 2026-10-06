@@ -51,13 +51,15 @@ export function productKeys(name: string): { readonly code: string | null; reado
 
 /**
  * The Battle Sets sell whole, and since 2026-10-05 also opened: the tops loose on the site, the
- * stadium alone on Vinted. A stadium sold alone is a set that will not be sold sealed any more,
- * so it takes one set off the shelf — which is also how the shelf learns that a set was opened.
+ * stadium alone on Vinted. The Drop Attack stadium is its own stock item, whose availability
+ * follows the sets (an opened set's stadium first, then a sealed set opened for it). A set with no
+ * such item yet (Sneak Attack) is taken off the shelf whole, which is what opening it means.
  */
-const ARENA_ONLY: readonly { readonly slug: string; readonly words: readonly string[] }[] = [
-  { slug: "drop-attack-battle-set", words: ["drop attack"] },
-  { slug: "sneak-attack-battle-set", words: ["sneak attack"] },
+const ARENA_ONLY: readonly { readonly slugs: readonly string[]; readonly words: readonly string[] }[] = [
+  { slugs: ["drop-attack-arena", "drop-attack-battle-set"], words: ["drop attack"] },
+  { slugs: ["sneak-attack-battle-set"], words: ["sneak attack"] },
 ];
+const ARENA_ONLY_SLUGS = new Set(ARENA_ONLY.flatMap((set) => set.slugs));
 
 const STADIUM = "(arena|stadio|beystadium)";
 /**
@@ -77,9 +79,10 @@ const STADIUM_ALONE = new RegExp(
 /** The opposite listing: the tops without their stadium. */
 const WITHOUT_STADIUM = new RegExp(`\\bsenza (l |lo |la )?${STADIUM}\\b`);
 
-function arenaOnly(title: string): string | null {
+function arenaOnly(title: string, catalogue: readonly MatchableProduct[]): string | null {
   if (!new RegExp(`\\b${STADIUM}\\b`).test(title) || !STADIUM_ALONE.test(title) || WITHOUT_STADIUM.test(title)) return null;
-  return ARENA_ONLY.find((set) => set.words.some((words) => contains(title, words)))?.slug ?? null;
+  const set = ARENA_ONLY.find((entry) => entry.words.some((words) => contains(title, words)));
+  return set?.slugs.find((slug) => catalogue.some((product) => product.slug === slug)) ?? null;
 }
 
 export function matchListing(
@@ -94,16 +97,17 @@ export function matchListing(
   const keyed = catalogue.map((product) => ({ product, ...productKeys(product.name) }));
   const byCode = keyed.filter((entry) => entry.code && contains(normalized, entry.code));
 
-  const arena = arenaOnly(normalized);
+  const arena = arenaOnly(normalized, catalogue);
   // A title that also names a top ("Impact Drake drop attack arena …") is not a stadium alone.
   const namesATop = keyed.some(
-    (entry) => !ARENA_ONLY.some((set) => set.slug === entry.product.slug) && entry.blade.split(" ").length >= 2 && contains(normalized, entry.blade),
+    (entry) => !ARENA_ONLY_SLUGS.has(entry.product.slug) && entry.blade.split(" ").length >= 2 && contains(normalized, entry.blade),
   );
   if (arena && (byCode.length > 0 || namesATop)) {
     return { lines: [], confidence: "low", source: "none", reason: "Il titolo parla sia di un'arena da sola sia di un pezzo." };
   }
-  if (arena && catalogue.some((product) => product.slug === arena)) {
-    return { lines: [{ slug: arena, quantity: 1 }], confidence: "high", source: "arena-only", reason: "Arena venduta da sola: un set aperto." };
+  if (arena) {
+    const reason = arena.endsWith("-battle-set") ? "Arena venduta da sola: un set aperto." : "Arena venduta da sola.";
+    return { lines: [{ slug: arena, quantity: 1 }], confidence: "high", source: "arena-only", reason };
   }
   if (byCode.length === 1) {
     const only = byCode[0]!;

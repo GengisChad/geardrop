@@ -1,6 +1,7 @@
 import { createHmac } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
 import { BUNDLES, PRODUCTS } from "@/data/catalog";
+import { BATTLE_SETS, STOCK_ONLY_PRODUCTS } from "@/data/stock-only";
 import { matchListing, productKeys, shouldApplyAutomatically, type SuggestedLine } from "@/lib/vinted/catalogue-match";
 import { ownerNoticeEmail } from "@/lib/vinted/owner-email";
 import { processInboundEmail, type InboundStore, type OwnerNotice } from "@/lib/vinted/process-inbound";
@@ -104,6 +105,19 @@ describe("matching a listing to the catalogue", () => {
   it("takes one Drop Attack set off the shelf for a stadium sold alone", () => {
     const match = matchListing("Beyblade X arena drop attack SOLO arena", 1, PRODUCTS);
     expect(match).toMatchObject({ lines: [{ slug: "drop-attack-battle-set", quantity: 1 }], confidence: "high", source: "arena-only" });
+  });
+
+  it("sells the Drop Attack stadium as its own stock item, which follows the sets", () => {
+    const shelf = [...PRODUCTS, ...STOCK_ONLY_PRODUCTS];
+    expect(matchListing("Beyblade X arena drop attack SOLO arena", 1, shelf)).toMatchObject({
+      lines: [{ slug: "drop-attack-arena", quantity: 1 }], confidence: "high", source: "arena-only",
+    });
+    // The stadium alone never reaches the storefront catalogue.
+    expect(PRODUCTS.some((product) => STOCK_ONLY_PRODUCTS.some((item) => item.slug === product.slug))).toBe(false);
+    for (const set of BATTLE_SETS) {
+      expect(PRODUCTS.some((product) => product.slug === set.setSlug), set.setSlug).toBe(true);
+      for (const piece of set.pieces) expect(shelf.some((product) => product.slug === piece), piece).toBe(true);
+    }
   });
 
   it("reads the stadium-alone rule only from explicit words, never from the tops sold without it", () => {

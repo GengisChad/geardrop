@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import styles from "@/components/admin/content/content.module.css";
 import { PendingVintedSale } from "@/components/admin/vinted/vinted-sale-forms";
 import { PRODUCTS } from "@/data/catalog";
+import { STOCK_ONLY_PRODUCTS } from "@/data/stock-only";
 import { requireAdminAccess } from "@/lib/admin/access";
 import { loadVintedPanel, readAppliedLines, readSuggestion } from "@/lib/admin/vinted";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -34,7 +35,7 @@ export default async function AdminVintedPage() {
     client.from("products").select("slug,stock_quantity"),
   ]);
   const stock = new Map((shelf.data ?? []).map((row) => [row.slug, row.stock_quantity]));
-  const options = [...PRODUCTS]
+  const options = [...PRODUCTS, ...STOCK_ONLY_PRODUCTS]
     .sort((a, b) => a.name.localeCompare(b.name, "it"))
     .map((product) => ({ slug: product.slug, name: product.name, stock: stock.get(product.slug) ?? null }));
 

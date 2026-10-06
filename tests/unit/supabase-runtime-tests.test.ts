@@ -23,7 +23,8 @@ describe("Supabase runtime test coverage", () => {
     // The catalogue count travels with the catalogue: fourteen products since the 2026-09-21 drop.
     // 96 policies since META ATTUALE: three tables, each with a public read and a staff write.
     // 98 since the Vinted sync: a manager read on its inbound emails and on its sales.
-    for (const expected of ["schema_migrations", "32::bigint", "98::bigint", "array[14::bigint]"]) {
+    // 99 since opened Battle Sets: a manager read on their loose pieces.
+    for (const expected of ["schema_migrations", "32::bigint", "99::bigint", "array[14::bigint]"]) {
       expect(sql).toContain(expected);
     }
   });

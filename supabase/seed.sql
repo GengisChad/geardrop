@@ -103,6 +103,38 @@ on conflict (slug) do update set
   review_count = excluded.review_count,
   sort_order = excluded.sort_order;
 
+-- Goods sold off the site (src/data/stock-only.ts): in the panel, never on the storefront. Their
+-- availability follows the sealed sets that hold them, with none opened yet.
+with seed(set_slug, slug, sku, name, tagline, description, price_cents) as (
+  values
+  ('drop-attack-battle-set', 'drop-attack-arena', 'DROP-ATTACK-ARENA', 'Beystadium Drop Attack (solo arena)', 'L''arena del Drop Attack Battle Set, senza trottole.', 'Il Beystadium del Drop Attack Battle Set, venduto da solo dopo aver tolto Impact Drake e Hover Wyvern. In vendita su Vinted, non sul sito.', 1000)
+)
+insert into public.products (
+  category_id, slug, sku, name, tagline, description, price_cents,
+  publication_status, active, stock_quantity, allow_backorder, rating, review_count, sort_order
+)
+select set_product.category_id, seed.slug, seed.sku, seed.name, seed.tagline, seed.description, seed.price_cents,
+  'draft'::public.publication_status, false, set_product.stock_quantity, false, 0, 0, 900
+from seed
+join public.products as set_product on set_product.slug = seed.set_slug
+on conflict (slug) do update set
+  name = excluded.name,
+  tagline = excluded.tagline,
+  description = excluded.description;
+
+with seed(set_slug, piece_slug) as (
+  values
+  ('drop-attack-battle-set', 'impact-drake-9-60lr'),
+  ('drop-attack-battle-set', 'hover-wyvern-3-85n'),
+  ('drop-attack-battle-set', 'drop-attack-arena')
+)
+insert into public.battle_set_parts (set_product_id, part_product_id)
+select set_product.id, piece.id
+from seed
+join public.products as set_product on set_product.slug = seed.set_slug
+join public.products as piece on piece.slug = seed.piece_slug
+on conflict do nothing;
+
 with seed(product_slug, src, width, height, alt, sort_order) as (
   values
   ('glory-valkerion-lf', '/products/glory-valkerion-lf.webp', 1000, 1000, 'Confezione Beyblade X Glory Valkerion LF bianca e oro con lanciatore e trottola', 0),
