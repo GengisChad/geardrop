@@ -56,7 +56,7 @@ export const PRODUCTS: readonly Product[] = [
   {
     slug: "shatter-horus-9-65gb", name: "Shatter Horus 9-65GB", tagline: "Stamina BX. Metallo oltre i ganci.",
     description: "Shatter Horus 9-65GB è una trottola stamina della linea BX: la blade dalla forma rotonda estende il metallo oltre i ganci del lanciatore e riveste di metallo anche il bordo del gear chip, che raffigura il dio egizio Horus. Monta il Ratchet 9-65 e il Bit GB. Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).",
-    price: eur(1250), category: "beyblade-x", bladeType: "stamina", stock: "disponibile", availableQuantity: 47, tags: [], rating: 0, reviewCount: 0,
+    price: eur(1199), category: "beyblade-x", bladeType: "stamina", stock: "disponibile", availableQuantity: 47, tags: [], rating: 0, reviewCount: 0,
     images: productImages["shatter-horus-9-65gb"],
     specs: [{ label: "Tipo", value: "Stamina" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "BX (Infinity Starter Pack)" }, { label: "Codice", value: "9-65GB" }, { label: "Componenti", value: "1 trottola, 1 lanciatore" }],
     features: [{ title: "Metallo esteso", description: "Il metallo supera i ganci del lanciatore" }, { title: "Forma rotonda", description: "Profilo tondo pensato per la resistenza" }, { title: "Starter completo", description: "Include il lanciatore" }, { title: "Compatibile Beyblade X", description: "Blade, Ratchet e Bit intercambiabili con la serie" }],
@@ -66,7 +66,7 @@ export const PRODUCTS: readonly Product[] = [
   {
     slug: "hurricane-enlil-is-7-55t", name: "Hurricane Enlil IS 7-55T", tagline: "Bilanciata CX. Blade Infinity scomponibile.",
     description: "Hurricane Enlil IS 7-55T è una trottola bilanciata a rotazione destra della linea CX: la blade Infinity si scompone in lock chip, over blade, blade metallica e assist blade per costruire l'assetto su misura, con Ratchet 7-55 e Bit T. Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).",
-    price: eur(1250), category: "beyblade-x", bladeType: "bilanciato", stock: "disponibile", availableQuantity: 49, tags: [], rating: 0, reviewCount: 0,
+    price: eur(999), category: "beyblade-x", bladeType: "bilanciato", stock: "disponibile", availableQuantity: 49, tags: [], rating: 0, reviewCount: 0,
     images: productImages["hurricane-enlil-is-7-55t"],
     specs: [{ label: "Tipo", value: "Bilanciata" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "CX (Infinity Starter Pack)" }, { label: "Codice", value: "IS 7-55T" }, { label: "Componenti", value: "1 trottola, 1 lanciatore" }],
     features: [{ title: "Blade Infinity scomponibile", description: "Lock chip, over blade, blade metallica e assist blade" }, { title: "Assetto bilanciato", description: "Equilibrio tra attacco, difesa e resistenza" }, { title: "Starter completo", description: "Include il lanciatore" }, { title: "Compatibile Beyblade X", description: "Blade, Ratchet e Bit intercambiabili con la serie" }],
@@ -299,12 +299,12 @@ export const BUNDLES: readonly Product[] = [
     bundleOf: [{ slug: "blast-pegasus-a-tr", quantity: 1 }, { slug: "saber-samurai-2-70l", quantity: 1 }],
   },
   {
-    slug: "duo-horus-enlil", name: "Duo Shatter Horus + Hurricane Enlil", tagline: "Stamina contro bilanciata. Due starter, €2,10 in meno.",
+    slug: "duo-horus-enlil", name: "Duo Shatter Horus + Hurricane Enlil", tagline: "Stamina contro bilanciata. Due starter, €2,08 in meno.",
     description: "Il duo mette insieme due Infinity Starter Beyblade X: Shatter Horus 9-65GB, trottola stamina della linea BX con il metallo esteso oltre i ganci, e Hurricane Enlil IS 7-55T, bilanciata CX con la blade Infinity scomponibile. Ogni starter include il proprio lanciatore: due assetti opposti, pronti a sfidarsi. Richiede un Beystadium Beyblade X (venduto separatamente).",
-    price: eur(2290), compareAtPrice: eur(2500), category: "beyblade-x", stock: "disponibile", availableQuantity: 47, tags: ["offerta"], rating: 0, reviewCount: 0,
+    price: eur(1990), compareAtPrice: eur(2198), category: "beyblade-x", stock: "disponibile", availableQuantity: 47, tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["duo-horus-enlil"],
     specs: [{ label: "Tipo", value: "Stamina + Bilanciata" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "BX + CX (Infinity Starter Pack)" }, { label: "Codice", value: "9-65GB · IS 7-55T" }, { label: "Componenti", value: "2 trottole, 2 lanciatori" }],
-    features: [{ title: "Due starter completi", description: "Due trottole e due lanciatori, pronti a sfidarsi" }, { title: "Stili opposti", description: "Stamina BX contro bilanciata CX" }, { title: "Risparmi €2,10", description: "€22,90 invece di €25 comprandoli separati" }, { title: "Compatibile Beyblade X", description: "Blade, Ratchet e Bit intercambiabili con la serie" }],
+    features: [{ title: "Due starter completi", description: "Due trottole e due lanciatori, pronti a sfidarsi" }, { title: "Stili opposti", description: "Stamina BX contro bilanciata CX" }, { title: "Risparmi €2,08", description: "€19,90 invece di €21,98 comprandoli separati" }, { title: "Compatibile Beyblade X", description: "Blade, Ratchet e Bit intercambiabili con la serie" }],
     boxContents: ["1 × Starter Shatter Horus 9-65GB (trottola e lanciatore)", "1 × Starter Hurricane Enlil IS 7-55T (trottola e lanciatore)", "2 × Manuale"],
     relatedSlugs: ["shatter-horus-9-65gb", "hurricane-enlil-is-7-55t", "glory-valkerion-lf"],
     bundleOf: [{ slug: "shatter-horus-9-65gb", quantity: 1 }, { slug: "hurricane-enlil-is-7-55t", quantity: 1 }],
@@ -323,10 +323,10 @@ export const BUNDLES: readonly Product[] = [
   {
     slug: "trio-starter-arena", name: "Trio Starter", tagline: "Stamina, bilanciata, difesa. Si parte da qui.",
     description: "Tre trottole per chi comincia e vuole già tre assetti diversi: Shatter Horus 9-65GB, stamina BX con il metallo esteso oltre i ganci; Hurricane Enlil IS 7-55T, bilanciata CX con la blade Infinity scomponibile; e Hover Wyvern 3-85N, difesa con il Ratchet 3-85 fra i più alti della serie. I due starter includono il proprio lanciatore; Hover Wyvern arriva imbustato, estratto dal Battle Set e senza lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).",
-    price: eur(2990), compareAtPrice: eur(4000), category: "beyblade-x", stock: "disponibile", availableQuantity: 47, tags: ["offerta"], rating: 0, reviewCount: 0,
+    price: eur(2990), compareAtPrice: eur(3698), category: "beyblade-x", stock: "disponibile", availableQuantity: 47, tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["trio-starter-arena"],
     specs: [{ label: "Tipo", value: "Stamina + Bilanciata + Difesa" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codici", value: "9-65GB · IS 7-55T · 3-85N" }, { label: "Componenti", value: "3 trottole, 2 lanciatori" }],
-    features: [{ title: "Tre assetti opposti", description: "Stamina, bilanciata e difesa in un colpo solo" }, { title: "Blade Infinity scomponibile", description: "Hurricane Enlil si smonta per costruire l'assetto su misura" }, { title: "Risparmi €10,10", description: "€29,90 invece di €40,00 comprandoli separati" }, { title: "Da sapere prima di comprare", description: "Hover Wyvern è imbustato, estratto dal Battle Set e senza lanciatore" }],
+    features: [{ title: "Tre assetti opposti", description: "Stamina, bilanciata e difesa in un colpo solo" }, { title: "Blade Infinity scomponibile", description: "Hurricane Enlil si smonta per costruire l'assetto su misura" }, { title: "Risparmi €7,08", description: "€29,90 invece di €36,98 comprandoli separati" }, { title: "Da sapere prima di comprare", description: "Hover Wyvern è imbustato, estratto dal Battle Set e senza lanciatore" }],
     boxContents: ["1 × Starter Shatter Horus 9-65GB (trottola e lanciatore)", "1 × Starter Hurricane Enlil IS 7-55T (trottola e lanciatore)", "1 × Trottola Hover Wyvern 3-85N imbustata"],
     relatedSlugs: ["hover-wyvern-3-85n", "duo-horus-enlil", "deck-completo-meta"],
     bundleOf: [{ slug: "shatter-horus-9-65gb", quantity: 1 }, { slug: "hurricane-enlil-is-7-55t", quantity: 1 }, { slug: "hover-wyvern-3-85n", quantity: 1 }],
@@ -336,7 +336,7 @@ export const BUNDLES: readonly Product[] = [
 /** The duo, as the managed homepage bundle banner presents it; its hero must be a product row in the database. */
 export const BUNDLE: Bundle = {
   slug: "duo-horus-enlil", eyebrow: "Offerta duo", title: ["Horus ×", "Enlil."],
-  description: "Due Infinity Starter Beyblade X, stamina contro bilanciata, a €22,90 invece di €25.", price: eur(2290), compareAtPrice: eur(2500),
+  description: "Due Infinity Starter Beyblade X, stamina contro bilanciata, a €19,90 invece di €21,98.", price: eur(1990), compareAtPrice: eur(2198),
   heroSlug: "shatter-horus-9-65gb", includes: ["shatter-horus-9-65gb", "hurricane-enlil-is-7-55t"],
 };
 

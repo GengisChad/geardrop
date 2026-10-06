@@ -17,8 +17,8 @@ describe("reviewed catalogue", () => {
       // sits at the bottom. Glory Valkerion is first because it is the best seller the shop can
       // actually send — nine pieces, second only to the sold-out Suppress Superion.
       { slug: "glory-valkerion-lf", price: 2300, stock: "disponibile", availableQuantity: 25, rating: 0, reviewCount: 0 },
-      { slug: "shatter-horus-9-65gb", price: 1250, stock: "disponibile", availableQuantity: 47, rating: 0, reviewCount: 0 },
-      { slug: "hurricane-enlil-is-7-55t", price: 1250, stock: "disponibile", availableQuantity: 49, rating: 0, reviewCount: 0 },
+      { slug: "shatter-horus-9-65gb", price: 1199, stock: "disponibile", availableQuantity: 47, rating: 0, reviewCount: 0 },
+      { slug: "hurricane-enlil-is-7-55t", price: 999, stock: "disponibile", availableQuantity: 49, rating: 0, reviewCount: 0 },
       { slug: "hammer-incendio-3-70h", price: 1200, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
       { slug: "shadow-shinobi-1-80mn", price: 999, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
       { slug: "wand-wizard-1-60r", price: 1490, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
