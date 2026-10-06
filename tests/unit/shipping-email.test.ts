@@ -67,8 +67,8 @@ describe("shipping email", () => {
 
 describe("ship order form", () => {
   it("accepts a courier with or without a code and refuses non-HTTPS links", () => {
-    expect(shipOrderSchema.safeParse({ orderId: "4", carrierId: "poste", code: "", url: "", notify: true }).success).toBe(true);
-    expect(shipOrderSchema.safeParse({ orderId: "4", carrierId: "altro", code: "X", url: "http://a.example", notify: false }).success).toBe(false);
+    expect(shipOrderSchema.safeParse({ orderId: "4", carrierId: "poste", code: "", url: "" }).success).toBe(true);
+    expect(shipOrderSchema.safeParse({ orderId: "4", carrierId: "altro", code: "X", url: "http://a.example" }).success).toBe(false);
   });
 });
 

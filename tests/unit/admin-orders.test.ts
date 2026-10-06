@@ -7,7 +7,7 @@ import {
   normalizeAdminOrderQuery,
   orderPiiVisibility,
   refundPreparationSchema,
-  trackingSchema,
+  shipOrderSchema,
 } from "@/lib/admin/orders";
 
 describe("admin orders", () => {
@@ -41,8 +41,8 @@ describe("admin orders", () => {
   });
 
   it("validates tracking and refund preparation", () => {
-    expect(trackingSchema.safeParse({ orderId: 1, carrier: "GLS", code: "ABC-1", url: "https://example.com/a" }).success).toBe(true);
-    expect(trackingSchema.safeParse({ orderId: 1, carrier: "GLS", code: "ABC-1", url: "javascript:alert(1)" }).success).toBe(false);
+    expect(shipOrderSchema.safeParse({ orderId: 1, carrierId: "gls", code: "ABC-1", url: "https://example.com/a" }).success).toBe(true);
+    expect(shipOrderSchema.safeParse({ orderId: 1, carrierId: "gls", code: "ABC-1", url: "javascript:alert(1)" }).success).toBe(false);
     expect(refundPreparationSchema.safeParse({ orderId: 1, amountCents: 500, reason: "Richiesta cliente" }).success).toBe(true);
     expect(refundPreparationSchema.safeParse({ orderId: 1, amountCents: 0, reason: "" }).success).toBe(false);
   });
@@ -55,8 +55,8 @@ describe("admin orders", () => {
 
   it("routes every mutation through validated lifecycle RPC actions", () => {
     const source = readFileSync(join(process.cwd(), "src/app/admin/actions/orders.ts"), "utf8");
-    for (const schema of ["orderTransitionSchema", "orderCancellationSchema", "trackingSchema", "orderNoteSchema", "refundPreparationSchema"]) expect(source).toContain(`${schema}.safeParse`);
-    for (const rpc of ["transition_order_status", "cancel_order_and_restore_stock", "set_order_tracking", "add_order_note", "prepare_order_refund"]) expect(source).toContain(`rpc(\"${rpc}\"`);
+    for (const schema of ["orderTransitionSchema", "orderCancellationSchema", "shipOrderSchema", "orderNoteSchema", "refundPreparationSchema"]) expect(source).toContain(`${schema}.safeParse`);
+    for (const rpc of ["transition_order_status", "cancel_order_and_restore_stock", "ship_order", "add_order_note", "prepare_order_refund"]) expect(source).toContain(`rpc(\"${rpc}\"`);
     expect(source).toContain("requireStaffRole");
   });
 
