@@ -54,9 +54,12 @@ test("a paid order goes from the station to a printed label and a costed shipmen
   await page.goto(`/admin/ordini/${orderId}`);
   await page.getByLabel("Codice di tracciamento").fill("018207900244");
   await page.getByLabel("Costo corriere per noi (€, facoltativo)").fill("4,00");
-  await page.getByLabel("Invia l’email al cliente").uncheck();
-  await page.getByRole("button", { name: "Spedisci" }).click();
-  await expect(page.getByText("Ordine segnato come spedito. Nessuna email inviata.")).toBeVisible();
+  // There is one place to enter a tracking code and it cannot save one quietly: the button
+  // ships and writes to the buyer in the same move. Whether the email actually leaves depends
+  // on a mail provider this gate does not configure, so the shipment is proved by the row and
+  // the notice is accepted in either of its two honest endings.
+  await page.getByRole("button", { name: "Spedisci e avvisa" }).click();
+  await expect(page.getByText(/Ordine spedito ed email inviata al cliente|Ordine segnato come spedito, ma l.email non . partita/)).toBeVisible();
   expect(sql(`select status || ':' || shipping_cost_cents from public.orders where id = ${orderId}`)).toBe("shipped:400");
 });
 
