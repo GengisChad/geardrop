@@ -12,7 +12,7 @@ describe("physical Next application ownership", () => {
     expect(json("package.json").packageManager).toBe("pnpm@10.34.6");
   });
   it("gives management its own application entry points without moving storefront", () => {
-    for (const path of ["package.json", "next.config.ts", "tsconfig.json", "next-env.d.ts", "src/proxy.ts", "src/app/layout.tsx", "src/app/page.tsx", "src/app/robots.ts"]) {
+    for (const path of ["package.json", "next.config.ts", "tsconfig.json", "next-env.d.ts", "src/proxy.ts", "src/app/layout.tsx", "src/app/(protected)/page.tsx", "src/app/robots.ts"]) {
       expect(existsSync(resolve("apps/management", path)), path).toBe(true);
     }
     expect(existsSync(resolve("src/app/(storefront)/page.tsx"))).toBe(true);

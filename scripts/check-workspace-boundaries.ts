@@ -36,7 +36,9 @@ export function checkSourceImports(source: string, filename: string, root: strin
     const dependency = specifier.startsWith("@") ? specifier.split("/").slice(0, 2).join("/") : specifier.split("/")[0]!;
     const resolved = ts.resolveModuleName(specifier, filename, config.options, ts.sys).resolvedModule;
     // TypeScript intentionally does not resolve CSS, but a local stylesheet still has an owner.
-    const candidate = resolved?.resolvedFileName ?? (specifier.startsWith(".") && specifier.endsWith(".css") ? resolve(dirname(filename), specifier) : null);
+    const candidate = resolved?.resolvedFileName
+      ?? (specifier.startsWith(".") && specifier.endsWith(".css") ? resolve(dirname(filename), specifier) : null)
+      ?? (specifier.startsWith("@/") && specifier.endsWith(".css") ? resolve(app, "src", specifier.slice(2)) : null);
     let valid = false;
     if (candidate && existsSync(candidate)) {
       const target = realpathSync(candidate);

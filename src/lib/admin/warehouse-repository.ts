@@ -2,6 +2,12 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
+import type { WarehouseSummary } from "@geardrop/data-contract";
+import { loadWarehouseSummary as _loadWarehouseSummaryNeutral } from "@geardrop/data-contract";
+
+// WarehouseSummary è ora definita nel package neutrale e re-esportata qui
+// per retrocompatibilità con gli import legacy esistenti.
+export type { WarehouseSummary };
 
 type Client = SupabaseClient<Database>;
 export type Supplier = Database["public"]["Tables"]["suppliers"]["Row"];
@@ -30,16 +36,7 @@ export type ReceiptDetail = {
   readonly lines: readonly (SupplierReceiptLine & { readonly productName: string; readonly productSku: string })[];
 };
 
-export type WarehouseSummary = {
-  readonly stockValueCents: number;
-  readonly productsWithoutCost: number;
-  readonly draftReceipts: number;
-  readonly periodDays: number;
-  readonly completeOrders: number;
-  readonly incompleteOrders: number;
-  readonly profitCents: number;
-  readonly revenueNetCents: number;
-};
+// WarehouseSummary re-esportato dal package neutrale sopra.
 
 export type ProductCost = {
   readonly averageCostCents: number | null;
@@ -158,26 +155,20 @@ export async function listReceiptProductOptions(client: Client, organizationId: 
   }));
 }
 
-function integer(value: unknown): number {
-  return typeof value === "number" && Number.isFinite(value) ? Math.round(value) : 0;
-}
-
+/**
+ * Adapter legacy: delega al loader neutrale del package e rilancia se null.
+ * Comportamento invariato rispetto alla versione precedente (throw on error).
+ */
 export async function loadWarehouseSummary(client: Client, organizationId: number, days = 30): Promise<WarehouseSummary> {
-  const { data, error } = await client.rpc("get_warehouse_summary", { p_organization_id: organizationId, p_days: days });
-  if (error || !data || typeof data !== "object" || Array.isArray(data)) {
+  const result = await _loadWarehouseSummaryNeutral(
+    client as Parameters<typeof _loadWarehouseSummaryNeutral>[0],
+    organizationId,
+    days,
+  );
+  if (result === null) {
     throw new Error("Impossibile caricare il riepilogo di magazzino");
   }
-  const row = data as Record<string, unknown>;
-  return {
-    stockValueCents: integer(row.stock_value_cents),
-    productsWithoutCost: integer(row.products_without_cost),
-    draftReceipts: integer(row.draft_receipts),
-    periodDays: integer(row.period_days),
-    completeOrders: integer(row.complete_orders),
-    incompleteOrders: integer(row.incomplete_orders),
-    profitCents: integer(row.profit_cents),
-    revenueNetCents: integer(row.revenue_net_cents),
-  };
+  return result;
 }
 
 export type ValuationRow = {

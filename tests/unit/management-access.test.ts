@@ -301,3 +301,77 @@ describe("requireManagementPrincipal – controllo lato server", () => {
     expect([...unique][0]).not.toBe("NO_ERROR");
   });
 });
+
+// ===========================================================================
+// Task 6 Step 4 – requireManagementPrincipal con slug preferito + costante cookie
+// ===========================================================================
+
+import { MANAGEMENT_ORGANIZATION_COOKIE } from "@geardrop/data-contract";
+
+const ORYVENNE_ORG = {
+  id: 2,
+  slug: "oryvenne",
+  name: "Oryvenne",
+  storefront_public: false,
+  active: true,
+};
+
+/** Client con due membership: geardrop owner (id=1) e oryvenne admin (id=2). */
+function makeTwoOrgClient(
+  overrideRoles: { geardropRole?: string; oryvenneRole?: string } = {},
+) {
+  const { geardropRole = "owner", oryvenneRole = "admin" } = overrideRoles;
+  return makeClient({
+    memberships: [
+      { role: oryvenneRole, organization: ORYVENNE_ORG },
+      { role: geardropRole, organization: DEFAULT_ORG },
+    ],
+  });
+}
+
+describe("requireManagementPrincipal – slug preferito e costante cookie", () => {
+  it("MANAGEMENT_ORGANIZATION_COOKIE è una stringa non vuota esportata dal package", () => {
+    expect(typeof MANAGEMENT_ORGANIZATION_COOKIE).toBe("string");
+    expect(MANAGEMENT_ORGANIZATION_COOKIE.length).toBeGreaterThan(0);
+  });
+
+  it("slug valido seleziona quell'organizzazione", async () => {
+    const principal = await requireManagementPrincipal(makeTwoOrgClient(), "oryvenne");
+    expect(principal.organization.slug).toBe("oryvenne");
+    expect(principal.role).toBe("admin");
+  });
+
+  it("slug di azienda senza membership ricade sul default (id minore)", async () => {
+    const principal = await requireManagementPrincipal(makeTwoOrgClient(), "unknown-org");
+    expect(principal.organization.slug).toBe("geardrop");
+    expect(principal.role).toBe("owner");
+  });
+
+  it("nessun argomento: comportamento identico (id minore, invariato)", async () => {
+    const principal = await requireManagementPrincipal(makeTwoOrgClient());
+    expect(principal.organization.slug).toBe("geardrop");
+    expect(principal.role).toBe("owner");
+  });
+
+  it("membership inattiva ricade sul default (l'org non è nella lista attiva)", async () => {
+    // Il DB filtra già le membership inattive: il client restituisce solo geardrop.
+    const clientOnlyActive = makeClient({
+      memberships: [{ role: "owner", organization: DEFAULT_ORG }],
+    });
+    const principal = await requireManagementPrincipal(clientOnlyActive, "oryvenne");
+    expect(principal.organization.slug).toBe("geardrop");
+  });
+
+  it("il cookie non può far diventare owner chi è editor (il ruolo è quello della membership)", async () => {
+    // utente editor in oryvenne, owner in geardrop.
+    const clientEditorOryvenne = makeTwoOrgClient({ oryvenneRole: "editor" });
+    const principal = await requireManagementPrincipal(clientEditorOryvenne, "oryvenne");
+    expect(principal.organization.slug).toBe("oryvenne");
+    expect(principal.role).toBe("editor"); // NON owner
+  });
+
+  it("slug stringa vuota ricade sul default", async () => {
+    const principal = await requireManagementPrincipal(makeTwoOrgClient(), "");
+    expect(principal.organization.slug).toBe("geardrop");
+  });
+});

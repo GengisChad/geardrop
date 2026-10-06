@@ -56,7 +56,18 @@ export class StaffAuthorizationError extends Error {
 }
 
 // ---------------------------------------------------------------------------
-// Logica di selezione organizzazione (deterministica: id minore)
+// Costante cookie (esportata così app e test la condividono senza importare next/headers)
+// ---------------------------------------------------------------------------
+
+/**
+ * Nome del cookie HTTP-only che l'app imposta per ricordare la preferenza
+ * organizzazione dell'utente. Viene validato sempre contro le membership attive
+ * del principal: è una preferenza, non un'autorizzazione.
+ */
+export const MANAGEMENT_ORGANIZATION_COOKIE = "gd_management_org" as const;
+
+// ---------------------------------------------------------------------------
+// Logica di selezione organizzazione (deterministica: id minore, o slug preferito)
 // ---------------------------------------------------------------------------
 
 function defaultOrganization(
@@ -65,6 +76,24 @@ function defaultOrganization(
   if (memberships.length === 0) return null;
   // Ordine per id ascendente: Gear Drop (id=1) precede Oryvenne.
   return [...memberships].sort((a, b) => a.id - b.id)[0] ?? null;
+}
+
+/**
+ * Seleziona l'organizzazione corrente a partire da uno slug preferito.
+ * Se lo slug corrisponde a una membership attiva del principal, quella
+ * diventa l'organizzazione; altrimenti si cade sul default deterministico.
+ * Uno slug sconosciuto, di un'azienda dove la persona non è membro o con
+ * membership inattiva NON amplia nulla e NON dà errore.
+ */
+function selectOrganization(
+  memberships: readonly OrganizationMembership[],
+  preferredSlug?: string,
+): OrganizationMembership | null {
+  if (preferredSlug) {
+    const preferred = memberships.find((m) => m.slug === preferredSlug);
+    if (preferred) return preferred;
+  }
+  return defaultOrganization(memberships);
 }
 
 // ---------------------------------------------------------------------------
@@ -79,9 +108,16 @@ function defaultOrganization(
  *
  * Credenziali errate, staff disattivato e membership assente producono lo stesso
  * messaggio generico: non viene rivelata la causa specifica del diniego.
+ *
+ * @param preferredSlug - Slug dell'organizzazione preferita (letto dal cookie dal chiamante).
+ *   Se corrisponde a una membership ATTIVA, quella diventa `principal.organization`;
+ *   altrimenti si torna al default deterministico (id minore).
+ *   Uno slug sconosciuto o privo di membership attiva NON amplia nulla e NON dà errore.
+ *   La firma senza argomento resta valida e identica al comportamento precedente.
  */
 export async function requireManagementPrincipal(
   client: SupabaseClient<Database>,
+  preferredSlug?: string,
 ): Promise<StaffPrincipal> {
   // Messaggio generico identico per tutti i casi di diniego.
   const DENIED = "Accesso negato";
@@ -137,8 +173,8 @@ export async function requireManagementPrincipal(
     },
   );
 
-  // 4. Almeno un'organizzazione attiva.
-  const organization = defaultOrganization(organizations);
+  // 4. Almeno un'organizzazione attiva; rispetta lo slug preferito se valido.
+  const organization = selectOrganization(organizations, preferredSlug);
   if (!organization) {
     throw new StaffAuthorizationError(DENIED);
   }
