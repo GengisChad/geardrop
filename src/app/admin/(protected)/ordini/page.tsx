@@ -34,6 +34,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
   const unconfirmed = await client
     .from("orders")
     .select("id", { count: "exact", head: true })
+    .eq("organization_id", principal.organization.id)
     .eq("status", "completed")
     .is("delivery_notified_at", null);
   const hrefFor = (page: number) => ({ pathname: "/admin/ordini", query: { ...params, page: String(page) } });

@@ -1491,6 +1491,156 @@ export type Database = {
           },
         ]
       }
+      meta_rankings: {
+        Row: {
+          archetype: string
+          created_at: string
+          id: number
+          piece_name: string
+          product_slug: string | null
+          rank: number
+          reason: string
+          snapshot_id: number
+          tier_type: string
+          trend: string | null
+          video_url: string | null
+        }
+        Insert: {
+          archetype: string
+          created_at?: string
+          id?: never
+          piece_name: string
+          product_slug?: string | null
+          rank: number
+          reason: string
+          snapshot_id: number
+          tier_type: string
+          trend?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          archetype?: string
+          created_at?: string
+          id?: never
+          piece_name?: string
+          product_slug?: string | null
+          rank?: number
+          reason?: string
+          snapshot_id?: number
+          tier_type?: string
+          trend?: string | null
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meta_rankings_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "meta_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meta_snapshots: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: number
+          intro: string | null
+          month: string
+          organization_id: number
+          publication_status: Database["public"]["Enums"]["publication_status"]
+          published_at: string | null
+          seo_description: string | null
+          seo_title: string | null
+          source_note: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: never
+          intro?: string | null
+          month: string
+          organization_id: number
+          publication_status?: Database["public"]["Enums"]["publication_status"]
+          published_at?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          source_note: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: never
+          intro?: string | null
+          month?: string
+          organization_id?: number
+          publication_status?: Database["public"]["Enums"]["publication_status"]
+          published_at?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          source_note?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meta_snapshots_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meta_videos: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: number
+          organization_id: number
+          sort_order: number
+          title: string
+          updated_at: string
+          youtube_url: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: never
+          organization_id: number
+          sort_order?: number
+          title: string
+          updated_at?: string
+          youtube_url: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: never
+          organization_id?: number
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          youtube_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meta_videos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       navigation_items: {
         Row: {
           active: boolean
@@ -1806,6 +1956,7 @@ export type Database = {
           currency: string
           customer_id: string | null
           delivered_at: string | null
+          delivery_notified_at: string | null
           discount_cents: number
           email: string
           id: number
@@ -1849,6 +2000,7 @@ export type Database = {
           currency?: string
           customer_id?: string | null
           delivered_at?: string | null
+          delivery_notified_at?: string | null
           discount_cents?: number
           email: string
           id?: never
@@ -1892,6 +2044,7 @@ export type Database = {
           currency?: string
           customer_id?: string | null
           delivered_at?: string | null
+          delivery_notified_at?: string | null
           discount_cents?: number
           email?: string
           id?: never
@@ -3414,6 +3567,10 @@ export type Database = {
         Args: { p_media_asset_id: number }
         Returns: undefined
       }
+      complete_order: {
+        Args: { p_note?: string; p_order_id: number }
+        Returns: undefined
+      }
       confirm_supplier_receipt: {
         Args: { p_receipt_id: number }
         Returns: Json
@@ -3546,6 +3703,10 @@ export type Database = {
           tracking_code: string
           tracking_url: string
         }[]
+      }
+      mark_order_delivery_notified: {
+        Args: { p_order_id: number }
+        Returns: undefined
       }
       mark_order_shipping_notified: {
         Args: { p_order_id: number }
