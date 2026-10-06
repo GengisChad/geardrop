@@ -5,7 +5,7 @@ const ownerRoutes = [
   "/admin", "/admin/prodotti", "/admin/categorie", "/admin/bundle", "/admin/media",
   "/admin/inventario", "/admin/homepage", "/admin/homepage/anteprima", "/admin/pagine",
   "/admin/navigazione", "/admin/footer", "/admin/promozioni", "/admin/coupon",
-  "/admin/ordini", "/admin/spedizioni", "/admin/impostazioni",
+  "/admin/ordini", "/admin/vinted", "/admin/spedizioni", "/admin/impostazioni",
   "/admin/impostazioni/negozio", "/admin/impostazioni/seo",
   "/admin/impostazioni/contatti", "/admin/impostazioni/social", "/admin/team", "/admin/attivita",
 ] as const;
@@ -23,7 +23,7 @@ test("every Full Admin module renders real state without horizontal overflow", a
 
 test("role boundaries keep editor and admin away from owner-only modules", async ({ page }) => {
   await login(page, "EDITOR");
-  for (const route of ["/admin/ordini", "/admin/promozioni", "/admin/coupon", "/admin/spedizioni", "/admin/impostazioni", "/admin/team", "/admin/attivita"]) {
+  for (const route of ["/admin/ordini", "/admin/vinted", "/admin/promozioni", "/admin/coupon", "/admin/spedizioni", "/admin/impostazioni", "/admin/team", "/admin/attivita"]) {
     await page.goto(route);
     await expect(page).toHaveURL(/\/admin$/);
   }

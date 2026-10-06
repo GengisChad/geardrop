@@ -825,6 +825,39 @@ export type Database = {
           },
         ]
       }
+      inbound_emails: {
+        Row: {
+          body_text: string
+          from_address: string
+          id: number
+          kind: string
+          provider_email_id: string
+          received_at: string
+          sender_verified: boolean
+          subject: string
+        }
+        Insert: {
+          body_text?: string
+          from_address?: string
+          id?: never
+          kind: string
+          provider_email_id: string
+          received_at?: string
+          sender_verified?: boolean
+          subject?: string
+        }
+        Update: {
+          body_text?: string
+          from_address?: string
+          id?: never
+          kind?: string
+          provider_email_id?: string
+          received_at?: string
+          sender_verified?: boolean
+          subject?: string
+        }
+        Relationships: []
+      }
       inventory_movements: {
         Row: {
           actor_user_id: string | null
@@ -2158,6 +2191,65 @@ export type Database = {
         }
         Relationships: []
       }
+      vinted_sales: {
+        Row: {
+          amount_cents: number
+          buyer_username: string
+          created_at: string
+          id: number
+          inbound_email_id: number
+          item_count: number
+          lines: Json
+          listing_title: string
+          note: string | null
+          recorded_at: string | null
+          recorded_by: string | null
+          sold_at: string
+          status: Database["public"]["Enums"]["vinted_sale_status"]
+          suggestion: Json
+        }
+        Insert: {
+          amount_cents: number
+          buyer_username?: string
+          created_at?: string
+          id?: never
+          inbound_email_id: number
+          item_count?: number
+          lines?: Json
+          listing_title: string
+          note?: string | null
+          recorded_at?: string | null
+          recorded_by?: string | null
+          sold_at?: string
+          status?: Database["public"]["Enums"]["vinted_sale_status"]
+          suggestion?: Json
+        }
+        Update: {
+          amount_cents?: number
+          buyer_username?: string
+          created_at?: string
+          id?: never
+          inbound_email_id?: number
+          item_count?: number
+          lines?: Json
+          listing_title?: string
+          note?: string | null
+          recorded_at?: string | null
+          recorded_by?: string | null
+          sold_at?: string
+          status?: Database["public"]["Enums"]["vinted_sale_status"]
+          suggestion?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vinted_sales_inbound_email_id_fkey"
+            columns: ["inbound_email_id"]
+            isOneToOne: true
+            referencedRelation: "inbound_emails"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -2175,6 +2267,14 @@ export type Database = {
           p_sku: string
         }
         Returns: number
+      }
+      apply_vinted_sale: {
+        Args: { p_lines: Json; p_sale_id: number }
+        Returns: Json
+      }
+      auto_apply_vinted_sale: {
+        Args: { p_lines: Json; p_sale_id: number }
+        Returns: Json
       }
       begin_media_delete: {
         Args: { p_media_asset_id: number }
@@ -2233,6 +2333,10 @@ export type Database = {
         Args: { p_expected_name: string; p_product_id: number }
         Returns: undefined
       }
+      dismiss_vinted_sale: {
+        Args: { p_note?: string; p_sale_id: number }
+        Returns: undefined
+      }
       duplicate_coupon_with_targets: {
         Args: { p_coupon_id: number }
         Returns: number
@@ -2267,6 +2371,21 @@ export type Database = {
           pending_notices: number
           preorder_demand: number
           product_slug: string
+        }[]
+      }
+      ingest_inbound_email: {
+        Args: {
+          p_body: string
+          p_from: string
+          p_provider_email_id: string
+          p_sale?: Json
+          p_sender_verified: boolean
+          p_subject: string
+        }
+        Returns: {
+          created: boolean
+          inbound_id: number
+          sale_id: number
         }[]
       }
       lookup_order_status: {
@@ -2440,6 +2559,10 @@ export type Database = {
         Args: { p_active: boolean; p_user_id: string }
         Returns: undefined
       }
+      set_vinted_sale_suggestion: {
+        Args: { p_sale_id: number; p_suggestion: Json }
+        Returns: undefined
+      }
       ship_order: {
         Args: {
           p_carrier: string
@@ -2505,6 +2628,7 @@ export type Database = {
         | "order_cancelled"
         | "return"
         | "damage"
+        | "vinted_sale"
       media_asset_status: "pending" | "ready" | "failed"
       order_status:
         | "pending"
@@ -2521,6 +2645,7 @@ export type Database = {
       staff_invite_status: "invited" | "active" | "revoked"
       staff_role: "owner" | "admin" | "editor"
       stock_status: "disponibile" | "in-arrivo" | "pre-ordine" | "esaurito"
+      vinted_sale_status: "pending" | "recorded" | "dismissed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2679,6 +2804,7 @@ export const Constants = {
         "order_cancelled",
         "return",
         "damage",
+        "vinted_sale",
       ],
       media_asset_status: ["pending", "ready", "failed"],
       order_status: [
@@ -2697,6 +2823,7 @@ export const Constants = {
       staff_invite_status: ["invited", "active", "revoked"],
       staff_role: ["owner", "admin", "editor"],
       stock_status: ["disponibile", "in-arrivo", "pre-ordine", "esaurito"],
+      vinted_sale_status: ["pending", "recorded", "dismissed"],
     },
   },
 } as const

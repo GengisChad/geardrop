@@ -19,6 +19,7 @@ const reasons = {
   order_cancelled: "Ordine annullato",
   return: "Reso",
   damage: "Danno",
+  vinted_sale: "Vendita Vinted",
 } as const;
 
 export default async function AdminInventoryPage({
