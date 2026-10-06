@@ -27,8 +27,8 @@ describe("reviewed catalogue", () => {
       // without a launcher. A hundred of each, because the goods sit inside 102 unopened
       // sets and a set takes seconds to open — and a hundred clears the shelf count, so
       // neither reads as scarce when it is not.
-      { slug: "impact-drake-9-60lr", price: 1300, stock: "disponibile", availableQuantity: 100, rating: 0, reviewCount: 0 },
-      { slug: "hover-wyvern-3-85n", price: 1300, stock: "disponibile", availableQuantity: 100, rating: 0, reviewCount: 0 },
+      { slug: "impact-drake-9-60lr", price: 1500, stock: "disponibile", availableQuantity: 100, rating: 0, reviewCount: 0 },
+      { slug: "hover-wyvern-3-85n", price: 1500, stock: "disponibile", availableQuantity: 100, rating: 0, reviewCount: 0 },
       { slug: "cobalt-dragoon-2-60c", price: 2300, stock: "disponibile", availableQuantity: 56, rating: 0, reviewCount: 0 },
       { slug: "blast-pegasus-a-tr", price: 2690, stock: "disponibile", availableQuantity: 56, rating: 0, reviewCount: 0 },
       { slug: "saber-samurai-2-70l", price: 2590, stock: "disponibile", availableQuantity: 16, rating: 0, reviewCount: 0 },
