@@ -22,7 +22,16 @@ import type { WarehouseSummary } from "../operations/warehouse";
 // Tipo pubblico
 // ---------------------------------------------------------------------------
 
+/**
+ * Stato di read_access per l'azienda corrente:
+ * – "on": acceso, i loader di business sono partiti;
+ * – "off": spento per scelta, nessun loader è partito (la UI dice "lettura non attiva");
+ * – "unknown": flag illeggibile, nessun loader è partito (la UI dice "non disponibile").
+ */
+export type ManagementReadAccess = "on" | "off" | "unknown";
+
 export type ManagementOverview = Readonly<{
+  readAccess: ManagementReadAccess;
   dashboard: OperationsDashboard;
   warehouse: WarehouseSummary | null;
 }>;
@@ -44,24 +53,25 @@ export async function loadManagementOverview(
   client: SupabaseClient<Database>,
   principal: StaffPrincipal,
 ): Promise<ManagementOverview> {
-  const UNAVAILABLE: ManagementOverview = {
+  const closed = (readAccess: "off" | "unknown"): ManagementOverview => ({
+    readAccess,
     dashboard: { status: "unavailable" },
     warehouse: null,
-  };
+  });
 
   // Step 1: feature flags (fail-closed)
   let features: Awaited<ReturnType<typeof loadManagementFeatures>>;
   try {
     features = await loadManagementFeatures(client, principal.organization.id);
   } catch {
-    return UNAVAILABLE;
+    return closed("unknown");
   }
 
   // Step 2: read_access obbligatorio (fail-closed)
   try {
     requireManagementFeature(features, "read_access");
   } catch {
-    return UNAVAILABLE;
+    return closed("off");
   }
 
   // Step 3: query sull'azienda corrente — ID sempre da principal, mai forgiabile
@@ -72,5 +82,5 @@ export async function loadManagementOverview(
     loadWarehouseSummary(client, orgId),
   ]);
 
-  return { dashboard, warehouse };
+  return { readAccess: "on", dashboard, warehouse };
 }

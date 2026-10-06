@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { cookies } from "next/headers";
 import { createManagementServerClient } from "@/lib/supabase/server";
 import {
@@ -56,8 +57,25 @@ function DashboardUnavailable() {
         Dati non disponibili
       </span>
       <p style={{ fontSize: "0.8rem", color: "#666", marginTop: "0.75rem" }}>
-        Impossibile leggere i dati operativi. Verifica la connessione o i flag
-        di accesso nelle impostazioni.
+        Impossibile leggere i dati operativi in questo momento. Riprova tra
+        poco.
+      </p>
+    </div>
+  );
+}
+
+// read_access spento è una scelta, non un guasto: lo si dice come tale e si indica dove cambiarlo.
+function DashboardReadOff({ organizationName }: { organizationName: string }) {
+  return (
+    <div className={styles.section}>
+      <p className={styles.sectionTitle}>Prodotti e stock</p>
+      <span className={`${styles.statusBadge} ${styles.statusEmpty}`}>
+        Lettura non attiva
+      </span>
+      <p style={{ fontSize: "0.8rem", color: "#888", marginTop: "0.75rem" }}>
+        La lettura dei dati operativi di {organizationName} è spenta. Un owner
+        con autenticazione a due fattori può attivarla in{" "}
+        <Link href="/settings/security">Sicurezza</Link>.
       </p>
     </div>
   );
@@ -297,10 +315,10 @@ export default async function OverviewPage() {
   }
 
   const overview = await loadManagementOverview(client, principal);
-  const { dashboard, warehouse } = overview;
+  const { readAccess, dashboard, warehouse } = overview;
 
   return (
-    <main>
+    <main className={styles.overview}>
       {/* Intestazione */}
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>Panoramica</h1>
@@ -310,7 +328,9 @@ export default async function OverviewPage() {
       </div>
 
       {/* Dati operativi discriminati per stato */}
-      {dashboard.status === "unavailable" ? (
+      {readAccess === "off" ? (
+        <DashboardReadOff organizationName={principal.organization.name} />
+      ) : dashboard.status === "unavailable" ? (
         <DashboardUnavailable />
       ) : dashboard.status === "empty" ? (
         <>

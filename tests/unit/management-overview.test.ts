@@ -3,6 +3,8 @@
  *
  * Copre i vincoli del Task 6 Step 1:
  * - read_access spento o illeggibile → nessun loader di business parte
+ * - read_access spento si distingue da illeggibile (readAccess "off" / "unknown"),
+ *   così la panoramica dice "lettura non attiva" invece di un errore
  * - errore di lettura → stato "unavailable", mai zeri
  * - azienda vuota → zeri veri con stato "empty"
  * - l'azienda interrogata è sempre principal.organization.id
@@ -162,6 +164,7 @@ describe("management overview read-only loader", () => {
     );
     const overview = await contract.loadManagementOverview(db, makePrincipal(1));
     expect(overview.dashboard.status).toBe("unavailable");
+    expect(overview.readAccess).toBe("off");
     expect(overview.warehouse).toBeNull();
     // Nessuna query di business deve essere partita
     expect(calls).not.toContain("get_admin_dashboard_metrics");
@@ -176,6 +179,7 @@ describe("management overview read-only loader", () => {
     );
     const overview = await contract.loadManagementOverview(db, makePrincipal(1));
     expect(overview.dashboard.status).toBe("unavailable");
+    expect(overview.readAccess).toBe("unknown");
     expect(overview.warehouse).toBeNull();
     expect(calls).not.toContain("get_admin_dashboard_metrics");
     expect(calls).not.toContain("get_warehouse_summary");
@@ -189,6 +193,8 @@ describe("management overview read-only loader", () => {
     });
     const overview = await contract.loadManagementOverview(db, makePrincipal(1));
     expect(overview.dashboard.status).toBe("unavailable");
+    // Il flag era acceso: il guasto è nella lettura, non nella configurazione
+    expect(overview.readAccess).toBe("on");
     // Lo stato unavailable NON deve avere un campo data con numeri
     expect("metrics" in overview.dashboard).toBe(false);
     expect(overview.warehouse).toBeNull();
@@ -221,6 +227,7 @@ describe("management overview read-only loader", () => {
     });
     const overview = await contract.loadManagementOverview(db, makePrincipal(1));
     expect(overview.dashboard.status).toBe("loaded");
+    expect(overview.readAccess).toBe("on");
     if (overview.dashboard.status === "loaded") {
       expect(overview.dashboard.metrics.total).toBe(5);
       expect(overview.dashboard.commerce?.orderCount).toBe(10);

@@ -133,7 +133,7 @@ export function FeatureControls({
 
   return (
     <section aria-label={`Flag funzionalità — ${organizationName}`}>
-      <p style={{ color: "#94a3b8", marginBottom: "1.5rem", fontSize: ".9rem" }}>
+      <p style={{ color: "#a3a3a3", marginBottom: "1.5rem", fontSize: ".9rem" }}>
         I flag abilitano le funzionalità del gestionale per questa organizzazione.
         Solo <strong>read_access</strong> può essere modificato in questa fase.
         Gli altri flag vengono attivati insieme ai rispettivi moduli operativi.
@@ -176,9 +176,9 @@ export function FeatureControls({
               key={row.feature}
               style={{
                 padding: "1rem 1.25rem",
-                border: "1px solid #334155",
+                border: "1px solid #2a2a2a",
                 borderRadius: "8px",
-                background: "#1e293b",
+                background: "#1a1a1a",
               }}
             >
               <div
@@ -190,14 +190,14 @@ export function FeatureControls({
                 }}
               >
                 <div>
-                  <strong style={{ fontSize: ".95rem", color: "#e2e8f0" }}>
+                  <strong style={{ fontSize: ".95rem", color: "#f5f5f5" }}>
                     {label}
                   </strong>
                   <p
                     style={{
                       margin: "0.25rem 0 0",
                       fontSize: ".85rem",
-                      color: "#64748b",
+                      color: "#777777",
                     }}
                   >
                     {description}
@@ -213,11 +213,11 @@ export function FeatureControls({
                     borderRadius: "9999px",
                     fontSize: ".8rem",
                     fontWeight: 600,
-                    background: row.enabled ? "#166534" : "#1e293b",
-                    color: row.enabled ? "#4ade80" : "#94a3b8",
+                    background: row.enabled ? "#166534" : "#1a1a1a",
+                    color: row.enabled ? "#4ade80" : "#a3a3a3",
                     border: row.enabled
                       ? "1px solid #166534"
-                      : "1px solid #334155",
+                      : "1px solid #2a2a2a",
                   }}
                 >
                   {row.enabled ? "Attivo" : "Disattivato"}
@@ -230,7 +230,7 @@ export function FeatureControls({
                   style={{
                     marginTop: ".75rem",
                     fontSize: ".8rem",
-                    color: "#475569",
+                    color: "#888888",
                     fontStyle: "italic",
                   }}
                 >
@@ -263,12 +263,12 @@ export function FeatureControls({
                     style={{
                       display: "block",
                       fontSize: ".85rem",
-                      color: "#94a3b8",
+                      color: "#a3a3a3",
                       marginBottom: ".4rem",
                     }}
                   >
                     Motivo della modifica{" "}
-                    <span style={{ color: "#64748b" }}>(3–500 caratteri)</span>
+                    <span style={{ color: "#777777" }}>(3–500 caratteri)</span>
                   </label>
                   <textarea
                     id={`reason-${row.feature}`}
@@ -284,9 +284,9 @@ export function FeatureControls({
                       boxSizing: "border-box",
                       padding: ".5rem .75rem",
                       borderRadius: "6px",
-                      border: "1px solid #475569",
-                      background: "#0f172a",
-                      color: "#e2e8f0",
+                      border: "1px solid #3a3a3a",
+                      background: "#111111",
+                      color: "#f5f5f5",
                       fontSize: ".9rem",
                       resize: "vertical",
                     }}
@@ -323,7 +323,7 @@ export function FeatureControls({
                   style={{
                     marginTop: ".75rem",
                     fontSize: ".8rem",
-                    color: "#475569",
+                    color: "#888888",
                     fontStyle: "italic",
                   }}
                 >

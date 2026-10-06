@@ -27,6 +27,18 @@
   overflow-y: auto;
 }
 
+/* Il main globale è pensato per le pagine fuori dalla shell (login, MFA): centrato a 12vh.
+   Dentro la shell la pagina parte dall'alto. */
+.content > main {
+  margin: 0 auto;
+}
+
+/* La panoramica disegna i propri margini con .pageHeader e .section. */
+.content > .overview {
+  max-width: 64rem;
+  padding: 0 0 2rem;
+}
+
 /* ---- Testata organizzazione ---- */
 
 .orgHeader {
@@ -412,8 +424,35 @@
     background: none;
   }
 
+  /* Su telefono il cambio azienda resta a portata: una riga sotto il menu. */
   .switcherSection {
-    display: none;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0 0;
+  }
+
+  .switcherLabel {
+    margin: 0;
+  }
+
+  .switcherList {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .switcherBtn {
+    width: auto;
+    padding: 0.55rem 0.75rem;
+  }
+
+  .content > main {
+    padding: 1.25rem 1rem;
+  }
+
+  .content > .overview {
+    padding: 0 0 1.5rem;
   }
 
   .pageHeader {

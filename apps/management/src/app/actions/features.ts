@@ -16,6 +16,7 @@
  * Nessuna dipendenza dalla root (src/...). Solo package workspace e file propri.
  */
 
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import {
   MANAGEMENT_ORGANIZATION_COOKIE,
@@ -145,6 +146,12 @@ export async function setReadAccess(
   ) {
     return { success: false, code: "UNAVAILABLE" };
   }
+
+  // 8. Le pagine rileggono il flag dal database: il badge mostra il nuovo stato e il
+  //    form riceve il nuovo updated_at, altrimenti il clic successivo invierebbe il
+  //    timestamp vecchio e riceverebbe un conflitto che nessuno ha causato. Il layout
+  //    copre anche la panoramica, che dipende da read_access.
+  revalidatePath("/", "layout");
 
   return { success: true };
 }
