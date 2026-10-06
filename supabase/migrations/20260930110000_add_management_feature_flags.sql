@@ -195,4 +195,27 @@ revoke all on function management_api.set_management_read_access(bigint,boolean,
 grant execute on function management_api.list_management_features(bigint) to authenticated;
 grant execute on function management_api.set_management_read_access(bigint,boolean,timestamptz,text) to authenticated;
 
+-- Provision even inactive organizations in their INSERT transaction. Only trusted
+-- organization creation can invoke this trigger; it grants no writer/API capability.
+create function private.provision_management_features()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  if tg_op <> 'INSERT' or tg_when <> 'AFTER' or tg_level <> 'ROW'
+    or tg_table_schema <> 'public' or tg_table_name <> 'organizations' or tg_nargs <> 0 then
+    raise exception using errcode='42501',message='GD_MANAGEMENT_PROVISION_TRIGGER_ONLY';
+  end if;
+  insert into public.organization_management_features(organization_id,feature,enabled)
+    select new.id, feature, false
+    from pg_catalog.unnest(pg_catalog.enum_range(null::public.management_feature)) feature
+    on conflict do nothing;
+  return new;
+end;
+$$;
+alter function private.provision_management_features() owner to postgres;
+revoke all on function private.provision_management_features()
+  from public, anon, authenticated, service_role, management_feature_writer;
+create trigger organizations_provision_management_features
+  after insert on public.organizations
+  for each row execute function private.provision_management_features();
+
 commit;

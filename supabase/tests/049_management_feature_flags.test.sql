@@ -189,5 +189,57 @@ select lives_ok($$select management_api.set_management_read_access((select id fr
 select throws_ok($$select private.require_management_feature((select id from fx where slug='geardrop'),'read_access')$$,'42501','GD_MANAGEMENT_FEATURE_DISABLED','helper closes after disable');
 reset role;
 select is((select count(*) from public.organization_management_features where feature<>'read_access' and enabled),0::bigint,'all six unavailable flags remain disabled');
+-- Provision new companies in the INSERT transaction, including dormant companies.
+insert into public.organizations(slug,name,order_number_prefix,active)
+values ('flags-new-inactive','New dormant company','NI',false),
+       ('flags-new-active','New active company','NA',true);
+select results_eq(
+ $$select o.slug,count(f.feature)::integer,count(distinct f.feature)::integer,bool_and(not f.enabled)
+   from public.organizations o left join public.organization_management_features f on f.organization_id=o.id
+   where o.slug in ('flags-new-inactive','flags-new-active') group by o.slug order by o.slug$$,
+ $$values ('flags-new-active'::text,7,7,true),('flags-new-inactive'::text,7,7,true)$$,
+ 'new active and inactive organizations immediately have seven unique disabled flags');
+create temporary table dormant_flags as select f.* from public.organization_management_features f
+ join public.organizations o on o.id=f.organization_id where o.slug='flags-new-inactive';
+update public.organizations set active=true where slug='flags-new-inactive';
+update public.organizations set active=false where slug='flags-new-inactive';
+update public.organizations set active=true where slug='flags-new-inactive';
+select results_eq(
+ $$select f.* from public.organization_management_features f join public.organizations o on o.id=f.organization_id
+   where o.slug='flags-new-inactive' order by f.feature$$,
+ $$select * from dormant_flags order by feature$$,
+ 'activation cycles preserve all preprovisioned rows and versions without gaps or duplicates');
+insert into public.organization_members(organization_id,user_id,role)
+ select id,'00000000-0000-0000-0000-000000004901','owner' from public.organizations where slug='flags-new-inactive';
+set local role authenticated;
+select is((select count(*) from management_api.list_management_features(
+ (select id from public.organizations where slug='flags-new-inactive'))),7::bigint,
+ 'owner lists all flags immediately after company activation');
+select lives_ok($$select management_api.set_management_read_access(
+ (select id from public.organizations where slug='flags-new-inactive'),true,
+ (select f.updated_at from public.organization_management_features f join public.organizations o on o.id=f.organization_id
+   where o.slug='flags-new-inactive' and f.feature='read_access'),'Activate new company read access')$$,
+ 'newly activated company owner can enable read access using its provisioned version');
+reset role;
+select has_function('private','provision_management_features',array[]::text[],'provisioner has no user parameters');
+select ok(exists(select 1 from pg_catalog.pg_proc where pronamespace='private'::regnamespace
+ and proname='provision_management_features' and prorettype='trigger'::regtype
+ and prosecdef and proowner='postgres'::regrole and proconfig @> array['search_path=""']),
+ 'provisioner is a private trigger-only definer owned by migration owner with empty search path');
+select is_empty($$select p.proname from pg_catalog.pg_proc p where p.pronamespace='private'::regnamespace
+ and p.proname='provision_management_features' and (
+ pg_catalog.has_function_privilege('anon',p.oid,'EXECUTE')
+ or pg_catalog.has_function_privilege('authenticated',p.oid,'EXECUTE')
+ or pg_catalog.has_function_privilege('service_role',p.oid,'EXECUTE')
+ or pg_catalog.has_function_privilege('management_feature_writer',p.oid,'EXECUTE'))$$,
+ 'neither application roles nor the RPC writer can execute the provisioner');
+select is_empty($$select p.proname from pg_catalog.pg_proc p,
+ lateral pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a
+ where p.pronamespace='private'::regnamespace and p.proname='provision_management_features'
+ and a.grantee=0 and a.privilege_type='EXECUTE'$$,'PUBLIC cannot execute the provisioner');
+select is((select count(*) from pg_catalog.pg_trigger t join pg_catalog.pg_proc p on p.oid=t.tgfoid
+ where p.pronamespace='private'::regnamespace and p.proname='provision_management_features'
+ and t.tgrelid='public.organizations'::regclass and t.tgtype=5 and t.tgnargs=0 and t.tgenabled='O'),1::bigint,
+ 'the only provisioning entrypoint is an enabled row AFTER INSERT trigger on organizations');
 select * from finish();
 rollback;
