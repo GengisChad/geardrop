@@ -13,6 +13,12 @@ const ownerRoutes = [
 ] as const;
 
 test("every Full Admin module renders real state without horizontal overflow", async ({ page }, testInfo) => {
+  // The gate serves the panel from `next dev`, which compiles a route the first time it is
+  // asked for, so the first project to run pays that cost for the whole list while the later
+  // viewports find everything warm. The default half minute covered a shorter panel than this
+  // one: tying the budget to the list keeps it right the next time a module is added, instead
+  // of leaving a number for someone to remember.
+  testInfo.setTimeout(ownerRoutes.length * 6_000);
   await login(page, "OWNER");
   for (const route of ownerRoutes) {
     const response = await page.goto(route);
