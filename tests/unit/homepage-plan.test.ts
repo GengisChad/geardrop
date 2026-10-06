@@ -36,6 +36,34 @@ describe("homepage plan", () => {
     expect(shown.sort()).toEqual(slugs(catalogue).sort());
   });
 
+  describe("with best sellers to lead (owner, 2026-10-05)", () => {
+    const best = ["glory", "enlil", "superion"];
+
+    it("deals the best sellers on sale first, in the listed order, and gives the drop its own row", () => {
+      const plan = homepagePlan(catalogue, 4, best);
+      // Superion is the record's best seller but sold out: it is not dealt.
+      expect(slugs(plan.hero)).toEqual(["glory", "enlil"]);
+      expect(plan.heroIsBestsellers).toBe(true);
+      expect(plan.heroIsNewRelease).toBe(false);
+      expect(slugs(plan.drop)).toEqual(["drake", "clock", "dran", "croc"]);
+      expect(slugs(plan.ready)).toEqual(["horus", "duo", "deck"]);
+      expect(slugs(plan.rest)).toEqual(["dragoon", "superion"]);
+    });
+
+    it("still shows every product exactly once", () => {
+      const plan = homepagePlan(catalogue, 4, best);
+      const shown = [...plan.hero, ...plan.drop, ...plan.ready, ...plan.rest].map((product) => product.slug);
+      expect(shown.sort()).toEqual(slugs(catalogue).sort());
+    });
+
+    it("falls back to the September order when no best seller can be sold", () => {
+      const plan = homepagePlan(catalogue, 4, ["superion", "not-in-the-catalogue"]);
+      expect(plan.heroIsBestsellers).toBe(false);
+      expect(slugs(plan.hero)).toEqual(["drake", "clock", "dran", "croc"]);
+      expect(plan.drop).toEqual([]);
+    });
+  });
+
   it("sends a release beyond the hero's cards to the rest, and deals what is on sale when nothing is new", () => {
     expect(slugs(homepagePlan(catalogue, 2).rest).slice(0, 2)).toEqual(["dran", "croc"]);
     const plain = homepagePlan([item("a", "esaurito"), item("b", "pre-ordine"), item("c", "disponibile")], 4);
