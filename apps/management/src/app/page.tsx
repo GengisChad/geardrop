@@ -1,5 +1,13 @@
-export const dynamic = "force-dynamic";
+import { redirect } from "next/navigation";
 
+/**
+ * La radice è dove arriva chi ha appena fatto l'accesso: login e schermate MFA mandano qui.
+ * Rimanda all'area protetta, il cui layout decide lato server: senza sessione va al login,
+ * con un fattore da iscrivere o da verificare va all'MFA, altrimenti entra. Rimandare al login
+ * riporterebbe chi è già dentro sul modulo da cui è partito.
+ *
+ * Nel Task 6 questa pagina lascia il posto all'overview in (protected)/page.tsx.
+ */
 export default function Page() {
-  return <main><p>GEAR//DROP · Gestionale</p><h1>Fondazione gestionale</h1><p>Ambiente indipendente predisposto. Nessun dato operativo disponibile.</p></main>;
+  redirect("/account");
 }

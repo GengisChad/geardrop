@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath,revalidateTag } from "next/cache";import { requireStaffRole,requireUser } from "@/lib/auth/guards";import { inviteStaffSchema,teamRevokeSchema,teamRoleChangeSchema,teamStatusSchema } from "@/lib/admin/team";import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { revalidatePath,revalidateTag } from "next/cache";import { requireStaffRole,requireUser } from "@/lib/auth/guards";import { inviteStaffSchema,teamRevokeSchema,teamRoleChangeSchema,teamStatusSchema } from "@/lib/admin/team";import { createSupabaseServerClient } from "@/lib/supabase/server";import { readDeploymentContract } from "@/lib/app-mode";
 export type TeamActionState={readonly ok:boolean;readonly message:string};const OWNERS=["owner"] as const;const text=(data:FormData,key:string)=>typeof data.get(key)==="string"?String(data.get(key)):"";const fail=(message="Operazione team non completata."):TeamActionState=>({ok:false,message});
 async function ownerClient(){const client=await createSupabaseServerClient();await requireUser(client);const principal=await requireStaffRole(client,OWNERS);return {client,principal};}function refresh(userId?:string){revalidateTag("team","max");revalidateTag("audit","max");revalidatePath("/admin/team");revalidatePath("/admin/attivita");if(userId)revalidatePath(`/admin/team/${userId}`);}
 
@@ -9,7 +9,7 @@ export async function inviteStaffAction(_state:TeamActionState,formData:FormData
     // the account exists, so an email invitation would fail.
     const existing=await privileged.from("staff_profiles").select("user_id").eq("invite_email",parsed.data.email.trim().toLowerCase()).maybeSingle();
     let userId=existing.data?.user_id??null;let invitedNow=false;
-    if(!userId){const invited=await privileged.auth.admin.inviteUserByEmail(parsed.data.email,{data:{display_name:parsed.data.displayName}});if(invited.error||!invited.data.user)return fail("Invito non completato. Verifica l’indirizzo e riprova.");userId=invited.data.user.id;invitedNow=true;}
+    if(!userId){const {managementOrigin}=readDeploymentContract();const redirectTo=managementOrigin?`${managementOrigin}/auth/callback?next=/mfa/enroll`:undefined;const invited=await privileged.auth.admin.inviteUserByEmail(parsed.data.email,{data:{display_name:parsed.data.displayName},...(redirectTo?{redirectTo}:{})});if(invited.error||!invited.data.user)return fail("Invito non completato. Verifica l’indirizzo e riprova.");userId=invited.data.user.id;invitedNow=true;}
     const inserted=await client.rpc("record_staff_invite",{p_organization_id:principal.organization.id,p_user_id:userId,p_email:parsed.data.email,p_display_name:parsed.data.displayName,p_role:parsed.data.role});if(inserted.error){
       // Only an account created by this very invitation is removed; an existing colleague never is.
       if(invitedNow)await privileged.auth.admin.deleteUser(userId);

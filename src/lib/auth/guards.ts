@@ -13,6 +13,11 @@ import {
 
 export { assertAllowedStaffRole } from "./roles";
 
+// Adapter: il pannello legacy usa i tipi locali in ./roles (strutturalmente identici
+// al contratto neutrale in @geardrop/data-contract). AssuranceLevel è re-esportato
+// qui per qualsiasi consumer legacy che importi tipi MFA da questo modulo.
+export type { AssuranceLevel } from "@geardrop/data-contract";
+
 export class AuthenticationRequiredError extends Error {}
 
 export async function requireUser(client: SupabaseClient<Database>): Promise<User> {
