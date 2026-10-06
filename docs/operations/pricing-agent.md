@@ -41,7 +41,7 @@ Per 60–90 giorni confrontare proposte, decisioni e vendite: le decisioni con n
 
 ## Riferimenti tecnici
 
-- Migrazione `20261006190000_add_pricing_agent.sql`: `market_sources`, `pricing_policies`,
+- Migrazione `20261006223010_add_pricing_agent.sql`: `market_sources`, `pricing_policies`,
   `agent_runs`, `market_observations`, `pricing_proposals` (tier A); RPC `start_agent_run`,
   `finish_agent_run`, `record_market_observation`, `propose_price`, `decide_pricing_proposal`,
   `save_pricing_policy`.

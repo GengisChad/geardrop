@@ -36,7 +36,7 @@ insert into expected_tiers (table_name, tier) values
   ('footer_items', 'C'), ('navigation_items', 'C'), ('customer_addresses', 'C'),
   ('staff_profiles', 'G'), ('organizations', 'G'), ('organization_members', 'G'),
   -- meta tier-list tables added by 20261005090000_meta_attuale_tier_lists.sql (main branch)
-  -- and scoped by 20261006230000_scope_the_meta_tables.sql
+  -- and scoped by 20261006223014_scope_the_meta_tables.sql
   ('meta_snapshots', 'A'), ('meta_videos', 'A'),
   ('meta_rankings', 'C');
 
