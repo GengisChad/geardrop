@@ -1,15 +1,32 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
-import { BUNDLES, CATEGORIES, PRODUCTS } from "@/data/catalog";
+import { BUNDLES, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS } from "@/data/catalog";
 import { oneCardPerFamily } from "@/lib/commerce/variants";
 import { breadcrumbJsonLd, jsonLd, productDescription, productJsonLd, productTitle, siteJsonLd } from "@/lib/seo";
+
+// The sitemap reads the published meta months from Supabase; the unit test stands in for
+// it so the file's own shape is what is under test.
+vi.mock("@/lib/storefront/meta-repository", () => ({
+  getStorefrontMetaArchive: async () => [
+    { month: "2026-10", title: "Meta ottobre 2026", publishedAt: "2026-10-05T00:00:00.000Z", updatedAt: "2026-10-05T00:00:00.000Z" },
+  ],
+}));
 
 afterEach(() => vi.unstubAllEnvs());
 
 describe("sitemap", () => {
-  const entries = sitemap();
-  const urls = entries.map((entry) => entry.url);
+  let entries: Awaited<ReturnType<typeof sitemap>>;
+  let urls: string[];
+  beforeAll(async () => {
+    entries = await sitemap();
+    urls = entries.map((entry) => entry.url);
+  });
+
+  it("lists the meta page and every published month", () => {
+    expect(urls).toContain("https://geardropshop.it/meta");
+    expect(urls).toContain("https://geardropshop.it/meta/2026-10");
+  });
 
   it("lists the home, the shop, every category and every product on the production domain", () => {
     expect(urls).toContain("https://geardropshop.it/");
@@ -63,7 +80,10 @@ describe("search metadata", () => {
       expect(description.length).toBeLessThanOrEqual(160);
       expect(description).toContain("€");
     }
-    expect(productDescription(glory)).toContain("€30,00, pre-ordine");
+    // Whatever the catalogue is selling as a pre-order today, its snippet has to say so.
+    const preorder = PRODUCTS.find((product) => product.stock === "pre-ordine");
+    expect(preorder, "the catalogue has no pre-order to check the wording against").toBeDefined();
+    expect(productDescription(preorder!)).toContain(", pre-ordine");
   });
 });
 
@@ -71,14 +91,15 @@ describe("structured data", () => {
   const glory = PRODUCTS.find((product) => product.slug === "glory-valkerion-lf")!;
 
   it("describes the offer as Google's merchant listings expect", () => {
-    const data = productJsonLd(glory);
+    // Pinned to a pre-order so the availability line is exercised whatever Glory is selling as.
+    const data = productJsonLd({ ...glory, stock: "pre-ordine" });
     expect(data).toMatchObject({
       "@type": "Product",
       url: "https://geardropshop.it/prodotto/glory-valkerion-lf",
       image: ["https://geardropshop.it/products/glory-valkerion-lf.webp"],
       brand: { name: "Hasbro" },
       offers: {
-        price: "30.00",
+        price: (glory.price.amount / 100).toFixed(2),
         priceCurrency: "EUR",
         availability: "https://schema.org/PreOrder",
         itemCondition: "https://schema.org/NewCondition",
@@ -91,7 +112,10 @@ describe("structured data", () => {
 
   it("marks sold-out stock and free shipping from the threshold", () => {
     expect(productJsonLd({ ...glory, stock: "esaurito" }).offers.availability).toBe("https://schema.org/OutOfStock");
-    expect(productJsonLd({ ...glory, price: { amount: 5900, currency: "EUR" } }).offers.shippingDetails.shippingRate.value).toBe("0.00");
+    expect(
+      productJsonLd({ ...glory, price: { amount: FREE_SHIPPING_THRESHOLD, currency: "EUR" } }).offers.shippingDetails
+        .shippingRate.value,
+    ).toBe("0.00");
   });
 
   it("publishes the shop, its search and breadcrumbs", () => {

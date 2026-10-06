@@ -9,12 +9,15 @@ import { assertCommerceMaintenanceOpen, commerceWriteBlockedMessage } from "@/li
 import { parseEuroCents } from "@/lib/admin/warehouse";
 import { carrierById, normalizeTrackingCode } from "@/lib/orders/carriers";
 import { customerMessageEmail } from "@/lib/orders/customer-message-email";
+import { deliveryConfirmationEmail } from "@/lib/orders/delivery-email";
 import { refundNotificationEmail } from "@/lib/orders/refund-email";
 import { preorderReadyEmail } from "@/lib/orders/preorder-ready-email";
 import { buyerFirstName } from "@/lib/orders/shipping-email";
 import { shippingNotificationEmail } from "@/lib/orders/shipping-email";
+import { shippingEmailDue } from "@/lib/orders/shipping-notice";
 import type { Database } from "@/lib/supabase/database.types";
 import {
+  deliverOrderSchema,
   messageCustomerSchema,
   orderCancellationSchema,
   orderNoteSchema,
@@ -217,7 +220,11 @@ async function sendShipmentEmail(client: SupabaseClient<Database>, organizationI
   const sent = await sendEmail({
     ...content,
     replyTo: SHOP_EMAIL,
-    idempotencyKey: `gd-order-shipped-${orderId}-${order.data.tracking_code ?? "senza-codice"}`,
+    // One key per tracking the buyer is told about: a corrected carrier, code or link is a new email.
+    idempotencyKey: `gd-order-shipped-${orderId}-${createHash("sha256")
+      .update([order.data.tracking_carrier, order.data.tracking_code, order.data.tracking_url].map((part) => part ?? "").join("|"))
+      .digest("hex")
+      .slice(0, 16)}`,
   });
   if (!sent.ok) return { ok: false, message: emailFailure(sent.reason, sent.detail) };
 
@@ -226,13 +233,16 @@ async function sendShipmentEmail(client: SupabaseClient<Database>, organizationI
   return { ok: true };
 }
 
+/**
+ * Ships the order and tells the buyer in the same step: saving a tracking code always emails it,
+ * unless the buyer already holds exactly this tracking (see shippingEmailDue).
+ */
 export async function shipOrderAction(_previous: OrderActionState, formData: FormData): Promise<OrderActionState> {
   const parsed = shipOrderSchema.safeParse({
     orderId: text(formData, "orderId"),
     carrierId: text(formData, "carrierId"),
     code: text(formData, "code"),
     url: text(formData, "url"),
-    notify: formData.get("notify") === "on",
   });
   const carrier = parsed.success ? carrierById(parsed.data.carrierId) : undefined;
   if (!parsed.success || !carrier) return { ok: false, message: "Scegli il corriere e controlla codice e link (solo HTTPS)." };
@@ -242,6 +252,13 @@ export async function shipOrderAction(_previous: OrderActionState, formData: For
   if (courierCostText && courierCostCents === null) return { ok: false, message: "Costo corriere: scrivi un importo in euro, es. 4,00." };
   try {
     const { client, organizationId } = await clientFor(MANAGERS);
+    const saved = await client
+      .from("orders")
+      .select("status,tracking_carrier,tracking_code,tracking_url,shipping_notified_at")
+      .eq("id", parsed.data.orderId)
+      .eq("organization_id", organizationId)
+      .single();
+    if (saved.error) return { ok: false, message: "Ordine non trovato." };
     const { error } = await client.rpc("ship_order", {
       p_order_id: parsed.data.orderId,
       p_carrier: carrier.label,
@@ -257,13 +274,87 @@ export async function shipOrderAction(_previous: OrderActionState, formData: For
       if (costs.error) console.error("[orders] courier cost not saved:", costs.error.message);
     }
     refresh(parsed.data.orderId);
-    if (!parsed.data.notify) return { ok: true, message: "Ordine segnato come spedito. Nessuna email inviata." };
+
+    const wasShipped = saved.data.status === "shipped";
+    const due = shippingEmailDue(
+      {
+        carrier: saved.data.tracking_carrier,
+        code: saved.data.tracking_code,
+        url: saved.data.tracking_url,
+        notifiedAt: saved.data.shipping_notified_at,
+      },
+      { carrier: carrier.label, code: code || null, url: parsed.data.url },
+    );
+    if (!due) return { ok: true, message: "Tracking invariato: il cliente ha già ricevuto l'email con questo codice." };
 
     const email = await sendShipmentEmail(client, organizationId, parsed.data.orderId);
     refresh(parsed.data.orderId);
+    if (email.ok) {
+      return { ok: true, message: wasShipped ? "Tracking aggiornato ed email inviata al cliente." : "Ordine spedito ed email inviata al cliente." };
+    }
+    return { ok: false, message: `${wasShipped ? "Tracking salvato" : "Ordine segnato come spedito"}, ma l'email non è partita: ${email.message}` };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
+/** Emails the buyer that the parcel arrived and stamps the order, so it is not sent twice. */
+async function sendDeliveryEmail(client: SupabaseClient<Database>, organizationId: number, orderId: number): Promise<ShipmentEmailResult> {
+  const [order, items] = await Promise.all([
+    client
+      .from("orders")
+      .select("order_number,email,status,tracking_carrier,tracking_code,tracking_url,shipping_address_snapshot")
+      .eq("id", orderId)
+      .eq("organization_id", organizationId)
+      .single(),
+    client.from("order_items").select("product_name_snapshot,quantity").eq("order_id", orderId).eq("organization_id", organizationId).order("id"),
+  ]);
+  if (order.error || items.error) return { ok: false, message: "non riesco a leggere l'ordine." };
+  if (order.data.status !== "completed") return { ok: false, message: "l'ordine non risulta consegnato." };
+
+  const content = deliveryConfirmationEmail({
+    orderNumber: order.data.order_number,
+    email: order.data.email,
+    carrier: order.data.tracking_carrier,
+    trackingCode: order.data.tracking_code,
+    trackingUrl: order.data.tracking_url,
+    shippingAddress: order.data.shipping_address_snapshot,
+    items: (items.data ?? []).map((item) => ({ name: item.product_name_snapshot, quantity: item.quantity })),
+  });
+  const sent = await sendEmail({
+    ...content,
+    replyTo: SHOP_EMAIL,
+    idempotencyKey: `gd-order-delivered-${orderId}`,
+  });
+  if (!sent.ok) return { ok: false, message: emailFailure(sent.reason, sent.detail) };
+
+  const { error } = await client.rpc("mark_order_delivery_notified", { p_order_id: orderId });
+  if (error) return { ok: false, message: "email inviata, ma non sono riuscito a segnarla sull'ordine." };
+  return { ok: true };
+}
+
+export async function deliverOrderAction(_previous: OrderActionState, formData: FormData): Promise<OrderActionState> {
+  const parsed = deliverOrderSchema.safeParse({
+    orderId: text(formData, "orderId"),
+    note: text(formData, "note"),
+    notify: formData.get("notify") === "on",
+  });
+  if (!parsed.success) return { ok: false, message: "Conferma consegna non valida." };
+  try {
+    const { client, organizationId } = await clientFor(MANAGERS);
+    const { error } = await client.rpc("complete_order", {
+      p_order_id: parsed.data.orderId,
+      ...(parsed.data.note ? { p_note: parsed.data.note } : {}),
+    });
+    if (error) return failure(error);
+    refresh(parsed.data.orderId);
+    if (!parsed.data.notify) return { ok: true, message: "Ordine segnato come consegnato. Nessuna email inviata." };
+
+    const email = await sendDeliveryEmail(client, organizationId, parsed.data.orderId);
+    refresh(parsed.data.orderId);
     return email.ok
-      ? { ok: true, message: "Ordine spedito ed email inviata al cliente." }
-      : { ok: false, message: `Ordine segnato come spedito, ma l'email non è partita: ${email.message}` };
+      ? { ok: true, message: "Consegna confermata ed email inviata al cliente." }
+      : { ok: false, message: `Ordine segnato come consegnato, ma l'email non è partita: ${email.message}` };
   } catch (error) {
     return failure(error);
   }
@@ -456,6 +547,36 @@ export async function notifyShippedOrdersAction(_previous: OrderActionState, _fo
     const sent = pending.data.length - failed.length;
     return failed.length === 0
       ? { ok: true, message: `Email di spedizione inviate: ${sent}.` }
+      : { ok: sent > 0, message: `Inviate ${sent} di ${pending.data.length}. ${failed.join(" · ")}` };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
+/** Sends the delivery confirmation to every completed order still waiting for one. */
+export async function notifyDeliveredOrdersAction(_previous: OrderActionState, _formData: FormData): Promise<OrderActionState> {
+  try {
+    const { client, organizationId } = await clientFor(MANAGERS);
+    const pending = await client
+      .from("orders")
+      .select("id,order_number")
+      .eq("organization_id", organizationId)
+      .eq("status", "completed")
+      .is("delivery_notified_at", null)
+      .order("delivered_at", { ascending: true })
+      .limit(50);
+    if (pending.error) return { ok: false, message: "Non riesco a leggere gli ordini consegnati." };
+    if (!pending.data.length) return { ok: true, message: "Tutti gli ordini consegnati hanno già ricevuto l'email." };
+
+    const failed: string[] = [];
+    for (const order of pending.data) {
+      const result = await sendDeliveryEmail(client, organizationId, order.id);
+      if (!result.ok) failed.push(`${order.order_number}: ${result.message}`);
+    }
+    revalidatePath("/admin/ordini");
+    const sent = pending.data.length - failed.length;
+    return failed.length === 0
+      ? { ok: true, message: `Email di consegna inviate: ${sent}.` }
       : { ok: sent > 0, message: `Inviate ${sent} di ${pending.data.length}. ${failed.join(" · ")}` };
   } catch (error) {
     return failure(error);

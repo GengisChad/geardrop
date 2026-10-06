@@ -8,7 +8,7 @@ import { RestockForm } from "@/components/product/restock-form";
 import { Button } from "@/components/ui/button";
 import { useWishlist } from "@/lib/store/wishlist";
 import { MAX_QUANTITY_PER_LINE } from "@/lib/store/cart";
-import { PREORDER_DELIVERY, deliveryClause, isPurchasable, stockHint, stockLabel } from "@/lib/labels";
+import { PREORDER_DELIVERY, bundleNoun, deliveryClause, isPurchasable, shownShelf, stockHint, stockLabel } from "@/lib/labels";
 import type { Product, StockStatus } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
 
@@ -48,6 +48,8 @@ export function BuyPanel({ product }: { product: Product }) {
     ? MAX_QUANTITY_PER_LINE
     : Math.min(MAX_QUANTITY_PER_LINE, product.availableQuantity ?? MAX_QUANTITY_PER_LINE);
   const shelf = product.availableQuantity;
+  // A deep shelf is availability, not scarcity: the badge already says "Disponibile".
+  const namedShelf = shownShelf(product);
   const beyondShelf =
     product.autoPreorder && product.stock === "disponibile" && shelf !== undefined && quantity > shelf ? quantity - shelf : 0;
 
@@ -65,14 +67,10 @@ export function BuyPanel({ product }: { product: Product }) {
               {product.availableQuantity} pre-ordini rimasti
             </p>
           ) : null}
-          {product.stock === "disponibile" && product.availableQuantity !== undefined ? (
+          {product.stock === "disponibile" && namedShelf !== undefined ? (
             <p className="mt-1 tabular text-[0.6875rem] font-bold text-available" data-testid="stock-remaining">
-              {product.availableQuantity}{" "}
-              {product.bundleOf
-                ? "duo disponibili"
-                : product.availableQuantity === 1
-                  ? "pezzo disponibile"
-                  : "pezzi disponibili"}
+              {namedShelf}{" "}
+              {product.bundleOf ? `${bundleNoun(product)} disponibili` : namedShelf === 1 ? "pezzo disponibile" : "pezzi disponibili"}
             </p>
           ) : null}
         </div>

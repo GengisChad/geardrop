@@ -5,6 +5,9 @@ import { FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_FLAT_RATE } from "@/data/ca
 
 const provider = createMockProvider();
 
+/** The fixture cart everywhere below is one Cobalt Dragoon; its price is read, never typed. */
+const DRAGOON = PRODUCTS.find((product) => product.slug === "cobalt-dragoon-2-60c")!.price.amount;
+
 describe("getProduct", () => {
   it("returns a product by slug", async () => {
     const product = await provider.getProduct("cobalt-dragoon-2-60c");
@@ -46,8 +49,8 @@ describe("listProducts", () => {
   });
 
   it("applies price bounds inclusively", async () => {
-    const page = await provider.listProducts({ minPrice: 2550, maxPrice: 2550 });
-    expect(page.items.every((p) => p.price.amount === 2550)).toBe(true);
+    const page = await provider.listProducts({ minPrice: DRAGOON, maxPrice: DRAGOON });
+    expect(page.items.every((p) => p.price.amount === DRAGOON)).toBe(true);
   });
 
   it("sorts by price ascending and descending", async () => {
@@ -100,8 +103,12 @@ describe("an item sold in several colours", () => {
   it("is found by any of its colours, still as one card", async () => {
     const page = await provider.listProducts({ search: "fucsia" });
     expect(page.items.map((product) => product.slug)).toEqual(["porta-deck-fucsia"]);
+    // Bundles that ship a case match the words too; what matters is that the seven colours
+    // still collapse into the one card that leads the family.
     const all = await provider.listProducts({ search: "porta deck" });
-    expect(all.items.map((product) => product.slug)).toEqual(["porta-deck-giallo"]);
+    expect(all.items.map((product) => product.slug).filter((slug) => slug.startsWith("porta-deck"))).toEqual([
+      "porta-deck-giallo",
+    ]);
   });
 
   it("keeps a page for every colour, sold with no stock limit", async () => {
@@ -140,8 +147,9 @@ describe("getFacets", () => {
 
   it("exposes the real price range", async () => {
     const facets = await provider.getFacets();
-    expect(facets.priceRange.min).toBe(Math.min(...PRODUCTS.map((p) => p.price.amount)));
-    expect(facets.priceRange.max).toBe(Math.max(...PRODUCTS.map((p) => p.price.amount)));
+    // Bundles are sold like any other card, so the range has to cover them too.
+    expect(facets.priceRange.min).toBe(Math.min(...STOREFRONT_CATALOGUE.map((p) => p.price.amount)));
+    expect(facets.priceRange.max).toBe(Math.max(...STOREFRONT_CATALOGUE.map((p) => p.price.amount)));
   });
 });
 
@@ -155,15 +163,16 @@ describe("quoteCart", () => {
 
   it("charges flat-rate shipping below the threshold", async () => {
     const quote = await provider.quoteCart({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }] });
-    expect(quote.totals.subtotal.amount).toBe(2550);
+    expect(quote.totals.subtotal.amount).toBe(DRAGOON);
     expect(quote.totals.shipping.amount).toBe(SHIPPING_FLAT_RATE);
-    expect(quote.totals.total.amount).toBe(2550 + SHIPPING_FLAT_RATE);
-    expect(quote.totals.freeShippingRemaining).toBe(FREE_SHIPPING_THRESHOLD - 2550);
+    expect(quote.totals.total.amount).toBe(DRAGOON + SHIPPING_FLAT_RATE);
+    expect(quote.totals.freeShippingRemaining).toBe(FREE_SHIPPING_THRESHOLD - DRAGOON);
   });
 
   it("gives free shipping exactly at the threshold, not just above it", async () => {
-    // 3 x 25,50 = 76,50 clears 59,00; check the boundary explicitly.
-    const quote = await provider.quoteCart({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 3 }] });
+    // The smallest number of packs that clears the threshold, whatever the owner sets it to.
+    const quantity = Math.ceil(FREE_SHIPPING_THRESHOLD / DRAGOON);
+    const quote = await provider.quoteCart({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity }] });
     expect(quote.totals.subtotal.amount).toBeGreaterThanOrEqual(FREE_SHIPPING_THRESHOLD);
     expect(quote.totals.shipping.amount).toBe(0);
     expect(quote.totals.freeShippingRemaining).toBe(0);
@@ -171,9 +180,9 @@ describe("quoteCart", () => {
 
   it("multiplies by quantity", async () => {
     const quote = await provider.quoteCart({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 2 }] });
-    expect(quote.totals.subtotal.amount).toBe(2550 * 2);
-    expect(quote.lines[0]?.unitPrice.amount).toBe(2550);
-    expect(quote.lines[0]?.lineTotal.amount).toBe(5100);
+    expect(quote.totals.subtotal.amount).toBe(DRAGOON * 2);
+    expect(quote.lines[0]?.unitPrice.amount).toBe(DRAGOON);
+    expect(quote.lines[0]?.lineTotal.amount).toBe(DRAGOON * 2);
   });
 
   it("reports lines whose product no longer exists instead of pricing them", async () => {
@@ -184,7 +193,7 @@ describe("quoteCart", () => {
         { slug: "prodotto-rimosso" as never, quantity: 5 },
       ],
     });
-    expect(quote.totals.subtotal.amount).toBe(2550);
+    expect(quote.totals.subtotal.amount).toBe(DRAGOON);
     expect(quote.missingSlugs).toEqual(["prodotto-rimosso"]);
     expect(quote.lines).toHaveLength(1);
   });

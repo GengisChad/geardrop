@@ -5,9 +5,9 @@ import {
   addOrderNoteAction,
   messageCustomerAction,
   cancelOrderAction,
+  deliverOrderAction,
   prepareOrderRefundAction,
   refundStripeAction,
-  setOrderTrackingAction,
   shipOrderAction,
   transitionOrderAction,
   type OrderActionState,
@@ -24,10 +24,11 @@ function Feedback({ state }: { readonly state: OrderActionState }) {
   return state.message ? <p className={state.ok ? styles.success : styles.error} role="status">{state.message}</p> : null;
 }
 
-export function OrderActions({ orderId, status, paymentStatus, role, tracking, shippingNotifiedAt, stripePaymentIntentId, totalCents, refundedCents = 0 }: {
+export function OrderActions({ orderId, status, paymentStatus, role, tracking, shippingNotifiedAt, deliveryNotifiedAt, stripePaymentIntentId, totalCents, refundedCents = 0 }: {
   readonly orderId: number; readonly status: OrderStatus; readonly paymentStatus: PaymentStatus; readonly role: StaffRole;
   readonly tracking: { readonly carrier: string | null; readonly code: string | null; readonly url: string | null };
   readonly shippingNotifiedAt: string | null;
+  readonly deliveryNotifiedAt: string | null;
   readonly stripePaymentIntentId: string | null;
   readonly totalCents: number;
   readonly refundedCents?: number;
@@ -38,9 +39,10 @@ export function OrderActions({ orderId, status, paymentStatus, role, tracking, s
   const refundable = manager && ["authorized", "paid"].includes(paymentStatus);
   const stripeRefundable = refundable && Boolean(stripePaymentIntentId) && totalCents - refundedCents > 0;
   const shippable = manager && ["confirmed", "processing", "shipped"].includes(status);
+  const deliverable = manager && ["shipped", "completed"].includes(status);
   const [shipState, shipAction, shipPending] = useActionState(shipOrderAction, initial);
+  const [deliverState, deliverAction, deliverPending] = useActionState(deliverOrderAction, initial);
   const [transitionState, transitionAction, transitionPending] = useActionState(transitionOrderAction, initial);
-  const [trackingState, trackingAction, trackingPending] = useActionState(setOrderTrackingAction, initial);
   const [noteState, noteAction, notePending] = useActionState(addOrderNoteAction, initial);
   const [messageState, messageAction, messagePending] = useActionState(messageCustomerAction, initial);
   const [cancelState, cancelAction, cancelPending] = useActionState(cancelOrderAction, initial);
@@ -59,8 +61,8 @@ export function OrderActions({ orderId, status, paymentStatus, role, tracking, s
     {shippable ? <form action={shipAction} className={`${styles.actionCard} ${styles.shipCard}`}>
       <h3>{status === "shipped" ? "Spedizione e email al cliente" : "Spedisci e avvisa il cliente"}</h3>
       <p>{shippingNotifiedAt
-        ? `Email di spedizione già inviata il ${new Intl.DateTimeFormat("it-IT", { dateStyle: "medium", timeStyle: "short" }).format(new Date(shippingNotifiedAt))}.`
-        : "Segna l'ordine come spedito e manda al cliente corriere, codice e link per seguire il pacco."}</p>
+        ? `Email di spedizione già inviata il ${new Intl.DateTimeFormat("it-IT", { dateStyle: "medium", timeStyle: "short" }).format(new Date(shippingNotifiedAt))}. Se correggi corriere o codice, al cliente arriva subito quello nuovo.`
+        : "Inserisci il codice: l'ordine passa a spedito e il cliente riceve subito l'email con corriere, codice e link per seguire il pacco."}</p>
       <input name="orderId" type="hidden" value={orderId}/>
       <label>Corriere<select defaultValue={carrierByLabel(tracking.carrier)?.id ?? "poste"} name="carrierId" required>{CARRIERS.map((carrier) => <option key={carrier.id} value={carrier.id}>{carrier.label}</option>)}</select></label>
       <label>Codice di tracciamento<input autoComplete="off" defaultValue={tracking.code ?? ""} inputMode="text" maxLength={240} name="code" placeholder="Es. 018207900244"/></label>
@@ -70,19 +72,22 @@ export function OrderActions({ orderId, status, paymentStatus, role, tracking, s
       <button disabled={shipPending} type="submit">{shipPending ? "Invio…" : status === "shipped" ? "Aggiorna" : "Spedisci"}</button><Feedback state={shipState}/>
     </form> : null}
 
+    {deliverable ? <form action={deliverAction} className={styles.actionCard}>
+      <h3>{status === "completed" ? "Consegna e email al cliente" : "Conferma la consegna"}</h3>
+      <p>{deliveryNotifiedAt
+        ? `Email di consegna già inviata il ${new Intl.DateTimeFormat("it-IT", { dateStyle: "medium", timeStyle: "short" }).format(new Date(deliveryNotifiedAt))}.`
+        : "Chiudi l’ordine e conferma al cliente che il pacco è arrivato, con i giorni che ha per il reso."}</p>
+      <input name="orderId" type="hidden" value={orderId}/>
+      <label>Nota operativa<textarea maxLength={1000} name="note" rows={3}/></label>
+      <label className={styles.confirm}><input defaultChecked={!deliveryNotifiedAt} name="notify" type="checkbox"/> Invia l’email di consegna al cliente</label>
+      <button disabled={deliverPending} type="submit">{deliverPending ? "Invio…" : status === "completed" ? "Invia di nuovo" : "Conferma consegna"}</button><Feedback state={deliverState}/>
+    </form> : null}
+
     {manager && transitions.length > 0 ? <form action={transitionAction} className={styles.actionCard}>
       <h3>Avanza stato</h3><input name="orderId" type="hidden" value={orderId}/>
       <label>Nuovo stato<select name="toStatus" required>{transitions.map((value) => <option key={value} value={value}>{labels[value]}</option>)}</select></label>
       <label>Nota operativa<textarea maxLength={1000} name="note" rows={3}/></label>
       <button disabled={transitionPending} type="submit">{transitionPending ? "Aggiornamento…" : "Aggiorna stato"}</button><Feedback state={transitionState}/>
-    </form> : null}
-
-    {manager ? <form action={trackingAction} className={styles.actionCard}>
-      <h3>Tracking</h3><input name="orderId" type="hidden" value={orderId}/>
-      <label>Corriere<input defaultValue={tracking.carrier ?? ""} maxLength={120} name="carrier" required/></label>
-      <label>Codice<input defaultValue={tracking.code ?? ""} maxLength={240} name="code" required/></label>
-      <label>URL HTTPS<input defaultValue={tracking.url ?? ""} name="url" type="url"/></label>
-      <button disabled={trackingPending} type="submit">{trackingPending ? "Salvataggio…" : "Salva tracking"}</button><Feedback state={trackingState}/>
     </form> : null}
 
     <form action={messageAction} className={styles.actionCard}>

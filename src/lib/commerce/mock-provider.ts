@@ -59,6 +59,25 @@ const normalise = (value: string) =>
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "");
 
+/**
+ * A search matches a product's name, tagline and description alike, which is right for
+ * finding things and wrong for ordering them: a bundle that merely mentions Cobalt
+ * Dragoon in its contents would otherwise sit above the Cobalt Dragoon itself.
+ *
+ * So a name match comes first and the chosen sort decides the rest. Without a search term
+ * nothing changes.
+ */
+function rank(query: ProductQuery, sorter: (a: Product, b: Product) => number) {
+  const needle = query.search ? normalise(query.search).trim() : "";
+  if (!needle) return sorter;
+  const tokens = needle.split(/\s+/);
+  const named = (product: Product) => {
+    const name = normalise(product.name);
+    return Number(tokens.every((token) => name.includes(token)));
+  };
+  return (a: Product, b: Product) => named(b) - named(a) || sorter(a, b);
+}
+
 function matches(product: Product, query: ProductQuery): boolean {
   if (query.category && product.category !== query.category) return false;
   if (query.stock?.length && !query.stock.includes(product.stock)) return false;
@@ -115,7 +134,7 @@ export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CA
 
     async listProducts(query = {}) {
       const perPage = query.perPage ?? DEFAULT_PER_PAGE;
-      const sorted = [...filter(query)].sort(SORTERS[query.sort ?? "popolari"]);
+      const sorted = [...filter(query)].sort(rank(query, SORTERS[query.sort ?? "popolari"]));
       const pageCount = Math.max(1, Math.ceil(sorted.length / perPage));
       const page = Math.min(Math.max(1, query.page ?? 1), pageCount);
       const start = (page - 1) * perPage;

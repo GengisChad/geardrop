@@ -32,6 +32,6 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
       <section className={`${styles.panel} ${styles.wide}`}><h2>Azioni auditate</h2>{data.auditEvents.length?<ul className={styles.timeline}>{data.auditEvents.map(event=><li key={event.id}><strong>{event.action}</strong><time>{new Intl.DateTimeFormat("it-IT",{dateStyle:"medium",timeStyle:"short"}).format(new Date(event.created_at))}</time></li>)}</ul>:<p>Nessuna azione registrata.</p>}</section>
     </div>
     <OrderProfitPanel orderId={order.id} overrides={{shippingCostCents:order.shipping_cost_cents,packagingCostCents:order.packaging_cost_cents,paymentFeeCents:order.payment_fee_cents,paymentFeeSource:order.payment_fee_source}} profit={profit}/>
-    <OrderActions orderId={order.id} paymentStatus={order.payment_status} role={principal.role} status={order.status} tracking={{carrier:order.tracking_carrier,code:order.tracking_code,url:order.tracking_url}} shippingNotifiedAt={order.shipping_notified_at} stripePaymentIntentId={order.stripe_payment_intent_id} totalCents={order.total_cents} refundedCents={order.refunded_cents}/>
+    <OrderActions orderId={order.id} paymentStatus={order.payment_status} role={principal.role} status={order.status} tracking={{carrier:order.tracking_carrier,code:order.tracking_code,url:order.tracking_url}} shippingNotifiedAt={order.shipping_notified_at} deliveryNotifiedAt={order.delivery_notified_at} stripePaymentIntentId={order.stripe_payment_intent_id} totalCents={order.total_cents} refundedCents={order.refunded_cents}/>
   </div>;
 }

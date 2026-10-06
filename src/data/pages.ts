@@ -36,7 +36,7 @@ export const SUPPORT_PAGES = {
       {
         heading: "Quanto costa la spedizione?",
         body: [
-          "La spedizione standard è gratuita per ordini superiori a 59€. Sotto questa soglia si applica una tariffa fissa di 4,90€.",
+          "La spedizione standard è gratuita per ordini superiori a 100€. Sotto questa soglia si applica una tariffa fissa di 4,90€.",
           "Spediamo solo in Italia.",
         ],
       },
@@ -78,7 +78,7 @@ export const SUPPORT_PAGES = {
       {
         heading: "Costi",
         body: [
-          "Spedizione gratuita per ordini superiori a 59€.",
+          "Spedizione gratuita per ordini superiori a 100€.",
           "Sotto la soglia, la spedizione standard costa 4,90€. Le opzioni disponibili sono mostrate prima della conferma.",
         ],
       },
@@ -186,7 +186,7 @@ export const LEGAL_PAGES = {
         heading: "Prezzi e spedizione",
         body: [
           "I prezzi sono espressi in euro e comprendono l'IVA.",
-          "La spedizione standard in Italia costa 4,90 € ed è gratuita per ordini da 59 €. Il totale, spedizione inclusa, è mostrato prima del pagamento.",
+          "La spedizione standard in Italia costa 4,90 € ed è gratuita per ordini da 100 €. Il totale, spedizione inclusa, è mostrato prima del pagamento.",
         ],
       },
       {

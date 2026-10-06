@@ -279,14 +279,24 @@ test.describe("desktop", () => {
       const surfaces = page.locator(".gd-glass-card, .gd-glass-panel, .gd-glass-compact");
       const count = await surfaces.count();
       expect(count, `${route} has a shared glass surface`).toBeGreaterThan(0);
-      const backdrop = await surfaces.first().evaluate((element) => {
-        const style = getComputedStyle(element);
-        return [
-          style.getPropertyValue("backdrop-filter"),
-          style.getPropertyValue("-webkit-backdrop-filter"),
-        ].find((value) => value && value !== "none") ?? "none";
-      });
-      expect(backdrop, `${route} has active backdrop filtering`).not.toBe("none");
+      // Polled rather than read once: the cart and the account rebuild their panels on
+      // hydration, and `getComputedStyle` on a node detached mid-swap returns empty
+      // strings for every property — which reads exactly like a page with no backdrop
+      // filtering at all. Re-resolving until it settles asserts the same thing without
+      // depending on when the measurement happens to land.
+      await expect
+        .poll(
+          async () =>
+            surfaces.first().evaluate((element) => {
+              const style = getComputedStyle(element);
+              return [
+                style.getPropertyValue("backdrop-filter"),
+                style.getPropertyValue("-webkit-backdrop-filter"),
+              ].find((value) => value && value !== "none") ?? "none";
+            }),
+          { message: `${route} has active backdrop filtering` },
+        )
+        .not.toBe("none");
     }
   });
 

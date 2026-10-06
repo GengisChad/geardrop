@@ -69,7 +69,21 @@ test.describe("catalogue", () => {
     await expect(page.getByTestId("product-grid")).toBeVisible();
     const count = Number(await page.getByTestId("result-count").innerText());
     expect(count).toBeGreaterThan(0);
-    await expect(page.getByTestId("product-card")).toHaveCount(count);
+
+    // The count is the whole result, the grid is one page of it. Since the Spain arrival the
+    // catalogue no longer fits on a single page, so the rest has to be reachable, not lost.
+    const onPage = await page.getByTestId("product-card").count();
+    if (onPage === count) {
+      await expect(page.getByTestId("pagination")).toHaveCount(0);
+      return;
+    }
+
+    expect(onPage).toBeLessThan(count);
+    await expect(page.getByTestId("pagination")).toBeVisible();
+    await page.goto("/negozio?page=2");
+    const onSecond = await page.getByTestId("product-card").count();
+    expect(onSecond).toBeGreaterThan(0);
+    expect(onPage + onSecond).toBeLessThanOrEqual(count);
   });
 
   test("sorting by price ascending actually reorders the grid", async ({ page }) => {
@@ -135,7 +149,8 @@ test.describe("product page", () => {
   test("shows price, availability and gallery", async ({ page }) => {
     await page.goto("/prodotto/cobalt-dragoon-2-60c");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Cobalt Dragoon 2-60C");
-    await expect(page.getByTestId("pdp-price")).toHaveText("€25,50");
+    const dragoon = PRODUCTS.find((product) => product.slug === "cobalt-dragoon-2-60c")!.price.amount;
+    await expect(page.getByTestId("pdp-price")).toHaveText(`€${(dragoon / 100).toFixed(2).replace(".", ",")}`);
     await expect(buyPanel(page).getByTestId("add-to-cart")).toBeVisible();
   });
 
@@ -187,10 +202,14 @@ test.describe("product page", () => {
 
 test.describe("search", () => {
   test("finds a product by name", async ({ page }) => {
-    // Two Cobalts in the catalogue since the 2026-09-21 drop: the search must return both.
+    // Two Cobalts in the catalogue since the 2026-09-21 drop, and since 2026-10-05 the Deck
+    // Completo that contains one. The search finds all three; the two actually named Cobalt
+    // rank above the bundle that only lists one among its contents.
     await page.goto("/ricerca?q=cobalt");
     await expect(page.getByTestId("search-results")).toBeVisible();
-    await expect(page.getByTestId("product-card")).toHaveCount(2);
+    await expect(page.getByTestId("product-card")).toHaveCount(3);
+    await expect(page.getByTestId("product-card").nth(0)).toContainText("Cobalt");
+    await expect(page.getByTestId("product-card").nth(1)).toContainText("Cobalt");
     await expect(page.getByTestId("search-results")).toContainText("Cobalt Dragoon");
     await expect(page.getByTestId("search-results")).toContainText("Cobalt Drake");
   });

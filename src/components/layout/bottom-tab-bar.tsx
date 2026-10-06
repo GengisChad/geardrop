@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Heart, Home, ShoppingBag, User, Zap } from "lucide-react";
+import { Heart, Home, ShoppingBag, Trophy, User } from "lucide-react";
 import type { AppHref } from "@/lib/routes";
 import { selectCartCount, useCart } from "@/lib/store/cart";
 import { useWishlist } from "@/lib/store/wishlist";
@@ -12,7 +12,11 @@ import { cn } from "@/lib/cn";
 const TABS = [
   { label: "Home", href: "/" as AppHref, Icon: Home },
   { label: "Negozio", href: "/negozio" as AppHref, Icon: ShoppingBag },
-  { label: "Arrivi", href: "/negozio?sort=novita" as AppHref, Icon: Zap },
+  // Five tabs is what fits at 375px — a sixth wraps "Account" onto its own row and
+  // breaks the bar. "Meta" takes the slot "Arrivi" held: new arrivals are the first
+  // thing on the home page and sit in the menu as "Nuovi arrivi", while the meta has
+  // no other way in.
+  { label: "Meta", href: "/meta" as AppHref, Icon: Trophy },
   { label: "Preferiti", href: "/preferiti" as AppHref, Icon: Heart },
   { label: "Account", href: "/account" as AppHref, Icon: User },
 ] as const;

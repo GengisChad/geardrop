@@ -39,8 +39,10 @@
     "stripe:products": "tsx scripts/sync-stripe-products.ts",
     "beta:rehearse": "tsx scripts/rehearse-production-upgrade.ts",
     "beta:fees": "tsx scripts/backfill-payment-fees.ts",
+    "yt:seo": "tsx scripts/youtube-seo.ts",
     "shots": "playwright test --config playwright.shots.config.ts",
     "assets": "python scripts/build-assets.py",
+    "assets:tops": "node scripts/build-loose-tops.mjs",
     "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "typegen": "next typegen"
   },

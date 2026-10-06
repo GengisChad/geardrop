@@ -33,9 +33,9 @@ export const brand = {
  * trims to the artwork. Keep in sync with the script's output.
  */
 export const brandSize = {
-  lockup: { width: 2362, height: 399 },
+  lockup: { width: 2000, height: 594 },
   wordmark: { width: 2159, height: 194 },
-  emblem: { width: 1017, height: 940 },
+  emblem: { width: 1206, height: 1161 },
 } as const;
 
 export type ProductImage = {
@@ -191,6 +191,107 @@ export const productImages = {
       width: 1000,
       height: 1000,
       alt: "Confezione Beyblade X Shatter Horus 9-65GB con lanciatore e trottola argento e rossa",
+    },
+  ],
+  "hammer-incendio-3-70h": [
+    {
+      src: "/products/hammer-incendio-3-70h.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Confezione Beyblade X Hammer Incendio 3-70H con trottola rossa e argento e lanciatore",
+    },
+  ],
+  "buster-dran-5-70db": [
+    {
+      src: "/products/buster-dran-5-70db.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Confezione Beyblade X Buster Dran 5-70DB con trottola gialla e argento",
+    },
+  ],
+  "shadow-shinobi-1-80mn": [
+    {
+      src: "/products/shadow-shinobi-1-80mn.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Confezione Beyblade X Shadow Shinobi 1-80MN con trottola viola e verde acqua e lanciatore",
+    },
+  ],
+  "wand-wizard-1-60r": [
+    {
+      src: "/products/wand-wizard-1-60r.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Confezione Beyblade X Wand Wizard 1-60R con trottola verde e lanciatore",
+    },
+  ],
+  "kit-doppio-starter-deck": [
+    {
+      src: "/products/kit-doppio-starter-deck.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Kit con gli starter Sword Dran 3-60F e Helm Knight 3-80N e il porta deck",
+    },
+  ],
+  "kit-arena-drop-completo": [
+    {
+      src: "/products/kit-arena-drop-completo.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Kit con il Drop Attack Battle Set, due starter Beyblade X e il porta deck",
+    },
+  ],
+  "kit-arena-sneak-completo": [
+    {
+      src: "/products/kit-arena-sneak-completo.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Kit con il Sneak Attack Battle Set, due starter Beyblade X e il porta deck",
+    },
+  ],
+  "duo-pegasus-samurai": [
+    {
+      src: "/products/duo-pegasus-samurai.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Duo con gli starter Blast Pegasus A Tr e Saber Samurai 2-70L e i loro lanciatori",
+    },
+  ],
+  /**
+   * The two tops that come inside the Drop Attack Battle Set. We sell them loose because
+   * the pieces inside are wanted on their own — a 9-60 ratchet and a Low Rush bit for the
+   * price of a booster — and the sets were sitting unsold whole.
+   */
+  "impact-drake-9-60lr": [
+    {
+      src: "/products/impact-drake-9-60lr.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Trottola Beyblade X Impact Drake 9-60LR rossa e argento con il gear chip del drago azzurro",
+    },
+  ],
+  "hover-wyvern-3-85n": [
+    {
+      src: "/products/hover-wyvern-3-85n.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Trottola Beyblade X Hover Wyvern 3-85N argento con la blade verde trasparente e il gear chip del wyvern",
+    },
+  ],
+  "deck-completo-meta": [
+    {
+      src: "/products/deck-completo-meta.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Gli starter Shadow Shinobi 1-80MN e Cobalt Dragoon 2-60C con la trottola Impact Drake 9-60LR",
+    },
+  ],
+  "trio-starter-arena": [
+    {
+      src: "/products/trio-starter-arena.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Gli starter Shatter Horus 9-65GB e Hurricane Enlil IS 7-55T con la trottola Hover Wyvern 3-85N",
     },
   ],
   "porta-deck-giallo": [DECK_IMAGE],

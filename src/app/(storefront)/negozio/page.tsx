@@ -5,6 +5,7 @@ import { CatalogView } from "@/components/catalog/catalog-view";
 import { TrustBandDark } from "@/components/home/trust";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { parseProductQuery, type RawSearchParams } from "@/lib/search-params";
+import { breadcrumbJsonLd, collectionJsonLd, jsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Tutti i prodotti Beyblade X",
@@ -24,8 +25,16 @@ export default async function NegozioPage({ searchParams }: { searchParams: Prom
   const query = parseProductQuery(await searchParams);
   const [page, facets] = await Promise.all([commerce.listProducts(query), commerce.getFacets(query)]);
 
+  const breadcrumbData = breadcrumbJsonLd([
+    { name: "Home", path: "/" },
+    { name: "Negozio", path: "/negozio" },
+  ]);
+  const collectionData = collectionJsonLd("Tutti i prodotti Beyblade X", "/negozio", page.items);
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbData) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(collectionData) }} />
       <CatalogHero
         title="Tutti i prodotti"
         description="Scopri l'intera collezione Beyblade X: trottole, lanciatori, stadi e accessori per dominare ogni scontro."

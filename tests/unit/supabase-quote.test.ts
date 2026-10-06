@@ -79,8 +79,9 @@ describe("Supabase quoteCart", () => {
     const { provider } = fakeProvider();
     const quote = await provider.quoteCart(cart);
 
+    // Whatever the catalogue charges today, the database row has to win over it.
     const staticPrice = PRODUCTS.find((p) => p.slug === "cobalt-dragoon-2-60c")?.price.amount;
-    expect(staticPrice).toBe(2550);
+    expect(staticPrice).not.toBe(1999);
     // The row says 19,99. The static catalogue must lose.
     expect(quote.lines[0]?.unitPrice.amount).toBe(1999);
     expect(quote.lines[0]?.lineTotal.amount).toBe(3998);

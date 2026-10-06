@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { cutoutSrc, packBoxes, productTops } from "@/data/assets";
 import { formatPrice } from "@/lib/format";
+import { bundleNoun } from "@/lib/labels";
 import { holoStyle, kindLabel, productLine } from "@/lib/holo";
 import type { Product } from "@/lib/commerce/types";
 
@@ -55,7 +56,7 @@ export function BundleContents({ bundle, components }: { readonly bundle: Produc
         })}
       </ul>
       <p className="mt-3 text-small text-grey-600">
-        Separati <span className="tabular line-through">{formatPrice({ amount: separately, currency: "EUR" })}</span>, nel duo{" "}
+        Separati <span className="tabular line-through">{formatPrice({ amount: separately, currency: "EUR" })}</span>, nel {bundleNoun(bundle)}{" "}
         <strong className="tabular text-graphite">{formatPrice(bundle.price)}</strong>.
       </p>
     </section>

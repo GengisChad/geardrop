@@ -18,7 +18,7 @@ import { bundlesContaining } from "@/lib/commerce/bundles";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { familyColours, familyLead } from "@/lib/commerce/variants";
 import { formatPrice } from "@/lib/format";
-import { BLADE_TYPE_LABEL, CATEGORY_LABEL, preorderDelivery } from "@/lib/labels";
+import { BLADE_TYPE_LABEL, CATEGORY_LABEL, bundleNoun, bundlePacks, preorderDelivery } from "@/lib/labels";
 import { absoluteUrl, breadcrumbJsonLd, jsonLd, productDescription, productJsonLd, productTitle } from "@/lib/seo";
 
 type Params = { slug: string };
@@ -115,7 +115,7 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
             <p className="mt-3 flex items-center gap-2">
               <span className="gd-chamfer gd-display inline-flex items-center gap-1.5 bg-lime px-2.5 py-1 text-[0.6875rem] font-bold tracking-wider text-void">
                 <Boxes className="size-3" aria-hidden="true" />
-                Offerta duo · {product.bundleOf.length} starter
+                Offerta {bundleNoun(product)} · {bundlePacks(product)} pezzi
               </span>
             </p>
           ) : null}

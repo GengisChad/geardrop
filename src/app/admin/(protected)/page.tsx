@@ -32,6 +32,19 @@ export default async function AdminDashboardPage() {
   const warehouseMargin = warehouse && warehouse.revenueNetCents > 0
     ? Math.round((warehouse.profitCents / warehouse.revenueNetCents) * 1000) / 10
     : null;
+  const commerce = dashboard.commerce;
+  const euro = (amount: number) => formatPrice({ amount, currency: "EUR" });
+  // The cards answer for the orders Stripe charged, so say out loud what is left out of them.
+  const settledNotes = [
+    commerce && commerce.unpaidOrderCount > 0
+      ? commerce.unpaidOrderCount === 1
+        ? "1 non pagato, escluso"
+        : `${numberFormat.format(commerce.unpaidOrderCount)} non pagati, esclusi`
+      : null,
+    commerce && commerce.refundedOrderCount > 0
+      ? `${numberFormat.format(commerce.refundedOrderCount)} con rimborso`
+      : null,
+  ].filter((note): note is string => note !== null);
   const funnelSummary7 = buildFunnelSummary(funnel7);
   const funnelSummary30 = buildFunnelSummary(funnel30);
   const metrics = [
@@ -56,7 +69,45 @@ export default async function AdminDashboardPage() {
         </div>
       </section>
 
-      {dashboard.commerce ? <section aria-labelledby="commerce-title"><div className={styles.sectionTitle}><h2 id="commerce-title">Commerce</h2><span>Visibile a owner e admin</span></div><div className={styles.metricsGrid}><article className={styles.metricCard} data-tone="violet"><span>Ordini</span><strong>{numberFormat.format(dashboard.commerce.orderCount)}</strong></article><article className={styles.metricCard} data-tone="lime"><span>Ricavi pagati</span><strong>{formatPrice({amount:dashboard.commerce.revenueCents,currency:"EUR"})}</strong></article><article className={styles.metricCard}><span>Valore medio pagato</span><strong>{formatPrice({amount:dashboard.commerce.averageOrderValueCents,currency:"EUR"})}</strong></article></div></section>:<section className={styles.movementsPanel}><div className={styles.sectionTitle}><h2>Commerce riservato</h2><span>Ruolo {principal.role}</span></div><p className={styles.redactionNotice}>Ordini, ricavi e attività staff non sono disponibili al ruolo editor.</p></section>}
+      {commerce ? (
+        <section aria-labelledby="commerce-title">
+          <div className={styles.sectionTitle}>
+            <h2 id="commerce-title">Commerce</h2>
+            <span>Pagamenti Stripe, al netto dei rimborsi</span>
+          </div>
+          <div className={styles.commerceGrid}>
+            <article className={styles.metricCard} data-tone="violet">
+              <span>Ordini pagati</span>
+              <strong>{numberFormat.format(commerce.orderCount)}</strong>
+              <small className={styles.metricFootnote}>
+                {settledNotes.length > 0 ? settledNotes.join(" · ") : "Nessun ordine in sospeso o rimborsato"}
+              </small>
+            </article>
+            <article className={styles.metricCard} data-tone="lime">
+              <span>Ricavi netti</span>
+              <strong>{euro(commerce.revenueCents)}</strong>
+              <small className={styles.metricFootnote}>
+                {commerce.refundedCents > 0
+                  ? `${euro(commerce.grossRevenueCents)} incassati − ${euro(commerce.refundedCents)} rimborsati`
+                  : "Nessun rimborso da sottrarre"}
+              </small>
+            </article>
+            <article className={styles.metricCard}>
+              <span>Valore medio</span>
+              <strong>{euro(commerce.averageOrderValueCents)}</strong>
+              <small className={styles.metricFootnote}>Ricavi netti divisi per gli ordini pagati</small>
+            </article>
+          </div>
+        </section>
+      ) : (
+        <section className={styles.movementsPanel}>
+          <div className={styles.sectionTitle}>
+            <h2>Commerce riservato</h2>
+            <span>Ruolo {principal.role}</span>
+          </div>
+          <p className={styles.redactionNotice}>Ordini, ricavi e attività staff non sono disponibili al ruolo editor.</p>
+        </section>
+      )}
 
       {warehouse ? (
         <section aria-labelledby="magazzino-title" data-testid="warehouse-summary">

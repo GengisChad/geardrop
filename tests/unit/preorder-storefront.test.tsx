@@ -55,16 +55,19 @@ describe("truthful public presentation", () => {
     expect(html).not.toContain("AggregateRating");
   });
 
-  it("renders the neutral preorder homepage without bestseller, Club, bundle, or rating decoration", async () => {
+  it("renders the homepage with only the decoration the sales record supports", async () => {
     const html = renderToStaticMarkup(<Providers>{await HomePage()}</Providers>);
 
-    // The hero deals the 2026-09-21 pre-order drop, so it says so.
+    // The best sellers lead (owner, 2026-10-05), and the label is allowed only because
+    // BESTSELLER_SLUGS is the paid-order record rather than an impression. It used to be
+    // forbidden outright, when the shop had no sales to back it.
+    expect(html).toContain("I più venduti");
+    // The pre-order drop keeps its own row, under them.
     expect(html).toContain("Pre-ordini aperti");
     expect(html).toContain("Pronti da spedire");
     expect(html).toContain("Tutto il resto");
     // The owner took the fight animation off the homepage on 2026-09-21.
     expect(html).not.toContain("Scegli. Carica.");
-    expect(html).not.toContain("Più venduti");
     expect(html).not.toContain("Scelti per il competitivo");
     expect(html).not.toContain("GEAR//DROP Club");
     expect(html).not.toContain("Bundle campione");

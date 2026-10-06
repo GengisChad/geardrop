@@ -54,3 +54,9 @@ __pycache__/
 # and committed so a clone builds without Python installed.
 
 .vercel
+
+# Screenshot e bozze di lavoro: restano sul disco, fuori dal repo.
+output/
+
+# OAuth client secrets and cached tokens (YouTube SEO script): never committed.
+.secrets/

@@ -61,6 +61,10 @@ SLUGS = (
     "suppress-superion-0-70lp",
     "strike-dran-4-50ff",
     "tread-croc-tq-5-50gn",
+    "hammer-incendio-3-70h",
+    "buster-dran-5-70db",
+    "shadow-shinobi-1-80mn",
+    "wand-wizard-1-60r",
 )
 
 # Measured in source pixels, one pixel inside the photographed edge so no background survives.

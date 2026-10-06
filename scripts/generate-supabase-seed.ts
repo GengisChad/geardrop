@@ -9,6 +9,7 @@ import {
   NAVIGATION_MENU_SEEDS,
 } from "../src/data/content-seed";
 import { UNLIMITED_STOCK } from "../src/lib/commerce/live-stock-overlay";
+import { SOCIAL_LINKS } from "../src/lib/navigation";
 
 function text(value: string): string {
   return `'${value.replaceAll("'", "''")}'`;
@@ -129,6 +130,17 @@ export function generateSupabaseSeed(): string {
   );
   const footerItemRows = FOOTER_COLUMN_SEEDS.flatMap((column) =>
     column.links.map((item, index) => [text(column.key), text(item.label), text(item.href), index].join(", ")),
+  );
+  const socialRows = SOCIAL_LINKS.map((link, index) =>
+    [
+      text(link.key),
+      text(link.label),
+      text(link.href),
+      "'published'::public.publication_status",
+      "now()",
+      "true",
+      index,
+    ].join(", "),
   );
   const tagSql = tagRows.length === 0 ? "" : `with seed(product_slug, tag) as (
   values
@@ -435,6 +447,14 @@ ${rows(footerItemRows)}
 insert into public.footer_items(column_id, label, href, active, sort_order)
 select column_row.id, seed.label, seed.href, true, seed.sort_order
 from seed join public.footer_columns as column_row on column_row.column_key = seed.column_key and column_row.organization_id = ${GEARDROP};
+
+insert into public.social_links(platform_key, label, href, publication_status, published_at, active, sort_order)
+values
+${rows(socialRows)}
+-- Only the wording and the address are refreshed. Whether a link is published and visible
+-- is operational state the owner sets from the panel, and the seed never takes it back.
+on conflict (platform_key) do update set
+  label = excluded.label, href = excluded.href;
 
 -- Fill reviewed public identity only while migration defaults are still blank.
 -- Later admin/runtime changes always win and are never reset by this seed.

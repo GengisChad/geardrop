@@ -1,4 +1,15 @@
 import { expect, test, type Page } from "@playwright/test";
+import { FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_FLAT_RATE } from "../../src/data/catalog";
+
+/**
+ * Every cart below is built from Cobalt Dragoon, so its price and the shipping rate are read off
+ * the catalogue rather than typed: the owner changes prices weekly, and a number spelled out here
+ * turns every change into a red build.
+ */
+const DRAGOON = PRODUCTS.find((product) => product.slug === "cobalt-dragoon-2-60c")!.price.amount;
+const euro = (cents: number) => `€${(cents / 100).toFixed(2).replace(".", ",")}`;
+/** The smallest cart that still pays for shipping, and the smallest that clears the threshold. */
+const FREE_FROM = Math.ceil(FREE_SHIPPING_THRESHOLD / DRAGOON);
 
 /** A PDP also renders "Si abbina bene con" cards, which carry the same testids. */
 const buyPanel = (page: Page) => page.locator("#buy-panel");
@@ -41,7 +52,7 @@ test.describe("cart", () => {
     await page.goto("/carrello");
     await expect(page.getByTestId("cart-line")).toHaveCount(1);
     await expect(page.getByTestId("qty-input")).toHaveValue("2");
-    await expect(page.getByTestId("line-total")).toHaveText("€51,00");
+    await expect(page.getByTestId("line-total")).toHaveText(euro(DRAGOON * 2));
   });
 
   test("quantity drives the line total and the cart total", async ({ page }) => {
@@ -50,24 +61,23 @@ test.describe("cart", () => {
     await page.goto("/carrello");
 
     await page.getByTestId("qty-increase").click();
-    await expect(page.getByTestId("line-total")).toHaveText("€51,00");
-    await expect(page.getByTestId("cart-subtotal")).toHaveText("€51,00");
+    await expect(page.getByTestId("line-total")).toHaveText(euro(DRAGOON * 2));
+    await expect(page.getByTestId("cart-subtotal")).toHaveText(euro(DRAGOON * 2));
   });
 
-  test("shipping is charged below 59€ and free at or above it", async ({ page }) => {
+  test("shipping is charged below the free-shipping threshold and free at or above it", async ({ page }) => {
     await page.goto("/prodotto/cobalt-dragoon-2-60c");
     await buyPanel(page).getByTestId("add-to-cart").click();
     await page.goto("/carrello");
 
     // 1 x 25,50 -> below the threshold
-    await expect(page.getByTestId("cart-shipping")).toHaveText("€4,90");
-    await expect(page.getByTestId("cart-total")).toHaveText("€30,40");
+    await expect(page.getByTestId("cart-shipping")).toHaveText(euro(SHIPPING_FLAT_RATE));
+    await expect(page.getByTestId("cart-total")).toHaveText(euro(DRAGOON + SHIPPING_FLAT_RATE));
 
-    // 3 x 25,50 = 76,50 -> free shipping
-    await page.getByTestId("qty-increase").click();
-    await page.getByTestId("qty-increase").click();
+    // Enough packs to clear the free-shipping threshold, whatever the two numbers are today.
+    for (let click = 1; click < FREE_FROM; click += 1) await page.getByTestId("qty-increase").click();
     await expect(page.getByTestId("cart-shipping")).toHaveText("Gratis");
-    await expect(page.getByTestId("cart-total")).toHaveText("€76,50");
+    await expect(page.getByTestId("cart-total")).toHaveText(euro(DRAGOON * FREE_FROM));
   });
 
   test("removing the last line shows the empty state", async ({ page }) => {
@@ -197,7 +207,7 @@ test.describe("checkout", () => {
     await expect(options).toHaveCount(1);
     await expect(page.getByTestId("shipping-options")).toContainText("Spedizione standard");
     await expect(page.getByTestId("shipping-options")).not.toContainText("Express");
-    await expect(page.getByTestId("cart-total")).toHaveText("€30,40");
+    await expect(page.getByTestId("cart-total")).toHaveText(euro(DRAGOON + SHIPPING_FLAT_RATE));
   });
 
   test("checkout with an empty cart offers nothing to pay for", async ({ page }) => {

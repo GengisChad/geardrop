@@ -2,7 +2,7 @@ import { FREE_SHIPPING_THRESHOLD, SHIPPING_FLAT_RATE } from "@/data/catalog";
 import { brand } from "@/data/assets";
 import { SHOP_EMAIL } from "@/lib/email/resend";
 import { formatPrice } from "@/lib/format";
-import { CATEGORY_LABEL, stockLabel } from "@/lib/labels";
+import { CATEGORY_LABEL, FREE_SHIPPING_FROM_LABEL, SHIPPING_FLAT_LABEL, stockLabel } from "@/lib/labels";
 import { PRODUCTION_ORIGIN } from "@/lib/site-url";
 import type { CategorySlug, Product } from "@/lib/commerce/types";
 
@@ -14,7 +14,7 @@ import type { CategorySlug, Product } from "@/lib/commerce/types";
 export const SITE_NAME = "GEAR//DROP";
 export const DEFAULT_TITLE = "GEAR//DROP · Negozio Beyblade X in Italia";
 export const DEFAULT_DESCRIPTION =
-  "Negozio online di Beyblade X in Italia: trottole, starter, lanciatori e stadi disponibili. Pagamento sicuro con Stripe, spedizione €4,90, gratis da €59.";
+  `Negozio online di Beyblade X in Italia: trottole, starter, lanciatori e stadi disponibili. Pagamento sicuro con Stripe, spedizione ${SHIPPING_FLAT_LABEL}, gratis da ${FREE_SHIPPING_FROM_LABEL}.`;
 
 /** Returns are free within this many days of delivery (see the "Resi e rimborsi" page). */
 const RETURN_DAYS = 30;
@@ -40,7 +40,9 @@ function clip(text: string): string {
 export function productDescription(
   product: Pick<Product, "name" | "tagline" | "price" | "stock" | "unofficial" | "releasePreorder">,
 ): string {
-  const shipping = product.price.amount >= FREE_SHIPPING_THRESHOLD ? "spedizione gratuita" : "spedizione €4,90, gratis da €59";
+  const shipping = product.price.amount >= FREE_SHIPPING_THRESHOLD
+      ? "spedizione gratuita"
+      : `spedizione ${SHIPPING_FLAT_LABEL}, gratis da ${FREE_SHIPPING_FROM_LABEL}`;
   return clip(`${productTitle(product)} a ${formatPrice(product.price)}, ${stockLabel(product).toLowerCase()}. ${product.tagline} Pagamento sicuro, ${shipping}.`);
 }
 
@@ -67,6 +69,9 @@ const organization = {
   url: PRODUCTION_ORIGIN,
   logo: absoluteUrl(brand.emblem512),
   email: SHOP_EMAIL,
+  // Ties the shop's own profiles to this Organization, so a search engine treats them as one business
+  // instead of three strangers that happen to share a name.
+  sameAs: ["https://www.instagram.com/geardropshop/"],
   contactPoint: {
     "@type": "ContactPoint",
     contactType: "customer service",
@@ -95,6 +100,75 @@ export function siteJsonLd() {
         },
       },
     ],
+  };
+}
+
+/**
+ * A catalogue page as a list of the products on it. The shop and its categories were the only pages
+ * saying nothing about what they hold, so a crawler had to guess the listing from the markup.
+ */
+export function collectionJsonLd(
+  name: string,
+  path: string,
+  products: readonly { readonly slug: string; readonly name: string }[],
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "@id": absoluteUrl(path),
+    name,
+    url: absoluteUrl(path),
+    isPartOf: { "@id": absoluteUrl("/#website") },
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: products.length,
+      itemListElement: products.map((product, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: product.name,
+        url: absoluteUrl(`/prodotto/${product.slug}`),
+      })),
+    },
+  };
+}
+
+/**
+ * The monthly meta tier list as a dated Article carrying its three rankings.
+ *
+ * `dateModified` is the point of it: "meta" is a question about now, and a page that can
+ * show when it was last revised is the one a search engine can tell is still current.
+ */
+export function metaPageJsonLd(input: {
+  readonly path: string;
+  readonly title: string;
+  readonly description: string;
+  readonly datePublished: string | null;
+  readonly dateModified: string;
+  readonly rankings: readonly { readonly tier: string; readonly pieces: readonly string[] }[];
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "@id": absoluteUrl(input.path),
+    url: absoluteUrl(input.path),
+    headline: input.title,
+    description: input.description,
+    inLanguage: "it-IT",
+    ...(input.datePublished ? { datePublished: input.datePublished } : {}),
+    dateModified: input.dateModified,
+    author: { "@id": absoluteUrl("/#organization") },
+    publisher: { "@id": absoluteUrl("/#organization") },
+    isPartOf: { "@id": absoluteUrl("/#website") },
+    hasPart: input.rankings.map((ranking) => ({
+      "@type": "ItemList",
+      name: ranking.tier,
+      numberOfItems: ranking.pieces.length,
+      itemListElement: ranking.pieces.map((piece, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: piece,
+      })),
+    })),
   };
 }
 

@@ -1,5 +1,5 @@
 import { LEGAL_PAGES, SUPPORT_PAGES } from "@/data/pages";
-import { FOOTER_NAV, MAIN_NAV } from "@/lib/navigation";
+import { FOOTER_NAV, MAIN_NAV, SOCIAL_LINKS } from "@/lib/navigation";
 import type { StorefrontContentProvider } from "./types";
 
 export function createMockContentProvider(): StorefrontContentProvider {
@@ -10,7 +10,7 @@ export function createMockContentProvider(): StorefrontContentProvider {
         desktopNavigation: MAIN_NAV,
         mobileNavigation: MAIN_NAV,
         footerColumns: FOOTER_NAV,
-        socialLinks: [],
+        socialLinks: SOCIAL_LINKS.map(({ label, href }) => ({ label, href })),
       };
     },
     async getPage(slug) {

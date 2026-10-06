@@ -45,6 +45,12 @@ MAPPING = {
     "suppressSuperion.jpg": "suppress-superion-0-70lp",
     "dranstrike.jpg": "strike-dran-4-50ff",
     "treadcroc.jpg": "tread-croc-tq-5-50gn",
+    # The 2026-09-29 arrival from Spain: eight starter packs, 26 of each.
+    # The 2026-09-30 Hasbro shipment: four UX starter packs, 26 of each.
+    "hammerincendio.jpg": "hammer-incendio-3-70h",
+    "busterdran.jpg": "buster-dran-5-70db",
+    "shadowshinobi.jpg": "shadow-shinobi-1-80mn",
+    "wandwizard.jpg": "wand-wizard-1-60r",
 }
 
 

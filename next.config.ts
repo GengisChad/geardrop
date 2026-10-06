@@ -12,6 +12,12 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     // 90 is reserved for the product gallery, where the packshot is shown large.
     qualities: [75, 90],
+    // The mock browser gate serves the cut-outs as they are on disk. Encoding one to AVIF on
+    // its first request costs 20-30x a cache hit, the `load` event waits for every image in
+    // the viewport, and a catalogue page no earlier test has warmed therefore spends its
+    // whole navigation budget inside sharp instead of on the markup the tests assert. The
+    // Supabase public gate still runs with the optimiser on, so /_next/image keeps a gate.
+    unoptimized: process.env["NEXT_IMAGE_UNOPTIMIZED"] === "1",
   },
   typedRoutes: true,
   async redirects() {
