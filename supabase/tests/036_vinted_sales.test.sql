@@ -1,5 +1,5 @@
 begin;
-select plan(22);
+select plan(24);
 
 -- Fixtures ------------------------------------------------------------------
 insert into auth.users(instance_id,id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at,confirmation_token,email_change,email_change_token_new,recovery_token) values
@@ -15,6 +15,8 @@ insert into public.products(category_id,slug,sku,name,tagline,description,price_
 values
   ((select id from public.categories where slug='vinted-cat'),'vinted-top','VINTED-TOP','Vinted Top 1-80MN','V','V',999,'published',true,5),
   ((select id from public.categories where slug='vinted-cat'),'vinted-last','VINTED-LAST','Vinted Last 3-85N','V','V',1500,'published',true,1);
+insert into public.products(category_id,slug,sku,name,tagline,description,price_cents,publication_status,active,stock_quantity,allow_backorder,availability_override,preorder_allocation)
+values ((select id from public.categories where slug='vinted-cat'),'vinted-drop','VINTED-DROP','Vinted Drop 4-50FF','V','V',2300,'published',true,0,true,'preorder',3);
 
 -- 1-6. Who may call what -----------------------------------------------------
 select ok(not has_function_privilege('anon','public.ingest_inbound_email(text,text,text,text,boolean,jsonb)','EXECUTE'), 'guests cannot store inbound email');
@@ -83,6 +85,15 @@ select is((select count(*)::int from public.vinted_sales), 0, 'a customer sees n
 select is((select count(*)::int from public.inbound_emails), 0, 'a customer sees no inbound email');
 reset role;
 select is((select stock_quantity from public.products where slug='vinted-top'), 3, 'a dismissed sale leaves the shelf alone');
+
+-- 23-24. An unreleased drop counts its pieces in its pre-order allocation, as Stripe does ---
+select public.ingest_inbound_email('resend-4','Vinted <no-reply@vinted.it>','Hai venduto un articolo su Vinted','body',true,
+  '{"buyer_username":"acquirente04","listing_title":"Vinted Drop 4-50FF","item_count":1,"amount_cents":2300}'::jsonb);
+select public.auto_apply_vinted_sale((select id from public.vinted_sales where listing_title = 'Vinted Drop 4-50FF'), '[{"slug":"vinted-drop","quantity":1}]'::jsonb);
+select results_eq($$select preorder_allocation, stock_quantity from public.products where slug='vinted-drop'$$,
+  $$values (2, 0)$$, 'a Vinted sale of an unreleased drop takes one from its allocation');
+select results_eq($$select (lines -> 0 ->> 'taken')::int from public.vinted_sales where listing_title = 'Vinted Drop 4-50FF'$$,
+  $$values (1)$$, 'and records the piece as taken');
 
 select * from finish();
 rollback;

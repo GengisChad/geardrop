@@ -40,7 +40,7 @@ const answerSchema = z.object({
   listing_title: z.string(),
   item_count: z.number().int().min(0).max(50),
   amount_cents: z.number().int().min(0).max(10_000_000),
-  lines: z.array(z.object({ slug: z.string(), quantity: z.number().int().min(1).max(50) })).max(20),
+  lines: z.array(z.object({ slug: z.string(), quantity: z.number().int().min(0).max(50) })).max(20),
   confidence: z.enum(["high", "medium", "low"]),
   reason: z.string(),
 });
@@ -135,7 +135,8 @@ export async function readSaleWithClaude(
     listingTitle: answer.data.listing_title,
     itemCount: Math.max(1, answer.data.item_count),
     amountCents: answer.data.amount_cents,
-    lines: answer.data.lines.filter((line) => known.has(line.slug)),
+    // A zero quantity drops that line, not the whole reading.
+    lines: answer.data.lines.filter((line) => known.has(line.slug) && line.quantity >= 1),
     confidence: answer.data.confidence,
     reason: answer.data.reason,
   };

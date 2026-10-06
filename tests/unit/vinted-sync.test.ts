@@ -60,6 +60,13 @@ describe("reading the sale email", () => {
     expect(parseVintedSaleEmail(SUBJECT, flat)).toMatchObject({ listingTitle: "Shadow Shinobi 1-80MN", amountCents: 999 });
   });
 
+  it("never takes a decimal inside the title for the amount", () => {
+    const lines = SINGLE.replace("Beyblade X arena drop attack SOLO arena", "Shadow Shinobi 1-80MN pagato 9.99").replace("10.00", "12.00");
+    expect(parseVintedSaleEmail(SUBJECT, lines)).toMatchObject({ listingTitle: "Shadow Shinobi 1-80MN pagato 9.99", amountCents: 1200 });
+    const flat = `${SUBJECT} acquirente01 ha comprato Shadow Shinobi ex 9.99 ! 12.00 Una volta completato l'ordine`;
+    expect(parseVintedSaleEmail(SUBJECT, flat)).toMatchObject({ listingTitle: "Shadow Shinobi ex 9.99", amountCents: 1200 });
+  });
+
   it("ignores emails that are not a sale", () => {
     expect(parseVintedSaleEmail("La tua etichetta è pronta", "Stampa l'etichetta di spedizione")).toBeNull();
     expect(parseVintedSaleEmail("Conferma dell'inoltro Gmail", "Codice di conferma: 123456")).toBeNull();
@@ -97,6 +104,21 @@ describe("matching a listing to the catalogue", () => {
   it("takes one Drop Attack set off the shelf for a stadium sold alone", () => {
     const match = matchListing("Beyblade X arena drop attack SOLO arena", 1, PRODUCTS);
     expect(match).toMatchObject({ lines: [{ slug: "drop-attack-battle-set", quantity: 1 }], confidence: "high", source: "arena-only" });
+  });
+
+  it("reads the stadium-alone rule only from explicit words, never from the tops sold without it", () => {
+    expect(matchListing("Impact Drake 9-60LR drop attack senza arena", 1, PRODUCTS)).toMatchObject({
+      lines: [{ slug: "impact-drake-9-60lr", quantity: 1 }], source: "code",
+    });
+    expect(matchListing("Arena Drop Attack senza trottole", 1, PRODUCTS)).toMatchObject({ lines: [{ slug: "drop-attack-battle-set", quantity: 1 }], source: "arena-only" });
+    expect(matchListing("Stadio Sneak Attack da solo", 1, PRODUCTS)).toMatchObject({ lines: [{ slug: "sneak-attack-battle-set", quantity: 1 }] });
+    // A whole set that mentions its stadium is not a stadium sold alone.
+    expect(matchListing("Drop Attack Battle Set completo con arena", 1, PRODUCTS).source).not.toBe("arena-only");
+    // Both at once is not something to act on.
+    expect(matchListing("Drop attack solo arena + 9-60LR", 1, PRODUCTS)).toMatchObject({ lines: [], confidence: "low" });
+    expect(matchListing("Impact Drake drop attack arena senza trottole", 1, PRODUCTS)).toMatchObject({ lines: [], confidence: "low" });
+    // A top listed without its launcher is not a stadium.
+    expect(matchListing("Impact Drake drop attack arena senza lanciatori", 1, PRODUCTS).source).not.toBe("arena-only");
   });
 
   it("only proposes a name without a code, and never guesses a set", () => {
@@ -154,6 +176,9 @@ describe("Resend's signed webhook", () => {
     expect(isFromVinted("no-reply@vinted.com")).toBe(true);
     expect(isFromVinted("Vinted <no-reply@vinted.it.example.com>")).toBe(false);
     expect(isFromVinted("vinted@gmail.com")).toBe(false);
+    // A Vinted address in the display name, or trailing the real one, is not the sender.
+    expect(isFromVinted("attacker@evil.com no-reply@vinted.it")).toBe(false);
+    expect(isFromVinted("\"no-reply@vinted.it\" <evil@example.com>")).toBe(false);
   });
 });
 
@@ -231,6 +256,32 @@ describe("one inbound email, start to finish", () => {
     });
     expect(readWithAi).toHaveBeenCalledOnce();
     expect(result).toMatchObject({ status: "pending", suggestion: { source: "claude", lines: [{ slug: "hover-wyvern-3-85n", quantity: 1 }] } });
+    expect(calls.autoApply).toEqual([]);
+  });
+
+  it("never spends a Claude call on email that did not really come from Vinted", async () => {
+    const { store } = fakeStore();
+    const readWithAi = vi.fn(async () => null);
+    const text = SINGLE.replace("Beyblade X arena drop attack SOLO arena", "Trottola misteriosa");
+    await processInboundEmail(vintedEmail(text, { senderVerified: false }), {
+      store, products: PRODUCTS, catalogue, readWithAi, notifyOwner: async () => undefined,
+    });
+    await processInboundEmail(vintedEmail(text, { id: "resend-2", from: "attacker@evil.com no-reply@vinted.it" }), {
+      store, products: PRODUCTS, catalogue, readWithAi, notifyOwner: async () => undefined,
+    });
+    expect(readWithAi).not.toHaveBeenCalled();
+  });
+
+  it("never moves stock on a sale only Claude could read, even when its title carries a code", async () => {
+    const { store, calls } = fakeStore();
+    const readWithAi = vi.fn(async () => ({
+      isSale: true, buyerUsername: "acquirente01", listingTitle: "Shadow Shinobi 1-80MN", itemCount: 1, amountCents: 999,
+      lines: [{ slug: "shadow-shinobi-1-80mn", quantity: 1 }], confidence: "high" as const, reason: "Codice 1-80MN.",
+    }));
+    const unreadable = "Ciao venditore01, una vendita è arrivata: controlla l'app.";
+    const result = await processInboundEmail(vintedEmail(unreadable), { store, products: PRODUCTS, catalogue, readWithAi, notifyOwner: async () => undefined });
+    expect(readWithAi).toHaveBeenCalledOnce();
+    expect(result).toMatchObject({ status: "pending" });
     expect(calls.autoApply).toEqual([]);
   });
 

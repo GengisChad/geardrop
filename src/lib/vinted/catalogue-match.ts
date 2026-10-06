@@ -59,9 +59,26 @@ const ARENA_ONLY: readonly { readonly slug: string; readonly words: readonly str
   { slug: "sneak-attack-battle-set", words: ["sneak attack"] },
 ];
 
+const STADIUM = "(arena|stadio|beystadium)";
+/**
+ * "solo arena", "arena da sola", "stadio Sneak Attack da solo", "arena Drop Attack solo", or a
+ * stadium listed "senza trottole". Read together with a stadium word, never on its own.
+ */
+const STADIUM_ALONE = new RegExp(
+  [
+    `\\b(solo|soltanto|only) (l |lo |la )?${STADIUM}\\b`,
+    `\\b${STADIUM} (solo|soltanto|only)\\b`,
+    "\\bda sol[ao]\\b",
+    "\\b(solo|soltanto|only)$",
+    // Not "senza lanciatore/i": a top is often listed without its launcher.
+    "\\bsenza (le |i )?(trottole|trottola|beyblade|bey)\\b",
+  ].join("|"),
+);
+/** The opposite listing: the tops without their stadium. */
+const WITHOUT_STADIUM = new RegExp(`\\bsenza (l |lo |la )?${STADIUM}\\b`);
+
 function arenaOnly(title: string): string | null {
-  if (!/\b(arena|stadio|beystadium)\b/.test(title)) return null;
-  if (!/\b(solo|senza|only)\b/.test(title)) return null;
+  if (!new RegExp(`\\b${STADIUM}\\b`).test(title) || !STADIUM_ALONE.test(title) || WITHOUT_STADIUM.test(title)) return null;
   return ARENA_ONLY.find((set) => set.words.some((words) => contains(title, words)))?.slug ?? null;
 }
 
@@ -74,14 +91,20 @@ export function matchListing(
     return { lines: [], confidence: "low", source: "none", reason: `Ordine di ${itemCount} annunci: l'email non dice quali.` };
   }
   const normalized = normalizeTitle(title);
+  const keyed = catalogue.map((product) => ({ product, ...productKeys(product.name) }));
+  const byCode = keyed.filter((entry) => entry.code && contains(normalized, entry.code));
 
   const arena = arenaOnly(normalized);
+  // A title that also names a top ("Impact Drake drop attack arena …") is not a stadium alone.
+  const namesATop = keyed.some(
+    (entry) => !ARENA_ONLY.some((set) => set.slug === entry.product.slug) && entry.blade.split(" ").length >= 2 && contains(normalized, entry.blade),
+  );
+  if (arena && (byCode.length > 0 || namesATop)) {
+    return { lines: [], confidence: "low", source: "none", reason: "Il titolo parla sia di un'arena da sola sia di un pezzo." };
+  }
   if (arena && catalogue.some((product) => product.slug === arena)) {
     return { lines: [{ slug: arena, quantity: 1 }], confidence: "high", source: "arena-only", reason: "Arena venduta da sola: un set aperto." };
   }
-
-  const keyed = catalogue.map((product) => ({ product, ...productKeys(product.name) }));
-  const byCode = keyed.filter((entry) => entry.code && contains(normalized, entry.code));
   if (byCode.length === 1) {
     const only = byCode[0]!;
     return { lines: [{ slug: only.product.slug, quantity: 1 }], confidence: "high", source: "code", reason: `Codice ${only.code!.toUpperCase()} nel titolo.` };

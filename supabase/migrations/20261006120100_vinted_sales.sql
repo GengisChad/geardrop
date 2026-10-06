@@ -62,7 +62,9 @@ create policy vinted_sales_manager_read on public.vinted_sales for select to aut
 grant select on public.inbound_emails, public.vinted_sales to authenticated;
 
 -- Takes the pieces of one sale off the shelf. Never below zero: a piece the shelf no longer
--- holds is recorded as wanted but not taken, so the ledger matches the shelf.
+-- holds is recorded as wanted but not taken, so the ledger matches the shelf. A product in an
+-- unreleased drop (availability_override = 'preorder') counts its pieces in preorder_allocation,
+-- exactly as record_stripe_checkout_order reads it, so a Vinted sale takes from there instead.
 create or replace function private.apply_vinted_sale_lines(p_sale_id bigint, p_lines jsonb, p_actor uuid)
 returns jsonb language plpgsql security definer set search_path = '' as $$
 declare
@@ -71,6 +73,7 @@ declare
   target public.products%rowtype;
   wanted integer;
   taken integer;
+  release boolean;
   applied jsonb := '[]'::jsonb;
 begin
   select * into sale from public.vinted_sales where id = p_sale_id for update;
@@ -99,8 +102,11 @@ begin
       raise exception using errcode = 'P0002', message = 'GD_PRODUCT_NOT_FOUND';
     end if;
 
-    taken := least(wanted, target.stock_quantity);
-    if taken > 0 then
+    release := target.availability_override = 'preorder'::public.availability_override;
+    taken := least(wanted, case when release then target.preorder_allocation else target.stock_quantity end);
+    if taken > 0 and release then
+      update public.products set preorder_allocation = target.preorder_allocation - taken where id = target.id;
+    elsif taken > 0 then
       update public.products set stock_quantity = target.stock_quantity - taken where id = target.id;
       insert into public.inventory_movements (product_id, delta, stock_after, reason, actor_user_id, note)
       values (target.id, -taken, target.stock_quantity - taken, 'vinted_sale'::public.inventory_reason, p_actor,
@@ -140,17 +146,20 @@ declare
   new_inbound_id bigint;
   new_sale_id bigint;
 begin
-  select id into existing_id from public.inbound_emails where provider_email_id = p_provider_email_id;
-  if found then
-    return query select existing_id, (select id from public.vinted_sales where inbound_email_id = existing_id), false;
-    return;
-  end if;
-
+  -- Two deliveries of one email can arrive together: the unique key decides which one stores
+  -- it, and the other waits for that row and reports it instead of failing.
   insert into public.inbound_emails (provider_email_id, from_address, subject, body_text, sender_verified, kind)
   values (p_provider_email_id, left(coalesce(p_from, ''), 320), left(coalesce(p_subject, ''), 500),
     left(coalesce(p_body, ''), 20000), coalesce(p_sender_verified, false),
     case when p_sale is null then 'other' else 'vinted_sale' end)
+  on conflict (provider_email_id) do nothing
   returning id into new_inbound_id;
+
+  if new_inbound_id is null then
+    select id into existing_id from public.inbound_emails where provider_email_id = p_provider_email_id;
+    return query select existing_id, (select id from public.vinted_sales where inbound_email_id = existing_id), false;
+    return;
+  end if;
 
   if p_sale is not null then
     insert into public.vinted_sales (inbound_email_id, buyer_username, listing_title, item_count, amount_cents, sold_at)

@@ -74,22 +74,49 @@ export function parseAmountCents(raw: string): number | null {
  * "<buyer> ha comprato [badge] <title> [icon] <amount>", one block per line in the samples; the
  * reader joins the lines so the same pattern holds if Vinted puts them on one line.
  */
-export function parseVintedSaleEmail(subject: string, text: string): VintedSaleEmail | null {
-  if (!isVintedSaleEmail(subject, text)) return null;
-  const flat = text.replace(/\s+/g, " ").trim();
-  const sale = /(\S+) ha comprato (?:\d{1,2} (?=Set di \d))?(.+?) (?:[!€] )?(?:€ ?)?(\d{1,6}[.,]\d{2})(?: ?€| EUR)?(?: |$)/i.exec(flat);
-  if (!sale) return null;
+const AMOUNT_LINE = /^(?:€\s?)?(\d{1,3}(?:[.,]\d{3})*[.,]\d{2}|\d{1,6}[.,]\d{2})(?:\s?€|\s?EUR)?$/i;
 
-  const buyerUsername = (sale[1] ?? "").replace(/[,;:]$/, "");
-  const listingTitle = (sale[2] ?? "").replace(/\s*[!€]\s*$/, "").trim();
-  const amountCents = parseAmountCents(sale[3] ?? "");
+function sale(buyer: string, title: string, amountCents: number | null): VintedSaleEmail | null {
+  const listingTitle = title.replace(/\s*[!€]\s*$/, "").trim();
   if (!listingTitle || amountCents === null) return null;
-
   const set = /^Set di (\d{1,2}) articoli$/i.exec(listingTitle);
   return {
-    buyerUsername,
+    buyerUsername: buyer.replace(/[,;:]$/, ""),
     listingTitle,
     itemCount: set ? Math.max(1, Number.parseInt(set[1] ?? "1", 10)) : 1,
     amountCents,
   };
+}
+
+/** The layout of the real emails: the title on its own line, the amount on a line of its own after it. */
+function parseLines(text: string): VintedSaleEmail | null {
+  const lines = text.split("\n").map((line) => line.trim()).filter(Boolean);
+  const at = lines.findIndex((line) => /(^|\s)ha comprato$/i.test(line));
+  if (at < 0) return null;
+  const buyer = /^(\S+) ha comprato$/i.exec(lines[at]!)?.[1] ?? lines[at - 1] ?? "";
+  let index = at + 1;
+  // The order badge ("2") sits above "Set di 2 articoli".
+  if (/^\d{1,2}$/.test(lines[index] ?? "") && /^Set di \d/i.test(lines[index + 1] ?? "")) index += 1;
+  const title = lines[index];
+  if (!title) return null;
+  for (let next = index + 1; next < Math.min(lines.length, index + 4); next += 1) {
+    const amount = AMOUNT_LINE.exec(lines[next]!);
+    if (amount) return sale(buyer, title, parseAmountCents(amount[1]!));
+  }
+  return null;
+}
+
+/**
+ * The same email flattened to one line (HTML without block tags). The amount is the one right
+ * before Vinted's next sentence, so a decimal inside the title ("ex 9.99") is not mistaken for it.
+ */
+function parseFlat(text: string): VintedSaleEmail | null {
+  const flat = text.replace(/\s+/g, " ").trim();
+  const match = /(\S+) ha comprato (?:\d{1,2} (?=Set di \d))?(.+?) (?:[!€] )?(?:€ ?)?(\d{1,6}[.,]\d{2})(?: ?€| EUR)?(?= (?:Una volta|Invia|Ecco|È anche)|$)/i.exec(flat);
+  return match ? sale(match[1] ?? "", match[2] ?? "", parseAmountCents(match[3] ?? "")) : null;
+}
+
+export function parseVintedSaleEmail(subject: string, text: string): VintedSaleEmail | null {
+  if (!isVintedSaleEmail(subject, text)) return null;
+  return parseLines(text) ?? parseFlat(text);
 }

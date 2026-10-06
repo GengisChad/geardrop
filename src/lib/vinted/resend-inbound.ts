@@ -96,5 +96,10 @@ export async function fetchReceivedEmail(
  * shop act on it alone; an email that merely says it is from Vinted is stored and left for the owner.
  */
 export function isFromVinted(from: string): boolean {
-  return /(^|<|\s)[^<>\s@]+@vinted\.(it|com|fr|es|de|co\.uk)>?\s*$/i.test(from.trim());
+  // The mailbox is the one address of the header: in angle brackets after a display name, or the
+  // whole header. A display name that merely contains a Vinted address does not count.
+  const trimmed = from.trim();
+  const bracketed = /^[^<>]*<([^<>\s]+)>$/.exec(trimmed);
+  const mailbox = bracketed ? bracketed[1]! : /^[^<>\s]+$/.test(trimmed) ? trimmed : null;
+  return mailbox !== null && /^[^@\s]+@vinted\.(it|com|fr|es|de|co\.uk)$/i.test(mailbox);
 }

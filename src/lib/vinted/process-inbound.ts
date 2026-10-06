@@ -79,10 +79,14 @@ export async function processInboundEmail(email: ReceivedEmail, deps: InboundDep
 
   let sale = parseVintedSaleEmail(email.subject, text);
   let aiReading: AiReading | null = null;
+  // Claude is paid for and reads untrusted text: it only ever sees email Vinted really sent.
+  const readWithAi = verified ? deps.readWithAi : undefined;
+  // A sale Claude had to find is only ever proposed: its title came from the model, not the email.
+  const saleFromAi = sale === null;
 
   // Vinted's subject, but a layout the code-based reader does not recognise: Claude reads it.
-  if (!sale && fromVinted && email.subject.toLowerCase().includes(VINTED_SALE_SUBJECT.toLowerCase()) && deps.readWithAi) {
-    aiReading = await safely(() => deps.readWithAi!({ subject: email.subject, from: email.from, text }, deps.catalogue));
+  if (!sale && email.subject.toLowerCase().includes(VINTED_SALE_SUBJECT.toLowerCase()) && readWithAi) {
+    aiReading = await safely(() => readWithAi({ subject: email.subject, from: email.from, text }, deps.catalogue));
     if (aiReading?.isSale && aiReading.listingTitle) {
       sale = {
         buyerUsername: aiReading.buyerUsername,
@@ -111,7 +115,7 @@ export async function processInboundEmail(email: ReceivedEmail, deps: InboundDep
   }
 
   const match = matchListing(sale.listingTitle, sale.itemCount, deps.products);
-  if (shouldApplyAutomatically(match, verified)) {
+  if (!saleFromAi && shouldApplyAutomatically(match, verified)) {
     const suggestion: Suggestion = { lines: match.lines, confidence: match.confidence, source: match.source, reason: match.reason };
     await deps.store.suggest(stored.saleId, suggestion);
     // The email is already stored, so a failure here must not be retried into a "duplicate":
@@ -124,8 +128,8 @@ export async function processInboundEmail(email: ReceivedEmail, deps: InboundDep
 
   // Not sure enough to move stock: offer the best reading in the panel.
   let suggestion: Suggestion = { lines: match.lines, confidence: match.confidence, source: match.source, reason: match.reason };
-  if (sale.itemCount === 1 && match.confidence !== "high" && deps.readWithAi) {
-    aiReading ??= await safely(() => deps.readWithAi!({ subject: email.subject, from: email.from, text }, deps.catalogue));
+  if (sale.itemCount === 1 && match.confidence !== "high" && readWithAi) {
+    aiReading ??= await safely(() => readWithAi({ subject: email.subject, from: email.from, text }, deps.catalogue));
     if (aiReading && aiReading.lines.length > 0) {
       suggestion = { lines: aiReading.lines, confidence: aiReading.confidence, source: "claude", reason: aiReading.reason };
     }
