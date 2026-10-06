@@ -25,7 +25,6 @@ import {
   refundPreparationSchema,
   refundStripeSchema,
   shipOrderSchema,
-  trackingSchema,
 } from "@/lib/admin/orders";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createStripeClient } from "@/lib/payments/stripe-api";
@@ -91,18 +90,6 @@ export async function cancelOrderAction(_previous: OrderActionState, formData: F
     if (error) return failure(error);
     refresh(parsed.data.orderId);
     return { ok: true, message: "Ordine annullato e stock ripristinato." };
-  } catch (error) { return failure(error); }
-}
-
-export async function setOrderTrackingAction(_previous: OrderActionState, formData: FormData): Promise<OrderActionState> {
-  const parsed = trackingSchema.safeParse({ orderId: text(formData, "orderId"), carrier: text(formData, "carrier"), code: text(formData, "code"), url: text(formData, "url") });
-  if (!parsed.success) return { ok: false, message: "Tracking non valido. Usa un URL HTTPS." };
-  try {
-    const { client } = await clientFor(MANAGERS);
-    const { error } = await client.rpc("set_order_tracking", { p_order_id: parsed.data.orderId, p_carrier: parsed.data.carrier, p_code: parsed.data.code, ...(parsed.data.url ? { p_url: parsed.data.url } : {}) });
-    if (error) return failure(error);
-    refresh(parsed.data.orderId);
-    return { ok: true, message: "Tracking salvato." };
   } catch (error) { return failure(error); }
 }
 

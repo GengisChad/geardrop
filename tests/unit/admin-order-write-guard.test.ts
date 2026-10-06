@@ -41,11 +41,12 @@ function form(fields: Readonly<Record<string, string>>): FormData {
 const everyAction = [
   ["transitionOrderAction", { orderId: "1", toStatus: "confirmed", note: "" }],
   ["cancelOrderAction", { orderId: "1", note: "Richiesta del cliente", confirmed: "on" }],
-  ["setOrderTrackingAction", { orderId: "1", carrier: "GLS", code: "ABC123", url: "" }],
   ["addOrderNoteAction", { orderId: "1", note: "Nota interna" }],
   ["messageCustomerAction", { orderId: "1", subject: "Il tuo ordine", message: "Messaggio di prova per il cliente", confirmed: "on" }],
   ["prepareOrderRefundAction", { orderId: "1", amount: "5,00", reason: "Richiesta cliente" }],
-  ["shipOrderAction", { orderId: "1", carrierId: "gls", code: "ABC123", url: "", notify: "on" }],
+  ["shipOrderAction", { orderId: "1", carrierId: "gls", code: "ABC123", url: "" }],
+  ["deliverOrderAction", { orderId: "1", note: "", notify: "on" }],
+  ["notifyDeliveredOrdersAction", {}],
   [
     "refundStripeAction",
     { orderId: "1", amount: "5,00", reason: "Richiesta cliente", confirmed: "on", attempt: "3f1a2b4c-5d6e-4f70-8a91-b2c3d4e5f607" },
