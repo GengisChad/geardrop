@@ -15,13 +15,13 @@ describe("rehearsal helpers", () => {
 
   it("lists the migrations production is missing, in order", () => {
     const local = localMigrationVersions([
-      "20260923100000_add_organizations.sql",
+      "20261006100000_add_organizations.sql",
       "20260717185534_assert_dedicated_project.sql",
       "note.md",
-      "20260928100000_add_inventory_costs.sql",
+      "20261006160000_add_inventory_costs.sql",
     ]);
-    expect(local).toEqual(["20260717185534", "20260923100000", "20260928100000"]);
-    expect(pendingMigrations(["20260717185534"], local)).toEqual(["20260923100000", "20260928100000"]);
+    expect(local).toEqual(["20260717185534", "20261006100000", "20261006160000"]);
+    expect(pendingMigrations(["20260717185534"], local)).toEqual(["20261006100000", "20261006160000"]);
     expect(pendingMigrations(local, local)).toEqual([]);
   });
 

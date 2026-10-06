@@ -56,7 +56,7 @@ viene confermato, non lo decide.
 
 ## Riferimenti tecnici
 
-- Migrazioni `20260928100000_add_inventory_costs.sql`, `20260928110000_add_goods_receipt_functions.sql`.
+- Migrazioni `20261006160000_add_inventory_costs.sql`, `20261006170000_add_goods_receipt_functions.sql`.
 - Tabelle: `suppliers`, `supplier_receipts` (A), `supplier_receipt_lines` (B), `inventory_cost_state`
   (A), `inventory_movement_costs` (C, figlia dei movimenti, leggibile solo da owner/admin).
 - Viste `order_profit`, `inventory_valuation` (`security_invoker`); RPC `save_supplier_receipt`,

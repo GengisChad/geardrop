@@ -16,11 +16,12 @@ import { localPsql } from "../tests/e2e/support/local-psql";
  *    memberships derived from staff, one settings row and checklist per company.
  * 5. Reset again with the seed, so the steps that follow find the database they expect.
  *
- * The previous replay of the September pre-order catalogue migration was retired with the
- * organization schema: that migration is applied on every existing database and can never
- * run again on one that has companies.
+ * The organization migrations are numbered after the whole shop history, because that is the
+ * order a live database receives them in: the catalogue, prices and orders exist first, and the
+ * scoping migrations then backfill them. So the replay starts from the last shop migration, and
+ * the retired September pre-order catalogue replay stays retired.
  */
-const LAST_MIGRATION_BEFORE_ORGANIZATIONS = "20260922100000";
+const LAST_MIGRATION_BEFORE_ORGANIZATIONS = "20261006090000";
 
 const root = process.cwd();
 const require = createRequire(import.meta.url);

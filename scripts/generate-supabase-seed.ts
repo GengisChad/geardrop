@@ -133,6 +133,7 @@ export function generateSupabaseSeed(): string {
   );
   const socialRows = SOCIAL_LINKS.map((link, index) =>
     [
+      GEARDROP,
       text(link.key),
       text(link.label),
       text(link.href),
@@ -448,12 +449,12 @@ insert into public.footer_items(column_id, label, href, active, sort_order)
 select column_row.id, seed.label, seed.href, true, seed.sort_order
 from seed join public.footer_columns as column_row on column_row.column_key = seed.column_key and column_row.organization_id = ${GEARDROP};
 
-insert into public.social_links(platform_key, label, href, publication_status, published_at, active, sort_order)
+insert into public.social_links(organization_id, platform_key, label, href, publication_status, published_at, active, sort_order)
 values
 ${rows(socialRows)}
 -- Only the wording and the address are refreshed. Whether a link is published and visible
 -- is operational state the owner sets from the panel, and the seed never takes it back.
-on conflict (platform_key) do update set
+on conflict (organization_id, platform_key) do update set
   label = excluded.label, href = excluded.href;
 
 -- Fill reviewed public identity only while migration defaults are still blank.
