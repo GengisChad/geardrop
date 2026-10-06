@@ -36,7 +36,8 @@ export const SUPPORT_PAGES = {
       {
         heading: "Quanto costa la spedizione?",
         body: [
-          "La spedizione standard è gratuita per ordini superiori a 100€. Sotto questa soglia si applica una tariffa fissa di 4,90€.",
+          "Scegli tu il corriere al checkout: Poste Italiane a casa 4,90 €, InPost in un punto di ritiro o Locker 5,65 €, InPost a casa 6,65 €.",
+          "La spedizione è gratuita, con qualsiasi corriere, per ordini da 100 €.",
           "Spediamo solo in Italia.",
         ],
       },
@@ -79,7 +80,7 @@ export const SUPPORT_PAGES = {
         heading: "Costi",
         body: [
           "Spedizione gratuita per ordini superiori a 100€.",
-          "Sotto la soglia, la spedizione standard costa 4,90€. Le opzioni disponibili sono mostrate prima della conferma.",
+          "Sotto la soglia scegli il corriere: Poste Italiane a casa 4,90 €, InPost in un punto di ritiro o Locker 5,65 €, InPost a casa 6,65 €. Il costo è mostrato prima del pagamento.",
         ],
       },
       {
@@ -186,7 +187,7 @@ export const LEGAL_PAGES = {
         heading: "Prezzi e spedizione",
         body: [
           "I prezzi sono espressi in euro e comprendono l'IVA.",
-          "La spedizione standard in Italia costa 4,90 € ed è gratuita per ordini da 100 €. Il totale, spedizione inclusa, è mostrato prima del pagamento.",
+          "La spedizione in Italia costa 4,90 € con Poste Italiane, 5,65 € con InPost in un punto di ritiro o Locker, 6,65 € con InPost a casa, ed è gratuita per ordini da 100 €. Il totale, spedizione inclusa, è mostrato prima del pagamento.",
         ],
       },
       {

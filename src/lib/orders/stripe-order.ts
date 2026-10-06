@@ -1,4 +1,4 @@
-import { BUNDLES, PRODUCTS } from "@/data/catalog";
+import { BUNDLES, PRODUCTS, shippingMethodByCode } from "@/data/catalog";
 import { isReleasePreorder } from "@/lib/commerce/release-preorder";
 import { stripeProductId, type StripeClient } from "@/lib/payments/stripe-api";
 
@@ -28,6 +28,11 @@ export type ShippingSnapshot = {
   readonly city: string;
   readonly province: string;
   readonly country: string;
+  /** How it travels: a SHIPPING_METHODS code ('standard' = Poste) and its label. Older orders have none. */
+  readonly method?: string;
+  readonly methodLabel?: string;
+  /** The InPost point or Locker the buyer named, for a pickup method. */
+  readonly pickupPoint?: string;
 };
 
 export type PaidCheckout = {
@@ -129,6 +134,19 @@ export function slugFromStripeId(id: string | null | undefined): string | null {
 
 const clean = (value: string | null | undefined) => value?.trim() ?? "";
 
+/**
+ * The carrier the buyer chose at checkout (metadata written by buildCheckoutSessionFields). A
+ * session from before the choice existed, or with a code the shop no longer sells, carries none.
+ */
+export function shippingChoice(
+  metadata: Readonly<Record<string, string>> | null | undefined,
+): Pick<ShippingSnapshot, "method" | "methodLabel" | "pickupPoint"> {
+  const method = shippingMethodByCode(clean(metadata?.["shipping_method"]));
+  if (!method) return {};
+  const pickupPoint = method.pickupPoint ? clean(metadata?.["pickup_point"]) : "";
+  return { method: method.code, methodLabel: method.label, ...(pickupPoint ? { pickupPoint } : {}) };
+}
+
 /** "glory-valkerion-lf x1, duo-horus-enlil x2" → { "glory-valkerion-lf": 1, "duo-horus-enlil": 2 }. */
 export function parsePreorderMetadata(value: string | null | undefined): Readonly<Record<string, number>> {
   const units: Record<string, number> = {};
@@ -195,6 +213,7 @@ export function paidCheckoutFromStripe(
       city: clean(address?.city),
       province: clean(address?.state),
       country: clean(address?.country) || "IT",
+      ...shippingChoice(session.metadata),
     },
     notes: clean(session.metadata?.["notes"]) || null,
     lines,

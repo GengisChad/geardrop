@@ -198,11 +198,27 @@ describe("quoteCart", () => {
     expect(quote.lines).toHaveLength(1);
   });
 
-  it("offers only the shipping option the local catalogue knows about", async () => {
+  it("offers the carriers the shop sells, at what each costs, Poste by default", async () => {
     const quote = await provider.quoteCart({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }] });
-    expect(quote.shippingOptions.map((option) => option.code)).toEqual(["standard"]);
+    expect(quote.shippingOptions.map((option) => [option.code, option.price.amount])).toEqual([
+      ["standard", 490], ["inpost-point", 565], ["inpost-home", 665],
+    ]);
     expect(quote.shippingCode).toBe("standard");
+    expect(quote.totals.shipping.amount).toBe(490);
     expect(quote.shippingOptions[0]?.hint).toBe("Consegna in 1-5 giorni lavorativi, a seconda del corriere");
+  });
+
+  it("charges the carrier the buyer picks, and none above the free-shipping threshold", async () => {
+    const line = [{ slug: "cobalt-dragoon-2-60c" as const, quantity: 1 }];
+    const point = await provider.quoteCart({ lines: line, shippingCode: "inpost-point" });
+    expect([point.shippingCode, point.totals.shipping.amount]).toEqual(["inpost-point", 565]);
+    const home = await provider.quoteCart({ lines: line, shippingCode: "inpost-home" });
+    expect([home.shippingCode, home.totals.shipping.amount, home.totals.total.amount]).toEqual(["inpost-home", 665, 2300 + 665]);
+    // A code the shop does not sell falls back to Poste rather than to a price nobody chose.
+    const unknown = await provider.quoteCart({ lines: line, shippingCode: "brt" });
+    expect([unknown.shippingCode, unknown.totals.shipping.amount]).toEqual(["standard", 490]);
+    const big = await provider.quoteCart({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 5 }], shippingCode: "inpost-home" });
+    expect(big.totals.shipping.amount).toBe(0);
   });
 
   it("never claims an order can be placed against the local catalogue", async () => {

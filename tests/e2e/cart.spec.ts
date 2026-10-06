@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_FLAT_RATE } from "../../src/data/catalog";
+import { FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_FLAT_RATE, SHIPPING_METHODS } from "../../src/data/catalog";
 
 /**
  * Every cart below is built from Cobalt Dragoon, so its price and the shipping rate are read off
@@ -198,16 +198,31 @@ test.describe("checkout", () => {
     }
   });
 
-  test("offers only the shipping options the backend returns", async ({ page }) => {
+  test("lets the buyer pick the carrier, at what each one costs", async ({ page }) => {
     await page.goto("/prodotto/cobalt-dragoon-2-60c");
     await buyPanel(page).getByTestId("add-to-cart").click();
     await page.goto("/checkout");
 
-    const options = page.getByTestId("shipping-options").getByRole("radio");
-    await expect(options).toHaveCount(1);
-    await expect(page.getByTestId("shipping-options")).toContainText("Spedizione standard");
-    await expect(page.getByTestId("shipping-options")).not.toContainText("Express");
+    // Poste, InPost to a point or Locker, InPost to the door (owner, 2026-10-06).
+    const shipping = page.getByTestId("shipping-options");
+    await expect(shipping.getByRole("radio")).toHaveCount(SHIPPING_METHODS.length);
+    await expect(shipping).toContainText("Poste Italiane");
+    await expect(shipping).not.toContainText("Express");
     await expect(page.getByTestId("cart-total")).toHaveText(euro(DRAGOON + SHIPPING_FLAT_RATE));
+    await expect(page.locator("#pickupPoint")).toHaveCount(0);
+
+    await shipping.getByText("InPost · punto di ritiro o Locker").click();
+    await expect(page.getByTestId("cart-total")).toHaveText(euro(DRAGOON + 565));
+    // The parcel goes to a point the buyer names: the field appears, with InPost's map.
+    await expect(page.locator("#pickupPoint")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Trovalo sulla mappa InPost" })).toHaveAttribute("href", "https://inpost.it/trova-un-locker");
+    await page.locator("#pickupPoint").focus();
+    await page.locator("#pickupPoint").blur();
+    await expect(page.getByText("Scrivi il punto InPost o il Locker dove ritirare il pacco.")).toBeVisible();
+
+    await shipping.getByText("InPost · consegna a casa").click();
+    await expect(page.getByTestId("cart-total")).toHaveText(euro(DRAGOON + 665));
+    await expect(page.locator("#pickupPoint")).toHaveCount(0);
   });
 
   test("checkout with an empty cart offers nothing to pay for", async ({ page }) => {
