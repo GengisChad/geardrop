@@ -13,10 +13,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createManagementBrowserClient } from "@/lib/supabase/client";
+import { startTotpEnrollment } from "@/lib/management/totp-enrollment";
 
 type EnrollData = {
   factorId: string;
-  qrSvg: string;
+  qrImage: string;
   secret: string;
 };
 
@@ -37,20 +38,17 @@ export function MfaEnrollment() {
 
     const client = createManagementBrowserClient();
 
-    client.auth.mfa
-      .enroll({ factorType: "totp", friendlyName: "GEAR//DROP Gestionale" })
-      .then(({ data, error }) => {
-        if (error || !data) {
+    // Shared with the account page: clears abandoned attempts first, so a reload cannot
+    // leave this screen failing for good.
+    startTotpEnrollment(client.auth.mfa)
+      .then((started) => {
+        if (!started.ok) {
           // Messaggio generico: non rivela l'esistenza dell'account
           setInitError("Impossibile avviare la configurazione. Riprova.");
           return;
         }
         // QR e secret restano SOLO in memoria componente
-        setEnrollData({
-          factorId: data.id,
-          qrSvg: data.totp.qr_code,
-          secret: data.totp.secret,
-        });
+        setEnrollData({ factorId: started.factorId, qrImage: started.qrImage, secret: started.secret });
       })
       .catch(() => {
         setInitError("Impossibile avviare la configurazione. Riprova.");
@@ -111,11 +109,15 @@ export function MfaEnrollment() {
         Authy) oppure inserisci la chiave manualmente.
       </p>
 
-      {/* QR code: SVG in memoria componente, mai inviato al server */}
-      <div
-        aria-label="QR code per l'autenticatore"
-        style={{ margin: "1.5rem 0", maxWidth: "12rem" }}
-        dangerouslySetInnerHTML={{ __html: enrollData.qrSvg }}
+      {/* QR code: in memoria componente, mai inviato al server. Un'immagine e non HTML
+          iniettato: dentro un <img> l'SVG non può eseguire nulla. */}
+      {/* eslint-disable-next-line @next/next/no-img-element -- data URI generato in memoria: next/image non si applica */}
+      <img
+        src={enrollData.qrImage}
+        alt="Codice QR da scansionare con l'app di autenticazione"
+        width={192}
+        height={192}
+        style={{ display: "block", margin: "1.5rem 0", background: "#fff", padding: "8px" }}
       />
 
       <details style={{ marginBottom: "1.5rem" }}>

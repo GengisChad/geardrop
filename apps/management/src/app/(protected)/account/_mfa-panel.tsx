@@ -15,6 +15,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createManagementBrowserClient } from "@/lib/supabase/client";
+import { startTotpEnrollment } from "@/lib/management/totp-enrollment";
 
 export type FactorSummary = {
   id: string;
@@ -31,11 +32,11 @@ type Props = {
   removeLastBlocked: boolean;
 };
 
-// Stato discriminato per l'enrollment. Le fasi "setup" tengono qrSvg e secret
+// Stato discriminato per l'enrollment. Le fasi "setup" tengono qrImage e secret
 // in memoria React: non vengono mai serializzati o loggati.
 type EnrollPhase =
   | { kind: "idle" }
-  | { kind: "setup"; factorId: string; qrSvg: string; secret: string; code: string }
+  | { kind: "setup"; factorId: string; qrImage: string; secret: string; code: string }
   | { kind: "error"; message: string };
 
 export default function AccountMfaPanel({ factors, removeLastBlocked }: Props) {
@@ -51,22 +52,15 @@ export default function AccountMfaPanel({ factors, removeLastBlocked }: Props) {
   async function startEnroll() {
     setEnroll({ kind: "idle" });
     setRemoveError(null);
-    const { data, error } = await supabase.auth.mfa.enroll({
-      factorType: "totp",
-      friendlyName: "Autenticatore",
-    });
-    if (error || !data) {
+    // Shared with the enrollment screen: clears abandoned attempts and names the factor so
+    // a second or third one never collides with the first.
+    const started = await startTotpEnrollment(supabase.auth.mfa);
+    if (!started.ok) {
       setEnroll({ kind: "error", message: "Impossibile avviare la registrazione." });
       return;
     }
-    // qrSvg e secret restano solo nello stato React — mai loggati o persistiti.
-    setEnroll({
-      kind: "setup",
-      factorId: data.id,
-      qrSvg: data.totp.qr_code,
-      secret: data.totp.secret,
-      code: "",
-    });
+    // qrImage e secret restano solo nello stato React — mai loggati o persistiti.
+    setEnroll({ kind: "setup", factorId: started.factorId, qrImage: started.qrImage, secret: started.secret, code: "" });
   }
 
   // Verifica il codice TOTP e completa l'enrollment.
@@ -192,15 +186,14 @@ export default function AccountMfaPanel({ factors, removeLastBlocked }: Props) {
           </p>
 
           {/* QR SVG: solo in memoria, mai in localStorage/cookie/log */}
-          <div
-            style={{
-              display: "inline-block",
-              background: "#fff",
-              padding: "8px",
-              marginBottom: "1rem",
-              lineHeight: 0,
-            }}
-            dangerouslySetInnerHTML={{ __html: enroll.qrSvg }}
+          {/* Un'immagine e non HTML iniettato: dentro un <img> l'SVG non può eseguire nulla. */}
+          {/* eslint-disable-next-line @next/next/no-img-element -- data URI generato in memoria: next/image non si applica */}
+          <img
+            src={enroll.qrImage}
+            alt="Codice QR da scansionare con l'app di autenticazione"
+            width={176}
+            height={176}
+            style={{ display: "block", background: "#fff", padding: "8px", marginBottom: "1rem" }}
           />
 
           <details style={{ marginBottom: "1rem" }}>
