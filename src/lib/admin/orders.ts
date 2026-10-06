@@ -61,14 +61,15 @@ const orderId = z.coerce.number().int().positive();
 export const orderTransitionSchema = z.object({ orderId, toStatus: z.enum(["confirmed", "processing", "shipped", "completed"]), note: z.string().trim().max(1000).transform((value) => value || null) });
 export const orderCancellationSchema = z.object({ orderId, note: z.string().trim().min(1).max(1000), confirmed: z.literal(true) });
 export const orderNoteSchema = z.object({ orderId, note: z.string().trim().min(1).max(4000) });
-export const trackingSchema = z.object({ orderId, carrier: z.string().trim().min(1).max(120), code: z.string().trim().min(1).max(240), url: z.union([z.url({ protocol: /^https$/ }), z.literal("")]).transform((value) => value || null) });
-/** "Spedisci e avvisa": a courier from the list, the tracking code if there is one, an optional pasted link. */
+/**
+ * "Spedisci e avvisa", the panel's only way to enter a tracking code: a courier from the list, the
+ * code if there is one, an optional pasted link. It has no opt-out: the buyer is always told.
+ */
 export const shipOrderSchema = z.object({
   orderId,
   carrierId: z.string().trim().min(1).max(40),
   code: z.string().trim().max(240),
   url: z.union([z.url({ protocol: /^https$/ }), z.literal("")]).transform((value) => value || null),
-  notify: z.boolean(),
 });
 export const deliverOrderSchema = z.object({
   orderId,
