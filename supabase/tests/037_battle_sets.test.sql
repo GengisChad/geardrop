@@ -1,5 +1,5 @@
 begin;
-select plan(24);
+select plan(25);
 
 -- Fixtures: a set of three pieces, ten sealed, nothing opened yet ---------------------
 insert into auth.users(instance_id,id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at,confirmation_token,email_change,email_change_token_new,recovery_token) values
@@ -120,6 +120,8 @@ select is((select count(*)::int from public.products where slug = 'drop-attack-a
 reset role;
 select is((select count(*)::int from public.battle_set_parts parts join public.products set_product on set_product.id = parts.set_product_id
   where set_product.slug = 'drop-attack-battle-set'), 3, 'the Drop Attack set holds Impact Drake, Hover Wyvern and its stadium');
+select is((select count(*)::int from public.battle_set_parts parts join public.products set_product on set_product.id = parts.set_product_id
+  where set_product.slug = 'sneak-attack-battle-set'), 3, 'the Sneak Attack set holds Rampart Aegis, Cutter Shinobi and its stadium');
 
 select * from finish();
 rollback;

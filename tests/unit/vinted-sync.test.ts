@@ -120,6 +120,21 @@ describe("matching a listing to the catalogue", () => {
     }
   });
 
+  it("sells the Sneak Attack pieces on Vinted only, each recognised by its full name", () => {
+    const shelf = [...PRODUCTS, ...STOCK_ONLY_PRODUCTS];
+    expect(matchListing("Arena Sneak Attack senza trottole", 1, shelf).lines).toEqual([{ slug: "sneak-attack-arena", quantity: 1 }]);
+    expect(matchListing("Beyblade X Rampart Aegis GB Hasbro nuovo", 1, shelf)).toMatchObject({
+      lines: [{ slug: "rampart-aegis-gb", quantity: 1 }], confidence: "high",
+    });
+    expect(matchListing("Cutter Shinobi LF trottola attacco", 1, shelf)).toMatchObject({
+      lines: [{ slug: "cutter-shinobi-lf", quantity: 1 }], confidence: "high",
+    });
+    // Without the bit it is still a name, offered for one tap rather than applied.
+    expect(matchListing("Cutter Shinobi beyblade", 1, shelf)).toMatchObject({ confidence: "medium", source: "name" });
+    // Not to be confused with the Shadow Shinobi sold on the site.
+    expect(matchListing("Shadow Shinobi 1-80MN", 1, shelf).lines).toEqual([{ slug: "shadow-shinobi-1-80mn", quantity: 1 }]);
+  });
+
   it("reads the stadium-alone rule only from explicit words, never from the tops sold without it", () => {
     expect(matchListing("Impact Drake 9-60LR drop attack senza arena", 1, PRODUCTS)).toMatchObject({
       lines: [{ slug: "impact-drake-9-60lr", quantity: 1 }], source: "code",

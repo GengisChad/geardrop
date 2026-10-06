@@ -29,8 +29,8 @@ select results_eq(
         'buster-dran-5-70db', 'hammer-incendio-3-70h', 'shadow-shinobi-1-80mn', 'wand-wizard-1-60r',
         -- Sold loose out of six opened Drop Attack Battle Sets.
         'impact-drake-9-60lr', 'hover-wyvern-3-85n',
-        -- The Drop Attack stadium alone, sold on Vinted: its stock follows the sets.
-        'drop-attack-arena',
+        -- Pieces of opened Battle Sets sold on Vinted: their stock follows the sets.
+        'drop-attack-arena', 'sneak-attack-arena', 'rampart-aegis-gb', 'cutter-shinobi-lf',
         -- The deck cases sell without a limit: the database keeps a counter the shop never shows.
         'porta-deck-giallo', 'porta-deck-verde-lime', 'porta-deck-azzurro', 'porta-deck-blu', 'porta-deck-rosa', 'porta-deck-fucsia', 'porta-deck-bianco')$$,
   array[0::bigint],
@@ -115,9 +115,10 @@ select results_eq(
   'double seed keeps four categories'
 );
 select results_eq(
-  -- 27 catalogue products and the Drop Attack stadium alone, a stock item never shown on the site.
+  -- 27 catalogue products and four Vinted-only stock items never shown on the site: the two
+  -- stadiums alone, Rampart Aegis GB and Cutter Shinobi LF.
   $$select count(*)::bigint from public.products$$,
-  array[28::bigint],
+  array[31::bigint],
   'double seed keeps the catalogue products'
 );
 select results_eq(

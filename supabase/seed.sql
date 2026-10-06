@@ -107,7 +107,10 @@ on conflict (slug) do update set
 -- availability follows the sealed sets that hold them, with none opened yet.
 with seed(set_slug, slug, sku, name, tagline, description, price_cents) as (
   values
-  ('drop-attack-battle-set', 'drop-attack-arena', 'DROP-ATTACK-ARENA', 'Beystadium Drop Attack (solo arena)', 'L''arena del Drop Attack Battle Set, senza trottole.', 'Il Beystadium del Drop Attack Battle Set, venduto da solo dopo aver tolto Impact Drake e Hover Wyvern. In vendita su Vinted, non sul sito.', 1000)
+  ('drop-attack-battle-set', 'drop-attack-arena', 'DROP-ATTACK-ARENA', 'Beystadium Drop Attack (solo arena)', 'L''arena del Drop Attack Battle Set, senza trottole.', 'Il Beystadium del Drop Attack Battle Set, venduto da solo dopo aver tolto Impact Drake e Hover Wyvern. In vendita su Vinted, non sul sito.', 1000),
+  ('sneak-attack-battle-set', 'sneak-attack-arena', 'SNEAK-ATTACK-ARENA', 'Beystadium Sneak Attack (solo arena)', 'L''arena verde del Sneak Attack Battle Set, senza trottole.', 'Il Beystadium verde del Sneak Attack Battle Set, con il rail a scomparsa, venduto da solo dopo aver tolto Rampart Aegis e Cutter Shinobi. In vendita su Vinted, non sul sito.', 2500),
+  ('sneak-attack-battle-set', 'rampart-aegis-gb', 'RAMPART-AEGIS-GB', 'Rampart Aegis GB', 'La trottola di stamina del Sneak Attack Battle Set.', 'Rampart Aegis GB, trottola di stamina del Sneak Attack Battle Set Hasbro (lama con ratchet integrato, bit GB), estratta dal set e senza lanciatore. In vendita su Vinted, non sul sito.', 1800),
+  ('sneak-attack-battle-set', 'cutter-shinobi-lf', 'CUTTER-SHINOBI-LF', 'Cutter Shinobi LF', 'La trottola d''attacco del Sneak Attack Battle Set.', 'Cutter Shinobi LF, trottola d''attacco del Sneak Attack Battle Set Hasbro (lama con ratchet integrato, bit LF), estratta dal set e senza lanciatore. In vendita su Vinted, non sul sito.', 1800)
 )
 insert into public.products (
   category_id, slug, sku, name, tagline, description, price_cents,
@@ -126,7 +129,10 @@ with seed(set_slug, piece_slug) as (
   values
   ('drop-attack-battle-set', 'impact-drake-9-60lr'),
   ('drop-attack-battle-set', 'hover-wyvern-3-85n'),
-  ('drop-attack-battle-set', 'drop-attack-arena')
+  ('drop-attack-battle-set', 'drop-attack-arena'),
+  ('sneak-attack-battle-set', 'rampart-aegis-gb'),
+  ('sneak-attack-battle-set', 'cutter-shinobi-lf'),
+  ('sneak-attack-battle-set', 'sneak-attack-arena')
 )
 insert into public.battle_set_parts (set_product_id, part_product_id)
 select set_product.id, piece.id

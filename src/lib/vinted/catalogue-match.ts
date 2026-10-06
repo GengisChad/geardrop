@@ -57,7 +57,7 @@ export function productKeys(name: string): { readonly code: string | null; reado
  */
 const ARENA_ONLY: readonly { readonly slugs: readonly string[]; readonly words: readonly string[] }[] = [
   { slugs: ["drop-attack-arena", "drop-attack-battle-set"], words: ["drop attack"] },
-  { slugs: ["sneak-attack-battle-set"], words: ["sneak attack"] },
+  { slugs: ["sneak-attack-arena", "sneak-attack-battle-set"], words: ["sneak attack"] },
 ];
 const ARENA_ONLY_SLUGS = new Set(ARENA_ONLY.flatMap((set) => set.slugs));
 
@@ -121,6 +121,17 @@ export function matchListing(
       return { lines: [{ slug: only.product.slug, quantity: 1 }], confidence: "high", source: "code", reason: `Codice e nome di ${only.product.name} nel titolo.` };
     }
     return { lines: [], confidence: "low", source: "none", reason: "Il titolo contiene codici di più prodotti." };
+  }
+
+  // A piece with no ratchet number (Glory Valkerion LF, Rampart Aegis GB, Cutter Shinobi LF): its
+  // full name, bit included, is as unmistakable as a code.
+  const byFullName = keyed.filter((entry) => {
+    const full = normalizeTitle(entry.product.name);
+    return !entry.code && full.split(" ").length >= 3 && contains(normalized, full);
+  });
+  if (byFullName.length === 1) {
+    const only = byFullName[0]!;
+    return { lines: [{ slug: only.product.slug, quantity: 1 }], confidence: "high", source: "code", reason: `Nome completo di ${only.product.name} nel titolo.` };
   }
 
   const byName = keyed.filter((entry) => entry.blade.split(" ").length >= 2 && contains(normalized, entry.blade));
