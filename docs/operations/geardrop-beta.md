@@ -80,7 +80,7 @@ progetto Vercel del negozio, che serve sia il sito sia `/admin`. Variabili da ag
 | `NEXT_PUBLIC_STOREFRONT_ORGANIZATION` | `geardrop` | dire all'app quale azienda ha il negozio pubblico |
 | `ANTHROPIC_API_KEY` | chiave Anthropic | agente prezzi e assistente (facoltativa) |
 
-`GESTIONALE_ONLY` **non** va impostata: il negozio deve continuare a rispondere.
+`GESTIONALE_ONLY` non esiste più nel codice: lo storefront risponde sempre, e il gestionale separato vive in `apps/management`, con un deploy suo.
 
 ## 3. Primo giorno di beta
 
