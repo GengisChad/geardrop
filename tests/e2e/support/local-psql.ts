@@ -2,8 +2,18 @@ import { execFileSync, type ExecFileSyncOptionsWithStringEncoding, type ExecFile
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-/** The local Supabase stack's database, as the host sees it. */
-export const LOCAL_DATABASE_URL = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+/**
+ * The local Supabase stack's database, as the host sees it. The port comes from the [db] table of
+ * supabase/config.toml, like the container name comes from its project id, so the helper follows
+ * the stack wherever the config puts it.
+ */
+export function localDatabaseUrl(): string {
+  const config = readFileSync(join(process.cwd(), "supabase", "config.toml"), "utf8");
+  const db = /^\[db\]\s*$([\s\S]*?)(?=^\[)/m.exec(config)?.[1] ?? "";
+  const port = /^port\s*=\s*(\d+)/m.exec(db)?.[1];
+  if (!port) throw new Error("supabase/config.toml has no [db] port");
+  return `postgresql://postgres:postgres@127.0.0.1:${port}/postgres`;
+}
 
 /** The same database from inside its own container, where Postgres listens on 5432. */
 const IN_CONTAINER_DATABASE_URL = "postgresql://postgres:postgres@127.0.0.1:5432/postgres";
@@ -32,7 +42,7 @@ export function localPsql(args: readonly string[], options: ExecFileSyncOptionsW
 export function localPsql(args: readonly string[], options?: ExecFileSyncOptions): string | Buffer;
 export function localPsql(args: readonly string[], options: ExecFileSyncOptions = {}): string | Buffer {
   try {
-    return execFileSync("psql", [LOCAL_DATABASE_URL, ...args], options);
+    return execFileSync("psql", [localDatabaseUrl(), ...args], options);
   } catch (error) {
     if (!isMissingExecutable(error)) throw error;
     return execFileSync("docker", ["exec", "-i", databaseContainer(), "psql", IN_CONTAINER_DATABASE_URL, ...args], options);

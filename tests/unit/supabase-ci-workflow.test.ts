@@ -28,7 +28,7 @@ describe("Supabase database CI workflow", () => {
       "pnpm install --frozen-lockfile",
       "supabase start",
       "supabase db reset --local",
-      'psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres"',
+      'psql "postgresql://postgres:postgres@127.0.0.1:54422/postgres"',
       "supabase test db --local supabase/tests",
       "pnpm db:test:upgrades",
       "supabase db lint --local --level error --fail-on error",
@@ -196,7 +196,9 @@ describe("admin browser configuration", () => {
     const psql = readFileSync(join(process.cwd(), "tests", "e2e", "support", "local-psql.ts"), "utf8");
     expect(source).toContain("localPsql(");
     expect(psql).toContain('execFileSync("psql"');
-    expect(psql).toContain("postgresql://postgres:postgres@127.0.0.1:54322/postgres");
+    // The host URL is always loopback, and its port is the [db] port read from config.toml.
+    expect(psql).toContain("postgresql://postgres:postgres@127.0.0.1:${port}/postgres");
+    expect(psql).toMatch(/\[db\]/);
     expect(psql).toContain('"docker", ["exec", "-i", databaseContainer()');
     expect(source).toContain('stdio: "ignore"');
     expect(source).not.toContain("console.log");

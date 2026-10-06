@@ -21,7 +21,14 @@ import { pathToFileURL } from "node:url";
  * Opzioni: --copy-url <url> (default: stack locale) · --skip-dump (riusa il dump già scaricato)
  */
 
-const LOCAL_COPY_URL = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+// The local copy is the local stack's database; its port is the [db] port in config.toml.
+function localCopyUrl(): string {
+  const config = readFileSync(join("supabase", "config.toml"), "utf8");
+  const db = /^\[db\]\s*$([\s\S]*?)(?=^\[)/m.exec(config)?.[1] ?? "";
+  const port = /^port\s*=\s*(\d+)/m.exec(db)?.[1];
+  if (!port) throw new Error("supabase/config.toml senza porta [db]");
+  return `postgresql://postgres:postgres@127.0.0.1:${port}/postgres`;
+}
 const BACKUP_DIR = "backup";
 
 const require = createRequire(import.meta.url);
@@ -143,7 +150,7 @@ function psql(connectionString: string, args: readonly string[], input?: string)
     return process.env["SUPABASE_DB_CONTAINER"]?.trim() || `supabase_db_${projectId}`;
   })();
   // Dentro il container lo stack locale risponde su 5432, non sulla porta esposta al PC.
-  const url = connectionString === LOCAL_COPY_URL ? "postgresql://postgres:postgres@127.0.0.1:5432/postgres" : connectionString;
+  const url = connectionString === localCopyUrl() ? "postgresql://postgres:postgres@127.0.0.1:5432/postgres" : connectionString;
   return run("psql", () =>
     execFileSync("docker", ["exec", "-i", container, "psql", url, "--set", "ON_ERROR_STOP=1", ...args], {
       encoding: "utf8",
@@ -196,7 +203,7 @@ async function main(argv: readonly string[]): Promise<void> {
     process.exitCode = 1;
     return;
   }
-  const copy = argument(argv, "--copy-url") ?? LOCAL_COPY_URL;
+  const copy = argument(argv, "--copy-url") ?? localCopyUrl();
   if (safeHost(copy) === safeHost(production)) {
     console.error("La copia e la produzione sono lo stesso database: la prova generale si fa altrove.");
     process.exitCode = 1;
