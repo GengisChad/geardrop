@@ -19,10 +19,10 @@ describe("reviewed catalogue", () => {
       { slug: "glory-valkerion-lf", price: 2300, stock: "disponibile", availableQuantity: 25, rating: 0, reviewCount: 0 },
       { slug: "shatter-horus-9-65gb", price: 1250, stock: "disponibile", availableQuantity: 47, rating: 0, reviewCount: 0 },
       { slug: "hurricane-enlil-is-7-55t", price: 1250, stock: "disponibile", availableQuantity: 49, rating: 0, reviewCount: 0 },
-      { slug: "hammer-incendio-3-70h", price: 1490, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
-      { slug: "shadow-shinobi-1-80mn", price: 1490, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
+      { slug: "hammer-incendio-3-70h", price: 1200, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
+      { slug: "shadow-shinobi-1-80mn", price: 999, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
       { slug: "wand-wizard-1-60r", price: 1490, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
-      { slug: "buster-dran-5-70db", price: 1290, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
+      { slug: "buster-dran-5-70db", price: 999, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
       // Sold loose out of the Drop Attack Battle Set, next to the other top that ships
       // without a launcher. A hundred of each, because the goods sit inside 102 unopened
       // sets and a set takes seconds to open — and a hundred clears the shelf count, so
