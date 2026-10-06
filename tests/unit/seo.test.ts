@@ -103,7 +103,7 @@ describe("structured data", () => {
         priceCurrency: "EUR",
         availability: "https://schema.org/PreOrder",
         itemCondition: "https://schema.org/NewCondition",
-        shippingDetails: { shippingRate: { value: "4.90", currency: "EUR" }, shippingDestination: { addressCountry: "IT" } },
+        shippingDetails: [{ shippingRate: { value: "4.90", currency: "EUR" }, shippingDestination: { addressCountry: "IT" } }, {}, {}],
         hasMerchantReturnPolicy: { merchantReturnDays: 30, returnFees: "https://schema.org/FreeReturn" },
       },
     });
@@ -112,10 +112,17 @@ describe("structured data", () => {
 
   it("marks sold-out stock and free shipping from the threshold", () => {
     expect(productJsonLd({ ...glory, stock: "esaurito" }).offers.availability).toBe("https://schema.org/OutOfStock");
+    // Every carrier the checkout offers is free from the threshold, and costs what it costs below it.
     expect(
-      productJsonLd({ ...glory, price: { amount: FREE_SHIPPING_THRESHOLD, currency: "EUR" } }).offers.shippingDetails
-        .shippingRate.value,
-    ).toBe("0.00");
+      productJsonLd({ ...glory, price: { amount: FREE_SHIPPING_THRESHOLD, currency: "EUR" } }).offers.shippingDetails.map(
+        (details) => details.shippingRate.value,
+      ),
+    ).toEqual(["0.00", "0.00", "0.00"]);
+    expect(productJsonLd({ ...glory, price: { amount: 2300, currency: "EUR" } }).offers.shippingDetails.map((details) => [details.shippingLabel, details.shippingRate.value])).toEqual([
+      ["Poste Italiane · consegna a casa", "4.90"],
+      ["InPost · punto di ritiro o Locker", "5.65"],
+      ["InPost · consegna a casa", "6.65"],
+    ]);
   });
 
   it("publishes the shop, its search and breadcrumbs", () => {

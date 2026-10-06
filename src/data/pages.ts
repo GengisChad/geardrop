@@ -211,7 +211,7 @@ export const LEGAL_PAGES = {
           "Puoi recedere dal contratto senza indicarne il motivo entro 14 giorni dalla consegna, come previsto dagli artt. 52 e seguenti del Codice del Consumo. GEAR//DROP estende questo termine a 30 giorni dalla consegna.",
           `Per esercitarlo scrivi a ${SELLER.email} prima della scadenza indicando il riferimento dell'ordine. Puoi usare il modulo tipo in fondo a questa pagina, ma non è obbligatorio.`,
           "Restituisci i prodotti integri, completi e nella confezione originale entro 14 giorni dalla comunicazione. Le spese di restituzione sono a carico di GEAR//DROP: ti inviamo noi l'etichetta di reso.",
-          "Ti rimborsiamo tutti i pagamenti ricevuti, spedizione standard compresa, entro 14 giorni dalla comunicazione di recesso e con lo stesso metodo di pagamento. Il rimborso può essere sospeso fino al ricevimento dei prodotti o alla prova della loro spedizione. Resta a tuo carico solo la diminuzione di valore dovuta a un uso diverso da quello necessario per verificarli.",
+          "Ti rimborsiamo tutti i pagamenti ricevuti, compresa la spedizione fino al costo della consegna standard (Poste Italiane, 4,90 €), entro 14 giorni dalla comunicazione di recesso e con lo stesso metodo di pagamento. Se hai scelto un corriere più costoso, la differenza resta a tuo carico (art. 56 del Codice del consumo). Il rimborso può essere sospeso fino al ricevimento dei prodotti o alla prova della loro spedizione. Resta a tuo carico solo la diminuzione di valore dovuta a un uso diverso da quello necessario per verificarli.",
         ],
       },
       {

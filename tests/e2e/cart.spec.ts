@@ -75,7 +75,11 @@ test.describe("cart", () => {
     await expect(page.getByTestId("cart-total")).toHaveText(euro(DRAGOON + SHIPPING_FLAT_RATE));
 
     // Enough packs to clear the free-shipping threshold, whatever the two numbers are today.
-    for (let click = 1; click < FREE_FROM; click += 1) await page.getByTestId("qty-increase").click();
+    // Each click waits for the line to settle: on a phone a tap fired mid-render was being lost.
+    for (let click = 1; click < FREE_FROM; click += 1) {
+      await page.getByTestId("qty-increase").click();
+      await expect(page.getByTestId("line-total")).toHaveText(euro(DRAGOON * (click + 1)));
+    }
     await expect(page.getByTestId("cart-shipping")).toHaveText("Gratis");
     await expect(page.getByTestId("cart-total")).toHaveText(euro(DRAGOON * FREE_FROM));
   });

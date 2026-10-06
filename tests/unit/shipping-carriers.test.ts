@@ -128,3 +128,48 @@ describe("the paid order", () => {
     }
   });
 });
+
+describe("what Google is told about shipping", () => {
+  it("lists every carrier in the Merchant feed, at the price the checkout charges", async () => {
+    const { GET } = await import("@/app/google-merchant.xml/route");
+    const xml = await (await GET()).text();
+    const item = (id: string) => xml.split("<item>").find((chunk) => chunk.includes(`<g:id>${id}</g:id>`)) ?? "";
+    const shipping = (chunk: string) => [...chunk.matchAll(/<g:service>([^<]+)<\/g:service><g:price>([^<]+)<\/g:price>/g)].map((m) => [m[1], m[2]]);
+    expect(shipping(item("cobalt-dragoon-2-60c"))).toEqual([
+      ["Poste Italiane · consegna a casa", "4.90 EUR"],
+      ["InPost · punto di ritiro o Locker", "5.65 EUR"],
+      ["InPost · consegna a casa", "6.65 EUR"],
+    ]);
+    // Every offer carries all three, so Shopping can show the cheapest one on any item.
+    const items = xml.split("<item>").slice(1);
+    expect(items.length).toBeGreaterThan(0);
+    for (const chunk of items) expect(shipping(chunk)).toHaveLength(3);
+  }, 60_000);
+});
+
+describe("the shipping email", () => {
+  it("sends an InPost pickup buyer to their point, not to their door", async () => {
+    const { shippingNotificationEmail } = await import("@/lib/orders/shipping-email");
+    const email = shippingNotificationEmail({
+      orderNumber: "GD-INPOST",
+      email: "buyer@example.com",
+      carrier: "InPost",
+      trackingCode: "620000000000000000000000",
+      trackingUrl: null,
+      shippingAddress: { name: "Mario Rossi", address: "Via Roma 1", postalCode: "20121", city: "Milano", province: "MI", country: "IT", method: "inpost-point", pickupPoint: "MIL123M" },
+      items: [{ name: "Cobalt Dragoon 2-60C", quantity: 1 }],
+    });
+    expect(email.text).toContain("Dove ritirarlo:");
+    expect(email.text).toContain("Punto InPost o Locker: MIL123M");
+    expect(email.text).not.toContain("Via Roma 1");
+  });
+});
+
+describe("the withdrawal clause", () => {
+  it("refunds delivery up to the standard Poste price, as the Codice del consumo allows", async () => {
+    const { LEGAL_PAGES } = await import("@/data/pages");
+    const text = JSON.stringify(LEGAL_PAGES);
+    expect(text).toContain("fino al costo della consegna standard (Poste Italiane, 4,90 €)");
+    expect(text).toContain("art. 56 del Codice del consumo");
+  });
+});

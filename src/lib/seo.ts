@@ -1,4 +1,4 @@
-import { FREE_SHIPPING_THRESHOLD, SHIPPING_FLAT_RATE } from "@/data/catalog";
+import { FREE_SHIPPING_THRESHOLD, SHIPPING_METHODS } from "@/data/catalog";
 import { brand } from "@/data/assets";
 import { SHOP_EMAIL } from "@/lib/email/resend";
 import { formatPrice } from "@/lib/format";
@@ -194,7 +194,7 @@ const AVAILABILITY = {
 
 export function productJsonLd(product: Product) {
   const url = absoluteUrl(`/prodotto/${product.slug}`);
-  const shippingCents = product.price.amount >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FLAT_RATE;
+  const free = product.price.amount >= FREE_SHIPPING_THRESHOLD;
   return {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -224,9 +224,11 @@ export function productJsonLd(product: Product) {
       availability: AVAILABILITY[product.stock],
       itemCondition: "https://schema.org/NewCondition",
       seller: { "@type": "Organization", name: SITE_NAME, url: PRODUCTION_ORIGIN },
-      shippingDetails: {
+      // One entry per carrier the checkout offers (Poste, InPost to a point, InPost to the door).
+      shippingDetails: SHIPPING_METHODS.map((method) => ({
         "@type": "OfferShippingDetails",
-        shippingRate: { "@type": "MonetaryAmount", value: (shippingCents / 100).toFixed(2), currency: "EUR" },
+        shippingLabel: method.label,
+        shippingRate: { "@type": "MonetaryAmount", value: ((free ? 0 : method.priceCents) / 100).toFixed(2), currency: "EUR" },
         shippingDestination: { "@type": "DefinedRegion", addressCountry: "IT" },
         deliveryTime: {
           "@type": "ShippingDeliveryTime",
@@ -237,7 +239,7 @@ export function productJsonLd(product: Product) {
           handlingTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 1, unitCode: "DAY" },
           transitTime: { "@type": "QuantitativeValue", minValue: 1, maxValue: 4, unitCode: "DAY" },
         },
-      },
+      })),
       hasMerchantReturnPolicy: {
         "@type": "MerchantReturnPolicy",
         applicableCountry: "IT",
