@@ -135,6 +135,14 @@ join public.products as set_product on set_product.slug = seed.set_slug
 join public.products as piece on piece.slug = seed.piece_slug
 on conflict do nothing;
 
+-- A piece is as available as its loose ones plus the sealed sets that hold one: with nothing
+-- opened yet, every piece starts at its set's sealed count, whatever the catalogue's fallback says.
+update public.products as piece
+set stock_quantity = set_product.stock_quantity + parts.loose
+from public.battle_set_parts as parts
+join public.products as set_product on set_product.id = parts.set_product_id
+where piece.id = parts.part_product_id;
+
 with seed(product_slug, src, width, height, alt, sort_order) as (
   values
   ('glory-valkerion-lf', '/products/glory-valkerion-lf.webp', 1000, 1000, 'Confezione Beyblade X Glory Valkerion LF bianca e oro con lanciatore e trottola', 0),

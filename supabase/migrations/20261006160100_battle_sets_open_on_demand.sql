@@ -15,6 +15,12 @@
 --     unchanged.
 -- One trigger on the ledger does this for every path that moves stock — Stripe orders, bundles,
 -- Vinted sales, the panel — without touching any of them.
+--
+-- Known limit: the trigger locks a second product row after the caller locked the first. Two
+-- orders committing at the same instant — one a loose piece that must open a set, the other a
+-- sealed set — can deadlock; Postgres aborts one, and its caller retries it (Stripe redelivers
+-- the webhook, a Vinted sale stays in the panel). Taking from loose pieces needs no second lock,
+-- so the window only exists while a piece has none loose.
 
 begin;
 select pg_advisory_xact_lock(hashtext('20261006160100_battle_sets_open_on_demand'));

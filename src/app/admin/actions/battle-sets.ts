@@ -29,7 +29,7 @@ function failure(error: unknown): BattleSetActionState {
 
 function refresh() {
   // The loose tops are on the site: their availability changes with the sets.
-  revalidateTag(STOREFRONT_CACHE_TAGS.products, { expire: 0 });
+  revalidateTag(STOREFRONT_CACHE_TAGS.products, "max");
   revalidateTag("inventory", "max");
   revalidatePath("/admin/inventario");
 }
@@ -55,6 +55,7 @@ export async function countBattleSetAction(_previous: BattleSetActionState, form
   for (const [key, value] of formData.entries()) {
     if (key.startsWith("loose:") && typeof value === "string") loose[key.slice("loose:".length)] = value;
   }
+  if (formData.get("confirmed") !== "on") return { ok: false, message: "Conferma che sono i numeri contati." };
   const parsed = countBattleSetSchema.safeParse({ setSlug: text(formData, "setSlug"), sealed: text(formData, "sealed"), loose });
   if (!parsed.success) return { ok: false, message: "Controlla i numeri: interi, da zero in su." };
   try {

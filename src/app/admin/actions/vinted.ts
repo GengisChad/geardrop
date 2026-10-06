@@ -29,7 +29,7 @@ function failure(error: unknown): VintedActionState {
 }
 
 function refresh() {
-  revalidateTag(STOREFRONT_CACHE_TAGS.products, { expire: 0 });
+  revalidateTag(STOREFRONT_CACHE_TAGS.products, "max");
   revalidateTag("inventory", "max");
   revalidateTag("dashboard", "max");
   revalidatePath("/admin/vinted");
