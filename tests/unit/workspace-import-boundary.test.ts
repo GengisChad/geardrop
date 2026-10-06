@@ -44,8 +44,10 @@ describe("management compiler import boundary", () => {
       expect(checkSourceImports('import "./escape/secret";', join(root, "apps/management/src/probe.ts"), root)).toHaveLength(1);
     } finally { rmSync(root, { recursive: true, force: true }); }
   });
+  // It compiles every source of the repository, which takes about a second alone and several
+  // when the whole suite runs beside it; the default five seconds made it fail under load.
   it("validates every owned application source", async () => {
     const { checkWorkspaceBoundaries } = await checker();
     expect(checkWorkspaceBoundaries(process.cwd())).toEqual([]);
-  });
+  }, 30_000);
 });
