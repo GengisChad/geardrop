@@ -54,6 +54,39 @@ export type Database = {
         }
         Relationships: []
       }
+      battle_set_parts: {
+        Row: {
+          loose: number
+          part_product_id: number
+          set_product_id: number
+        }
+        Insert: {
+          loose?: number
+          part_product_id: number
+          set_product_id: number
+        }
+        Update: {
+          loose?: number
+          part_product_id?: number
+          set_product_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "battle_set_parts_part_product_id_fkey"
+            columns: ["part_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "battle_set_parts_set_product_id_fkey"
+            columns: ["set_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bundle_items: {
         Row: {
           bundle_id: number
@@ -824,6 +857,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      inbound_emails: {
+        Row: {
+          body_text: string
+          from_address: string
+          id: number
+          kind: string
+          provider_email_id: string
+          received_at: string
+          sender_verified: boolean
+          subject: string
+        }
+        Insert: {
+          body_text?: string
+          from_address?: string
+          id?: never
+          kind: string
+          provider_email_id: string
+          received_at?: string
+          sender_verified?: boolean
+          subject?: string
+        }
+        Update: {
+          body_text?: string
+          from_address?: string
+          id?: never
+          kind?: string
+          provider_email_id?: string
+          received_at?: string
+          sender_verified?: boolean
+          subject?: string
+        }
+        Relationships: []
       }
       inventory_movements: {
         Row: {
@@ -2158,6 +2224,65 @@ export type Database = {
         }
         Relationships: []
       }
+      vinted_sales: {
+        Row: {
+          amount_cents: number
+          buyer_username: string
+          created_at: string
+          id: number
+          inbound_email_id: number
+          item_count: number
+          lines: Json
+          listing_title: string
+          note: string | null
+          recorded_at: string | null
+          recorded_by: string | null
+          sold_at: string
+          status: Database["public"]["Enums"]["vinted_sale_status"]
+          suggestion: Json
+        }
+        Insert: {
+          amount_cents: number
+          buyer_username?: string
+          created_at?: string
+          id?: never
+          inbound_email_id: number
+          item_count?: number
+          lines?: Json
+          listing_title: string
+          note?: string | null
+          recorded_at?: string | null
+          recorded_by?: string | null
+          sold_at?: string
+          status?: Database["public"]["Enums"]["vinted_sale_status"]
+          suggestion?: Json
+        }
+        Update: {
+          amount_cents?: number
+          buyer_username?: string
+          created_at?: string
+          id?: never
+          inbound_email_id?: number
+          item_count?: number
+          lines?: Json
+          listing_title?: string
+          note?: string | null
+          recorded_at?: string | null
+          recorded_by?: string | null
+          sold_at?: string
+          status?: Database["public"]["Enums"]["vinted_sale_status"]
+          suggestion?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vinted_sales_inbound_email_id_fkey"
+            columns: ["inbound_email_id"]
+            isOneToOne: true
+            referencedRelation: "inbound_emails"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -2175,6 +2300,14 @@ export type Database = {
           p_sku: string
         }
         Returns: number
+      }
+      apply_vinted_sale: {
+        Args: { p_lines: Json; p_sale_id: number }
+        Returns: Json
+      }
+      auto_apply_vinted_sale: {
+        Args: { p_lines: Json; p_sale_id: number }
+        Returns: Json
       }
       begin_media_delete: {
         Args: { p_media_asset_id: number }
@@ -2216,6 +2349,10 @@ export type Database = {
         Args: { p_note?: string; p_order_id: number }
         Returns: undefined
       }
+      count_battle_set: {
+        Args: { p_loose: Json; p_sealed: number; p_set_slug: string }
+        Returns: Json
+      }
       create_order: {
         Args: {
           p_billing_address: Json
@@ -2231,6 +2368,10 @@ export type Database = {
       }
       delete_product_permanently: {
         Args: { p_expected_name: string; p_product_id: number }
+        Returns: undefined
+      }
+      dismiss_vinted_sale: {
+        Args: { p_note?: string; p_sale_id: number }
         Returns: undefined
       }
       duplicate_coupon_with_targets: {
@@ -2269,6 +2410,21 @@ export type Database = {
           product_slug: string
         }[]
       }
+      ingest_inbound_email: {
+        Args: {
+          p_body: string
+          p_from: string
+          p_provider_email_id: string
+          p_sale?: Json
+          p_sender_verified: boolean
+          p_subject: string
+        }
+        Returns: {
+          created: boolean
+          inbound_id: number
+          sale_id: number
+        }[]
+      }
       lookup_order_status: {
         Args: { p_email: string; p_order_number: string }
         Returns: {
@@ -2293,6 +2449,10 @@ export type Database = {
       mark_restock_notices_sent: {
         Args: { p_request_ids: number[] }
         Returns: undefined
+      }
+      open_battle_sets: {
+        Args: { p_count: number; p_set_slug: string }
+        Returns: number
       }
       prepare_order_refund: {
         Args: { p_amount_cents: number; p_order_id: number; p_reason: string }
@@ -2440,6 +2600,10 @@ export type Database = {
         Args: { p_active: boolean; p_user_id: string }
         Returns: undefined
       }
+      set_vinted_sale_suggestion: {
+        Args: { p_sale_id: number; p_suggestion: Json }
+        Returns: undefined
+      }
       ship_order: {
         Args: {
           p_carrier: string
@@ -2505,6 +2669,9 @@ export type Database = {
         | "order_cancelled"
         | "return"
         | "damage"
+        | "vinted_sale"
+        | "set_opened"
+        | "set_linked"
       media_asset_status: "pending" | "ready" | "failed"
       order_status:
         | "pending"
@@ -2521,6 +2688,7 @@ export type Database = {
       staff_invite_status: "invited" | "active" | "revoked"
       staff_role: "owner" | "admin" | "editor"
       stock_status: "disponibile" | "in-arrivo" | "pre-ordine" | "esaurito"
+      vinted_sale_status: "pending" | "recorded" | "dismissed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2679,6 +2847,9 @@ export const Constants = {
         "order_cancelled",
         "return",
         "damage",
+        "vinted_sale",
+        "set_opened",
+        "set_linked",
       ],
       media_asset_status: ["pending", "ready", "failed"],
       order_status: [
@@ -2697,6 +2868,7 @@ export const Constants = {
       staff_invite_status: ["invited", "active", "revoked"],
       staff_role: ["owner", "admin", "editor"],
       stock_status: ["disponibile", "in-arrivo", "pre-ordine", "esaurito"],
+      vinted_sale_status: ["pending", "recorded", "dismissed"],
     },
   },
 } as const

@@ -10,6 +10,7 @@ import {
 } from "../src/data/content-seed";
 import { UNLIMITED_STOCK } from "../src/lib/commerce/live-stock-overlay";
 import { SOCIAL_LINKS } from "../src/lib/navigation";
+import { BATTLE_SETS, STOCK_ONLY_PRODUCTS } from "../src/data/stock-only";
 
 function text(value: string): string {
   return `'${value.replaceAll("'", "''")}'`;
@@ -58,6 +59,14 @@ export function generateSupabaseSeed(): string {
       index,
     ].join(", "),
   );
+  const setOf = (slug: string) => BATTLE_SETS.find((set) => set.pieces.includes(slug))?.setSlug;
+  const stockOnlyRows = STOCK_ONLY_PRODUCTS.flatMap((product) => {
+    const setSlug = setOf(product.slug);
+    return setSlug
+      ? [[text(setSlug), text(product.slug), text(product.sku), text(product.name), text(product.tagline), text(product.description), product.priceCents].join(", ")]
+      : [];
+  });
+  const battleSetRows = BATTLE_SETS.flatMap((set) => set.pieces.map((piece) => [text(set.setSlug), text(piece)].join(", ")));
   const imageRows = PRODUCTS.flatMap((product) =>
     product.images.map((image, index) =>
       [text(product.slug), text(image.src), image.width, image.height, text(image.alt), index].join(", "),
@@ -231,6 +240,44 @@ on conflict (slug) do update set
   rating = excluded.rating,
   review_count = excluded.review_count,
   sort_order = excluded.sort_order;
+
+-- Goods sold off the site (src/data/stock-only.ts): in the panel, never on the storefront. Their
+-- availability follows the sealed sets that hold them, with none opened yet.
+with seed(set_slug, slug, sku, name, tagline, description, price_cents) as (
+  values
+${rows(stockOnlyRows)}
+)
+insert into public.products (
+  category_id, slug, sku, name, tagline, description, price_cents,
+  publication_status, active, stock_quantity, allow_backorder, rating, review_count, sort_order
+)
+select set_product.category_id, seed.slug, seed.sku, seed.name, seed.tagline, seed.description, seed.price_cents,
+  'draft'::public.publication_status, false, set_product.stock_quantity, false, 0, 0, 900
+from seed
+join public.products as set_product on set_product.slug = seed.set_slug
+on conflict (slug) do update set
+  name = excluded.name,
+  tagline = excluded.tagline,
+  description = excluded.description;
+
+with seed(set_slug, piece_slug) as (
+  values
+${rows(battleSetRows)}
+)
+insert into public.battle_set_parts (set_product_id, part_product_id)
+select set_product.id, piece.id
+from seed
+join public.products as set_product on set_product.slug = seed.set_slug
+join public.products as piece on piece.slug = seed.piece_slug
+on conflict do nothing;
+
+-- A piece is as available as its loose ones plus the sealed sets that hold one: with nothing
+-- opened yet, every piece starts at its set's sealed count, whatever the catalogue's fallback says.
+update public.products as piece
+set stock_quantity = set_product.stock_quantity + parts.loose
+from public.battle_set_parts as parts
+join public.products as set_product on set_product.id = parts.set_product_id
+where piece.id = parts.part_product_id;
 
 with seed(product_slug, src, width, height, alt, sort_order) as (
   values

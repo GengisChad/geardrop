@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { BattleSetPanel } from "@/components/admin/inventory/battle-set-panel";
 import { InventoryAdjustmentForm } from "@/components/admin/inventory/inventory-adjustment-form";
 import { RestockDemandPanel } from "@/components/admin/inventory/restock-demand-panel";
 import styles from "@/components/admin/inventory/inventory.module.css";
 import { requireAdminAccess } from "@/lib/admin/access";
+import { loadBattleSets } from "@/lib/admin/battle-sets";
 import { listAdminInventory, normalizeAdminInventoryQuery } from "@/lib/admin/inventory-repository";
 import { getRestockDemand } from "@/lib/admin/inventory-restock";
 import { BUNDLES } from "@/data/catalog";
@@ -19,6 +21,9 @@ const reasons = {
   order_cancelled: "Ordine annullato",
   return: "Reso",
   damage: "Danno",
+  vinted_sale: "Vendita Vinted",
+  set_opened: "Set aperto",
+  set_linked: "Legato al set",
 } as const;
 
 export default async function AdminInventoryPage({
@@ -42,6 +47,8 @@ export default async function AdminInventoryPage({
   const demandRows = isManager && allDemandSlugs.length > 0
     ? await getRestockDemand(client, allDemandSlugs).catch(() => [])
     : [];
+  // Opened Battle Sets: managers only, like the rest of the stock moves.
+  const battleSets = isManager ? await loadBattleSets(client) : [];
 
   // Build name map for demand panel display.
   const nameBySlug = new Map<string, string>([
@@ -66,6 +73,8 @@ export default async function AdminInventoryPage({
     </form>
 
     {canAdjust ? <InventoryAdjustmentForm /> : <section className={styles.readOnly}><h2>Consultazione inventario</h2><p>Il ruolo editor può leggere stock e movimenti. Le rettifiche richiedono owner o admin.</p></section>}
+
+    {battleSets.map((set) => <BattleSetPanel key={set.slug} set={set} />)}
 
     {isManager ? <RestockDemandPanel rows={demandPanelRows} /> : null}
 
