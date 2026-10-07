@@ -116,7 +116,7 @@ export function buildCheckoutSessionFields(
   const { contact } = order;
   const reference = orderReference(order.idempotencyKey);
   const shipping = quote.totals.shipping.amount;
-  // The carrier the quote was priced with: Poste unless the buyer picked InPost.
+  // The carrier the quote was priced with: the cheapest unless the buyer picked another.
   const method = shippingMethodByCode(quote.shippingCode) ?? SHIPPING_METHODS[0]!;
 
   const fields: Record<string, string | number> = {

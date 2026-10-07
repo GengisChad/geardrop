@@ -70,10 +70,10 @@ test.describe("cart", () => {
     await buyPanel(page).getByTestId("add-to-cart").click();
     await page.goto("/carrello");
 
-    // 1 x 25,50 -> below the threshold. The cart prices Poste and says it is a starting price:
-    // the carrier is picked at checkout, and buyers read a bare 4,90 as what InPost would cost.
+    // 1 x 25,50 -> below the threshold. The cart prices InPost point (cheapest) with a "da" prefix:
+    // the buyer picks the carrier at checkout, so the cart cannot show the final price.
     await expect(page.getByTestId("cart-shipping")).toHaveText(`da ${euro(SHIPPING_FLAT_RATE)}`);
-    await expect(page.getByTestId("cart-carrier-note")).toContainText("Scegli Poste o InPost al checkout");
+    await expect(page.getByTestId("cart-carrier-note")).toContainText("Al checkout scegli il punto di ritiro o Locker InPost");
     await expect(page.getByTestId("cart-total")).toHaveText(euro(DRAGOON + SHIPPING_FLAT_RATE));
 
     // Enough packs to clear the free-shipping threshold, whatever the two numbers are today.
@@ -210,7 +210,7 @@ test.describe("checkout", () => {
     await buyPanel(page).getByTestId("add-to-cart").click();
     await page.goto("/checkout");
 
-    // Poste, InPost to a point or Locker, InPost to the door (owner, 2026-10-06).
+    // InPost point or Locker (default, cheapest), Poste to the door (owner, 2026-10-07).
     const shipping = page.getByTestId("shipping-options");
     await expect(shipping.getByRole("radio")).toHaveCount(SHIPPING_METHODS.length);
     await expect(shipping).toContainText("Poste Italiane");
@@ -219,20 +219,23 @@ test.describe("checkout", () => {
     // At checkout the price is the chosen carrier's, not a starting price.
     await expect(page.getByTestId("cart-shipping")).toHaveText(euro(SHIPPING_FLAT_RATE));
     await expect(page.getByTestId("cart-carrier-note")).toHaveCount(0);
-    await expect(page.locator("#pickupPoint")).toHaveCount(0);
-
-    await shipping.getByText("InPost · punto di ritiro o Locker").click();
-    await expect(page.getByTestId("cart-total")).toHaveText(euro(DRAGOON + 565));
-    // The parcel goes to a point the buyer names: the field appears, with InPost's map.
+    // InPost point is the default: the pickup field is already visible on load.
     await expect(page.locator("#pickupPoint")).toBeVisible();
     await expect(page.getByRole("link", { name: "Trovalo sulla mappa InPost" })).toHaveAttribute("href", "https://inpost.it/trova-un-locker");
     await page.locator("#pickupPoint").focus();
     await page.locator("#pickupPoint").blur();
     await expect(page.getByText("Scrivi il punto InPost o il Locker dove ritirare il pacco.")).toBeVisible();
 
-    await shipping.getByText("InPost · consegna a casa").click();
+    // Switching to Poste hides the pickup field and updates the price to 6,65.
+    await shipping.getByText("Poste Italiane · consegna a casa").click();
     await expect(page.getByTestId("cart-total")).toHaveText(euro(DRAGOON + 665));
+    await expect(page.getByTestId("cart-shipping")).toHaveText(euro(665));
     await expect(page.locator("#pickupPoint")).toHaveCount(0);
+
+    // Switching back to InPost point restores the pickup field and the cheaper price.
+    await shipping.getByText("InPost · punto di ritiro o Locker").click();
+    await expect(page.getByTestId("cart-total")).toHaveText(euro(DRAGOON + SHIPPING_FLAT_RATE));
+    await expect(page.locator("#pickupPoint")).toBeVisible();
   });
 
   test("checkout with an empty cart offers nothing to pay for", async ({ page }) => {

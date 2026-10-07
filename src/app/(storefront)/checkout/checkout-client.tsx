@@ -126,7 +126,7 @@ export function CheckoutClient() {
             contact: {
               ...values,
               shippingMethod: values.shippingMethod || activeShipping,
-              // A point typed for InPost and then left for Poste must not travel with the order.
+              // A point typed for a Locker and then left for home delivery must not travel with the order.
               pickupPoint: shippingMethodByCode(values.shippingMethod || activeShipping)?.pickupPoint ? values.pickupPoint : undefined,
             },
             lines: lines.map((line) => ({ slug: line.slug, quantity: line.quantity })),

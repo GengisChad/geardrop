@@ -122,7 +122,7 @@ const organization = {
   alternateName: "GearDrop",
   url: PRODUCTION_ORIGIN,
   logo: { "@type": "ImageObject", url: absoluteUrl(brand.emblem512), width: 512, height: 512 },
-  description: "Negozio online di Beyblade X in Italia: trottole, lanciatori e stadi originali, spediti con Poste Italiane e InPost.",
+  description: "Negozio online di Beyblade X in Italia: trottole, lanciatori e stadi originali, spediti con InPost e Poste Italiane in tutta Italia.",
   email: SHOP_EMAIL,
   vatID: `IT${SELLER.vat}`,
   // Ties the shop's own profiles to this Organization, so a search engine treats them as one business
@@ -282,7 +282,7 @@ export function productJsonLd(product: Product) {
       availability: AVAILABILITY[product.stock],
       itemCondition: "https://schema.org/NewCondition",
       seller: { "@type": "Organization", name: SITE_NAME, url: PRODUCTION_ORIGIN },
-      // One entry per carrier the checkout offers (Poste, InPost to a point, InPost to the door).
+      // One entry per delivery the checkout offers (an InPost point or Locker, Poste to the door).
       shippingDetails: SHIPPING_METHODS.map((method) => ({
         "@type": "OfferShippingDetails",
         shippingLabel: method.label,

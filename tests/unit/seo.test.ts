@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
-import { BUNDLES, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS } from "@/data/catalog";
+import { BUNDLES, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_FLAT_RATE, SHIPPING_METHODS } from "@/data/catalog";
 import { oneCardPerFamily } from "@/lib/commerce/variants";
 import { breadcrumbJsonLd, jsonLd, productDescription, productJsonLd, productTitle, siteJsonLd } from "@/lib/seo";
 
@@ -103,7 +103,7 @@ describe("structured data", () => {
         priceCurrency: "EUR",
         availability: "https://schema.org/PreOrder",
         itemCondition: "https://schema.org/NewCondition",
-        shippingDetails: [{ shippingRate: { value: "4.90", currency: "EUR" }, shippingDestination: { addressCountry: "IT" } }, {}, {}],
+        shippingDetails: [{ shippingRate: { value: (SHIPPING_FLAT_RATE / 100).toFixed(2), currency: "EUR" }, shippingDestination: { addressCountry: "IT" } }, {}],
         hasMerchantReturnPolicy: { merchantReturnDays: 30, returnFees: "https://schema.org/FreeReturn" },
       },
     });
@@ -117,11 +117,10 @@ describe("structured data", () => {
       productJsonLd({ ...glory, price: { amount: FREE_SHIPPING_THRESHOLD, currency: "EUR" } }).offers.shippingDetails.map(
         (details) => details.shippingRate.value,
       ),
-    ).toEqual(["0.00", "0.00", "0.00"]);
+    ).toEqual(["0.00", "0.00"]);
     expect(productJsonLd({ ...glory, price: { amount: 2300, currency: "EUR" } }).offers.shippingDetails.map((details) => [details.shippingLabel, details.shippingRate.value])).toEqual([
-      ["Poste Italiane · consegna a casa", "4.90"],
-      ["InPost · punto di ritiro o Locker", "5.65"],
-      ["InPost · consegna a casa", "6.65"],
+      [SHIPPING_METHODS[0]!.label, (SHIPPING_METHODS[0]!.priceCents / 100).toFixed(2)],
+      [SHIPPING_METHODS[1]!.label, (SHIPPING_METHODS[1]!.priceCents / 100).toFixed(2)],
     ]);
   });
 
@@ -164,9 +163,8 @@ describe("the shop as Google's OnlineStore", () => {
         service.shippingConditions.map((condition) => condition.shippingRate.value),
       ]),
     ).toEqual([
-      ["Poste Italiane · consegna a casa", "FulfillmentTypeDelivery", [4.9, 0]],
-      ["InPost · punto di ritiro o Locker", "FulfillmentTypeCollectionPoint", [5.65, 0]],
-      ["InPost · consegna a casa", "FulfillmentTypeDelivery", [6.65, 0]],
+      [SHIPPING_METHODS[0]!.label, "FulfillmentTypeCollectionPoint", [SHIPPING_METHODS[0]!.priceCents / 100, 0]],
+      [SHIPPING_METHODS[1]!.label, "FulfillmentTypeDelivery", [SHIPPING_METHODS[1]!.priceCents / 100, 0]],
     ]);
     // The two bands meet at the threshold without a gap or an overlap.
     for (const service of services) {
