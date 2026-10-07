@@ -342,17 +342,17 @@ export const BUNDLE: Bundle = {
 
 /**
  * Shipping stops being charged only once the order can carry it. The stadium box is 45×45×15, so
- * every carrier bills it at its 6 kg volumetric weight and Poste adds a €5 out-of-format fee: a
- * parcel that costs far more than the €4,90 collected. At €59 a single arena plus one small piece
+ * every carrier bills it at its 6 kg volumetric weight: a parcel that costs far more than the
+ * shipping collected. At €59 a single arena plus one small piece
  * cleared the threshold and shipped a bulky box for free, so the owner raised it to €100 on
  * 2026-09-29.
  */
 export const FREE_SHIPPING_THRESHOLD = 10000;
-/** The cheapest delivery the shop offers (Poste Italiane), the "da 4,90 €" of every banner. */
-export const SHIPPING_FLAT_RATE = 490;
+/** The cheapest delivery the shop offers (InPost to a point or Locker), the "da 5,65 €" of every banner. */
+export const SHIPPING_FLAT_RATE = 565;
 
 export type ShippingMethodDefinition = {
-  /** Stored on the order and sent by the checkout form; "standard" is the Poste code orders already carry. */
+  /** Stored on the order and sent by the checkout form; "standard" is Poste to the door, the code orders already carry. */
   readonly code: string;
   readonly carrier: "poste" | "inpost";
   readonly label: string;
@@ -362,15 +362,15 @@ export type ShippingMethodDefinition = {
 };
 
 /**
- * What the buyer picks at checkout, at what the parcel costs the shop to send (owner, 2026-10-06):
- * charging InPost at the Poste price left the shop paying a euro or more on every InPost parcel.
- * Free shipping from FREE_SHIPPING_THRESHOLD applies to every method. BRT, DHL and others will
- * join this list.
+ * What the buyer picks at checkout, at what the parcel costs the shop to send (owner, 2026-10-07):
+ * an InPost point or Locker at €5,65, or Poste Italiane to the door at €6,65. The €4,90 Poste rate
+ * "non esiste". The first entry is the cheapest and the one a cart is priced with until the buyer
+ * chooses. Free shipping from FREE_SHIPPING_THRESHOLD applies to every method. BRT, DHL and others
+ * will join this list.
  */
 export const SHIPPING_METHODS: readonly ShippingMethodDefinition[] = [
-  { code: "standard", carrier: "poste", label: "Poste Italiane · consegna a casa", priceCents: SHIPPING_FLAT_RATE, pickupPoint: false },
-  { code: "inpost-point", carrier: "inpost", label: "InPost · punto di ritiro o Locker", priceCents: 565, pickupPoint: true },
-  { code: "inpost-home", carrier: "inpost", label: "InPost · consegna a casa", priceCents: 665, pickupPoint: false },
+  { code: "inpost-point", carrier: "inpost", label: "InPost · punto di ritiro o Locker", priceCents: SHIPPING_FLAT_RATE, pickupPoint: true },
+  { code: "standard", carrier: "poste", label: "Poste Italiane · consegna a casa", priceCents: 665, pickupPoint: false },
 ];
 
 /** Where the buyer finds the InPost point or Locker nearest to them. */
