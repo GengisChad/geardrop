@@ -31,6 +31,23 @@ import { PRODUCTION_ORIGIN } from "../src/lib/site-url";
 
 const DEFAULT_SITEMAP = new URL("/sitemap.xml", PRODUCTION_ORIGIN).toString();
 
+/**
+ * Node reports every network failure as a bare "fetch failed" and hides the reason — the DNS
+ * error, the refused connection, the proxy, the certificate — one level down in `cause`. Printing
+ * only the message turns a five-second diagnosis into a guess, so the whole chain is unwrapped.
+ */
+function describe(error: unknown): string {
+  if (!(error instanceof Error)) return String(error);
+  const chain = [error.message];
+  let cause: unknown = error.cause;
+  while (cause instanceof Error) {
+    const code = (cause as NodeJS.ErrnoException).code;
+    chain.push(code ? `${code}: ${cause.message}` : cause.message);
+    cause = cause.cause;
+  }
+  return chain.join(" — ");
+}
+
 function readFlag(argv: readonly string[], name: string): boolean {
   return argv.includes(`--${name}`);
 }
@@ -51,7 +68,9 @@ function locations(xml: string): readonly string[] {
 }
 
 async function fetchSitemap(url: string): Promise<readonly string[]> {
-  const response = await fetch(url, { headers: { accept: "application/xml" } });
+  const response = await fetch(url, { headers: { accept: "application/xml" } }).catch((error: unknown) => {
+    throw new Error(`${url} could not be fetched — ${describe(error)}`);
+  });
   if (!response.ok) throw new Error(`${url} answered ${response.status}`);
   const urls = locations(await response.text());
   if (urls.length === 0) throw new Error(`${url} holds no <loc> entries`);
@@ -71,7 +90,7 @@ async function keyFileIsLive(): Promise<{ ok: boolean; detail: string }> {
     if (body !== INDEXNOW_KEY) return { ok: false, detail: `${url} holds "${body}", expected the key` };
     return { ok: true, detail: url };
   } catch (error) {
-    return { ok: false, detail: `${url} could not be fetched: ${(error as Error).message}` };
+    return { ok: false, detail: `${url} could not be fetched: ${describe(error)}` };
   }
 }
 
@@ -116,6 +135,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(error instanceof Error ? error.message : error);
+  console.error(describe(error));
   process.exitCode = 1;
 });
