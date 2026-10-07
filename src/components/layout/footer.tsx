@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { Lock, RotateCcw, Truck } from "lucide-react";
+import { CookieSettingsButton } from "@/components/analytics/cookie-consent";
 import { Wordmark } from "@/components/layout/logo";
 import type { StorefrontChrome } from "@/lib/content/types";
 import { FREE_SHIPPING_FROM_LABEL, SHIPPING_FLAT_LABEL } from "@/lib/labels";
@@ -19,7 +20,7 @@ const PROMISES = [
   { Icon: RotateCcw, text: "Reso gratuito entro 30 giorni" },
 ] as const;
 
-export function Footer({ content }: { readonly content: StorefrontChrome }) {
+export function Footer({ content, cookieSettings = false }: { readonly content: StorefrontChrome; readonly cookieSettings?: boolean }) {
   return (
     <footer className="gd-page-end on-dark relative border-t border-white/[0.08] bg-void/70">
       <div className="mx-auto grid max-w-[1400px] grid-cols-2 gap-x-6 gap-y-10 px-4 py-12 sm:px-6 md:grid-cols-4 lg:grid-cols-[1.4fr_repeat(4,1fr)] lg:px-10">
@@ -78,9 +79,13 @@ export function Footer({ content }: { readonly content: StorefrontChrome }) {
       </div>
 
       <div className="border-t border-white/[0.08] py-5">
-        <p className="gd-mono mx-auto max-w-[1400px] px-4 text-[0.6875rem] tracking-[0.04em] text-grey-400 sm:px-6 lg:px-10">
-          © {new Date().getFullYear()} GEAR//DROP di {SELLER_NAME} · P.IVA {VAT_NUMBER} · Tutti i diritti riservati.
-        </p>
+        <div className="mx-auto flex max-w-[1400px] flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-10">
+          <p className="gd-mono text-[0.6875rem] tracking-[0.04em] text-grey-400">
+            © {new Date().getFullYear()} GEAR//DROP di {SELLER_NAME} · P.IVA {VAT_NUMBER} · Tutti i diritti riservati.
+          </p>
+          {/* Where a visitor changes their cookie choice, on every page, as the Garante asks. */}
+          {cookieSettings ? <CookieSettingsButton /> : null}
+        </div>
       </div>
     </footer>
   );
