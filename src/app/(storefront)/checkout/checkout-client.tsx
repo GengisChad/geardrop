@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { cutoutSrc } from "@/data/assets";
 import Link from "next/link";
@@ -18,6 +18,7 @@ import { cartDelivery, preorderNote } from "@/lib/labels";
 import { checkoutSchema, PICKUP_POINT_MESSAGE, pickupPointMissing, type CheckoutValues } from "@/lib/checkout-schema";
 import { INPOST_POINT_FINDER_URL, shippingMethodByCode } from "@/data/catalog";
 import { trackEvent } from "@/lib/funnel";
+import { gaItem, sendGaEvent } from "@/lib/analytics/google";
 import { submitOrder } from "./actions";
 import type { Money } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
@@ -56,6 +57,21 @@ export function CheckoutClient() {
   // Before the customer touches a radio the backend's own default is what the totals
   // were computed with, so that is what the form shows as selected.
   const activeShipping = selectedShipping || quote?.shippingCode || "";
+
+  // GA4 begin_checkout, once, as soon as the first priced cart is in. Nothing leaves the browser
+  // unless the visitor accepted statistics.
+  const checkoutStarted = useRef(false);
+  useEffect(() => {
+    if (checkoutStarted.current || !quote || quote.lines.length === 0) return;
+    checkoutStarted.current = true;
+    sendGaEvent("begin_checkout", {
+      currency: "EUR",
+      value: quote.totals.subtotal.amount / 100,
+      items: quote.lines.map((line) =>
+        gaItem({ slug: line.slug, name: line.name, priceCents: line.unitPrice.amount, quantity: line.quantity }),
+      ),
+    });
+  }, [quote]);
 
   if (placed) {
     return (

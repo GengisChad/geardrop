@@ -13,6 +13,7 @@ import {
   matchStripePrices,
   openQuoteForStripe,
   orderReference,
+  checkoutLines,
   retrieveCheckoutSession,
   stripeCheckoutEnabled,
   type StripePriceRow,
@@ -245,6 +246,8 @@ describe("stripe checkout result", () => {
       client_reference_id: "GD-ABCDEFGH",
       amount_total: 3040,
       customer_details: { email: "mario.rossi@email.it" },
+      total_details: { amount_shipping: 565 },
+      metadata: { lines: "cobalt-dragoon-2-60c x1, shadow-shinobi-1-80mn x2" },
     }));
 
     expect(await retrieveCheckoutSession("cs_live_a1b2c3d4e5f6", ENV, { get, post: vi.fn() } as unknown as StripeClient)).toEqual({
@@ -253,6 +256,19 @@ describe("stripe checkout result", () => {
       reference: "GD-ABCDEFGH",
       totalCents: 3040,
       email: "mario.rossi@email.it",
+      shippingCents: 565,
+      lines: [
+        { slug: "cobalt-dragoon-2-60c", quantity: 1 },
+        { slug: "shadow-shinobi-1-80mn", quantity: 2 },
+      ],
     });
+  });
+
+  it("reads back only well-formed lines, so a truncated list loses its tail and nothing else", () => {
+    expect(checkoutLines("cobalt-dragoon-2-60c x1, shadow-shinobi-1-80mn x2, porta-deck-gia…")).toEqual([
+      { slug: "cobalt-dragoon-2-60c", quantity: 1 },
+      { slug: "shadow-shinobi-1-80mn", quantity: 2 },
+    ]);
+    expect(checkoutLines(undefined)).toEqual([]);
   });
 });

@@ -221,6 +221,10 @@ export type CheckoutSessionSummary = {
   readonly reference: string | null;
   readonly totalCents: number | null;
   readonly email: string | null;
+  /** Shipping charged, for the purchase event; null when Stripe does not report it. */
+  readonly shippingCents: number | null;
+  /** What was bought, read back from the session's own metadata ("slug xN, …"). */
+  readonly lines: readonly { readonly slug: string; readonly quantity: number }[];
 };
 
 type StripeCheckoutSession = {
@@ -229,7 +233,18 @@ type StripeCheckoutSession = {
   readonly client_reference_id: string | null;
   readonly amount_total: number | null;
   readonly customer_details?: { readonly email?: string | null } | null;
+  readonly total_details?: { readonly amount_shipping?: number | null } | null;
+  readonly metadata?: { readonly lines?: string } | null;
 };
+
+/** The "slug xN, slug xN" list the session was created with; anything else is skipped. */
+export function checkoutLines(metadata: string | undefined): CheckoutSessionSummary["lines"] {
+  return (metadata ?? "")
+    .split(",")
+    .map((part) => /^([a-z0-9-]+) x(\d+)$/.exec(part.trim()))
+    .filter((match): match is RegExpExecArray => match !== null)
+    .map((match) => ({ slug: match[1]!, quantity: Number(match[2]) }));
+}
 
 /** Reads a session back for the result page. Malformed ids never reach Stripe. */
 export async function retrieveCheckoutSession(
@@ -252,6 +267,8 @@ export async function retrieveCheckoutSession(
       reference: session.client_reference_id,
       totalCents: session.amount_total,
       email: session.customer_details?.email ?? null,
+      shippingCents: session.total_details?.amount_shipping ?? null,
+      lines: checkoutLines(session.metadata?.lines),
     };
   } catch (error) {
     console.error("[stripe-checkout]", error instanceof Error ? error.message : error);

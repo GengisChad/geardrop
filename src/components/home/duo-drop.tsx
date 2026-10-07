@@ -121,7 +121,7 @@ export function DuoDrop({ bundle, packs }: { readonly bundle: Product; readonly 
             <div className={cn(isPurchasable(bundle.stock) && "gd-glow")}>
               <AddToCartButton
                 slug={bundle.slug}
-                name={bundle.name}
+                name={bundle.name} priceCents={bundle.price.amount}
                 stock={bundle.stock}
                 size="lg"
                 emphasis="primary"

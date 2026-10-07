@@ -145,7 +145,7 @@ export function HoloCard({ product, position, total, flipped, onFlip, auto = fal
                   <div className="min-w-0 flex-1">
                     <AddToCartButton
                       slug={product.slug}
-                      name={product.name}
+                      name={product.name} priceCents={product.price.amount}
                       stock={product.stock}
                       emphasis="primary"
                     />

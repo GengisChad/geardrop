@@ -136,7 +136,7 @@ export function Arena({ products }: { readonly products: readonly Product[] }) {
                 Lancia
               </Button>
               <div className="gd-glow">
-                <AddToCartButton slug={product.slug} name={product.name} stock={product.stock} emphasis="primary" />
+                <AddToCartButton slug={product.slug} name={product.name} priceCents={product.price.amount} stock={product.stock} emphasis="primary" />
               </div>
             </div>
           </div>

@@ -10,10 +10,13 @@ import { STOCK_CTA, isPurchasable } from "@/lib/labels";
 import type { StockStatus } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
 import { trackEvent } from "@/lib/funnel";
+import { gaItem, sendGaEvent } from "@/lib/analytics/google";
 
 type AddToCartButtonProps = {
   slug: string;
   name: string;
+  /** Unit price in cents, for the GA4 add_to_cart value. */
+  priceCents?: number;
   stock: StockStatus;
   quantity?: number;
   size?: ButtonSize;
@@ -34,6 +37,7 @@ const COMPACT = "gd-chamfer inline-flex size-11 shrink-0 items-center justify-ce
 export function AddToCartButton({
   slug,
   name,
+  priceCents,
   stock,
   quantity = 1,
   size = "md",
@@ -77,6 +81,10 @@ export function AddToCartButton({
   const onAdd = () => {
     add(slug, quantity);
     trackEvent("add_to_cart");
+    sendGaEvent("add_to_cart", {
+      ...(priceCents === undefined ? {} : { currency: "EUR", value: (priceCents * quantity) / 100 }),
+      items: [gaItem({ slug, name, priceCents: priceCents ?? null, quantity })],
+    });
     setJustAdded(true);
     clearTimeout(timer.current);
     timer.current = setTimeout(() => setJustAdded(false), 1400);
