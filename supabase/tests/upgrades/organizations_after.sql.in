@@ -1,7 +1,7 @@
 -- Run by scripts/test-supabase-upgrades.ts after organizations_before.sql.in has populated the
 -- pre-organization schema and every later migration has been applied on top of it.
 begin;
-select plan(14);
+select plan(16);
 
 select results_eq(
   $$select o.slug, count(f.feature)::integer, bool_and(not f.enabled)
@@ -118,10 +118,27 @@ select is(
   'the backfill touched no row: updated_at did not move'
 );
 
-select throws_ok(
+-- While the rollout is in flight the app built before organizations still inserts without a
+-- company, so 20261007201016_keep_the_running_app_working_during_rollout.sql puts such a row in
+-- the storefront company. The column itself stays NOT NULL without a default, which keeps the
+-- generated types requiring it from the new app; the contract migration makes this an error again.
+select lives_ok(
   $$insert into public.products (category_id, slug, sku, name, tagline, description, price_cents)
     select id, 'no-company', 'no-company', 'No company', 't', 'd', 100 from public.categories where slug = 'upgrade-category'$$,
-  '23502', null, 'after the upgrade a product must name its company'
+  'during the rollout a product inserted without a company is accepted'
+);
+select is(
+  (select organization.slug from public.products as product
+   join public.organizations as organization on organization.id = product.organization_id
+   where product.slug = 'no-company'),
+  'geardrop',
+  'and it lands in the storefront company'
+);
+select is(
+  (select is_nullable || coalesce(column_default, '') from information_schema.columns
+   where table_schema = 'public' and table_name = 'products' and column_name = 'organization_id'),
+  'NO',
+  'products.organization_id stays NOT NULL without a default'
 );
 
 select lives_ok(
