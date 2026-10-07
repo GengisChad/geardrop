@@ -98,6 +98,78 @@ function scan() {
   return { tables, rpcs, unscoped, allowed, queries, rpcCalls };
 }
 
+/**
+ * RPCs that also keep their pre-organization signature during the rollout (migration
+ * 20261007201016_keep_the_running_app_working_during_rollout.sql): in the generated types they
+ * are a union where one variant takes p_organization_id and another does not.
+ */
+function legacyOverloadRpcsFrom(source: string): ReadonlySet<string> {
+  const normalized = source.replace(/\r\n?/g, "\n");
+  const functions = normalized.slice(normalized.indexOf("Functions: {"));
+  const legacy = new Set<string>();
+  for (const match of functions.matchAll(/\n {6}([a-z_]+):\n((?: {8}\|[\s\S]*?))(?=\n {6}[a-z_]+:|\n {4}\})/g)) {
+    const variants = match[2]!.split(/\n {8}\| /);
+    const scoped = variants.filter((variant) => variant.includes("p_organization_id"));
+    if (scoped.length > 0 && scoped.length < variants.length) legacy.add(match[1]!);
+  }
+  return legacy;
+}
+
+/** Every call site of an overloaded RPC in the apps and the shared packages, without the company. */
+function legacyCalls(rpcs: ReadonlySet<string>) {
+  const unscoped: Finding[] = [];
+  let calls = 0;
+  const directories = ["src", "apps/management/src", "packages/data-contract/src", "packages/runtime-contract/src"];
+  for (const path of directories.flatMap(sourceFiles)) {
+    const file = path.replaceAll("\\", "/");
+    const source = read(path).replace(/\r\n?/g, "\n");
+    for (const match of source.matchAll(/\.rpc\(\s*"([a-z_]+)"/g)) {
+      if (!rpcs.has(match[1]!)) continue;
+      calls += 1;
+      if (!statementAfter(source, match.index).includes("p_organization_id")) {
+        unscoped.push({ file, line: source.slice(0, match.index).split("\n").length, target: `rpc ${match[1]}` });
+      }
+    }
+  }
+  return { unscoped, calls };
+}
+
+/** The transitional site_settings.singleton column is for the old app only. */
+function singletonReads(): readonly string[] {
+  const directories = ["src", "apps/management/src", "packages/data-contract/src", "packages/runtime-contract/src"];
+  return directories.flatMap(sourceFiles)
+    .filter((path) => /\bsingleton\b/.test(read(path)))
+    .map((path) => path.replaceAll("\\", "/"));
+}
+
+describe("the rollout's transitional database pieces stay unused by this app", () => {
+  const types = read("packages/data-contract/src/database.types.ts");
+  const legacy = legacyOverloadRpcsFrom(types);
+
+  it("finds the overloaded RPCs in the generated types, in either layout", () => {
+    expect([...legacyOverloadRpcsFrom(
+      "Functions: {\n      a_rpc:\n        | { Args: never; Returns: Json }\n        | { Args: { p_organization_id: number }; Returns: Json }\n      b_rpc: {\n        Args: { p_x: number }\n        Returns: Json\n      }\n    }",
+    )]).toEqual(["a_rpc"]);
+    expect([...legacy].sort()).toEqual([
+      "adjust_inventory", "change_staff_role", "get_admin_dashboard_metrics", "get_inventory_restock_demand",
+      "read_funnel_stats", "record_staff_invite", "save_bundle_with_items", "save_coupon_with_targets",
+      "save_footer_configuration", "save_homepage_section", "save_navigation_tree", "save_promotion_with_targets",
+      "set_manual_order_enablement_check", "set_order_acceptance", "set_staff_active",
+    ]);
+  });
+
+  it("always calls the scoped signature, never the old one the types now also allow", () => {
+    const result = legacyCalls(legacy);
+    // The scan must see the app's calls, or it proves nothing.
+    expect(result.calls).toBeGreaterThan(10);
+    expect(result.unscoped).toEqual([]);
+  });
+
+  it("never reads site_settings.singleton", () => {
+    expect(singletonReads()).toEqual([]);
+  });
+});
+
 describe("organization-scoped queries", () => {
   const result = scan();
 

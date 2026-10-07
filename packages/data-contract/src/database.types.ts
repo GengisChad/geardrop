@@ -3041,6 +3041,7 @@ export type Database = {
           max_quantity_per_line: number
           organization_id: number
           postal_code: string | null
+          singleton: boolean | null
           store_name: string
           street_address: string | null
           support_email: string | null
@@ -3070,6 +3071,7 @@ export type Database = {
           max_quantity_per_line?: number
           organization_id: number
           postal_code?: string | null
+          singleton?: boolean | null
           store_name?: string
           street_address?: string | null
           support_email?: string | null
@@ -3099,6 +3101,7 @@ export type Database = {
           max_quantity_per_line?: number
           organization_id?: number
           postal_code?: string | null
+          singleton?: boolean | null
           store_name?: string
           street_address?: string | null
           support_email?: string | null
@@ -3520,16 +3523,26 @@ export type Database = {
         Args: { p_note: string; p_order_id: number }
         Returns: number
       }
-      adjust_inventory: {
-        Args: {
-          p_delta: number
-          p_note?: string
-          p_organization_id: number
-          p_reason: Database["public"]["Enums"]["inventory_reason"]
-          p_sku: string
-        }
-        Returns: number
-      }
+      adjust_inventory:
+        | {
+            Args: {
+              p_delta: number
+              p_note?: string
+              p_organization_id: number
+              p_reason: Database["public"]["Enums"]["inventory_reason"]
+              p_sku: string
+            }
+            Returns: number
+          }
+        | {
+            Args: {
+              p_delta: number
+              p_note?: string
+              p_reason: Database["public"]["Enums"]["inventory_reason"]
+              p_sku: string
+            }
+            Returns: number
+          }
       begin_media_delete: {
         Args: { p_media_asset_id: number }
         Returns: string
@@ -3555,14 +3568,22 @@ export type Database = {
         Args: { p_note?: string; p_order_id: number }
         Returns: undefined
       }
-      change_staff_role: {
-        Args: {
-          p_organization_id: number
-          p_role: Database["public"]["Enums"]["staff_role"]
-          p_user_id: string
-        }
-        Returns: undefined
-      }
+      change_staff_role:
+        | {
+            Args: {
+              p_organization_id: number
+              p_role: Database["public"]["Enums"]["staff_role"]
+              p_user_id: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_role: Database["public"]["Enums"]["staff_role"]
+              p_user_id: string
+            }
+            Returns: undefined
+          }
       complete_media_delete: {
         Args: { p_media_asset_id: number }
         Returns: undefined
@@ -3632,10 +3653,9 @@ export type Database = {
         Args: { p_outcome: Json; p_run_id: number }
         Returns: undefined
       }
-      get_admin_dashboard_metrics: {
-        Args: { p_organization_id: number }
-        Returns: Json
-      }
+      get_admin_dashboard_metrics:
+        | { Args: never; Returns: Json }
+        | { Args: { p_organization_id: number }; Returns: Json }
       get_inventory_forecast: {
         Args: {
           p_lead_days?: number
@@ -3665,14 +3685,23 @@ export type Database = {
           unlimited_stock: boolean
         }[]
       }
-      get_inventory_restock_demand: {
-        Args: { p_organization_id: number; p_slugs: string[] }
-        Returns: {
-          pending_notices: number
-          preorder_demand: number
-          product_slug: string
-        }[]
-      }
+      get_inventory_restock_demand:
+        | {
+            Args: { p_organization_id: number; p_slugs: string[] }
+            Returns: {
+              pending_notices: number
+              preorder_demand: number
+              product_slug: string
+            }[]
+          }
+        | {
+            Args: { p_slugs: string[] }
+            Returns: {
+              pending_notices: number
+              preorder_demand: number
+              product_slug: string
+            }[]
+          }
       get_preorder_queue: {
         Args: { p_organization_id: number }
         Returns: {
@@ -3740,14 +3769,23 @@ export type Database = {
         Args: { p_section_id: number }
         Returns: undefined
       }
-      read_funnel_stats: {
-        Args: { p_days?: number; p_organization_id: number }
-        Returns: {
-          count: number
-          day: string
-          event: string
-        }[]
-      }
+      read_funnel_stats:
+        | {
+            Args: { p_days?: number }
+            Returns: {
+              count: number
+              day: string
+              event: string
+            }[]
+          }
+        | {
+            Args: { p_days?: number; p_organization_id: number }
+            Returns: {
+              count: number
+              day: string
+              event: string
+            }[]
+          }
       record_completed_media_storage_mutation: {
         Args: { p_object_path: string; p_operation: string }
         Returns: number
@@ -3769,16 +3807,26 @@ export type Database = {
         }
         Returns: undefined
       }
-      record_staff_invite: {
-        Args: {
-          p_display_name: string
-          p_email: string
-          p_organization_id: number
-          p_role: Database["public"]["Enums"]["staff_role"]
-          p_user_id: string
-        }
-        Returns: undefined
-      }
+      record_staff_invite:
+        | {
+            Args: {
+              p_display_name: string
+              p_email: string
+              p_organization_id: number
+              p_role: Database["public"]["Enums"]["staff_role"]
+              p_user_id: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_display_name: string
+              p_email: string
+              p_role: Database["public"]["Enums"]["staff_role"]
+              p_user_id: string
+            }
+            Returns: undefined
+          }
       record_staff_login: { Args: never; Returns: undefined }
       record_stripe_checkout_order: {
         Args: {
@@ -3831,71 +3879,110 @@ export type Database = {
         Returns: number
       }
       revoke_staff_access: { Args: { p_user_id: string }; Returns: undefined }
-      save_bundle_with_items: {
-        Args: { p_bundle: Json; p_items: Json; p_organization_id: number }
-        Returns: number
-      }
-      save_coupon_with_targets: {
-        Args: {
-          p_bundle_ids: number[]
-          p_category_ids: number[]
-          p_coupon: Json
-          p_organization_id: number
-          p_product_ids: number[]
-        }
-        Returns: number
-      }
-      save_footer_configuration: {
-        Args: { p_configuration: Json; p_organization_id: number }
-        Returns: undefined
-      }
-      save_homepage_section: {
-        Args: {
-          p_organization_id: number
-          p_section: Json
-          p_target_ids: number[]
-        }
-        Returns: number
-      }
-      save_navigation_tree: {
-        Args: { p_organization_id: number; p_tree: Json }
-        Returns: number
-      }
+      save_bundle_with_items:
+        | { Args: { p_bundle: Json; p_items: Json }; Returns: number }
+        | {
+            Args: { p_bundle: Json; p_items: Json; p_organization_id: number }
+            Returns: number
+          }
+      save_coupon_with_targets:
+        | {
+            Args: {
+              p_bundle_ids: number[]
+              p_category_ids: number[]
+              p_coupon: Json
+              p_product_ids: number[]
+            }
+            Returns: number
+          }
+        | {
+            Args: {
+              p_bundle_ids: number[]
+              p_category_ids: number[]
+              p_coupon: Json
+              p_organization_id: number
+              p_product_ids: number[]
+            }
+            Returns: number
+          }
+      save_footer_configuration:
+        | { Args: { p_configuration: Json }; Returns: undefined }
+        | {
+            Args: { p_configuration: Json; p_organization_id: number }
+            Returns: undefined
+          }
+      save_homepage_section:
+        | {
+            Args: {
+              p_organization_id: number
+              p_section: Json
+              p_target_ids: number[]
+            }
+            Returns: number
+          }
+        | { Args: { p_section: Json; p_target_ids: number[] }; Returns: number }
+      save_navigation_tree:
+        | { Args: { p_organization_id: number; p_tree: Json }; Returns: number }
+        | { Args: { p_tree: Json }; Returns: number }
       save_pricing_policy: {
         Args: { p_organization_id: number; p_policy: Json }
         Returns: undefined
       }
-      save_promotion_with_targets: {
-        Args: {
-          p_bundle_ids: number[]
-          p_category_ids: number[]
-          p_organization_id: number
-          p_product_ids: number[]
-          p_promotion: Json
-        }
-        Returns: number
-      }
+      save_promotion_with_targets:
+        | {
+            Args: {
+              p_bundle_ids: number[]
+              p_category_ids: number[]
+              p_organization_id: number
+              p_product_ids: number[]
+              p_promotion: Json
+            }
+            Returns: number
+          }
+        | {
+            Args: {
+              p_bundle_ids: number[]
+              p_category_ids: number[]
+              p_product_ids: number[]
+              p_promotion: Json
+            }
+            Returns: number
+          }
       save_supplier_receipt: {
         Args: { p_lines: Json; p_organization_id: number; p_receipt: Json }
         Returns: number
       }
-      set_manual_order_enablement_check: {
-        Args: {
-          p_evidence: string
-          p_key: string
-          p_organization_id: number
-          p_status: Database["public"]["Enums"]["enablement_check_status"]
-        }
-        Returns: undefined
-      }
-      set_order_acceptance: {
-        Args: {
-          p_confirmation: string
-          p_enabled: boolean
-          p_organization_id: number
-        }
-        Returns: undefined
-      }
+      set_manual_order_enablement_check:
+        | {
+            Args: {
+              p_evidence: string
+              p_key: string
+              p_status: Database["public"]["Enums"]["enablement_check_status"]
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_evidence: string
+              p_key: string
+              p_organization_id: number
+              p_status: Database["public"]["Enums"]["enablement_check_status"]
+            }
+            Returns: undefined
+          }
+      set_order_acceptance:
+        | {
+            Args: { p_confirmation: string; p_enabled: boolean }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_confirmation: string
+              p_enabled: boolean
+              p_organization_id: number
+            }
+            Returns: undefined
+          }
       set_order_costs: {
         Args: { p_costs: Json; p_order_id: number }
         Returns: undefined
@@ -3931,14 +4018,16 @@ export type Database = {
         }
         Returns: number
       }
-      set_staff_active: {
-        Args: {
-          p_active: boolean
-          p_organization_id: number
-          p_user_id: string
-        }
-        Returns: undefined
-      }
+      set_staff_active:
+        | {
+            Args: {
+              p_active: boolean
+              p_organization_id: number
+              p_user_id: string
+            }
+            Returns: undefined
+          }
+        | { Args: { p_active: boolean; p_user_id: string }; Returns: undefined }
       ship_order: {
         Args: {
           p_carrier: string

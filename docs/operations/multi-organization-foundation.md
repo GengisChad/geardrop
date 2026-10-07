@@ -140,6 +140,44 @@ Il negozio online arriva dopo, come rollout distinto: un deployment con
 - L'anteprima homepage admin usa il catalogo pubblico: disponibile solo per l'azienda del negozio.
 - La domanda di restock dei bundle usa il catalogo statico di Gear Drop (`src/data/catalog.ts`).
 
+## Rollout in produzione: prima il database, poi l'app
+
+Migrazione del database e deploy Vercel non avvengono nello stesso istante. Per qualche minuto una
+delle due app gira sul database "sbagliato". Verificato il 7 ottobre 2026 su tutto il codice di
+`main` e di questa branch:
+
+| Finestra | Cosa si rompe senza precauzioni |
+| --- | --- |
+| **App nuova su database vecchio** | Tutto il negozio: `storefrontOrganizationId()` legge `public.organizations`, che non esiste ancora, e si chiude. Catalogo in 500, checkout fermo, webhook Stripe che non registra gli ordini pagati. Pannello senza accesso (`organization_members` assente). |
+| **App vecchia su database nuovo** | Negozio e `/admin` filtrano `site_settings` su `singleton`, colonna eliminata: 500 su ogni pagina. 15 RPC del pannello chiamate con la firma vecchia (errore `42883`). Inserimenti senza `organization_id` (prodotti, categorie, pagine, media, spedizioni, profilo cliente, meta). |
+
+La seconda finestra è resa sicura da `20261007201016_keep_the_running_app_working_during_rollout.sql`
+(fase *expand*): ripristina `site_settings.singleton` sulla riga dell'azienda del negozio, riempie
+`organization_id` quando manca (trigger `_fill_storefront_organization` sulle 20 tabelle che l'app
+vecchia conosce) e ricrea le 15 firme vecchie come inoltri verso quelle con l'azienda. Tutto punta
+all'unica azienda con negozio pubblico e passa dai controlli di ruolo di quell'azienda: chi lavora
+solo per Oryvenne non ottiene nulla su Gear Drop. Prova: pgTAP `050_rollout_compatibility`. L'app
+nuova non usa niente di tutto questo (contract test `scoped-queries-contract`).
+
+Ordine obbligatorio, con approvazione esplicita per ogni passo remoto:
+
+1. **Database.** `supabase db push` sul progetto di produzione, con le migrazioni della branch.
+   L'app in produzione continua a funzionare.
+2. **Smoke test dell'app vecchia**: home, una pagina prodotto, carrello e quote, `/admin` con
+   dashboard e impostazioni.
+3. **App.** Merge della PR su `main`: Vercel pubblica l'app nuova. Mai prima del passo 1.
+4. **Smoke test dell'app nuova** (`geardrop-smoke-test.md`).
+5. **Contrazione**, solo quando nessun deployment vecchio può più tornare in servizio (anche un
+   *instant rollback* Vercel verso un build precedente ha bisogno della fase expand): una migrazione
+   nuova elimina le 15 firme vecchie, i 20 trigger e `private.fill_storefront_organization()`,
+   `site_settings.singleton` con trigger, indice e `private.mark_storefront_site_settings()`.
+   Poi rigenerare i tipi e aggiornare il contract test, che elenca le firme rimaste.
+
+Una migrazione del negozio aggiunta a `main` dopo questa branch (come
+`20261007200000_takara_consignment_products.sql`) va **prima** delle migrazioni delle aziende:
+in produzione è già applicata quando arrivano queste. Se ne arriva un'altra prima del merge, le
+migrazioni delle aziende si rinumerano di nuovo dopo di essa.
+
 ## Verifica
 
 ```powershell
@@ -152,6 +190,7 @@ pnpm test:e2e:admin
 pnpm exec playwright test --config playwright.storefront.config.ts
 ```
 
-Guardie specifiche: pgTAP 041–044 (schema, matrice RLS, confini RPC, registro tier), upgrade
+Guardie specifiche: pgTAP 041–044 (schema, matrice RLS, confini RPC, registro tier), pgTAP 050
+(compatibilità con l'app vecchia durante il rollout), upgrade
 `organizations_before/after.sql.in` su database popolato, unit `org-context`,
 `organization-switcher`, `scoped-queries-contract`, e2e `organization-isolation.spec.ts`.

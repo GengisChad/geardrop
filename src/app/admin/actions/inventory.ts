@@ -62,14 +62,13 @@ export async function adjustInventoryAction(
     const client = await supabaseServer.createSupabaseServerClient();
     const principal = await verifiedStaff(client, ["owner", "admin"]);
     const input = parsed.data;
-    const args = {
+    const { data, error } = await client.rpc("adjust_inventory", {
       p_organization_id: principal.organization.id,
       p_sku: input.sku,
       p_delta: input.delta,
       p_reason: input.reason,
       ...(input.note === null ? {} : { p_note: input.note }),
-    };
-    const { data, error } = await client.rpc("adjust_inventory", args);
+    });
     if (error) return safeInventoryFailure(error);
 
     revalidateTag("inventory", "max");
