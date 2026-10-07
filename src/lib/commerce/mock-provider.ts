@@ -32,8 +32,8 @@ import type {
 const DEFAULT_PER_PAGE = 24;
 
 /**
- * The delivery options the catalogue sells (src/data/catalog.ts SHIPPING_METHODS): Poste, InPost
- * to a point or Locker, InPost to the door. Real shipping options come from the backend when there
+ * The delivery options the catalogue sells (src/data/catalog.ts SHIPPING_METHODS): an InPost point
+ * or Locker, Poste Italiane to the door. Real shipping options come from the backend when there
  * is one; hardcoding them is allowed here and nowhere else.
  */
 const CATALOGUE_SHIPPING: readonly ShippingOption[] = SHIPPING_METHODS.map((method) => ({
@@ -272,7 +272,7 @@ export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CA
       const subtotal = sellable.reduce((sum, line) => sum + line.lineTotal.amount, 0);
       const isEmpty = subtotal === 0;
       const qualifies = subtotal >= FREE_SHIPPING_THRESHOLD;
-      // The buyer's choice when it is one the shop sells, otherwise the cheapest (Poste).
+      // The buyer's choice when it is one the shop sells, otherwise the cheapest (InPost to a point).
       const method = shippingMethodByCode(request.shippingCode) ?? DEFAULT_SHIPPING;
       const shipping = isEmpty || qualifies ? 0 : method.priceCents;
 

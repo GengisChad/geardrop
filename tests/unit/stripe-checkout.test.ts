@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { PRODUCTS } from "@/data/catalog";
+import { PRODUCTS, SHIPPING_FLAT_RATE, SHIPPING_METHODS } from "@/data/catalog";
 import type { PlaceOrderInput } from "@/lib/checkout-schema";
 import { createMockProvider } from "@/lib/commerce/mock-provider";
 import type { CartQuote, CartQuoteRequest } from "@/lib/commerce/types";
@@ -47,8 +47,11 @@ const catalogPrices: StripePriceRow[] = PRODUCTS.map((product) => ({
   active: true,
 }));
 
-async function quoteFor(lines: readonly { slug: string; quantity: number }[]): Promise<CartQuote> {
-  return openQuoteForStripe(await createMockProvider().quoteCart({ lines } as CartQuoteRequest));
+async function quoteFor(
+  lines: readonly { slug: string; quantity: number }[],
+  shippingCode?: string,
+): Promise<CartQuote> {
+  return openQuoteForStripe(await createMockProvider().quoteCart({ lines, shippingCode } as CartQuoteRequest));
 }
 
 function fakeStripe(prices: readonly StripePriceRow[]) {
@@ -137,9 +140,9 @@ describe("stripe checkout session", () => {
       cancel_url: "https://geardropshop.it/checkout",
       "line_items[0][price]": "price_hurricane-enlil-is-7-55t",
       "line_items[0][quantity]": 2,
-      "shipping_options[0][shipping_rate_data][display_name]": "Poste Italiane · consegna a casa",
-      "metadata[shipping_method]": "standard",
-      "shipping_options[0][shipping_rate_data][fixed_amount][amount]": 490,
+      "shipping_options[0][shipping_rate_data][display_name]": SHIPPING_METHODS[0]!.label,
+      "metadata[shipping_method]": SHIPPING_METHODS[0]!.code,
+      "shipping_options[0][shipping_rate_data][fixed_amount][amount]": SHIPPING_FLAT_RATE,
       "payment_intent_data[shipping][name]": "Mario Rossi",
       "payment_intent_data[shipping][address][postal_code]": "20121",
       "payment_intent_data[shipping][address][country]": "IT",
@@ -181,7 +184,7 @@ describe("stripe checkout session", () => {
     const fields = buildCheckoutSessionFields({ quote, order, origin: ORIGIN }, matchStripePrices(quote, catalogPrices)!);
 
     expect(fields["shipping_options[0][shipping_rate_data][fixed_amount][amount]"]).toBe(0);
-    expect(fields["shipping_options[0][shipping_rate_data][display_name]"]).toBe("Spedizione gratuita · Poste Italiane · consegna a casa");
+    expect(fields["shipping_options[0][shipping_rate_data][display_name]"]).toBe(`Spedizione gratuita · ${SHIPPING_METHODS[0]!.label}`);
     expect(fields["line_items[1][price]"]).toBe("price_cobalt-dragoon-2-60c");
   });
 

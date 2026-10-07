@@ -44,13 +44,21 @@ export function FreeShippingMeter({ totals, threshold }: { totals: CartTotals; t
 export function CartTotalsPanel({
   totals,
   deliveryHint = STANDARD_DELIVERY,
+  carrierChosenLater = false,
   className,
 }: {
   totals: CartTotals;
   /** Delivery time shown under the shipping row. Defaults to the in-stock estimate. */
   deliveryHint?: string;
+  /**
+   * The cart prices the cheapest delivery (an InPost point or Locker); the buyer picks it or Poste
+   * to the door at checkout. A bare price there read as what any choice would cost, so the cart
+   * says "da" and where the choice happens.
+   */
+  carrierChosenLater?: boolean;
   className?: string;
 }) {
+  const startingPrice = carrierChosenLater && totals.shipping.amount > 0;
   return (
     <dl className={cn("flex flex-col gap-3", className)}>
       <div className="flex justify-between text-small">
@@ -74,13 +82,18 @@ export function CartTotalsPanel({
             className={cn("tabular font-semibold", totals.shipping.amount === 0 ? "text-available" : "text-graphite")}
             data-testid="cart-shipping"
           >
-            {formatShipping(totals.shipping)}
+            {startingPrice ? `da ${formatShipping(totals.shipping)}` : formatShipping(totals.shipping)}
           </dd>
         </div>
+        {startingPrice ? (
+          <p className="text-[0.6875rem] text-grey-600" data-testid="cart-carrier-note">
+            Al checkout scegli il punto di ritiro o Locker InPost oppure la consegna a casa con Poste Italiane: il totale si aggiorna.
+          </p>
+        ) : null}
         <p className="text-[0.6875rem] text-grey-600">{deliveryHint}</p>
       </div>
       <div className="flex items-baseline justify-between border-t border-grey-200 pt-3">
-        <dt className="gd-display text-small font-bold tracking-wider text-graphite">Totale</dt>
+        <dt className="gd-display text-small font-bold tracking-wider text-graphite">{startingPrice ? "Totale da" : "Totale"}</dt>
         <dd className="tabular gd-display text-h3 font-extrabold text-graphite" data-testid="cart-total">
           {formatPrice(totals.total)}
         </dd>
