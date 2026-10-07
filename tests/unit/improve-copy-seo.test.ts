@@ -149,19 +149,22 @@ describe("SEO JSON-LD brand", () => {
 
   it("product JSON-LD includes shippingDetails deliveryTime", () => {
     const data = productJsonLd(glory);
-    expect(data.offers.shippingDetails).toMatchObject({
-      deliveryTime: {
-        "@type": "ShippingDeliveryTime",
-        handlingTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 1, unitCode: "DAY" },
-        transitTime: { "@type": "QuantitativeValue", minValue: 1, maxValue: 4, unitCode: "DAY" },
-      },
-    });
+    for (const details of data.offers.shippingDetails) {
+      expect(details).toMatchObject({
+        deliveryTime: {
+          "@type": "ShippingDeliveryTime",
+          handlingTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 1, unitCode: "DAY" },
+          transitTime: { "@type": "QuantitativeValue", minValue: 1, maxValue: 4, unitCode: "DAY" },
+        },
+      });
+    }
   });
 
   it("deliveryTime business days cover Monday through Friday", () => {
     const data = productJsonLd(glory);
-    const businessDays = (data.offers.shippingDetails as { deliveryTime: { businessDays: { dayOfWeek: string[] } } }).deliveryTime.businessDays;
-    expect(businessDays.dayOfWeek).toEqual(expect.arrayContaining(["Monday", "Friday"]));
+    for (const details of data.offers.shippingDetails) {
+      expect(details.deliveryTime.businessDays.dayOfWeek).toEqual(expect.arrayContaining(["Monday", "Friday"]));
+    }
   });
 });
 

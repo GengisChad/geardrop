@@ -1,4 +1,4 @@
-import { BUNDLES, FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_FLAT_RATE } from "@/data/catalog";
+import { BUNDLES, FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_METHODS } from "@/data/catalog";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import type { Product } from "@/lib/commerce/types";
 import { CATEGORY_LABEL } from "@/lib/labels";
@@ -66,10 +66,14 @@ function offer(product: Product): string {
     rows.push(`<g:color>${escape(product.variant.label)}</g:color>`);
   }
 
-  const shipping = product.price.amount >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FLAT_RATE;
-  rows.push(
-    `<g:shipping><g:country>IT</g:country><g:service>Standard</g:service><g:price>${euro(shipping)}</g:price></g:shipping>`,
-  );
+  // One row per carrier the checkout offers, at the price the buyer pays for it: Merchant Center
+  // requires the declared shipping to match the checkout, and shows the cheapest.
+  const free = product.price.amount >= FREE_SHIPPING_THRESHOLD;
+  for (const method of SHIPPING_METHODS) {
+    rows.push(
+      `<g:shipping><g:country>IT</g:country><g:service>${escape(method.label)}</g:service><g:price>${euro(free ? 0 : method.priceCents)}</g:price></g:shipping>`,
+    );
+  }
 
   return `<item>${rows.join("")}</item>`;
 }

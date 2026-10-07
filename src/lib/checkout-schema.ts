@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { shippingMethodByCode } from "@/data/catalog";
 import { MAX_QUANTITY_PER_LINE } from "@/lib/commerce/limits";
 
 /** Italian postal codes are exactly five digits. */
@@ -42,7 +43,23 @@ export const checkoutSchema = z.object({
     .transform((value) => value.toUpperCase()),
   phone,
   shippingMethod: shippingCode,
+  /** The InPost point or Locker the parcel goes to, when the buyer picked one. */
+  pickupPoint: z.string().trim().max(160, "Massimo 160 caratteri.").optional(),
   notes: z.string().trim().max(300, "Massimo 300 caratteri.").optional(),
+});
+
+export const PICKUP_POINT_MESSAGE = "Scrivi il punto InPost o il Locker dove ritirare il pacco.";
+
+/** A pickup method needs the point it delivers to: three characters at least (a Locker code). */
+export function pickupPointMissing(shippingMethod: string | undefined, pickupPoint: string | undefined): boolean {
+  return Boolean(shippingMethodByCode(shippingMethod)?.pickupPoint) && (pickupPoint ?? "").trim().length < 3;
+}
+
+/** The whole form, with the rule that ties two of its fields together. */
+export const checkoutFormSchema = checkoutSchema.superRefine((values, context) => {
+  if (pickupPointMissing(values.shippingMethod, values.pickupPoint)) {
+    context.addIssue({ code: "custom", path: ["pickupPoint"], message: PICKUP_POINT_MESSAGE });
+  }
 });
 
 export type CheckoutValues = z.infer<typeof checkoutSchema>;
@@ -55,7 +72,7 @@ export type CheckoutValues = z.infer<typeof checkoutSchema>;
  * and the buyer is read from the session, so nothing here can move either.
  */
 export const placeOrderSchema = z.object({
-  contact: checkoutSchema,
+  contact: checkoutFormSchema,
   lines: z
     .array(
       z.object({
