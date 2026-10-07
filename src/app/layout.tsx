@@ -47,6 +47,8 @@ export const metadata: Metadata = {
   },
   twitter: { card: "summary_large_image", title: DEFAULT_TITLE, description: DEFAULT_DESCRIPTION },
   robots: { index: true, follow: true },
+  // Merchant Center's claim on geardropshop.it. Public by design; removing it un-verifies the store.
+  verification: { google: "JNUM4raMzlZSW65wFPpEOJ7S9IcM6RffInMwIanf-W4" },
 };
 
 export const viewport: Viewport = {
