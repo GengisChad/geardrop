@@ -1,6 +1,6 @@
 import { writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { BUNDLE, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_FLAT_RATE } from "../src/data/catalog";
+import { BUNDLE, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS, shippingMethodByCode } from "../src/data/catalog";
 import {
   CONTENT_PAGE_SEEDS,
   FOOTER_COLUMN_SEEDS,
@@ -455,7 +455,7 @@ where singleton
   and default_seo_description is null;
 
 insert into public.shipping_methods (code, name, price_cents, free_from_cents, active, sort_order)
-values ('standard', 'Spedizione standard', ${SHIPPING_FLAT_RATE}, ${FREE_SHIPPING_THRESHOLD}, false, 0)
+values ('standard', 'Spedizione standard', ${shippingMethodByCode("standard")!.priceCents}, ${FREE_SHIPPING_THRESHOLD}, false, 0)
 on conflict (code) do update set
   name = excluded.name,
   price_cents = excluded.price_cents,

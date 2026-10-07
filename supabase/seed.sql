@@ -766,7 +766,7 @@ Gli accessori compatibili, come i porta deck, non sono prodotti da Hasbro: la lo
 
 ## Quanto costa la spedizione?
 
-Scegli tu il corriere al checkout: Poste Italiane a casa 4,90 €, InPost in un punto di ritiro o Locker 5,65 €, InPost a casa 6,65 €.
+Al checkout scegli come ricevere il pacco: in un punto di ritiro o Locker InPost 5,65 €, a casa con Poste Italiane 6,65 €.
 
 La spedizione è gratuita, con qualsiasi corriere, per ordini da 100 €.
 
@@ -801,7 +801,7 @@ Spediamo solo in Italia.
 
 Spedizione gratuita per ordini superiori a 100€.
 
-Sotto la soglia scegli il corriere: Poste Italiane a casa 4,90 €, InPost in un punto di ritiro o Locker 5,65 €, InPost a casa 6,65 €. Il costo è mostrato prima del pagamento.
+Sotto la soglia scegli come ricevere il pacco: in un punto di ritiro o Locker InPost 5,65 €, a casa con Poste Italiane 6,65 €. Il costo è mostrato prima del pagamento.
 
 ## Tracciamento
 
@@ -951,7 +951,7 @@ where singleton
   and default_seo_description is null;
 
 insert into public.shipping_methods (code, name, price_cents, free_from_cents, active, sort_order)
-values ('standard', 'Spedizione standard', 490, 10000, false, 0)
+values ('standard', 'Spedizione standard', 665, 10000, false, 0)
 on conflict (code) do update set
   name = excluded.name,
   price_cents = excluded.price_cents,
