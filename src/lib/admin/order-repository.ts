@@ -79,7 +79,7 @@ export async function loadAdminOrderDetail(client: SupabaseClient<Database>, org
 }
 
 export async function listAdminOrdersForCsv(client: SupabaseClient<Database>, organizationId: number, query: AdminOrderQuery) {
-  let builder = client.from("orders").select("order_number,email,created_at,status,payment_status,shipping_method_code,coupon_code,subtotal_cents,discount_cents,shipping_cents,total_cents,currency,shipping_address_snapshot").eq("organization_id", organizationId);
+  let builder = client.from("orders").select("id,order_number,email,created_at,status,payment_status,shipping_method_code,coupon_code,subtotal_cents,discount_cents,shipping_cents,total_cents,currency,shipping_address_snapshot").eq("organization_id", organizationId);
   if (query.q) { const pattern = `%${escapePattern(query.q)}%`; builder = builder.or(`order_number.ilike.${pattern},email.ilike.${pattern}`); }
   if (query.from) builder = builder.gte("created_at", `${query.from}T00:00:00.000Z`);
   if (query.to) builder = builder.lt("created_at", exclusiveEnd(query.to));
@@ -90,4 +90,35 @@ export async function listAdminOrdersForCsv(client: SupabaseClient<Database>, or
   const result = await builder.order("created_at", { ascending: false }).order("id", { ascending: false }).limit(5000);
   if (result.error) throw new Error("Impossibile esportare gli ordini");
   return result.data ?? [];
+}
+
+/** Fetches items for a set of order IDs (used by the CSV export to compute partner_owed_cents). */
+export async function listOrderItemsByOrderIds(client: SupabaseClient<Database>, organizationId: number, orderIds: readonly number[]) {
+  if (orderIds.length === 0) return [];
+  const result = await client.from("order_items").select("order_id,sku_snapshot,product_name_snapshot,quantity,unit_price_cents").eq("organization_id", organizationId).in("order_id", [...orderIds]);
+  if (result.error) throw new Error("Impossibile caricare le righe degli ordini");
+  return result.data ?? [];
+}
+
+/** Paid orders that contain at least one consignment line, newest first, with items. */
+export async function listPartnerOrders(client: SupabaseClient<Database>, organizationId: number, consignmentSlugs: readonly string[]) {
+  if (consignmentSlugs.length === 0) return [];
+  // Fetch items whose SKU is one of the partner's slugs.
+  const itemsResult = await client.from("order_items").select("order_id,sku_snapshot,product_name_snapshot,quantity,unit_price_cents").eq("organization_id", organizationId).in("sku_snapshot", [...consignmentSlugs]);
+  if (itemsResult.error) throw new Error("Impossibile caricare le righe partner");
+  const items = itemsResult.data ?? [];
+  if (items.length === 0) return [];
+  const orderIds = [...new Set(items.map((item) => item.order_id))];
+  // Fetch the orders themselves, paid only.
+  const ordersResult = await client.from("orders").select("id,order_number,created_at,payment_status").eq("organization_id", organizationId).in("id", orderIds).eq("payment_status", "paid").order("created_at", { ascending: false }).order("id", { ascending: false });
+  if (ordersResult.error) throw new Error("Impossibile caricare gli ordini partner");
+  const orders = ordersResult.data ?? [];
+  // Group items by order_id.
+  const itemsByOrder = new Map<number, typeof items>();
+  for (const item of items) {
+    const list = itemsByOrder.get(item.order_id) ?? [];
+    list.push(item);
+    itemsByOrder.set(item.order_id, list);
+  }
+  return orders.map((order) => ({ order, items: itemsByOrder.get(order.id) ?? [] }));
 }

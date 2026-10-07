@@ -259,7 +259,7 @@ export const LEGAL_PAGES = {
           "Ordine: nome, cognome, email, telefono, indirizzo di spedizione, note per il corriere, prodotti e importi.",
           "Pagamento: esito, metodo usato e riferimento della transazione. I dati completi della carta sono trattati esclusivamente da Stripe.",
           "Assistenza: i messaggi e i dati che ci invii. Account: se ne crei uno, l'email e le credenziali di accesso.",
-          "Navigazione: dati tecnici necessari al funzionamento del sito e statistiche aggregate sulle pagine visitate (anonime con Vercel Web Analytics; con Google Analytics solo se lo accetti). Carrello e preferiti restano salvati nel tuo browser.",
+          "Navigazione: dati tecnici necessari al funzionamento del sito e statistiche aggregate sulle pagine visitate (anonime con Vercel Web Analytics; con Google Analytics solo se lo accetti) e, se accetti il marketing, le visite e gli acquisti arrivati dalle nostre pubblicità su Google. Carrello e preferiti restano salvati nel tuo browser.",
         ],
       },
       {
@@ -269,8 +269,8 @@ export const LEGAL_PAGES = {
           "Per adempiere agli obblighi fiscali e contabili, sulla base di un obbligo di legge (art. 6.1.c GDPR).",
           "Per rispondere alle richieste di assistenza, sulla base del contratto o di misure precontrattuali (art. 6.1.b GDPR).",
           "Per la sicurezza del sito, la prevenzione delle frodi e le statistiche anonime di visita, sulla base del legittimo interesse (art. 6.1.f GDPR).",
-          "Per misurare le visite con Google Analytics, solo con il tuo consenso (art. 6.1.a GDPR), che puoi revocare in qualsiasi momento da «Gestisci cookie» in fondo a ogni pagina.",
-          "Non usiamo i dati per profilazione né per inviarti pubblicità. Fornire i dati dell'ordine è necessario per evaderlo.",
+          "Per misurare le visite con Google Analytics e, se accetti il marketing, per misurare e mostrare le nostre pubblicità con Google Ads, solo con il tuo consenso (art. 6.1.a GDPR), che puoi revocare in qualsiasi momento da «Gestisci cookie» in fondo a ogni pagina.",
+          "Senza il tuo consenso al marketing non usiamo i tuoi dati per pubblicità, e non vendiamo dati a nessuno. Fornire i dati dell'ordine è necessario per evaderlo.",
         ],
       },
       {
@@ -287,7 +287,7 @@ export const LEGAL_PAGES = {
           "Vercel Inc. (Stati Uniti), per l'hosting del sito e le statistiche aggregate e anonime di visita.",
           "Supabase, Inc. (Stati Uniti), per la gestione degli ordini, degli account, delle giacenze e delle richieste di notifica disponibilità.",
           "Resend Inc. (Stati Uniti), per l'invio delle email relative ad ordini, spedizioni e notifiche di disponibilità.",
-          "Google Ireland Limited (Irlanda), per le statistiche di Google Analytics, solo se le accetti.",
+          "Google Ireland Limited (Irlanda), per le statistiche di Google Analytics e, se accetti il marketing, per le pubblicità di Google Ads, solo con il tuo consenso.",
           "L'email lasciata per ricevere una notifica di disponibilità è usata esclusivamente per quella notifica e viene eliminata dopo l'invio o entro sei mesi dalla registrazione. Il tracciamento di un ordine tramite numero d'ordine ed email mostra unicamente lo stato dell'ordine e il numero di spedizione.",
           "Corrieri, per la consegna, e consulenti fiscali, per gli adempimenti contabili.",
           "I fornitori che trattano dati per nostro conto agiscono come responsabili del trattamento ai sensi dell'art. 28 GDPR.",
@@ -303,10 +303,11 @@ export const LEGAL_PAGES = {
         heading: "Cookie",
         body: [
           "Cookie tecnici: carrello, preferiti e sessione di accesso. Sono necessari al funzionamento del sito e non richiedono il consenso.",
-          "Cookie di statistica: Google Analytics 4 (_ga e _ga_<ID>, durata massima 2 anni), solo se premi «Accetta» nel banner. Ci dicono in forma aggregata quante persone visitano il sito, da dove arrivano e quali pagine guardano. Google Signals e la personalizzazione degli annunci sono disattivati, Google Analytics 4 non memorizza l'indirizzo IP e le pagine dell'account e di accesso non vengono misurate.",
-          "Se rifiuti o chiudi il banner con la X, Google Analytics non viene caricato e non te lo richiediamo per sei mesi. Puoi cambiare scelta quando vuoi da «Gestisci cookie» in fondo a ogni pagina: se revochi il consenso, i cookie di Google Analytics vengono cancellati.",
+          "Cookie di statistica: Google Analytics 4 (_ga e _ga_<ID>, durata massima 2 anni; _gid, durata 24 ore), solo se accetti le «Statistiche» (o «Accetta tutto») nel banner. Ci dicono in forma aggregata quante persone visitano il sito, da dove arrivano, quali pagine guardano e quanti ordini vengono completati. Google Signals è disattivato, Google Analytics 4 non memorizza l'indirizzo IP e le pagine dell'account e di accesso non vengono misurate.",
+          "Cookie di marketing: Google Ads (sul nostro sito _gcl_au e, se arrivi da un nostro annuncio, _gcl_aw e _gcl_dc, durata 90 giorni; i cookie pubblicitari di Google sui suoi domini, fino a 13 mesi), solo se accetti il «Marketing» (o «Accetta tutto»). Servono a contare le vendite arrivate dalle nostre pubblicità su Google e a mostrare i nostri annunci a chi ha già visitato il sito. Funzionano solo insieme alle statistiche.",
+          "Se rifiuti o chiudi il banner con la X, Google Analytics e Google Ads non vengono caricati e non te lo richiediamo per sei mesi. Con «Personalizza» scegli le singole voci: la prima volta nessuna è selezionata, riaprendo il banner da «Gestisci cookie» ritrovi le scelte che hai fatto. Puoi cambiare scelta quando vuoi da «Gestisci cookie» in fondo a ogni pagina: se revochi il consenso, i cookie di Google sul nostro sito vengono cancellati.",
           "Le statistiche di Vercel Web Analytics non usano cookie e non identificano i visitatori.",
-          "La pagina di pagamento è gestita da Stripe sul proprio dominio, con i propri strumenti tecnici e antifrode. Non usiamo cookie di profilazione o pubblicitari.",
+          "La pagina di pagamento è gestita da Stripe sul proprio dominio, con i propri strumenti tecnici e antifrode. Non usiamo altri cookie pubblicitari oltre a quelli di Google Ads descritti sopra, e solo con il tuo consenso.",
         ],
       },
       {

@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     // The shelf just changed: every page that shows availability reads it again.
     if (result.order.created) revalidateTag(STOREFRONT_CACHE_TAGS.products, { expire: 0 });
     console.info(
-      `[stripe-webhook] ${event.id} order ${result.order.orderNumber} ${result.order.created ? "created" : "already recorded"}, owner email ${result.ownerEmail}`,
+      `[stripe-webhook] ${event.id} order ${result.order.orderNumber} ${result.order.created ? "created" : "already recorded"}, owner email ${result.ownerEmail}${result.partnerEmail === "not_applicable" ? "" : `, partner email ${result.partnerEmail}`}`,
     );
     return NextResponse.json({ received: true, order: result.order.orderNumber });
   }

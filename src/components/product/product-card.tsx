@@ -127,7 +127,7 @@ export function ProductCard({
                     <Palette className="size-4" aria-hidden="true" />
                   </Link>
                 ) : (
-                  <AddToCartButton slug={product.slug} name={product.name} stock={product.stock} compact />
+                  <AddToCartButton slug={product.slug} name={product.name} priceCents={product.price.amount} stock={product.stock} compact />
                 )}
               </span>
             </div>

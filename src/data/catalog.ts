@@ -9,7 +9,46 @@
 
 import { productImages } from "@/data/assets";
 import { VARIANT_FAMILIES, type VariantColour } from "@/data/variant-families";
-import type { Bundle, Category, Product } from "@/lib/commerce/types";
+import type { Brand, BrandSlug, Bundle, Category, Product, ShippingOption } from "@/lib/commerce/types";
+
+/**
+ * The one consignment partner we work with: NerdPoint holds Takara Tomy stock and ships it
+ * himself. His email comes from the env so it can be overridden in tests or staging without
+ * touching the code. He is owed the list price minus the commission whatever the buyer paid,
+ * which is why a cart holding his pieces takes no promotion code (lib/payments/stripe-checkout.ts).
+ */
+export const CONSIGNMENT_PARTNER = {
+  key: "nerdpoint",
+  name: "NerdPoint",
+  email: (process.env["PARTNER_EMAIL"]?.trim() || "amministrazione@nerdpoint.it"),
+} as const;
+
+export type PartnerLine = {
+  readonly slug: string;
+  readonly name: string;
+  readonly quantity: number;
+  readonly unitPriceCents: number;
+  readonly commissionCents: number;
+  /** What the partner receives for these units: (unitPrice − commission) × quantity, min 0. */
+  readonly owed: number;
+};
+
+/**
+ * Picks the paid lines whose slug belongs to a consignment product and computes what the
+ * partner is owed for each one. Bundles are skipped (they never contain consignment items today).
+ */
+export function partnerLines(
+  lines: readonly { readonly slug: string; readonly name: string; readonly quantity: number; readonly unitPriceCents: number }[],
+): readonly PartnerLine[] {
+  const bySlug = new Map(PRODUCTS.map((p) => [p.slug as string, p]));
+  return lines.flatMap((line) => {
+    const product = bySlug.get(line.slug);
+    if (!product?.consignment) return [];
+    const commission = product.commissionCents ?? 0;
+    const owed = Math.max(0, (line.unitPriceCents - commission) * line.quantity);
+    return [{ slug: line.slug, name: line.name, quantity: line.quantity, unitPriceCents: line.unitPriceCents, commissionCents: commission, owed }];
+  });
+}
 
 const eur = (amount: number) => ({ amount, currency: "EUR" }) as const;
 
@@ -33,6 +72,31 @@ function deckCase({ slug, label, swatch }: VariantColour): Product {
     variant: { family: "porta-deck", familyName: DECK_CASE.name, label, swatch },
     unofficial: true,
   };
+}
+
+/**
+ * Brand descriptors for the two lines we sell. Hasbro is the Western Beyblade X line
+ * (the products we stock and ship ourselves). Takara Tomy is the original Japanese line,
+ * sold on consignment: our partner holds and ships those pieces from his warehouse.
+ */
+export const BRANDS: readonly Brand[] = [
+  {
+    slug: "hasbro",
+    name: "Hasbro",
+    tagline: "La linea ufficiale occidentale di Beyblade X.",
+    description: "I prodotti Hasbro sono la linea Beyblade X ufficiale per il mercato occidentale: trottole, lanciatori e stadi originali, acquistati dal distributore e spediti direttamente dal nostro magazzino.",
+  },
+  {
+    slug: "takara-tomy",
+    name: "Takara Tomy",
+    tagline: "L'originale giapponese. Dal Giappone al tuo stadio.",
+    description: "La linea originale giapponese di Beyblade X, l'inizio di tutto. I pezzi Takara Tomy sono venduti in consignment: il nostro partner li spedisce direttamente dal suo magazzino, in un pacco separato.",
+  },
+];
+
+/** Returns the brand a product belongs to. Absent means Hasbro. */
+export function brandOf(product: Pick<Product, "brand">): BrandSlug {
+  return product.brand ?? "hasbro";
 }
 
 export const CATEGORIES: readonly Category[] = [
@@ -245,6 +309,38 @@ export const PRODUCTS: readonly Product[] = [
     boxContents: ["1 × Trottola Soar Phoenix 9-60GF", "1 × Lanciatore a corda", "Manuale"],
     relatedSlugs: ["cobalt-dragoon-2-60c", "blast-pegasus-a-tr", "saber-samurai-2-70l"],
   },
+  // Takara Tomy, the original Japanese line, on consignment from our partner (owner, 2026-10-07):
+  // he keeps them in his warehouse and ships them himself; the shop keeps commissionCents a piece.
+  {
+    slug: "cx-00-evangelion-deck-set", name: "CX-00 Evangelion Deck Set", tagline: "Tre trottole Evangelion per i 30 anni della serie.",
+    description: "Il CX-00 Evangelion Deck Set è l'edizione Takara Tomy per i 30 anni di Evangelion: tre trottole Beyblade X ispirate alle Unità 00, 01 e 02 (EvaArc, EvaBrave ed EvaBrush), due lanciatori Winder e il box porta trottole EVA HANGAR. Prodotto originale giapponese, confezione in giapponese. Spedito dal nostro partner.",
+    price: eur(13500), category: "beyblade-x", brand: "takara-tomy", consignment: true, commissionCents: 500, stock: "disponibile", availableQuantity: 2, tags: [], rating: 0, reviewCount: 0,
+    images: productImages["cx-00-evangelion-deck-set"],
+    specs: [{ label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codice", value: "CX-00" }, { label: "Componenti", value: "3 trottole, 2 lanciatori Winder, 1 box porta trottole" }, { label: "Confezione", value: "In giapponese" }, { label: "Età", value: "Dai 6 anni (indicazione della confezione)" }],
+    features: [{ title: "30 anni di Evangelion", description: "Collaborazione ufficiale Takara Tomy" }, { title: "Tre trottole", description: "EvaArc, EvaBrave ed EvaBrush, versioni Unità 00, 01 e 02" }, { title: "Due lanciatori Winder", description: "Si gioca subito in due" }, { title: "Box EVA HANGAR", description: "Porta trottole a tema incluso" }],
+    boxContents: ["3 × Trottola Beyblade X (EvaArc, EvaBrave, EvaBrush)", "2 × Lanciatore Winder", "1 × Box porta trottole EVA HANGAR"],
+    relatedSlugs: ["ux-00-glory-valkyrie-lf", "cx-00-tigarage-ft3-60t"],
+  },
+  {
+    slug: "ux-00-glory-valkyrie-lf", name: "UX-00 Glory Valkyrie LF", tagline: "B4 Limited, Metal Coat blu.",
+    description: "UX-00 Glory Valkyrie LF è l'edizione limitata B4 (Beyblade Battle Base) di Takara Tomy, con la blade in Metal Coat blu e il Bit Low Flat (LF) a punta piatta e bassa per un attacco rapido. Lo starter include il lanciatore a corda. Prodotto originale giapponese, confezione in giapponese. Spedito dal nostro partner.",
+    price: eur(20500), category: "beyblade-x", bladeType: "attacco", brand: "takara-tomy", consignment: true, commissionCents: 500, stock: "disponibile", availableQuantity: 2, tags: [], rating: 0, reviewCount: 0,
+    images: productImages["ux-00-glory-valkyrie-lf"],
+    specs: [{ label: "Tipo", value: "Attacco" }, { label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "UX" }, { label: "Codice", value: "UX-00 LF" }, { label: "Edizione", value: "B4 Limited, Metal Coat blu" }, { label: "Componenti", value: "1 trottola, 1 lanciatore a corda" }, { label: "Confezione", value: "In giapponese" }],
+    features: [{ title: "Edizione limitata B4", description: "Venduta nei Beyblade Battle Base giapponesi" }, { title: "Metal Coat blu", description: "Finitura metallizzata della blade" }, { title: "Bit Low Flat", description: "Punta piatta e bassa per un attacco rapido" }, { title: "Starter completo", description: "Include il lanciatore a corda" }],
+    boxContents: ["1 × Trottola Glory Valkyrie LF", "1 × Lanciatore a corda"],
+    relatedSlugs: ["cx-00-evangelion-deck-set", "cx-00-tigarage-ft3-60t"],
+  },
+  {
+    slug: "cx-00-tigarage-ft3-60t", name: "CX-00 Tigarage FT3-60T", tagline: "B4 Limited, collaborazione Ultraman Tiga.",
+    description: "CX-00 Tigarage FT3-60T è l'edizione limitata B4 (Beyblade Battle Base) di Takara Tomy nata dalla collaborazione con Ultraman Tiga. Lo starter include il lanciatore e gli adesivi della collaborazione. Prodotto originale giapponese, confezione in giapponese. Spedito dal nostro partner.",
+    price: eur(10399), category: "beyblade-x", brand: "takara-tomy", consignment: true, commissionCents: 500, stock: "disponibile", availableQuantity: 2, tags: [], rating: 0, reviewCount: 0,
+    images: productImages["cx-00-tigarage-ft3-60t"],
+    specs: [{ label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "CX" }, { label: "Codice", value: "CX-00 FT3-60T" }, { label: "Edizione", value: "B4 Limited, collaborazione Ultraman Tiga" }, { label: "Componenti", value: "1 trottola, 1 lanciatore, adesivi" }, { label: "Confezione", value: "In giapponese" }],
+    features: [{ title: "Edizione limitata B4", description: "Venduta nei Beyblade Battle Base giapponesi" }, { title: "Ultraman Tiga", description: "Collaborazione ufficiale con adesivi dedicati" }, { title: "Linea CX", description: "Blade componibile della Custom Line" }, { title: "Starter completo", description: "Include il lanciatore" }],
+    boxContents: ["1 × Trottola Tigarage FT3-60T", "1 × Lanciatore", "Adesivi della collaborazione"],
+    relatedSlugs: ["ux-00-glory-valkyrie-lf", "cx-00-evangelion-deck-set"],
+  },
 ];
 
 /**
@@ -373,9 +469,85 @@ export const SHIPPING_METHODS: readonly ShippingMethodDefinition[] = [
   { code: "standard", carrier: "poste", label: "Poste Italiane · consegna a casa", priceCents: 665, pickupPoint: false },
 ];
 
+/**
+ * Pieces sold out of an opened Battle Set: a sealed bag with no retail box, so no barcode of their
+ * own. Merchant Center is told so; every boxed Hasbro item does have an EAN, recorded when known.
+ */
+export const SOLD_WITHOUT_BARCODE: ReadonlySet<string> = new Set(["impact-drake-9-60lr", "hover-wyvern-3-85n"]);
+
 /** Where the buyer finds the InPost point or Locker nearest to them. */
 export const INPOST_POINT_FINDER_URL = "https://inpost.it/trova-un-locker";
 
+/** Where the buyer finds the nearest Poste Italiane Punto Poste or Locker. */
+export const POSTE_POINT_FINDER_URL = "https://www.poste.it/cerca/index.html";
+
+/**
+ * The delivery method used for Takara Tomy consignment orders: our partner ships via Poste
+ * Italiane to a Punto Poste or Locker. The price is €5,00 — lower than our Poste door-delivery
+ * because it goes to a collection point, not straight to the buyer's address.
+ */
+export const PARTNER_SHIPPING_METHOD: ShippingMethodDefinition = {
+  code: "poste-point-partner",
+  carrier: "poste",
+  label: "Poste Italiane · Punto Poste o Locker",
+  priceCents: 500,
+  pickupPoint: true,
+};
+
+/** All methods the shop can use, including the partner route for Takara Tomy consignment. */
+const ALL_METHODS: readonly ShippingMethodDefinition[] = [...SHIPPING_METHODS, PARTNER_SHIPPING_METHOD];
+
 export function shippingMethodByCode(code: string | null | undefined): ShippingMethodDefinition | undefined {
-  return SHIPPING_METHODS.find((method) => method.code === code);
+  return ALL_METHODS.find((method) => method.code === code);
+}
+
+export type ShippingPlan = {
+  /** The methods available for this cart, in preference order. */
+  readonly methods: readonly ShippingMethodDefinition[];
+  /** True when the composition forces a single method and the buyer cannot switch. */
+  readonly locked: boolean;
+  /** Human-readable description of the composition that triggered this plan. */
+  readonly composition: "hasbro-only" | "takara-only" | "mixed" | "empty";
+};
+
+/**
+ * Derives the shipping plan for a cart based on the brands it contains.
+ *
+ * - Hasbro-only (or empty): all SHIPPING_METHODS, buyer chooses.
+ * - Takara-only: only the partner's Poste Punto-Poste route, locked.
+ * - Mixed: InPost point only, locked (one shipment, two warehouses, two packs).
+ *
+ * FREE_SHIPPING_THRESHOLD applies to every plan at the quoting layer.
+ */
+export function shippingPlanFor(brands: ReadonlySet<BrandSlug>): ShippingPlan {
+  const hasHasbro = brands.has("hasbro");
+  const hasTakara = brands.has("takara-tomy");
+
+  if (hasTakara && hasHasbro) {
+    const inpost = SHIPPING_METHODS.find((m) => m.code === "inpost-point");
+    if (!inpost) throw new Error("inpost-point method missing from SHIPPING_METHODS");
+    return { methods: [inpost], locked: true, composition: "mixed" };
+  }
+  if (hasTakara) {
+    return { methods: [PARTNER_SHIPPING_METHOD], locked: true, composition: "takara-only" };
+  }
+  return { methods: SHIPPING_METHODS, locked: false, composition: brands.size === 0 ? "empty" : "hasbro-only" };
+}
+
+/**
+ * Converts a ShippingMethodDefinition to a ShippingOption for the quote.
+ * Pass `locked` to mark the option as non-switchable.
+ */
+export function toShippingOption(
+  method: ShippingMethodDefinition,
+  hint: string | null,
+  locked?: boolean,
+): ShippingOption {
+  return {
+    code: method.code,
+    label: method.label,
+    hint,
+    price: { amount: method.priceCents, currency: "EUR" },
+    ...(locked ? { locked: true } : {}),
+  };
 }

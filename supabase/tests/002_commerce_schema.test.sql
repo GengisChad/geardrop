@@ -60,7 +60,9 @@ select results_eq(
         -- Sold loose out of six opened Drop Attack Battle Sets.
         'impact-drake-9-60lr', 'hover-wyvern-3-85n',
         -- The deck cases sell without a limit: the database keeps a counter the shop never shows.
-        'porta-deck-giallo', 'porta-deck-verde-lime', 'porta-deck-azzurro', 'porta-deck-blu', 'porta-deck-rosa', 'porta-deck-fucsia', 'porta-deck-bianco')$$,
+        'porta-deck-giallo', 'porta-deck-verde-lime', 'porta-deck-azzurro', 'porta-deck-blu', 'porta-deck-rosa', 'porta-deck-fucsia', 'porta-deck-bianco',
+        -- Takara Tomy on consignment from the partner, two of each (2026-10-07).
+        'cx-00-evangelion-deck-set', 'ux-00-glory-valkyrie-lf', 'cx-00-tigarage-ft3-60t')$$,
   array[0::bigint],
   'only the owner-reviewed catalogue carries stock'
 );
@@ -143,12 +145,12 @@ select results_eq(
 );
 select results_eq(
   $$select count(*)::bigint from public.products$$,
-  array[27::bigint],
+  array[30::bigint],
   'double seed keeps the catalogue products'
 );
 select results_eq(
   $$select count(*)::bigint from public.product_images$$,
-  array[27::bigint],
+  array[30::bigint],
   'double seed keeps one image per catalogue product'
 );
 select results_eq(

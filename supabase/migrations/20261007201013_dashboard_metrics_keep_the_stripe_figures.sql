@@ -1,10 +1,10 @@
 -- After the merge of main into feat/gestionale-cloud the migration order became:
--- 1. all of main's history (up to 20261006090000), including
+-- 1. all of main's history (up to 20261007200000), including
 --    20261002120000_dashboard_revenue_matches_stripe.sql which rewrote
 --    get_admin_dashboard_metrics() to count only settled orders and to expose
 --    gross_revenue_cents / refunded_cents / refunded_order_count / unpaid_order_count;
--- 2. our scoped migrations (20261006223001–20261006223012), where
---    20261006223005_scope_order_rpcs.sql drops the no-arg form and creates
+-- 2. our scoped migrations (20261007201001–20261007201012), where
+--    20261007201005_scope_order_rpcs.sql drops the no-arg form and creates
 --    get_admin_dashboard_metrics(p_organization_id bigint) — but carried the OLD
 --    revenue logic that counted every order and ignored partial refunds.
 --

@@ -47,6 +47,10 @@ describe("reviewed catalogue", () => {
       { slug: "strike-dran-4-50ff", price: 2300, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
       { slug: "tread-croc-tq-5-50gn", price: 2500, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
       { slug: "soar-phoenix-9-60gf", price: 3200, stock: "pre-ordine", availableQuantity: undefined, rating: 0, reviewCount: 0 },
+      // Takara Tomy on consignment from the partner, two of each (owner, 2026-10-07).
+      { slug: "cx-00-evangelion-deck-set", price: 13500, stock: "disponibile", availableQuantity: 2, rating: 0, reviewCount: 0 },
+      { slug: "ux-00-glory-valkyrie-lf", price: 20500, stock: "disponibile", availableQuantity: 2, rating: 0, reviewCount: 0 },
+      { slug: "cx-00-tigarage-ft3-60t", price: 10399, stock: "disponibile", availableQuantity: 2, rating: 0, reviewCount: 0 },
     ]);
   });
 

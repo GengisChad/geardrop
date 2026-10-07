@@ -8,6 +8,21 @@
 
 import type { ProductImage, ProductSlug } from "@/data/assets";
 
+/**
+ * Which manufacturer's line the product comes from. Absent means Hasbro (the default
+ * and the only line in the catalogue today). Takara Tomy items are consignment stock
+ * from our partner and ship from his warehouse.
+ */
+export type BrandSlug = "hasbro" | "takara-tomy";
+
+/** Static descriptor for a manufacturer's brand, used by brand landing pages and SEO. */
+export type Brand = {
+  readonly slug: BrandSlug;
+  readonly name: string;
+  readonly tagline: string;
+  readonly description: string;
+};
+
 /** Money is held in integer cents to keep arithmetic exact. */
 export type Money = {
   /** e.g. 2499 for €24,99 */
@@ -106,6 +121,21 @@ export type Product = {
    * its page nor its structured data names a brand it does not carry.
    */
   readonly unofficial?: true;
+  /**
+   * Which manufacturer's line the product belongs to. Absent means Hasbro. Takara Tomy items
+   * arrive on consignment from our partner and are shipped from his warehouse.
+   */
+  readonly brand?: BrandSlug;
+  /**
+   * True for partner-stocked, partner-shipped items (all Takara Tomy pieces). The shop never
+   * holds this stock: the order is passed straight to the partner and he ships it.
+   */
+  readonly consignment?: true;
+  /**
+   * The shop's cut per piece in integer cents when the item is sold on consignment. Absent means
+   * the full price is retained (Hasbro items the shop bought outright).
+   */
+  readonly commissionCents?: number;
 };
 
 export type CartLine = {
@@ -129,6 +159,11 @@ export type ShippingOption = {
   readonly label: string;
   readonly hint: string | null;
   readonly price: Money;
+  /**
+   * True when the cart's composition forces exactly this method and the buyer cannot switch.
+   * A Takara-only cart locks to the partner's Poste route; a mixed cart locks to InPost point.
+   */
+  readonly locked?: boolean;
 };
 
 export type CartQuoteLine = {
@@ -205,6 +240,8 @@ export type ProductQuery = {
   readonly sort?: SortKey;
   readonly page?: number;
   readonly perPage?: number;
+  /** Restrict to products whose brand (or default hasbro) matches this slug. */
+  readonly brand?: BrandSlug;
 };
 
 export type ProductPage = {

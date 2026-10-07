@@ -98,7 +98,7 @@ export function BuyPanel({ product }: { product: Product }) {
           <div className="flex-1">
             <AddToCartButton
               slug={product.slug}
-              name={product.name}
+              name={product.name} priceCents={product.price.amount}
               stock={product.stock}
               quantity={quantity}
               size="lg"

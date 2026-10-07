@@ -1,4 +1,4 @@
-import { PRODUCTS } from "@/data/catalog";
+import { CONSIGNMENT_PARTNER, partnerLines, PRODUCTS } from "@/data/catalog";
 import { formatPrice } from "@/lib/format";
 import { SHOP_EMAIL } from "@/lib/email/resend";
 import { deliveryClause, preorderDelivery } from "@/lib/labels";
@@ -134,7 +134,12 @@ function lowStockLine(item: LowStockProduct): string {
   return `${escapeHtml(item.name)} — ne resta ${item.stockQuantity}`;
 }
 
-export function ownerOrderEmail(checkout: PaidCheckout, order: RecordedOrder, lowStockItems: readonly LowStockProduct[] = []) {
+export function ownerOrderEmail(
+  checkout: PaidCheckout,
+  order: RecordedOrder,
+  lowStockItems: readonly LowStockProduct[] = [],
+  partnerEmailStatus: "sent" | "not_applicable" | "not_configured" | "failed" = "not_applicable",
+) {
   const address = addressBlock(checkout);
   const adminUrl = `${PRODUCTION_ORIGIN}/admin/ordini/${order.id}`;
   const stripeUrl = checkout.paymentIntentId ? `https://dashboard.stripe.com/payments/${checkout.paymentIntentId}` : null;
@@ -149,6 +154,37 @@ export function ownerOrderEmail(checkout: PaidCheckout, order: RecordedOrder, lo
     ),
   ];
   const subject = `${preordered.length ? "[PRE-ORDINE] " : ""}Nuovo ordine ${order.orderNumber} · ${euro(checkout.totalCents)} · ${checkout.shipping.name || checkout.email}`;
+
+  // NerdPoint consignment lines and what to pay them.
+  const pLines = partnerLines(checkout.lines);
+  const partnerOwedCents = pLines.reduce((sum, l) => sum + l.owed, 0);
+  const partnerBoxHtml = pLines.length
+    ? `<div style="margin:16px 0 0;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:12px;font-size:15px">
+        <strong>Spedisce ${escapeHtml(CONSIGNMENT_PARTNER.name)}:</strong>
+        <ul style="margin:4px 0 0;padding-left:20px">${pLines.map((l) => `<li>${escapeHtml(l.name)} &times; ${l.quantity}</li>`).join("")}</ul>
+        <p style="margin:8px 0 0">Da bonificare a ${escapeHtml(CONSIGNMENT_PARTNER.name)}: <strong>${euro(partnerOwedCents)}</strong></p>
+        <p style="margin:4px 0 0;font-size:13px;color:#555">${
+          partnerEmailStatus === "sent"
+            ? `Email inviata a ${escapeHtml(CONSIGNMENT_PARTNER.name)} con i dettagli di spedizione.`
+            : partnerEmailStatus === "failed"
+              ? `<span style="color:#b91c1c">Email al partner NON inviata: inoltra tu l'ordine a ${escapeHtml(CONSIGNMENT_PARTNER.email)}.</span>`
+              : partnerEmailStatus === "not_configured"
+                ? `Email non configurata: inoltra tu l'ordine a ${escapeHtml(CONSIGNMENT_PARTNER.email)}.`
+                : ""
+        }</p>
+      </div>`
+    : "";
+  const partnerBoxText = pLines.length
+    ? [
+        "",
+        `SPEDISCE ${CONSIGNMENT_PARTNER.name.toUpperCase()}`,
+        ...pLines.map((l) => `  ${l.quantity} × ${l.name}`),
+        `Da bonificare a ${CONSIGNMENT_PARTNER.name}: ${euro(partnerOwedCents)}`,
+        partnerEmailStatus === "sent"
+          ? `Email inviata a ${CONSIGNMENT_PARTNER.name}.`
+          : `EMAIL AL PARTNER NON INVIATA — inoltra tu l'ordine a ${CONSIGNMENT_PARTNER.email}.`,
+      ]
+    : [];
 
   const missingAddress = isAddressMissing(checkout);
   const html = emailShell(
@@ -170,6 +206,7 @@ export function ownerOrderEmail(checkout: PaidCheckout, order: RecordedOrder, lo
         ? `<div style="margin:16px 0 0;background:#fff7ed;border:1px solid #fdba74;border-radius:8px;padding:12px;font-size:15px"><strong>Contiene un pre-ordine:</strong> ${escapeHtml(preordered.join(", "))}. Al cliente è indicato che ${escapeHtml(waits.join(" · "))}.</div>`
         : ""
     }
+    ${partnerBoxHtml}
     <h2 style="font-size:16px;margin:24px 0 8px">Articoli</h2>
     ${linesTable(checkout, order, "owner")}
     ${
@@ -197,6 +234,7 @@ export function ownerOrderEmail(checkout: PaidCheckout, order: RecordedOrder, lo
     checkout.notes ? `Note del cliente: ${checkout.notes}` : null,
     preordered.length ? `
 CONTIENE UN PRE-ORDINE: ${preordered.join(", ")}` : null,
+    ...partnerBoxText,
     "",
     "ARTICOLI",
     ...checkout.lines.flatMap((line, index) => [

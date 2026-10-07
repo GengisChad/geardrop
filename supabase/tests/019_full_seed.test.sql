@@ -31,9 +31,9 @@ create trigger legacy_mirror_staff_membership after insert or update of role, ac
   for each row execute function private.legacy_mirror_staff_membership();
 select plan(17);
 
-select results_eq($$select count(*)::integer from public.products$$, array[27], 'seed has the reviewed products');
+select results_eq($$select count(*)::integer from public.products$$, array[30], 'seed has the reviewed products');
 select results_eq($$select count(*)::integer from public.categories$$, array[4], 'seed has the four reviewed categories');
-select results_eq($$select count(*)::integer from public.product_images where is_primary and published$$, array[27], 'seed has one reviewed primary image per product');
+select results_eq($$select count(*)::integer from public.product_images where is_primary and published$$, array[30], 'seed has one reviewed primary image per product');
 select results_eq($$select count(*)::integer from public.bundles$$, array[1], 'seed has the reviewed bundle');
 select results_eq($$select count(*)::integer from public.homepage_sections$$, array[8], 'seed has the current homepage sections');
 select results_eq($$select count(*)::integer from public.content_pages$$, array[5], 'seed has only reviewed public informational pages');

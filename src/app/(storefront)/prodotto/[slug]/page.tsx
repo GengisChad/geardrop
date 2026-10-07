@@ -12,8 +12,10 @@ import { VariantPicker } from "@/components/product/variant-picker";
 import { ProductCarousel } from "@/components/product/product-carousel";
 import { Rating } from "@/components/ui/rating";
 import { TrustBarLight } from "@/components/home/trust";
+import { GaEvent } from "@/components/analytics/ga-event";
 import { TrackPageView } from "@/components/funnel/track-page-view";
-import { BUNDLES, PRODUCTS } from "@/data/catalog";
+import { gaItem } from "@/lib/analytics/google";
+import { BRANDS, BUNDLES, PRODUCTS, brandOf } from "@/data/catalog";
 import { bundlesContaining } from "@/lib/commerce/bundles";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { familyColours, familyLead } from "@/lib/commerce/variants";
@@ -79,6 +81,14 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
   return (
     <>
       <TrackPageView event="product_view" />
+      <GaEvent
+        name="view_item"
+        params={{
+          currency: "EUR",
+          value: product.price.amount / 100,
+          items: [gaItem({ slug: product.slug, name: product.name, priceCents: product.price.amount, quantity: 1, category: CATEGORY_LABEL[product.category] })],
+        }}
+      />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(productData) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbData) }} />
 
@@ -107,9 +117,23 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
             {product.unofficial ? "Compatibile Beyblade" : "Beyblade"} <span className="text-lime-ink">X</span>
           </p>
 
+          {/* Brand kicker: shown near the title so the buyer knows which manufacturer's line it is. */}
+          {!product.unofficial ? (
+            <p className="mt-1 text-[0.6875rem] font-semibold uppercase tracking-widest text-grey-500" data-testid="product-brand">
+              {BRANDS.find((b) => b.slug === brandOf(product))?.name ?? "Hasbro"}
+            </p>
+          ) : null}
+
           <h1 className="gd-display-wide mt-3 text-[2rem] font-extrabold leading-[1.02] text-graphite sm:text-[2.5rem]">
             {product.name}
           </h1>
+
+          {/* Consignment items are shipped by our partner, not from our shelf. */}
+          {product.consignment ? (
+            <p className="mt-2 text-[0.6875rem] text-grey-600" data-testid="consignment-note">
+              Spedito dal nostro partner · consegna in 2-6 giorni lavorativi
+            </p>
+          ) : null}
 
           {product.bundleOf ? (
             <p className="mt-3 flex items-center gap-2">

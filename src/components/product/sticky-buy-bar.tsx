@@ -96,7 +96,7 @@ export function StickyBuyBar({ product }: { product: Product }) {
               ) : (
                 <AddToCartButton
                   slug={product.slug}
-                  name={product.name}
+                  name={product.name} priceCents={product.price.amount}
                   stock={product.stock}
                   size="md"
                   emphasis="primary"

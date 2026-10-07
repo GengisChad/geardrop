@@ -135,6 +135,9 @@ function matches(product: Product, query: ProductQuery): boolean {
   if (query.bladeType?.length && (!product.bladeType || !query.bladeType.includes(product.bladeType))) return false;
   if (query.minPrice !== undefined && product.price.amount < query.minPrice) return false;
   if (query.maxPrice !== undefined && product.price.amount > query.maxPrice) return false;
+  // No brand column in the DB: every DB product is treated as hasbro. A takara-tomy
+  // filter returns nothing; a hasbro filter passes through unchanged.
+  if (query.brand === "takara-tomy") return false;
 
   const search = normalise(query.search ?? "").trim();
   if (search) {

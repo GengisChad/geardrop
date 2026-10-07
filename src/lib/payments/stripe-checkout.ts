@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
-import { SHIPPING_METHODS, shippingMethodByCode } from "@/data/catalog";
+import { PRODUCTS, SHIPPING_METHODS, shippingMethodByCode } from "@/data/catalog";
 import type { PlaceOrderInput } from "@/lib/checkout-schema";
 import type { CartQuote } from "@/lib/commerce/types";
 import { preorderDelivery, preorderUnits } from "@/lib/labels";
@@ -107,6 +107,9 @@ export type CheckoutSessionInput = {
  * (a pre-order drop sells out in an hour). Stripe accepts 30 minutes to 24 hours; the margin
  * keeps a slow clock from asking for less than 30.
  */
+/** The partner's consignment pieces: no promotion code applies to a cart that holds one. */
+const CONSIGNMENT_SLUGS: ReadonlySet<string> = new Set(PRODUCTS.filter((product) => product.consignment).map((product) => product.slug));
+
 export const CHECKOUT_SESSION_MINUTES = 35;
 
 export function buildCheckoutSessionFields(
@@ -130,8 +133,10 @@ export function buildCheckoutSessionFields(
     expires_at: Math.floor(now / 1000) + CHECKOUT_SESSION_MINUTES * 60,
     // No consent_collection or after_expiration recovery: Stripe refuses promotions consent for
     // Italian accounts ("not available in your country") and fails the whole session, and
-    // recovery emails need that consent. Manual promotion codes are fine.
-    "allow_promotion_codes": "true",
+    // recovery emails need that consent. Manual promotion codes are fine, except on a cart with
+    // a partner's consignment piece: the partner is owed his price whatever the buyer paid, so a
+    // code there would come entirely out of the shop's few euros of commission.
+    "allow_promotion_codes": quote.lines.some((line) => CONSIGNMENT_SLUGS.has(line.slug)) ? "false" : "true",
     "metadata[order_ref]": reference,
     "metadata[lines]": truncate(quote.lines.map((line) => `${line.slug} x${line.quantity}`).join(", "), METADATA_LIMIT),
     "metadata[shipping_method]": method.code,
@@ -221,6 +226,10 @@ export type CheckoutSessionSummary = {
   readonly reference: string | null;
   readonly totalCents: number | null;
   readonly email: string | null;
+  /** Shipping charged, for the purchase event; null when Stripe does not report it. */
+  readonly shippingCents: number | null;
+  /** What was bought, read back from the session's own metadata ("slug xN, …"). */
+  readonly lines: readonly { readonly slug: string; readonly quantity: number }[];
 };
 
 type StripeCheckoutSession = {
@@ -229,7 +238,18 @@ type StripeCheckoutSession = {
   readonly client_reference_id: string | null;
   readonly amount_total: number | null;
   readonly customer_details?: { readonly email?: string | null } | null;
+  readonly total_details?: { readonly amount_shipping?: number | null } | null;
+  readonly metadata?: { readonly lines?: string } | null;
 };
+
+/** The "slug xN, slug xN" list the session was created with; anything else is skipped. */
+export function checkoutLines(metadata: string | undefined): CheckoutSessionSummary["lines"] {
+  return (metadata ?? "")
+    .split(",")
+    .map((part) => /^([a-z0-9-]+) x(\d+)$/.exec(part.trim()))
+    .filter((match): match is RegExpExecArray => match !== null)
+    .map((match) => ({ slug: match[1]!, quantity: Number(match[2]) }));
+}
 
 /** Reads a session back for the result page. Malformed ids never reach Stripe. */
 export async function retrieveCheckoutSession(
@@ -252,6 +272,8 @@ export async function retrieveCheckoutSession(
       reference: session.client_reference_id,
       totalCents: session.amount_total,
       email: session.customer_details?.email ?? null,
+      shippingCents: session.total_details?.amount_shipping ?? null,
+      lines: checkoutLines(session.metadata?.lines),
     };
   } catch (error) {
     console.error("[stripe-checkout]", error instanceof Error ? error.message : error);
