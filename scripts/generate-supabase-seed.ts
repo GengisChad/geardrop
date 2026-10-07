@@ -47,6 +47,8 @@ export function generateSupabaseSeed(): string {
         ? "'preorder'::public.availability_override"
         : "null::public.availability_override",
       product.stock === "pre-ordine" ? (product.availableQuantity ?? 0) : 0,
+      // A partner's consignment piece is his stock: at zero it is sold out, never a pre-order.
+      product.consignment ? "false" : "true",
       text(product.name),
       text(product.tagline),
       text(product.description),
@@ -188,7 +190,7 @@ on conflict (slug) do update set
   description = excluded.description,
   sort_order = excluded.sort_order;
 
-with seed(category_slug, slug, sku, stock_quantity, availability_override, preorder_allocation, name, tagline, description, price_cents, compare_at_price_cents, blade_type, rating, review_count, sort_order) as (
+with seed(category_slug, slug, sku, stock_quantity, availability_override, preorder_allocation, allow_backorder, name, tagline, description, price_cents, compare_at_price_cents, blade_type, rating, review_count, sort_order) as (
   values
 ${rows(productRows)}
 )
@@ -211,8 +213,9 @@ select
   seed.stock_quantity,
   seed.availability_override,
   seed.preorder_allocation,
-  -- Sold out means pre-order, never a closed sale (migration 20260917140000).
-  true as allow_backorder,
+  -- Sold out means pre-order, never a closed sale (migration 20260917140000), except for a
+  -- partner's consignment piece, which is his stock and simply sells out.
+  seed.allow_backorder,
   seed.blade_type::public.blade_type,
   seed.rating,
   seed.review_count,

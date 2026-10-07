@@ -48,7 +48,7 @@ export const checkoutSchema = z.object({
   notes: z.string().trim().max(300, "Massimo 300 caratteri.").optional(),
 });
 
-export const PICKUP_POINT_MESSAGE = "Scrivi il punto InPost o il Locker dove ritirare il pacco.";
+export const PICKUP_POINT_MESSAGE = "Scrivi il punto di ritiro o il Locker dove ritirare il pacco.";
 
 /** A pickup method needs the point it delivers to: three characters at least (a Locker code). */
 export function pickupPointMissing(shippingMethod: string | undefined, pickupPoint: string | undefined): boolean {

@@ -1,5 +1,6 @@
 import { orderNotificationRecipient, SHOP_EMAIL, type EmailMessage, type EmailResult } from "@/lib/email/resend";
 import { customerOrderEmail, ownerOrderEmail } from "./order-email";
+import { partnerOrderEmail } from "./partner-email";
 import type { PaidCheckout } from "./stripe-order";
 
 /**
@@ -47,6 +48,7 @@ export type ProcessResult =
       readonly status: "recorded";
       readonly order: StoredOrder;
       readonly ownerEmail: "sent" | "already_sent" | "not_configured";
+      readonly partnerEmail: "sent" | "not_applicable" | "not_configured" | "failed";
     }
   | { readonly status: "failed"; readonly step: "load" | "record" | "notify"; readonly detail: string };
 
@@ -81,12 +83,40 @@ export async function processPaidCheckout(sessionId: string, deps: ProcessDepend
     }
   }
 
+  // "not_applicable" also on a retry once the owner was notified: the partner was told then.
+  let partnerEmail: "sent" | "not_applicable" | "not_configured" | "failed" = "not_applicable";
   let ownerEmail: "sent" | "already_sent" | "not_configured";
   try {
     if (await deps.store.ownerNotified(order.id)) {
       ownerEmail = "already_sent";
     } else {
-      const content = ownerOrderEmail(checkout, order, lowStockItems);
+      // The partner's email goes out with the owner's, under the same "already notified" guard: a
+      // Stripe retry days later (past Resend's 24-hour idempotency window) must never send the
+      // partner the buyer's address a second time. Its outcome is shown in the owner's email,
+      // which tells the owner to forward the order if it failed.
+      const partnerContent = partnerOrderEmail(checkout, order.orderNumber);
+      if (partnerContent) {
+        try {
+          const partnerSent = await deps.sendEmail({
+            to: partnerContent.to,
+            replyTo: SHOP_EMAIL,
+            idempotencyKey: `gd-order-partner-${order.orderNumber}`,
+            subject: partnerContent.subject,
+            html: partnerContent.html,
+            text: partnerContent.text,
+          });
+          if (partnerSent.ok) partnerEmail = "sent";
+          else if (partnerSent.reason === "not_configured") partnerEmail = "not_configured";
+          else {
+            console.error("[orders] partner email not sent:", partnerSent.reason, partnerSent.detail ?? "");
+            partnerEmail = "failed";
+          }
+        } catch (error) {
+          console.error("[orders] partner email not sent:", message(error));
+          partnerEmail = "failed";
+        }
+      }
+      const content = ownerOrderEmail(checkout, order, lowStockItems, partnerEmail);
       const sent = await deps.sendEmail({
         to: orderNotificationRecipient(env),
         replyTo: checkout.email,
@@ -124,5 +154,5 @@ export async function processPaidCheckout(sessionId: string, deps: ProcessDepend
     }
   }
 
-  return { status: "recorded", order, ownerEmail };
+  return { status: "recorded", order, ownerEmail, partnerEmail };
 }

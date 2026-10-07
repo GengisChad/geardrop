@@ -142,7 +142,8 @@ describe("what Google is told about shipping", () => {
     // Every offer carries both, so Shopping can show the cheapest one on any item.
     const items = xml.split("<item>").slice(1);
     expect(items.length).toBeGreaterThan(0);
-    for (const chunk of items) expect(shipping(chunk)).toHaveLength(2);
+    // Takara Tomy pieces ship from the partner by one route; the rest offer both carriers.
+    for (const chunk of items) expect(shipping(chunk)).toHaveLength(chunk.includes("<g:brand>Takara Tomy</g:brand>") ? 1 : 2);
   }, 60_000);
 });
 

@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { BUNDLES, CATEGORIES, PRODUCTS } from "@/data/catalog";
+import { BRANDS, BUNDLES, CATEGORIES, PRODUCTS, brandOf } from "@/data/catalog";
 import { LEGAL_PAGES, SUPPORT_PAGES } from "@/data/pages";
 import { oneCardPerFamily } from "@/lib/commerce/variants";
 import { absoluteUrl } from "@/lib/seo";
@@ -18,9 +18,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // the whole file because one table is unreachable costs far more than losing the meta
   // months from it for one fetch.
   const metaMonths = await getStorefrontMetaArchive().catch(() => []);
+  const hasTakaraProducts = PRODUCTS.some((p) => brandOf(p) === "takara-tomy");
+
   return [
     { url: absoluteUrl("/"), lastModified, changeFrequency: "daily", priority: 1 },
     { url: absoluteUrl("/negozio"), lastModified, changeFrequency: "daily", priority: 0.9 },
+    // Hasbro brand page is always listed; Takara Tomy only when the catalogue has those products.
+    ...BRANDS.filter((b) => b.slug === "hasbro" || hasTakaraProducts).map((brandDef) => ({
+      url: absoluteUrl(`/negozio/${brandDef.slug}`),
+      lastModified,
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    })),
     ...CATEGORIES.map((category) => ({
       url: absoluteUrl(`/negozio/${category.slug}`),
       lastModified,

@@ -37,7 +37,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
   for (const [key, value] of Object.entries(params)) if (typeof value === "string" && key !== "page") exportParams.set(key, value);
 
   return <div className={styles.page}>
-    <header className={styles.heading}><div><p>Commerce / Operazioni</p><h1>Ordini</h1><span>{result.total} ordini reali · nessun dato dimostrativo</span></div>{orderPiiVisibility(principal.role).export ? <Link href={`/admin/ordini/export?${exportParams}`}>Esporta CSV</Link> : null}</header>
+    <header className={styles.heading}><div><p>Commerce / Operazioni</p><h1>Ordini</h1><span>{result.total} ordini reali · nessun dato dimostrativo</span></div><div style={{display:"flex",gap:"0.75rem",alignItems:"center"}}><Link href="/admin/ordini/partner">Ordini NerdPoint</Link>{orderPiiVisibility(principal.role).export ? <Link href={`/admin/ordini/export?${exportParams}`}>Esporta CSV</Link> : null}</div></header>
     <NotifyShippedOrders count={unnotified.count ?? 0}/>
     <NotifyDeliveredOrders count={unconfirmed.count ?? 0}/>
     <form className={styles.filters} method="get">

@@ -10,6 +10,7 @@ import { getCommerceProvider } from "@/lib/commerce/provider";
 import { storefrontContent } from "@/lib/content/provider";
 import { RELEASE_DELIVERY, STANDARD_DELIVERY } from "@/lib/labels";
 import { HOME_FEATURED_LIMIT, homepagePlan } from "@/lib/home/product-selection";
+import { PRODUCTS, brandOf } from "@/data/catalog";
 import { jsonLd, siteJsonLd } from "@/lib/seo";
 import { resolveHomepageSections } from "@/lib/storefront/homepage-resolver";
 
@@ -51,7 +52,8 @@ export default async function HomePage() {
   };
 
   // Tells Google who sells here and how to search the shop (sitelinks search box).
-  const structuredData = <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(siteJsonLd()) }} />;
+  const hasTakaraProducts = PRODUCTS.some((p) => brandOf(p) === "takara-tomy");
+  const structuredData = <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(siteJsonLd({ includePartner: hasTakaraProducts })) }} />;
 
   // Managed path: the CMS controls order, copy, visibility and product targets; the same
   // Holo Drop components render them. When no managed content is published, the approved

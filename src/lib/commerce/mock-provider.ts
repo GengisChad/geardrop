@@ -6,12 +6,13 @@
  * contract for the whole UI to keep working.
  */
 
-import { BUNDLE, BUNDLES, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_METHODS, shippingMethodByCode } from "@/data/catalog";
+import { BUNDLE, BUNDLES, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS, brandOf, shippingMethodByCode, shippingPlanFor, toShippingOption } from "@/data/catalog";
 import { STANDARD_DELIVERY } from "@/lib/labels";
 import { piecesOf, withBundles } from "./bundles";
 import { oneCardPerFamily } from "./variants";
 import type {
   BladeType,
+  BrandSlug,
   Bundle,
   CartQuote,
   CartQuoteLine,
@@ -31,18 +32,8 @@ import type {
 // The catalogue is small: one page holds it all, so nobody lands on a page with two cards.
 const DEFAULT_PER_PAGE = 24;
 
-/**
- * The delivery options the catalogue sells (src/data/catalog.ts SHIPPING_METHODS): an InPost point
- * or Locker, Poste Italiane to the door. Real shipping options come from the backend when there
- * is one; hardcoding them is allowed here and nowhere else.
- */
-const CATALOGUE_SHIPPING: readonly ShippingOption[] = SHIPPING_METHODS.map((method) => ({
-  code: method.code,
-  label: method.label,
-  hint: STANDARD_DELIVERY,
-  price: { amount: method.priceCents, currency: "EUR" },
-}));
-const DEFAULT_SHIPPING = SHIPPING_METHODS[0]!;
+// No module-level shipping constants: shipping options are derived per-cart from the
+// brands present (shippingPlanFor), so the plan is computed inside quoteCart.
 
 /** Popularity is not a stored field; the mockups rank by review volume. */
 const byPopularity = (a: Product, b: Product) => b.reviewCount - a.reviewCount;
@@ -86,6 +77,7 @@ function matches(product: Product, query: ProductQuery): boolean {
   if (query.bladeType?.length && (!product.bladeType || !query.bladeType.includes(product.bladeType))) return false;
   if (query.minPrice !== undefined && product.price.amount < query.minPrice) return false;
   if (query.maxPrice !== undefined && product.price.amount > query.maxPrice) return false;
+  if (query.brand !== undefined && brandOf(product) !== query.brand) return false;
   if (query.search) {
     const needle = normalise(query.search).trim();
     if (needle) {
@@ -272,14 +264,32 @@ export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CA
       const subtotal = sellable.reduce((sum, line) => sum + line.lineTotal.amount, 0);
       const isEmpty = subtotal === 0;
       const qualifies = subtotal >= FREE_SHIPPING_THRESHOLD;
-      // The buyer's choice when it is one the shop sells, otherwise the cheapest (InPost to a point).
-      const method = shippingMethodByCode(request.shippingCode) ?? DEFAULT_SHIPPING;
+
+      // Derive the shipping plan from the brands actually in the sellable lines.
+      const cartBrands = new Set<BrandSlug>(
+        sellable.map((line) => {
+          const product = bySlug.get(line.slug);
+          return product ? brandOf(product) : "hasbro";
+        }),
+      );
+      const plan = shippingPlanFor(cartBrands);
+
+      // The buyer's choice when it is in the plan, otherwise the plan's first (cheapest) method.
+      const requested = shippingMethodByCode(request.shippingCode);
+      const method =
+        requested && plan.methods.some((m) => m.code === requested.code)
+          ? requested
+          : plan.methods[0]!;
+
       const shipping = isEmpty || qualifies ? 0 : method.priceCents;
+      const shippingOptions: readonly ShippingOption[] = plan.methods.map((m) =>
+        toShippingOption(m, STANDARD_DELIVERY, plan.locked || undefined),
+      );
 
       return {
         lines: quoteLines,
         missingSlugs,
-        shippingOptions: CATALOGUE_SHIPPING,
+        shippingOptions,
         shippingCode: method.code,
         totals: {
           subtotal: { amount: subtotal, currency: "EUR" },

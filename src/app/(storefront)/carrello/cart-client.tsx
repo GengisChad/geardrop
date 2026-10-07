@@ -172,7 +172,7 @@ export function CartClient({ shelfProducts }: CartClientProps) {
         <aside data-testid="cart-summary" className="gd-glass-panel sticky top-28 flex flex-col gap-4 rounded-[--radius-glass] p-5">
           <h2 className="gd-display text-small font-bold tracking-wider text-graphite">Riepilogo</h2>
           <FreeShippingMeter totals={quote.totals} threshold={quote.freeShippingThreshold} />
-          <CartTotalsPanel totals={quote.totals} deliveryHint={cartDelivery(quote.lines.filter((line) => !line.issue))} carrierChosenLater />
+          <CartTotalsPanel totals={quote.totals} deliveryHint={cartDelivery(quote.lines.filter((line) => !line.issue))} carrierChosenLater={quote.shippingOptions.length > 1} />
           <Button as={Link} href="/checkout" variant="primary" size="lg" fullWidth data-testid="go-to-checkout" aria-disabled={blocked}>
             Vai al checkout
             <ArrowRight className="size-4" aria-hidden="true" />

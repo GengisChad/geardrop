@@ -1,8 +1,10 @@
 "use server";
 
 import { headers } from "next/headers";
+import { shippingMethodByCode } from "@/data/catalog";
 import {
   cartQuoteSchema,
+  PICKUP_POINT_MESSAGE,
   placeOrderSchema,
   type CartQuoteInput,
   type PlaceOrderInput,
@@ -78,6 +80,13 @@ export async function submitOrder(input: PlaceOrderInput): Promise<PlaceOrderRes
         }),
       );
       if (!quote.orderable) return { ok: false, message: quote.notice ?? CHECKOUT_FALLBACK_MESSAGE };
+
+      // The quote may have overridden a stale submitted code: re-validate the pickup point
+      // against what the quote actually selected (not what the browser sent).
+      const selectedMethod = shippingMethodByCode(quote.shippingCode);
+      if (selectedMethod?.pickupPoint && (parsed.data.contact.pickupPoint ?? "").trim().length < 3) {
+        return { ok: false, message: PICKUP_POINT_MESSAGE };
+      }
 
       const checkout = await createStripeCheckout({ quote, order: parsed.data, origin: await checkoutOrigin() });
       return checkout.ok ? { ok: true, redirectUrl: checkout.url } : { ok: false, message: checkout.message };
