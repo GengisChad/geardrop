@@ -111,6 +111,13 @@ export function allowedOrderTransitions(status: OrderStatus): readonly OrderStat
   return transitions[status];
 }
 
+/** The carrier the buyer picked at checkout, read from the shipping snapshot; empty for older orders. */
+export function shipmentChoice(value: unknown): { readonly method: string | null; readonly label: string | null; readonly pickupPoint: string | null } {
+  const record = value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+  const text = (key: string) => (typeof record[key] === "string" && record[key].trim() ? record[key].trim() : null);
+  return { method: text("method"), label: text("methodLabel"), pickupPoint: text("pickupPoint") };
+}
+
 export function addressLines(value: unknown): readonly string[] {
   if (!value || typeof value !== "object" || Array.isArray(value)) return [];
   const record = value as Record<string, unknown>;

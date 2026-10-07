@@ -36,7 +36,8 @@ export const SUPPORT_PAGES = {
       {
         heading: "Quanto costa la spedizione?",
         body: [
-          "La spedizione standard è gratuita per ordini superiori a 100€. Sotto questa soglia si applica una tariffa fissa di 4,90€.",
+          "Scegli tu il corriere al checkout: Poste Italiane a casa 4,90 €, InPost in un punto di ritiro o Locker 5,65 €, InPost a casa 6,65 €.",
+          "La spedizione è gratuita, con qualsiasi corriere, per ordini da 100 €.",
           "Spediamo solo in Italia.",
         ],
       },
@@ -79,7 +80,7 @@ export const SUPPORT_PAGES = {
         heading: "Costi",
         body: [
           "Spedizione gratuita per ordini superiori a 100€.",
-          "Sotto la soglia, la spedizione standard costa 4,90€. Le opzioni disponibili sono mostrate prima della conferma.",
+          "Sotto la soglia scegli il corriere: Poste Italiane a casa 4,90 €, InPost in un punto di ritiro o Locker 5,65 €, InPost a casa 6,65 €. Il costo è mostrato prima del pagamento.",
         ],
       },
       {
@@ -148,7 +149,7 @@ export const SUPPORT_PAGES = {
 } as const satisfies Record<string, ContentPage>;
 
 /** Seller facts published on the site. Tax code, PEC and REA stay off it by the owner's choice. */
-const SELLER = {
+export const SELLER = {
   holder: "Alessia Brunetti",
   vat: "18464231002",
   office: "Via Fratelli Cervi 2, 00065 Fiano Romano (RM)",
@@ -186,7 +187,7 @@ export const LEGAL_PAGES = {
         heading: "Prezzi e spedizione",
         body: [
           "I prezzi sono espressi in euro e comprendono l'IVA.",
-          "La spedizione standard in Italia costa 4,90 € ed è gratuita per ordini da 100 €. Il totale, spedizione inclusa, è mostrato prima del pagamento.",
+          "La spedizione in Italia costa 4,90 € con Poste Italiane, 5,65 € con InPost in un punto di ritiro o Locker, 6,65 € con InPost a casa, ed è gratuita per ordini da 100 €. Il totale, spedizione inclusa, è mostrato prima del pagamento.",
         ],
       },
       {
@@ -210,7 +211,7 @@ export const LEGAL_PAGES = {
           "Puoi recedere dal contratto senza indicarne il motivo entro 14 giorni dalla consegna, come previsto dagli artt. 52 e seguenti del Codice del Consumo. GEAR//DROP estende questo termine a 30 giorni dalla consegna.",
           `Per esercitarlo scrivi a ${SELLER.email} prima della scadenza indicando il riferimento dell'ordine. Puoi usare il modulo tipo in fondo a questa pagina, ma non è obbligatorio.`,
           "Restituisci i prodotti integri, completi e nella confezione originale entro 14 giorni dalla comunicazione. Le spese di restituzione sono a carico di GEAR//DROP: ti inviamo noi l'etichetta di reso.",
-          "Ti rimborsiamo tutti i pagamenti ricevuti, spedizione standard compresa, entro 14 giorni dalla comunicazione di recesso e con lo stesso metodo di pagamento. Il rimborso può essere sospeso fino al ricevimento dei prodotti o alla prova della loro spedizione. Resta a tuo carico solo la diminuzione di valore dovuta a un uso diverso da quello necessario per verificarli.",
+          "Ti rimborsiamo tutti i pagamenti ricevuti, compresa la spedizione fino al costo della consegna standard (Poste Italiane, 4,90 €), entro 14 giorni dalla comunicazione di recesso e con lo stesso metodo di pagamento. Se hai scelto un corriere più costoso, la differenza resta a tuo carico (art. 56 del Codice del consumo). Il rimborso può essere sospeso fino al ricevimento dei prodotti o alla prova della loro spedizione. Resta a tuo carico solo la diminuzione di valore dovuta a un uso diverso da quello necessario per verificarli.",
         ],
       },
       {

@@ -24,9 +24,11 @@ function Feedback({ state }: { readonly state: OrderActionState }) {
   return state.message ? <p className={state.ok ? styles.success : styles.error} role="status">{state.message}</p> : null;
 }
 
-export function OrderActions({ orderId, status, paymentStatus, role, tracking, shippingNotifiedAt, deliveryNotifiedAt, stripePaymentIntentId, totalCents, refundedCents = 0 }: {
+export function OrderActions({ orderId, status, paymentStatus, role, tracking, suggestedCarrierId = "poste", shippingNotifiedAt, deliveryNotifiedAt, stripePaymentIntentId, totalCents, refundedCents = 0 }: {
   readonly orderId: number; readonly status: OrderStatus; readonly paymentStatus: PaymentStatus; readonly role: StaffRole;
   readonly tracking: { readonly carrier: string | null; readonly code: string | null; readonly url: string | null };
+  /** The carrier the buyer chose at checkout, preselected until a tracking says otherwise. */
+  readonly suggestedCarrierId?: string;
   readonly shippingNotifiedAt: string | null;
   readonly deliveryNotifiedAt: string | null;
   readonly stripePaymentIntentId: string | null;
@@ -64,7 +66,7 @@ export function OrderActions({ orderId, status, paymentStatus, role, tracking, s
         ? `Email di spedizione già inviata il ${new Intl.DateTimeFormat("it-IT", { dateStyle: "medium", timeStyle: "short" }).format(new Date(shippingNotifiedAt))}. Se correggi corriere o codice, al cliente arriva subito quello nuovo.`
         : "Inserisci il codice: l'ordine passa a spedito e il cliente riceve subito l'email con corriere, codice e link per seguire il pacco."}</p>
       <input name="orderId" type="hidden" value={orderId}/>
-      <label>Corriere<select defaultValue={carrierByLabel(tracking.carrier)?.id ?? "poste"} name="carrierId" required>{CARRIERS.map((carrier) => <option key={carrier.id} value={carrier.id}>{carrier.label}</option>)}</select></label>
+      <label>Corriere<select defaultValue={carrierByLabel(tracking.carrier)?.id ?? suggestedCarrierId} name="carrierId" required>{CARRIERS.map((carrier) => <option key={carrier.id} value={carrier.id}>{carrier.label}</option>)}</select></label>
       <label>Codice di tracciamento<input autoComplete="off" defaultValue={tracking.code ?? ""} inputMode="text" maxLength={240} name="code" placeholder="Es. 018207900244"/></label>
       <label>Link di tracciamento (solo se il corriere è “Altro”)<input defaultValue={carrierByLabel(tracking.carrier)?.trackingUrl ? "" : tracking.url ?? ""} name="url" placeholder="https://" type="url"/></label>
       <label>Costo corriere per noi (€, facoltativo)<input inputMode="decimal" name="courierCost" placeholder="Es. 4,00 — per il profitto"/></label>

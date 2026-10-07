@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
+import { SHIPPING_METHODS, shippingMethodByCode } from "@/data/catalog";
 import type { PlaceOrderInput } from "@/lib/checkout-schema";
 import type { CartQuote } from "@/lib/commerce/types";
 import { preorderDelivery, preorderUnits } from "@/lib/labels";
@@ -115,6 +116,8 @@ export function buildCheckoutSessionFields(
   const { contact } = order;
   const reference = orderReference(order.idempotencyKey);
   const shipping = quote.totals.shipping.amount;
+  // The carrier the quote was priced with: Poste unless the buyer picked InPost.
+  const method = shippingMethodByCode(quote.shippingCode) ?? SHIPPING_METHODS[0]!;
 
   const fields: Record<string, string | number> = {
     mode: "payment",
@@ -131,6 +134,7 @@ export function buildCheckoutSessionFields(
     "allow_promotion_codes": "true",
     "metadata[order_ref]": reference,
     "metadata[lines]": truncate(quote.lines.map((line) => `${line.slug} x${line.quantity}`).join(", "), METADATA_LIMIT),
+    "metadata[shipping_method]": method.code,
     "payment_intent_data[description]": `Ordine ${reference} · GEAR//DROP`,
     "payment_intent_data[metadata][order_ref]": reference,
     // The address was already collected and validated on the site; Stripe keeps it with the payment.
@@ -142,7 +146,7 @@ export function buildCheckoutSessionFields(
     "payment_intent_data[shipping][address][state]": contact.province,
     "payment_intent_data[shipping][address][country]": "IT",
     "shipping_options[0][shipping_rate_data][type]": "fixed_amount",
-    "shipping_options[0][shipping_rate_data][display_name]": shipping === 0 ? "Spedizione gratuita" : "Spedizione standard",
+    "shipping_options[0][shipping_rate_data][display_name]": shipping === 0 ? `Spedizione gratuita · ${method.label}` : method.label,
     "shipping_options[0][shipping_rate_data][fixed_amount][amount]": shipping,
     "shipping_options[0][shipping_rate_data][fixed_amount][currency]": "eur",
     "shipping_options[0][shipping_rate_data][tax_behavior]": "inclusive",
@@ -157,6 +161,8 @@ export function buildCheckoutSessionFields(
 
   const notes = contact.notes?.trim();
   if (notes) fields["metadata[notes]"] = truncate(notes, METADATA_LIMIT);
+  const pickupPoint = method.pickupPoint ? contact.pickupPoint?.trim() : undefined;
+  if (pickupPoint) fields["metadata[pickup_point]"] = truncate(pickupPoint, METADATA_LIMIT);
 
   // Pieces beyond the shelf are pre-ordered: the buyer reads it next to the pay button, and the
   // webhook compares what was announced here with what the stock allowed at payment time.

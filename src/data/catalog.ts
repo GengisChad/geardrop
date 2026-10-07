@@ -348,4 +348,34 @@ export const BUNDLE: Bundle = {
  * 2026-09-29.
  */
 export const FREE_SHIPPING_THRESHOLD = 10000;
+/** The cheapest delivery the shop offers (Poste Italiane), the "da 4,90 €" of every banner. */
 export const SHIPPING_FLAT_RATE = 490;
+
+export type ShippingMethodDefinition = {
+  /** Stored on the order and sent by the checkout form; "standard" is the Poste code orders already carry. */
+  readonly code: string;
+  readonly carrier: "poste" | "inpost";
+  readonly label: string;
+  readonly priceCents: number;
+  /** The buyer names the InPost point or locker the parcel goes to. */
+  readonly pickupPoint: boolean;
+};
+
+/**
+ * What the buyer picks at checkout, at what the parcel costs the shop to send (owner, 2026-10-06):
+ * charging InPost at the Poste price left the shop paying a euro or more on every InPost parcel.
+ * Free shipping from FREE_SHIPPING_THRESHOLD applies to every method. BRT, DHL and others will
+ * join this list.
+ */
+export const SHIPPING_METHODS: readonly ShippingMethodDefinition[] = [
+  { code: "standard", carrier: "poste", label: "Poste Italiane · consegna a casa", priceCents: SHIPPING_FLAT_RATE, pickupPoint: false },
+  { code: "inpost-point", carrier: "inpost", label: "InPost · punto di ritiro o Locker", priceCents: 565, pickupPoint: true },
+  { code: "inpost-home", carrier: "inpost", label: "InPost · consegna a casa", priceCents: 665, pickupPoint: false },
+];
+
+/** Where the buyer finds the InPost point or Locker nearest to them. */
+export const INPOST_POINT_FINDER_URL = "https://inpost.it/trova-un-locker";
+
+export function shippingMethodByCode(code: string | null | undefined): ShippingMethodDefinition | undefined {
+  return SHIPPING_METHODS.find((method) => method.code === code);
+}

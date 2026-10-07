@@ -42,7 +42,12 @@ const dateFormatter = new Intl.DateTimeFormat("it-IT", {
 function addressBlock(checkout: PaidCheckout): readonly string[] {
   const { shipping } = checkout;
   const place = [shipping.postalCode, shipping.city, shipping.province ? `(${shipping.province})` : ""].filter(Boolean).join(" ");
-  return [shipping.name, shipping.address, place, shipping.country].filter(Boolean);
+  // Which carrier, and for InPost to a point the point itself: what the parcel is booked on.
+  const carrier = [
+    shipping.methodLabel ? `Spedizione: ${shipping.methodLabel}` : "",
+    shipping.pickupPoint ? `Punto InPost: ${shipping.pickupPoint}` : "",
+  ];
+  return [shipping.name, shipping.address, place, shipping.country, ...carrier].filter(Boolean);
 }
 
 type Audience = "owner" | "buyer";

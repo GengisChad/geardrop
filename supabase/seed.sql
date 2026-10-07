@@ -771,7 +771,9 @@ Gli accessori compatibili, come i porta deck, non sono prodotti da Hasbro: la lo
 
 ## Quanto costa la spedizione?
 
-La spedizione standard è gratuita per ordini superiori a 100€. Sotto questa soglia si applica una tariffa fissa di 4,90€.
+Scegli tu il corriere al checkout: Poste Italiane a casa 4,90 €, InPost in un punto di ritiro o Locker 5,65 €, InPost a casa 6,65 €.
+
+La spedizione è gratuita, con qualsiasi corriere, per ordini da 100 €.
 
 Spediamo solo in Italia.
 
@@ -804,7 +806,7 @@ Spediamo solo in Italia.
 
 Spedizione gratuita per ordini superiori a 100€.
 
-Sotto la soglia, la spedizione standard costa 4,90€. Le opzioni disponibili sono mostrate prima della conferma.
+Sotto la soglia scegli il corriere: Poste Italiane a casa 4,90 €, InPost in un punto di ritiro o Locker 5,65 €, InPost a casa 6,65 €. Il costo è mostrato prima del pagamento.
 
 ## Tracciamento
 
