@@ -44,13 +44,21 @@ export function FreeShippingMeter({ totals, threshold }: { totals: CartTotals; t
 export function CartTotalsPanel({
   totals,
   deliveryHint = STANDARD_DELIVERY,
+  carrierChosenLater = false,
   className,
 }: {
   totals: CartTotals;
   /** Delivery time shown under the shipping row. Defaults to the in-stock estimate. */
   deliveryHint?: string;
+  /**
+   * The cart prices the cheapest carrier; the buyer picks Poste or InPost at checkout. Buyers
+   * read a bare "4,90" there as the price they would pay whatever they chose, so the cart says
+   * "da" and where the choice happens.
+   */
+  carrierChosenLater?: boolean;
   className?: string;
 }) {
+  const startingPrice = carrierChosenLater && totals.shipping.amount > 0;
   return (
     <dl className={cn("flex flex-col gap-3", className)}>
       <div className="flex justify-between text-small">
@@ -74,13 +82,18 @@ export function CartTotalsPanel({
             className={cn("tabular font-semibold", totals.shipping.amount === 0 ? "text-available" : "text-graphite")}
             data-testid="cart-shipping"
           >
-            {formatShipping(totals.shipping)}
+            {startingPrice ? `da ${formatShipping(totals.shipping)}` : formatShipping(totals.shipping)}
           </dd>
         </div>
+        {startingPrice ? (
+          <p className="text-[0.6875rem] text-grey-600" data-testid="cart-carrier-note">
+            Scegli Poste o InPost al checkout: il totale si aggiorna con il corriere scelto.
+          </p>
+        ) : null}
         <p className="text-[0.6875rem] text-grey-600">{deliveryHint}</p>
       </div>
       <div className="flex items-baseline justify-between border-t border-grey-200 pt-3">
-        <dt className="gd-display text-small font-bold tracking-wider text-graphite">Totale</dt>
+        <dt className="gd-display text-small font-bold tracking-wider text-graphite">{startingPrice ? "Totale da" : "Totale"}</dt>
         <dd className="tabular gd-display text-h3 font-extrabold text-graphite" data-testid="cart-total">
           {formatPrice(totals.total)}
         </dd>

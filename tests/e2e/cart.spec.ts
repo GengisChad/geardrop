@@ -70,8 +70,10 @@ test.describe("cart", () => {
     await buyPanel(page).getByTestId("add-to-cart").click();
     await page.goto("/carrello");
 
-    // 1 x 25,50 -> below the threshold
-    await expect(page.getByTestId("cart-shipping")).toHaveText(euro(SHIPPING_FLAT_RATE));
+    // 1 x 25,50 -> below the threshold. The cart prices Poste and says it is a starting price:
+    // the carrier is picked at checkout, and buyers read a bare 4,90 as what InPost would cost.
+    await expect(page.getByTestId("cart-shipping")).toHaveText(`da ${euro(SHIPPING_FLAT_RATE)}`);
+    await expect(page.getByTestId("cart-carrier-note")).toContainText("Scegli Poste o InPost al checkout");
     await expect(page.getByTestId("cart-total")).toHaveText(euro(DRAGOON + SHIPPING_FLAT_RATE));
 
     // Enough packs to clear the free-shipping threshold, whatever the two numbers are today.
@@ -81,6 +83,7 @@ test.describe("cart", () => {
       await expect(page.getByTestId("line-total")).toHaveText(euro(DRAGOON * (click + 1)));
     }
     await expect(page.getByTestId("cart-shipping")).toHaveText("Gratis");
+    await expect(page.getByTestId("cart-carrier-note")).toHaveCount(0);
     await expect(page.getByTestId("cart-total")).toHaveText(euro(DRAGOON * FREE_FROM));
   });
 
@@ -213,6 +216,9 @@ test.describe("checkout", () => {
     await expect(shipping).toContainText("Poste Italiane");
     await expect(shipping).not.toContainText("Express");
     await expect(page.getByTestId("cart-total")).toHaveText(euro(DRAGOON + SHIPPING_FLAT_RATE));
+    // At checkout the price is the chosen carrier's, not a starting price.
+    await expect(page.getByTestId("cart-shipping")).toHaveText(euro(SHIPPING_FLAT_RATE));
+    await expect(page.getByTestId("cart-carrier-note")).toHaveCount(0);
     await expect(page.locator("#pickupPoint")).toHaveCount(0);
 
     await shipping.getByText("InPost · punto di ritiro o Locker").click();
