@@ -115,11 +115,11 @@ describe("contatti page social channels", () => {
 // ---------------------------------------------------------------------------
 
 describe("catalog authenticity", () => {
-  it("every product has a Produttore spec for Hasbro", () => {
+  it("every product names its maker: Hasbro, or Takara Tomy for the Japanese line", () => {
     for (const product of PRODUCTS) {
-      const hasbro = product.specs.find((s) => s.label === "Produttore");
-      expect(hasbro, `${product.slug} is missing Produttore spec`).toBeDefined();
-      expect(hasbro!.value).toContain("Hasbro");
+      const maker = product.specs.find((s) => s.label === "Produttore");
+      expect(maker, `${product.slug} is missing Produttore spec`).toBeDefined();
+      expect(maker!.value).toContain(product.brand === "takara-tomy" ? "Takara Tomy" : "Hasbro");
     }
   });
 

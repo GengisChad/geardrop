@@ -1,4 +1,4 @@
-import { BUNDLES, FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_METHODS, SOLD_WITHOUT_BARCODE } from "@/data/catalog";
+import { BUNDLES, FREE_SHIPPING_THRESHOLD, PARTNER_SHIPPING_METHOD, PRODUCTS, SHIPPING_METHODS, SOLD_WITHOUT_BARCODE, brandOf } from "@/data/catalog";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import type { Product } from "@/lib/commerce/types";
 import { CATEGORY_LABEL } from "@/lib/labels";
@@ -43,7 +43,7 @@ function offer(product: Product): string {
     ...(AVAILABILITY[product.stock] === "backorder"
       ? [`<g:availability_date>${availabilityDate(product)}</g:availability_date>`]
       : []),
-    `<g:brand>${escape(product.unofficial ? SITE_NAME : "Hasbro")}</g:brand>`,
+    `<g:brand>${escape(product.unofficial ? SITE_NAME : brandOf(product) === "takara-tomy" ? "Takara Tomy" : "Hasbro")}</g:brand>`,
     `<g:product_type>${escape(CATEGORY_LABEL[product.category])}</g:product_type>`,
   ];
 
@@ -75,10 +75,12 @@ function offer(product: Product): string {
     rows.push(`<g:color>${escape(product.variant.label)}</g:color>`);
   }
 
-  // One row per carrier the checkout offers, at the price the buyer pays for it: Merchant Center
-  // requires the declared shipping to match the checkout, and shows the cheapest.
+  // One row per carrier the checkout offers for this product's brand.
+  // Takara Tomy items only ship via the partner's Poste Punto Poste route.
+  // Hasbro (and unofficial) items use the regular InPost + Poste methods.
   const free = product.price.amount >= FREE_SHIPPING_THRESHOLD;
-  for (const method of SHIPPING_METHODS) {
+  const shippingMethods = brandOf(product) === "takara-tomy" && !product.unofficial ? [PARTNER_SHIPPING_METHOD] : SHIPPING_METHODS;
+  for (const method of shippingMethods) {
     rows.push(
       `<g:shipping><g:country>IT</g:country><g:service>${escape(method.label)}</g:service><g:price>${euro(free ? 0 : method.priceCents)}</g:price></g:shipping>`,
     );

@@ -236,7 +236,8 @@ describe("ecommerce events", () => {
 
 describe("the banner and the policy", () => {
   it("gives Accetta tutto and Rifiuta the same weight, lets each purpose be chosen unticked, and the X refuses", () => {
-    const source = readFileSync(join(process.cwd(), "src/components/analytics/cookie-consent.tsx"), "utf8");
+    // Line endings normalised: a Windows checkout reads the file with CRLF.
+    const source = readFileSync(join(process.cwd(), "src/components/analytics/cookie-consent.tsx"), "utf8").replaceAll("\r\n", "\n");
     expect(source).toMatch(/variant="glass" size="sm" type="button" onClick=\{\(\) => choose\(NONE\)\} data-testid="cookie-reject"/);
     expect(source).toMatch(/variant="glass" size="sm" type="button" onClick=\{\(\) => choose\(ALL\)\} data-testid="cookie-accept"/);
     expect(source).toContain('aria-label="Chiudi e rifiuta i cookie non necessari"');

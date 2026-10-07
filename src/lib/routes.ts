@@ -17,6 +17,7 @@ import type { CategorySlug } from "@/lib/commerce/types";
  */
 export type AppHref =
   | Route
+  | `/negozio/${"hasbro" | "takara-tomy"}`
   | `/negozio/${CategorySlug}`
   | `/negozio/${CategorySlug}?${string}`
   | `/prodotto/${ProductSlug}`

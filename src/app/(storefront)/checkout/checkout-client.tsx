@@ -16,7 +16,7 @@ import { useCart } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/format";
 import { cartDelivery, preorderNote } from "@/lib/labels";
 import { checkoutSchema, PICKUP_POINT_MESSAGE, pickupPointMissing, type CheckoutValues } from "@/lib/checkout-schema";
-import { INPOST_POINT_FINDER_URL, shippingMethodByCode } from "@/data/catalog";
+import { INPOST_POINT_FINDER_URL, POSTE_POINT_FINDER_URL, shippingMethodByCode } from "@/data/catalog";
 import { trackEvent } from "@/lib/funnel";
 import { gaItem, sendGaEvent } from "@/lib/analytics/google";
 import { submitOrder } from "./actions";
@@ -362,6 +362,31 @@ export function CheckoutClient() {
               <p className="text-small text-grey-600 sm:col-span-2">
                 Nessun metodo di spedizione è attivo in questo momento.
               </p>
+            ) : quote.shippingOptions.length === 1 && quote.shippingOptions[0]?.locked ? (
+              // Locked plan: exactly one method forced by the cart composition — show as read-only.
+              (() => {
+                const option = quote.shippingOptions[0]!;
+                return (
+                  <>
+                    <input type="hidden" value={option.code} {...register("shippingMethod")} />
+                    <div className="flex items-center gap-3 rounded-xl border border-grey-300 bg-grey-100 p-3.5 sm:col-span-2" data-testid="shipping-locked">
+                      <span className="flex-1">
+                        <span className="gd-display block text-small font-bold tracking-wider text-graphite">{option.label}</span>
+                        {option.hint ? <span className="block text-[0.6875rem] text-grey-600">{option.hint}</span> : null}
+                      </span>
+                      <span className="tabular text-small font-semibold text-graphite">
+                        {option.price.amount === 0 ? "Gratis" : formatPrice(option.price)}
+                      </span>
+                    </div>
+                    {/* Mixed cart: InPost is the locked method when both brands are present. */}
+                    {option.code === "inpost-point" ? (
+                      <p className="text-[0.6875rem] text-grey-600 sm:col-span-2" data-testid="mixed-cart-note">
+                        I pezzi Takara Tomy partono dal nostro partner: arrivano in due pacchi, paghi una sola spedizione.
+                      </p>
+                    ) : null}
+                  </>
+                );
+              })()
             ) : (
               quote.shippingOptions.map((option) => (
                 <label
@@ -390,9 +415,14 @@ export function CheckoutClient() {
             )}
           </div>
 
-          {/* InPost delivers to the point or Locker the buyer names; the shop books it on that. */}
+          {/* Pickup point: InPost point/Locker or Poste Punto Poste/Locker. */}
           {shippingMethodByCode(activeShipping)?.pickupPoint ? (
-            <Field label="Punto InPost o Locker" htmlFor="pickupPoint" error={errors.pickupPoint?.message} className="mt-4">
+            <Field
+              label={shippingMethodByCode(activeShipping)?.carrier === "poste" ? "Punto Poste o Locker" : "Punto InPost o Locker"}
+              htmlFor="pickupPoint"
+              error={errors.pickupPoint?.message}
+              className="mt-4"
+            >
               <TextInput
                 id="pickupPoint"
                 autoComplete="off"
@@ -404,8 +434,15 @@ export function CheckoutClient() {
               />
               <span className="mt-1.5 block text-[0.6875rem] text-grey-600">
                 Non sai qual è il più vicino?{" "}
-                <a className="font-semibold text-violet underline-offset-2 hover:underline" href={INPOST_POINT_FINDER_URL} rel="noreferrer" target="_blank">
-                  Trovalo sulla mappa InPost
+                <a
+                  className="font-semibold text-violet underline-offset-2 hover:underline"
+                  href={shippingMethodByCode(activeShipping)?.carrier === "poste" ? POSTE_POINT_FINDER_URL : INPOST_POINT_FINDER_URL}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  {shippingMethodByCode(activeShipping)?.carrier === "poste"
+                    ? "Cercalo sul sito Poste Italiane"
+                    : "Trovalo sulla mappa InPost"}
                 </a>{" "}
                 e copia qui il codice o l&apos;indirizzo.
               </span>

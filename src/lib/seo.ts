@@ -1,4 +1,4 @@
-import { FREE_SHIPPING_THRESHOLD, SHIPPING_METHODS } from "@/data/catalog";
+import { FREE_SHIPPING_THRESHOLD, PARTNER_SHIPPING_METHOD, SHIPPING_METHODS, brandOf } from "@/data/catalog";
 import { brand } from "@/data/assets";
 import { SELLER } from "@/data/pages";
 import { SHOP_EMAIL } from "@/lib/email/resend";
@@ -85,8 +85,11 @@ const euros = (cents: number) => Number((cents / 100).toFixed(2));
  * The shop's shipping policy, one service per carrier the checkout offers: its price below the
  * free-shipping threshold and nothing from it. Product pages repeat the rate for a single item,
  * which Google reads as the more specific of the two.
+ *
+ * When `includePartner` is true the partner's Poste Punto-Poste service is added too — this
+ * happens only when the catalogue contains at least one Takara Tomy product.
  */
-function shippingServices() {
+function shippingServices(includePartner = false) {
   const condition = (orderValue: { readonly minValue?: number; readonly maxValue?: number }, cents: number) => ({
     "@type": "ShippingConditions",
     shippingDestination: { "@type": "DefinedRegion", addressCountry: "IT" },
@@ -94,7 +97,8 @@ function shippingServices() {
     shippingRate: { "@type": "MonetaryAmount", value: euros(cents), currency: "EUR" },
     transitTime: { "@type": "ServicePeriod", duration: days(TRANSIT_DAYS) },
   });
-  return SHIPPING_METHODS.map((method) => ({
+  const methods = includePartner ? [...SHIPPING_METHODS, PARTNER_SHIPPING_METHOD] : SHIPPING_METHODS;
+  return methods.map((method) => ({
     "@type": "ShippingService",
     "@id": absoluteUrl(`/#shipping-${method.code}`),
     name: method.label,
@@ -110,36 +114,38 @@ function shippingServices() {
   }));
 }
 
-/**
- * The shop as Google's OnlineStore: it sells online only, with no premises customers visit, so it
- * carries no street address. The VAT number is the one already published in the footer and the
- * legal pages; the shipping and return policies are the ones the checkout applies.
- */
-const organization = {
-  "@type": "OnlineStore",
-  "@id": absoluteUrl("/#organization"),
-  name: SITE_NAME,
-  alternateName: "GearDrop",
-  url: PRODUCTION_ORIGIN,
-  logo: { "@type": "ImageObject", url: absoluteUrl(brand.emblem512), width: 512, height: 512 },
-  description: "Negozio online di Beyblade X in Italia: trottole, lanciatori e stadi originali, spediti con InPost e Poste Italiane in tutta Italia.",
-  email: SHOP_EMAIL,
-  vatID: `IT${SELLER.vat}`,
-  // Ties the shop's own profiles to this Organization, so a search engine treats them as one business
-  // instead of three strangers that happen to share a name.
-  sameAs: ["https://www.instagram.com/geardropshop/"],
-  contactPoint: {
-    "@type": "ContactPoint",
-    contactType: "customer service",
+function buildOrganization(includePartner = false) {
+  return {
+    "@type": "OnlineStore",
+    "@id": absoluteUrl("/#organization"),
+    name: SITE_NAME,
+    alternateName: "GearDrop",
+    url: PRODUCTION_ORIGIN,
+    logo: { "@type": "ImageObject", url: absoluteUrl(brand.emblem512), width: 512, height: 512 },
+    description: "Negozio online di Beyblade X in Italia: trottole, lanciatori e stadi originali, spediti con InPost e Poste Italiane in tutta Italia.",
     email: SHOP_EMAIL,
-    availableLanguage: ["it"],
-    areaServed: "IT",
-  },
-  hasMerchantReturnPolicy: { ...RETURN_POLICY, refundType: "https://schema.org/FullRefund" },
-  hasShippingService: shippingServices(),
-};
+    vatID: `IT${SELLER.vat}`,
+    // Ties the shop's own profiles to this Organization, so a search engine treats them as one business
+    // instead of three strangers that happen to share a name.
+    sameAs: ["https://www.instagram.com/geardropshop/"],
+    contactPoint: {
+      "@type": "ContactPoint",
+      contactType: "customer service",
+      email: SHOP_EMAIL,
+      availableLanguage: ["it"],
+      areaServed: "IT",
+    },
+    hasMerchantReturnPolicy: { ...RETURN_POLICY, refundType: "https://schema.org/FullRefund" },
+    hasShippingService: shippingServices(includePartner),
+  };
+}
 
-export function siteJsonLd() {
+/**
+ * The shop as Google's OnlineStore. Pass `includePartner: true` when the catalogue
+ * contains at least one Takara Tomy product, to add the partner's shipping service.
+ */
+export function siteJsonLd({ includePartner = false }: { includePartner?: boolean } = {}) {
+  const organization = buildOrganization(includePartner);
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -250,9 +256,24 @@ const AVAILABILITY = {
   esaurito: "https://schema.org/OutOfStock",
 } as const;
 
+/** The shipping methods that apply to a single product based on its brand. */
+function productShippingMethods(product: Pick<Product, "brand" | "unofficial">) {
+  // Unofficial accessories and Hasbro products use the regular carrier options.
+  if (brandOf(product) === "takara-tomy" && !product.unofficial) return [PARTNER_SHIPPING_METHOD];
+  return SHIPPING_METHODS;
+}
+
+/** The brand name for schema.org, or null when we don't claim one. */
+function schemaBrand(product: Pick<Product, "brand" | "unofficial">): { brand: { "@type": "Brand"; name: string } } | Record<never, never> {
+  if (product.unofficial) return {};
+  if (brandOf(product) === "takara-tomy") return { brand: { "@type": "Brand", name: "Takara Tomy" } };
+  return { brand: { "@type": "Brand", name: "Hasbro" } };
+}
+
 export function productJsonLd(product: Product) {
   const url = absoluteUrl(`/prodotto/${product.slug}`);
   const free = product.price.amount >= FREE_SHIPPING_THRESHOLD;
+  const methods = productShippingMethods(product);
   return {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -263,8 +284,8 @@ export function productJsonLd(product: Product) {
     sku: product.slug.toUpperCase(),
     image: product.images.map((image) => absoluteUrl(image.src)),
     category: CATEGORY_LABEL[product.category],
-    // A compatible accessory carries no Hasbro brand, and the shop never claims one for it.
-    ...(product.unofficial ? {} : { brand: { "@type": "Brand", name: "Hasbro" } }),
+    // Brand follows the product's manufacturer; an unofficial accessory claims none.
+    ...schemaBrand(product),
     ...(product.reviewCount > 0
       ? {
           aggregateRating: {
@@ -282,8 +303,8 @@ export function productJsonLd(product: Product) {
       availability: AVAILABILITY[product.stock],
       itemCondition: "https://schema.org/NewCondition",
       seller: { "@type": "Organization", name: SITE_NAME, url: PRODUCTION_ORIGIN },
-      // One entry per delivery the checkout offers (an InPost point or Locker, Poste to the door).
-      shippingDetails: SHIPPING_METHODS.map((method) => ({
+      // One entry per delivery method that applies to this product's brand (buying just this item).
+      shippingDetails: methods.map((method) => ({
         "@type": "OfferShippingDetails",
         shippingLabel: method.label,
         shippingRate: { "@type": "MonetaryAmount", value: ((free ? 0 : method.priceCents) / 100).toFixed(2), currency: "EUR" },

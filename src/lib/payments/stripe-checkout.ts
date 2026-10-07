@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
-import { SHIPPING_METHODS, shippingMethodByCode } from "@/data/catalog";
+import { PRODUCTS, SHIPPING_METHODS, shippingMethodByCode } from "@/data/catalog";
 import type { PlaceOrderInput } from "@/lib/checkout-schema";
 import type { CartQuote } from "@/lib/commerce/types";
 import { preorderDelivery, preorderUnits } from "@/lib/labels";
@@ -107,6 +107,9 @@ export type CheckoutSessionInput = {
  * (a pre-order drop sells out in an hour). Stripe accepts 30 minutes to 24 hours; the margin
  * keeps a slow clock from asking for less than 30.
  */
+/** The partner's consignment pieces: no promotion code applies to a cart that holds one. */
+const CONSIGNMENT_SLUGS: ReadonlySet<string> = new Set(PRODUCTS.filter((product) => product.consignment).map((product) => product.slug));
+
 export const CHECKOUT_SESSION_MINUTES = 35;
 
 export function buildCheckoutSessionFields(
@@ -130,8 +133,10 @@ export function buildCheckoutSessionFields(
     expires_at: Math.floor(now / 1000) + CHECKOUT_SESSION_MINUTES * 60,
     // No consent_collection or after_expiration recovery: Stripe refuses promotions consent for
     // Italian accounts ("not available in your country") and fails the whole session, and
-    // recovery emails need that consent. Manual promotion codes are fine.
-    "allow_promotion_codes": "true",
+    // recovery emails need that consent. Manual promotion codes are fine, except on a cart with
+    // a partner's consignment piece: the partner is owed his price whatever the buyer paid, so a
+    // code there would come entirely out of the shop's few euros of commission.
+    "allow_promotion_codes": quote.lines.some((line) => CONSIGNMENT_SLUGS.has(line.slug)) ? "false" : "true",
     "metadata[order_ref]": reference,
     "metadata[lines]": truncate(quote.lines.map((line) => `${line.slug} x${line.quantity}`).join(", "), METADATA_LIMIT),
     "metadata[shipping_method]": method.code,

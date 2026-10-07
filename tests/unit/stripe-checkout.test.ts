@@ -167,6 +167,14 @@ describe("stripe checkout session", () => {
     expect(Object.keys(fields).some((key) => key.startsWith("after_expiration"))).toBe(false);
   });
 
+  it("takes no promotion code on a cart holding the partner's consignment piece", async () => {
+    // The partner is owed his price whatever the buyer paid: a code would come out of the commission.
+    const quote = await quoteFor([{ slug: "ux-00-glory-valkyrie-lf", quantity: 1 }]);
+    const fields = buildCheckoutSessionFields({ quote, order: { ...order, contact: { ...order.contact, shippingMethod: "poste-point-partner", pickupPoint: "Locker Milano 12" } }, origin: ORIGIN }, matchStripePrices(quote, catalogPrices)!);
+    expect(fields["allow_promotion_codes"]).toBe("false");
+    expect(fields["shipping_options[0][shipping_rate_data][fixed_amount][amount]"]).toBe(0);
+  });
+
   it("warns on the Stripe page when a line is a pre-order", async () => {
     const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }]);
     const preorder: CartQuote = { ...quote, lines: quote.lines.map((line) => ({ ...line, stock: "pre-ordine" as const })) };
