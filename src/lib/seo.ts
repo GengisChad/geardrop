@@ -1,5 +1,6 @@
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_METHODS } from "@/data/catalog";
 import { brand } from "@/data/assets";
+import { SELLER } from "@/data/pages";
 import { SHOP_EMAIL } from "@/lib/email/resend";
 import { formatPrice } from "@/lib/format";
 import { CATEGORY_LABEL, FREE_SHIPPING_FROM_LABEL, SHIPPING_FLAT_LABEL, stockLabel } from "@/lib/labels";
@@ -62,13 +63,68 @@ export function jsonLd(data: unknown): string {
   return JSON.stringify(data).replace(/</g, "\\u003c");
 }
 
+/** Weekdays: when orders are packed and handed to the carrier. */
+const BUSINESS_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+const HANDLING_DAYS = { minValue: 0, maxValue: 1 } as const;
+const TRANSIT_DAYS = { minValue: 1, maxValue: 4 } as const;
+const days = (range: { readonly minValue: number; readonly maxValue: number }) => ({ "@type": "QuantitativeValue", ...range, unitCode: "DAY" });
+
+/** Free returns within 30 days of delivery, by mail, refunded in full: the "Resi e rimborsi" page. */
+const RETURN_POLICY = {
+  "@type": "MerchantReturnPolicy",
+  applicableCountry: "IT",
+  returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+  merchantReturnDays: RETURN_DAYS,
+  returnMethod: "https://schema.org/ReturnByMail",
+  returnFees: "https://schema.org/FreeReturn",
+} as const;
+
+const euros = (cents: number) => Number((cents / 100).toFixed(2));
+
+/**
+ * The shop's shipping policy, one service per carrier the checkout offers: its price below the
+ * free-shipping threshold and nothing from it. Product pages repeat the rate for a single item,
+ * which Google reads as the more specific of the two.
+ */
+function shippingServices() {
+  const condition = (orderValue: { readonly minValue?: number; readonly maxValue?: number }, cents: number) => ({
+    "@type": "ShippingConditions",
+    shippingDestination: { "@type": "DefinedRegion", addressCountry: "IT" },
+    orderValue: { "@type": "MonetaryAmount", currency: "EUR", ...orderValue },
+    shippingRate: { "@type": "MonetaryAmount", value: euros(cents), currency: "EUR" },
+    transitTime: { "@type": "ServicePeriod", duration: days(TRANSIT_DAYS) },
+  });
+  return SHIPPING_METHODS.map((method) => ({
+    "@type": "ShippingService",
+    "@id": absoluteUrl(`/#shipping-${method.code}`),
+    name: method.label,
+    // An InPost point or Locker is where the courier leaves the parcel: there is no shop to collect from.
+    fulfillmentType: method.pickupPoint
+      ? "https://schema.org/FulfillmentTypeCollectionPoint"
+      : "https://schema.org/FulfillmentTypeDelivery",
+    handlingTime: { "@type": "ServicePeriod", duration: days(HANDLING_DAYS), businessDays: BUSINESS_DAYS },
+    shippingConditions: [
+      condition({ minValue: 0, maxValue: euros(FREE_SHIPPING_THRESHOLD - 1) }, method.priceCents),
+      condition({ minValue: euros(FREE_SHIPPING_THRESHOLD) }, 0),
+    ],
+  }));
+}
+
+/**
+ * The shop as Google's OnlineStore: it sells online only, with no premises customers visit, so it
+ * carries no street address. The VAT number is the one already published in the footer and the
+ * legal pages; the shipping and return policies are the ones the checkout applies.
+ */
 const organization = {
-  "@type": "Organization",
+  "@type": "OnlineStore",
   "@id": absoluteUrl("/#organization"),
   name: SITE_NAME,
+  alternateName: "GearDrop",
   url: PRODUCTION_ORIGIN,
-  logo: absoluteUrl(brand.emblem512),
+  logo: { "@type": "ImageObject", url: absoluteUrl(brand.emblem512), width: 512, height: 512 },
+  description: "Negozio online di Beyblade X in Italia: trottole, lanciatori e stadi originali, spediti con Poste Italiane e InPost.",
   email: SHOP_EMAIL,
+  vatID: `IT${SELLER.vat}`,
   // Ties the shop's own profiles to this Organization, so a search engine treats them as one business
   // instead of three strangers that happen to share a name.
   sameAs: ["https://www.instagram.com/geardropshop/"],
@@ -79,6 +135,8 @@ const organization = {
     availableLanguage: ["it"],
     areaServed: "IT",
   },
+  hasMerchantReturnPolicy: { ...RETURN_POLICY, refundType: "https://schema.org/FullRefund" },
+  hasShippingService: shippingServices(),
 };
 
 export function siteJsonLd() {
@@ -232,22 +290,12 @@ export function productJsonLd(product: Product) {
         shippingDestination: { "@type": "DefinedRegion", addressCountry: "IT" },
         deliveryTime: {
           "@type": "ShippingDeliveryTime",
-          businessDays: {
-            "@type": "OpeningHoursSpecification",
-            dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-          },
-          handlingTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 1, unitCode: "DAY" },
-          transitTime: { "@type": "QuantitativeValue", minValue: 1, maxValue: 4, unitCode: "DAY" },
+          businessDays: { "@type": "OpeningHoursSpecification", dayOfWeek: BUSINESS_DAYS },
+          handlingTime: days(HANDLING_DAYS),
+          transitTime: days(TRANSIT_DAYS),
         },
       })),
-      hasMerchantReturnPolicy: {
-        "@type": "MerchantReturnPolicy",
-        applicableCountry: "IT",
-        returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
-        merchantReturnDays: RETURN_DAYS,
-        returnMethod: "https://schema.org/ReturnByMail",
-        returnFees: "https://schema.org/FreeReturn",
-      },
+      hasMerchantReturnPolicy: RETURN_POLICY,
     },
   };
 }

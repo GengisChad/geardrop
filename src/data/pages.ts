@@ -149,7 +149,7 @@ export const SUPPORT_PAGES = {
 } as const satisfies Record<string, ContentPage>;
 
 /** Seller facts published on the site. Tax code, PEC and REA stay off it by the owner's choice. */
-const SELLER = {
+export const SELLER = {
   holder: "Alessia Brunetti",
   vat: "18464231002",
   office: "Via Fratelli Cervi 2, 00065 Fiano Romano (RM)",

@@ -127,7 +127,7 @@ describe("structured data", () => {
 
   it("publishes the shop, its search and breadcrumbs", () => {
     const site = siteJsonLd();
-    expect(site["@graph"].map((node) => node["@type"])).toEqual(["Organization", "WebSite"]);
+    expect(site["@graph"].map((node) => node["@type"])).toEqual(["OnlineStore", "WebSite"]);
     expect(JSON.stringify(site)).toContain("infogeardrop@gmail.com");
     const crumbs = breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Negozio", path: "/negozio" }]);
     expect(crumbs.itemListElement[1]).toEqual({ "@type": "ListItem", position: 2, name: "Negozio", item: "https://geardropshop.it/negozio" });
@@ -135,5 +135,53 @@ describe("structured data", () => {
 
   it("can never close its script tag", () => {
     expect(jsonLd({ name: "</script><script>alert(1)</script>" })).not.toContain("</script>");
+  });
+});
+
+describe("the shop as Google's OnlineStore", () => {
+  const store = siteJsonLd()["@graph"][0] as ReturnType<typeof siteJsonLd>["@graph"][0] & Record<string, unknown>;
+
+  it("is an online store with no premises: VAT number, logo, contact, and no street address", () => {
+    expect(store).toMatchObject({
+      "@type": "OnlineStore",
+      vatID: "IT18464231002",
+      logo: { "@type": "ImageObject", width: 512, height: 512 },
+      contactPoint: { email: "infogeardrop@gmail.com" },
+    });
+    expect(JSON.stringify(siteJsonLd())).not.toMatch(/"address"|PostalAddress|streetAddress|telephone/);
+  });
+
+  it("publishes one shipping service per carrier, paid below the threshold and free from it", () => {
+    const services = store.hasShippingService as {
+      name: string;
+      fulfillmentType: string;
+      shippingConditions: { orderValue: { minValue?: number; maxValue?: number }; shippingRate: { value: number } }[];
+    }[];
+    expect(
+      services.map((service) => [
+        service.name,
+        service.fulfillmentType.replace("https://schema.org/", ""),
+        service.shippingConditions.map((condition) => condition.shippingRate.value),
+      ]),
+    ).toEqual([
+      ["Poste Italiane · consegna a casa", "FulfillmentTypeDelivery", [4.9, 0]],
+      ["InPost · punto di ritiro o Locker", "FulfillmentTypeCollectionPoint", [5.65, 0]],
+      ["InPost · consegna a casa", "FulfillmentTypeDelivery", [6.65, 0]],
+    ]);
+    // The two bands meet at the threshold without a gap or an overlap.
+    for (const service of services) {
+      expect(service.shippingConditions.map((condition) => condition.orderValue)).toEqual([
+        expect.objectContaining({ minValue: 0, maxValue: (FREE_SHIPPING_THRESHOLD - 1) / 100 }),
+        expect.objectContaining({ minValue: FREE_SHIPPING_THRESHOLD / 100 }),
+      ]);
+      expect(service.shippingConditions[1]!.orderValue).not.toHaveProperty("maxValue");
+    }
+  });
+
+  it("states the same return policy as the product pages, with a full refund", () => {
+    expect(store.hasMerchantReturnPolicy).toEqual({
+      ...productJsonLd(PRODUCTS[0]!).offers.hasMerchantReturnPolicy,
+      refundType: "https://schema.org/FullRefund",
+    });
   });
 });
