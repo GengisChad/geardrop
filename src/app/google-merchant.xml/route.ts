@@ -1,7 +1,8 @@
-import { BUNDLES, FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_METHODS } from "@/data/catalog";
+import { BUNDLES, FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_METHODS, SOLD_WITHOUT_BARCODE } from "@/data/catalog";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import type { Product } from "@/lib/commerce/types";
 import { CATEGORY_LABEL } from "@/lib/labels";
+import { availabilityDate } from "@/lib/merchant-availability";
 import { absoluteUrl, productTitle, SITE_NAME } from "@/lib/seo";
 
 /**
@@ -39,6 +40,9 @@ function offer(product: Product): string {
     `<g:link>${escape(absoluteUrl(`/prodotto/${product.slug}`))}</g:link>`,
     `<g:condition>new</g:condition>`,
     `<g:availability>${AVAILABILITY[product.stock]}</g:availability>`,
+    ...(AVAILABILITY[product.stock] === "backorder"
+      ? [`<g:availability_date>${availabilityDate(product)}</g:availability_date>`]
+      : []),
     `<g:brand>${escape(product.unofficial ? SITE_NAME : "Hasbro")}</g:brand>`,
     `<g:product_type>${escape(CATEGORY_LABEL[product.category])}</g:product_type>`,
   ];
@@ -57,9 +61,14 @@ function offer(product: Product): string {
     rows.push(`<g:price>${euro(product.price.amount)}</g:price>`);
   }
 
-  // Only the deck cases are ours and genuinely have no barcode. Hasbro boxes do have one; until
-  // those are recorded we say nothing rather than claim an identifier does not exist.
-  if (product.unofficial) rows.push(`<g:identifier_exists>no</g:identifier_exists>`);
+  // The deck cases are ours, and pieces out of an opened set come in a bag: neither has a barcode.
+  // Hasbro boxes do have one; until those are recorded we say nothing rather than claim an
+  // identifier does not exist.
+  if (product.unofficial || SOLD_WITHOUT_BARCODE.has(product.slug)) {
+    rows.push(`<g:identifier_exists>no</g:identifier_exists>`);
+  }
+  // A kit the shop puts together is a bundle to Google, priced as one offer.
+  if (product.bundleOf) rows.push(`<g:is_bundle>yes</g:is_bundle>`);
 
   if (product.variant) {
     rows.push(`<g:item_group_id>${escape(product.variant.family)}</g:item_group_id>`);

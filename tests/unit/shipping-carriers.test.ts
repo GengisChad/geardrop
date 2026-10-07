@@ -172,3 +172,36 @@ describe("the withdrawal clause", () => {
     expect(text).toContain("art. 56 del Codice del consumo");
   });
 });
+
+describe("backorder items in the Merchant feed", () => {
+  it("carry the availability date Google requires, at the far end of the delay the page states", async () => {
+    const { availabilityDate } = await import("@/lib/merchant-availability");
+    const { GET } = await import("@/app/google-merchant.xml/route");
+    // Wednesday 7 October 2026: 15 working days is Wednesday 28, 20 is Wednesday 4 November.
+    const now = new Date("2026-10-07T10:00:00Z");
+    expect(availabilityDate({}, now)).toBe("2026-10-28T00:00:00Z");
+    expect(availabilityDate({ releasePreorder: true }, now)).toBe("2026-11-04T00:00:00Z");
+
+    const xml = await (await GET()).text();
+    const items = xml.split("<item>").slice(1);
+    for (const item of items) {
+      const backorder = item.includes("<g:availability>backorder</g:availability>");
+      expect(item.includes("<g:availability_date>"), item.slice(0, 80)).toBe(backorder);
+    }
+  }, 60_000);
+});
+
+describe("product identifiers in the Merchant feed", () => {
+  it("says a loose set piece or our own deck case has no barcode, and marks the shop's kits as bundles", async () => {
+    const { GET } = await import("@/app/google-merchant.xml/route");
+    const { BUNDLES, PRODUCTS, SOLD_WITHOUT_BARCODE } = await import("@/data/catalog");
+    const xml = await (await GET()).text();
+    const item = (slug: string) => xml.split("<item>").find((chunk) => chunk.includes(`<g:id>${slug}</g:id>`)) ?? "";
+    for (const slug of SOLD_WITHOUT_BARCODE) expect(item(slug), slug).toContain("<g:identifier_exists>no</g:identifier_exists>");
+    // A boxed Hasbro starter has a barcode: the feed must not deny it.
+    const boxed = PRODUCTS.find((product) => !product.unofficial && !product.bundleOf && !SOLD_WITHOUT_BARCODE.has(product.slug))!;
+    expect(item(boxed.slug)).not.toContain("identifier_exists");
+    for (const bundle of BUNDLES.filter((product) => product.bundleOf)) expect(item(bundle.slug), bundle.slug).toContain("<g:is_bundle>yes</g:is_bundle>");
+  }, 60_000);
+});
+

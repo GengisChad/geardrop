@@ -373,6 +373,12 @@ export const SHIPPING_METHODS: readonly ShippingMethodDefinition[] = [
   { code: "standard", carrier: "poste", label: "Poste Italiane · consegna a casa", priceCents: 665, pickupPoint: false },
 ];
 
+/**
+ * Pieces sold out of an opened Battle Set: a sealed bag with no retail box, so no barcode of their
+ * own. Merchant Center is told so; every boxed Hasbro item does have an EAN, recorded when known.
+ */
+export const SOLD_WITHOUT_BARCODE: ReadonlySet<string> = new Set(["impact-drake-9-60lr", "hover-wyvern-3-85n"]);
+
 /** Where the buyer finds the InPost point or Locker nearest to them. */
 export const INPOST_POINT_FINDER_URL = "https://inpost.it/trova-un-locker";
 
