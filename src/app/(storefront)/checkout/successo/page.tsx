@@ -3,7 +3,10 @@ import Link from "next/link";
 import { AlertTriangle, CheckCircle2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/format";
-import { retrieveCheckoutSession } from "@/lib/payments/stripe-checkout";
+import { GaEvent } from "@/components/analytics/ga-event";
+import { BUNDLES, PRODUCTS } from "@/data/catalog";
+import { gaItem, purchaseEvent } from "@/lib/analytics/google";
+import { retrieveCheckoutSession, type CheckoutSessionSummary } from "@/lib/payments/stripe-checkout";
 import { ClearCart } from "./clear-cart";
 
 export const metadata: Metadata = {
@@ -32,6 +35,7 @@ export default async function CheckoutResultPage({ searchParams }: { searchParam
         className="gd-hud mx-auto mt-10 flex max-w-lg flex-col items-center bg-surface/80 px-6 py-14 text-center"
       >
         {completed ? <ClearCart /> : null}
+        {paid ? <PurchaseEvent session={session} /> : null}
         {paid ? (
           <CheckCircle2 className="size-14 text-available" strokeWidth={1.5} aria-hidden="true" />
         ) : completed ? (
@@ -80,3 +84,27 @@ export default async function CheckoutResultPage({ searchParams }: { searchParam
     </div>
   );
 }
+
+const CATALOGUE: ReadonlyMap<string, { readonly name: string; readonly price: { readonly amount: number } }> = new Map(
+  [...PRODUCTS, ...BUNDLES].map((product) => [product.slug, product]),
+);
+
+/**
+ * The GA4 purchase for a paid session: Google Ads reads it to count the sales its campaigns bring.
+ * Items come from the session's own line list and are named and priced from the catalogue.
+ */
+function PurchaseEvent({ session }: { readonly session: CheckoutSessionSummary }) {
+  if (!session.reference || session.totalCents === null) return null;
+  const items = session.lines.map((line) => {
+    const product = CATALOGUE.get(line.slug);
+    return gaItem({ slug: line.slug, name: product?.name ?? line.slug, priceCents: product?.price.amount ?? null, quantity: line.quantity });
+  });
+  return (
+    <GaEvent
+      name="purchase"
+      params={purchaseEvent({ reference: session.reference, totalCents: session.totalCents, shippingCents: session.shippingCents ?? 0, items })}
+      onceKey={`gd-ga-purchase-${session.reference}`}
+    />
+  );
+}
+

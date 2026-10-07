@@ -12,7 +12,9 @@ import { VariantPicker } from "@/components/product/variant-picker";
 import { ProductCarousel } from "@/components/product/product-carousel";
 import { Rating } from "@/components/ui/rating";
 import { TrustBarLight } from "@/components/home/trust";
+import { GaEvent } from "@/components/analytics/ga-event";
 import { TrackPageView } from "@/components/funnel/track-page-view";
+import { gaItem } from "@/lib/analytics/google";
 import { BUNDLES, PRODUCTS } from "@/data/catalog";
 import { bundlesContaining } from "@/lib/commerce/bundles";
 import { getCommerceProvider } from "@/lib/commerce/provider";
@@ -79,6 +81,14 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
   return (
     <>
       <TrackPageView event="product_view" />
+      <GaEvent
+        name="view_item"
+        params={{
+          currency: "EUR",
+          value: product.price.amount / 100,
+          items: [gaItem({ slug: product.slug, name: product.name, priceCents: product.price.amount, quantity: 1, category: CATEGORY_LABEL[product.category] })],
+        }}
+      />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(productData) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbData) }} />
 
