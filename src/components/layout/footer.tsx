@@ -15,7 +15,7 @@ const SELLER_NAME = "Alessia Brunetti";
 /** Standing promises. Card wallets are not named here: Stripe decides which appear at checkout. */
 const PROMISES = [
   { Icon: Lock, text: "Pagamento sicuro con Stripe" },
-  { Icon: Truck, text: `Spedizione ${SHIPPING_FLAT_LABEL} · gratis da ${FREE_SHIPPING_FROM_LABEL}` },
+  { Icon: Truck, text: `Spedizione da ${SHIPPING_FLAT_LABEL} · gratis da ${FREE_SHIPPING_FROM_LABEL}` },
   { Icon: RotateCcw, text: "Reso gratuito entro 30 giorni" },
 ] as const;
 

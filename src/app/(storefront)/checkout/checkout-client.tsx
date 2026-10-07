@@ -15,7 +15,8 @@ import { useCartQuote } from "@/lib/use-cart-quote";
 import { useCart } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/format";
 import { cartDelivery, preorderNote } from "@/lib/labels";
-import { checkoutSchema, type CheckoutValues } from "@/lib/checkout-schema";
+import { checkoutSchema, PICKUP_POINT_MESSAGE, pickupPointMissing, type CheckoutValues } from "@/lib/checkout-schema";
+import { INPOST_POINT_FINDER_URL, shippingMethodByCode } from "@/data/catalog";
 import { trackEvent } from "@/lib/funnel";
 import { submitOrder } from "./actions";
 import type { Money } from "@/lib/commerce/types";
@@ -122,7 +123,12 @@ export function CheckoutClient() {
           const result = await submitOrder({
             // The shipping code the quote was priced with wins if the customer never
             // touched the radios; the database rejects it anyway if it is not active.
-            contact: { ...values, shippingMethod: values.shippingMethod || activeShipping },
+            contact: {
+              ...values,
+              shippingMethod: values.shippingMethod || activeShipping,
+              // A point typed for InPost and then left for Poste must not travel with the order.
+              pickupPoint: shippingMethodByCode(values.shippingMethod || activeShipping)?.pickupPoint ? values.pickupPoint : undefined,
+            },
             lines: lines.map((line) => ({ slug: line.slug, quantity: line.quantity })),
             idempotencyKey,
           });
@@ -367,6 +373,28 @@ export function CheckoutClient() {
               ))
             )}
           </div>
+
+          {/* InPost delivers to the point or Locker the buyer names; the shop books it on that. */}
+          {shippingMethodByCode(activeShipping)?.pickupPoint ? (
+            <Field label="Punto InPost o Locker" htmlFor="pickupPoint" error={errors.pickupPoint?.message} className="mt-4">
+              <TextInput
+                id="pickupPoint"
+                autoComplete="off"
+                placeholder="Es. codice del Locker o indirizzo del punto"
+                hasError={Boolean(errors.pickupPoint)}
+                {...register("pickupPoint", {
+                  validate: (v) => !pickupPointMissing(activeShipping, v) || PICKUP_POINT_MESSAGE,
+                })}
+              />
+              <span className="mt-1.5 block text-[0.6875rem] text-grey-600">
+                Non sai qual è il più vicino?{" "}
+                <a className="font-semibold text-violet underline-offset-2 hover:underline" href={INPOST_POINT_FINDER_URL} rel="noreferrer" target="_blank">
+                  Trovalo sulla mappa InPost
+                </a>{" "}
+                e copia qui il codice o l&apos;indirizzo.
+              </span>
+            </Field>
+          ) : null}
         </fieldset>
 
         <fieldset className="gd-glass-panel rounded-[--radius-glass] p-5">

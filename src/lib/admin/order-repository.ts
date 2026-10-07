@@ -78,7 +78,7 @@ export async function loadAdminOrderDetail(client: SupabaseClient<Database>, id:
 }
 
 export async function listAdminOrdersForCsv(client: SupabaseClient<Database>, query: AdminOrderQuery) {
-  let builder = client.from("orders").select("order_number,email,created_at,status,payment_status,shipping_method_code,coupon_code,subtotal_cents,discount_cents,shipping_cents,total_cents,currency");
+  let builder = client.from("orders").select("order_number,email,created_at,status,payment_status,shipping_method_code,coupon_code,subtotal_cents,discount_cents,shipping_cents,total_cents,currency,shipping_address_snapshot");
   if (query.q) { const pattern = `%${escapePattern(query.q)}%`; builder = builder.or(`order_number.ilike.${pattern},email.ilike.${pattern}`); }
   if (query.from) builder = builder.gte("created_at", `${query.from}T00:00:00.000Z`);
   if (query.to) builder = builder.lt("created_at", exclusiveEnd(query.to));

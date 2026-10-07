@@ -137,7 +137,8 @@ describe("stripe checkout session", () => {
       cancel_url: "https://geardropshop.it/checkout",
       "line_items[0][price]": "price_hurricane-enlil-is-7-55t",
       "line_items[0][quantity]": 2,
-      "shipping_options[0][shipping_rate_data][display_name]": "Spedizione standard",
+      "shipping_options[0][shipping_rate_data][display_name]": "Poste Italiane · consegna a casa",
+      "metadata[shipping_method]": "standard",
       "shipping_options[0][shipping_rate_data][fixed_amount][amount]": 490,
       "payment_intent_data[shipping][name]": "Mario Rossi",
       "payment_intent_data[shipping][address][postal_code]": "20121",
@@ -180,7 +181,7 @@ describe("stripe checkout session", () => {
     const fields = buildCheckoutSessionFields({ quote, order, origin: ORIGIN }, matchStripePrices(quote, catalogPrices)!);
 
     expect(fields["shipping_options[0][shipping_rate_data][fixed_amount][amount]"]).toBe(0);
-    expect(fields["shipping_options[0][shipping_rate_data][display_name]"]).toBe("Spedizione gratuita");
+    expect(fields["shipping_options[0][shipping_rate_data][display_name]"]).toBe("Spedizione gratuita · Poste Italiane · consegna a casa");
     expect(fields["line_items[1][price]"]).toBe("price_cobalt-dragoon-2-60c");
   });
 

@@ -6,7 +6,7 @@
  * contract for the whole UI to keep working.
  */
 
-import { BUNDLE, BUNDLES, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_FLAT_RATE } from "@/data/catalog";
+import { BUNDLE, BUNDLES, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_METHODS, shippingMethodByCode } from "@/data/catalog";
 import { STANDARD_DELIVERY } from "@/lib/labels";
 import { piecesOf, withBundles } from "./bundles";
 import { oneCardPerFamily } from "./variants";
@@ -32,15 +32,17 @@ import type {
 const DEFAULT_PER_PAGE = 24;
 
 /**
- * The one delivery option the local catalogue knows about. Real shipping options come
- * from the backend; hardcoding them is allowed here and nowhere else.
+ * The delivery options the catalogue sells (src/data/catalog.ts SHIPPING_METHODS): Poste, InPost
+ * to a point or Locker, InPost to the door. Real shipping options come from the backend when there
+ * is one; hardcoding them is allowed here and nowhere else.
  */
-const MOCK_SHIPPING: ShippingOption = {
-  code: "standard",
-  label: "Spedizione standard",
+const CATALOGUE_SHIPPING: readonly ShippingOption[] = SHIPPING_METHODS.map((method) => ({
+  code: method.code,
+  label: method.label,
   hint: STANDARD_DELIVERY,
-  price: { amount: SHIPPING_FLAT_RATE, currency: "EUR" },
-};
+  price: { amount: method.priceCents, currency: "EUR" },
+}));
+const DEFAULT_SHIPPING = SHIPPING_METHODS[0]!;
 
 /** Popularity is not a stored field; the mockups rank by review volume. */
 const byPopularity = (a: Product, b: Product) => b.reviewCount - a.reviewCount;
@@ -270,13 +272,15 @@ export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CA
       const subtotal = sellable.reduce((sum, line) => sum + line.lineTotal.amount, 0);
       const isEmpty = subtotal === 0;
       const qualifies = subtotal >= FREE_SHIPPING_THRESHOLD;
-      const shipping = isEmpty || qualifies ? 0 : SHIPPING_FLAT_RATE;
+      // The buyer's choice when it is one the shop sells, otherwise the cheapest (Poste).
+      const method = shippingMethodByCode(request.shippingCode) ?? DEFAULT_SHIPPING;
+      const shipping = isEmpty || qualifies ? 0 : method.priceCents;
 
       return {
         lines: quoteLines,
         missingSlugs,
-        shippingOptions: [MOCK_SHIPPING],
-        shippingCode: MOCK_SHIPPING.code,
+        shippingOptions: CATALOGUE_SHIPPING,
+        shippingCode: method.code,
         totals: {
           subtotal: { amount: subtotal, currency: "EUR" },
           discount: { amount: 0, currency: "EUR" },
