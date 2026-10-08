@@ -90,7 +90,8 @@ describe("bundle stock", () => {
       "duo-horus-enlil",
       "trio-starter-arena",
     ]);
-    expect(bundlesContaining("glory-valkerion-lf", BUNDLES)).toHaveLength(0);
+    // Glory Valkerion sells alone and in the Promo Attack (owner, 2026-10-08).
+    expect(bundlesContaining("glory-valkerion-lf", BUNDLES).map((bundle) => bundle.slug)).toEqual(["promo-attack"]);
   });
 });
 

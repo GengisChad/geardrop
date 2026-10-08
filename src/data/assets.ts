@@ -249,6 +249,26 @@ export const productImages = {
       alt: "Kit con il Sneak Attack Battle Set, due starter Beyblade X e il porta deck",
     },
   ],
+  "promo-attack": [
+    {
+      src: "/products/promo-attack.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Promo Attack Beyblade X: confezioni Glory Valkerion LF e Buster Dran 5-70DB con la trottola Buster Dran",
+    },
+    {
+      src: "/products/glory-valkerion-lf.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Confezione Beyblade X Glory Valkerion LF",
+    },
+    {
+      src: "/products/buster-dran-5-70db.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Confezione Beyblade X Buster Dran 5-70DB",
+    },
+  ],
   "duo-pegasus-samurai": [
     {
       src: "/products/duo-pegasus-samurai.webp",
