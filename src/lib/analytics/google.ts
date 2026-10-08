@@ -38,10 +38,46 @@ export function consentState(purposes: ConsentPurposes) {
  */
 const FUNNEL_PATHS: ReadonlySet<string> = new Set(["/carrello", "/checkout", "/checkout/successo", "/preferiti"]);
 
-/** The page address Analytics may see: no query string, no hash, nothing on an account or auth route. */
-export function analyticsPageLocation(origin: string, pathname: string): string | null {
+/**
+ * Query parameters that say where a visit came from. Analytics reads a session's source from the
+ * address of its first page view, so a landing page stripped of these turns every campaign, every
+ * tagged bio link and every paid click into "Direct" or "Unassigned".
+ *
+ * The utm_* tags are labels a link carries for everyone who follows it; they say nothing about the
+ * visitor. Click identifiers are per visitor, so they only pass with marketing consent — the same
+ * consent that lets Google Ads count the sale they lead to.
+ */
+const CAMPAIGN_PARAMS: readonly string[] = [
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_term",
+  "utm_content",
+  "utm_id",
+  "utm_source_platform",
+];
+const CLICK_ID_PARAMS: readonly string[] = ["gclid", "gbraid", "wbraid", "gclsrc", "dclid", "srsltid"];
+
+/**
+ * The page address Analytics may see: nothing on an account or auth route, no hash, and of the
+ * query string only the attribution parameters above — never a Stripe session id, a search term
+ * or anything else a URL can carry.
+ */
+export function analyticsPageLocation(
+  origin: string,
+  pathname: string,
+  search = "",
+  { clickIds = false }: { readonly clickIds?: boolean } = {},
+): string | null {
   if (!FUNNEL_PATHS.has(pathname) && isSensitiveAnalyticsPath(pathname)) return null;
-  return `${origin}${pathname}`;
+  const query = new URLSearchParams(search);
+  const kept = new URLSearchParams();
+  for (const name of clickIds ? [...CAMPAIGN_PARAMS, ...CLICK_ID_PARAMS] : CAMPAIGN_PARAMS) {
+    const value = query.get(name);
+    if (value) kept.set(name, value);
+  }
+  const tail = kept.toString();
+  return `${origin}${pathname}${tail ? `?${tail}` : ""}`;
 }
 
 type QueuedEvent = { readonly name: string; readonly params: Record<string, unknown>; readonly onSent?: () => void };
@@ -49,6 +85,8 @@ type GtagWindow = Window & {
   dataLayer?: unknown[];
   gtag?: (...args: unknown[]) => void;
   gdGaQueue?: QueuedEvent[];
+  /** Marketing granted on the running tag: click identifiers may ride on the page address. */
+  gdGaAdSignals?: boolean;
 } & Record<string, unknown>;
 
 const browserWindow = () => window as unknown as GtagWindow;
@@ -66,6 +104,7 @@ const MAX_QUEUED = 20;
 export function loadGoogleAnalytics(purposes: ConsentPurposes, win: GtagWindow = browserWindow()): void {
   if (!purposes.analytics) return;
   win[disableFlag] = false;
+  win.gdGaAdSignals = purposes.marketing;
   if (win.document.getElementById(SCRIPT_ID)) {
     win.gtag?.("consent", "update", consentState(purposes));
     win.gtag?.("set", { allow_ad_personalization_signals: purposes.marketing });
@@ -85,22 +124,23 @@ export function loadGoogleAnalytics(purposes: ConsentPurposes, win: GtagWindow =
     script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_MEASUREMENT_ID)}`;
     win.document.head.appendChild(script);
   }
-  for (const event of win.gdGaQueue?.splice(0) ?? []) {
-    win.gtag?.("event", event.name, event.params);
-    event.onSent?.();
-  }
+  // Queued events are not sent here but after the first page view (see sendPageView): a session
+  // takes its source from its first event, and a view_item raised by the product page before the
+  // banner was read carries no campaign — sent first, it made the session "Unassigned".
 }
 
 /** Withdrawn consent: the loaded tag stops sending, queued events are dropped, and the cookies go. */
 export function disableGoogleAnalytics(cookieNames: readonly string[], win: GtagWindow = browserWindow()): void {
   win[disableFlag] = true;
   win.gdGaQueue = [];
+  win.gdGaAdSignals = false;
   win.gtag?.("consent", "update", consentState({ analytics: false, marketing: false }));
   disableCookies(cookieNames, win);
 }
 
 /** Marketing withdrawn while statistics stay: the ad signals go back to denied. */
 export function denyMarketing(cookieNames: readonly string[], win: GtagWindow = browserWindow()): void {
+  win.gdGaAdSignals = false;
   win.gtag?.("consent", "update", { ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied" });
   win.gtag?.("set", { allow_ad_personalization_signals: false });
   disableCookies(cookieNames, win);
@@ -121,12 +161,22 @@ export function dropQueuedEvents(win: GtagWindow = browserWindow()): void {
   win.gdGaQueue = [];
 }
 
-/** One page view, for a path Analytics may see. */
+/**
+ * One page view, for a path Analytics may see, carrying the landing page's campaign parameters.
+ * Then whatever was raised before the visitor's choice was read goes out behind it, so the page
+ * view stays the session's first event.
+ */
 export function sendPageView(pathname: string, win: GtagWindow = browserWindow()): boolean {
-  const location = analyticsPageLocation(win.location.origin, pathname);
-  if (!location || !win.gtag || win[disableFlag] === true) return false;
-  win.gtag("event", "page_view", { page_location: location, page_title: win.document.title });
-  return true;
+  if (!win.gtag || win[disableFlag] === true) return false;
+  const location = analyticsPageLocation(win.location.origin, pathname, win.location.search ?? "", {
+    clickIds: win.gdGaAdSignals === true,
+  });
+  if (location) win.gtag("event", "page_view", { page_location: location, page_title: win.document.title });
+  for (const event of win.gdGaQueue?.splice(0) ?? []) {
+    win.gtag("event", event.name, event.params);
+    event.onSent?.();
+  }
+  return location !== null;
 }
 
 /**
