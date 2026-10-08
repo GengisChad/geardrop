@@ -40,7 +40,11 @@ const byPopularity = (a: Product, b: Product) => b.reviewCount - a.reviewCount;
 
 const SORTERS: Record<SortKey, (a: Product, b: Product) => number> = {
   popolari: byPopularity,
-  novita: (a, b) => Number(b.tags.includes("novita")) - Number(a.tags.includes("novita")) || byPopularity(a, b),
+  // Among the new releases, what ships now leads what is still on pre-order (owner, 2026-10-08).
+  novita: (a, b) =>
+    Number(b.tags.includes("novita")) - Number(a.tags.includes("novita")) ||
+    Number(b.stock === "disponibile") - Number(a.stock === "disponibile") ||
+    byPopularity(a, b),
   "prezzo-asc": (a, b) => a.price.amount - b.price.amount || byPopularity(a, b),
   "prezzo-desc": (a, b) => b.price.amount - a.price.amount || byPopularity(a, b),
   nome: (a, b) => a.name.localeCompare(b.name, "it"),

@@ -20,7 +20,7 @@ const VIEWPORTS = [
 
 /** Every card of the storefront: an item sold in several colours (the deck case) is one card. */
 const STOREFRONT_CARDS = oneCardPerFamily(STOREFRONT_CATALOGUE);
-/** The owner's order (2026-10-05): the best sellers, the pre-order drop, what ships now, the rest. */
+/** The owner's order (2026-10-05): the best sellers, the new arrivals, the pre-order drop, what ships now, the rest. */
 const PLAN = homepagePlan(STOREFRONT_CARDS, 5);
 const slugs = (products: readonly { readonly slug: string }[]) => products.map((product) => product.slug);
 
@@ -44,6 +44,7 @@ test.describe("public homepage", () => {
     const cardSlugs = (testId: string) =>
       page.getByTestId(testId).getByTestId("product-card").evaluateAll((cards) => cards.map((card) => card.getAttribute("data-slug")));
     expect(await cardSlugs("hero-products")).toEqual(slugs(PLAN.hero));
+    expect(await cardSlugs("new-arrivals")).toEqual(slugs(PLAN.arrivals));
     expect(await cardSlugs("preorder-drop")).toEqual(slugs(PLAN.drop));
     expect(await cardSlugs("ready-to-ship")).toEqual(slugs(PLAN.ready));
     expect(await cardSlugs("arsenal-grid")).toEqual(slugs(PLAN.rest));

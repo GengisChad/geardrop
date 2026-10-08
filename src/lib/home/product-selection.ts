@@ -44,6 +44,10 @@ export const BESTSELLER_SLUGS: readonly string[] = [
  * still on pre-order, then what ships right away (single pieces, then bundles, then
  * accessories), then everything else with sold-out pieces last. Every product appears once.
  *
+ * A new release already on the shelf (owner, 2026-10-08: 199 Soar Phoenix landed) gets a row
+ * of its own, "Appena arrivati", between the best sellers and the pre-orders: it ships now, so
+ * it never sits under "Pre-ordini aperti" with the release wait beside it.
+ *
  * When none of the best sellers can be sold the hero falls back to the September order — the
  * new releases, or failing those anything on sale — rather than dealing an empty first screen.
  */
@@ -62,9 +66,12 @@ export function homepagePlan<T extends PlannedProduct>(
   const heroIsBestsellers = best.length > 0;
   const hero = heroIsBestsellers ? best : (releases.length > 0 ? releases : products.filter(onSale)).slice(0, heroLimit);
   const taken = new Set(hero.map((product) => product.slug));
-  // The new releases get a row of their own once the best sellers hold the first screen.
-  const drop = heroIsBestsellers ? releases.filter((product) => !taken.has(product.slug)) : [];
-  for (const product of drop) taken.add(product.slug);
+  // The new releases get rows of their own once the best sellers hold the first screen: what
+  // has landed, then what is still on pre-order.
+  const unseen = heroIsBestsellers ? releases.filter((product) => !taken.has(product.slug)) : [];
+  const arrivals = unseen.filter((product) => product.stock === "disponibile");
+  const drop = unseen.filter((product) => product.stock !== "disponibile");
+  for (const product of unseen) taken.add(product.slug);
   const kind = (product: T) => (product.bundleOf ? 1 : product.variant ? 2 : 0);
   const ready = products
     .filter((product) => !taken.has(product.slug) && product.stock === "disponibile")
@@ -77,6 +84,7 @@ export function homepagePlan<T extends PlannedProduct>(
     hero,
     heroIsBestsellers,
     heroIsNewRelease: !heroIsBestsellers && releases.length > 0,
+    arrivals,
     drop,
     ready,
     rest: [...others.filter(onSale), ...others.filter((product) => !onSale(product))],

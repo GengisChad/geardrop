@@ -52,14 +52,26 @@ describe("homepage plan", () => {
 
     it("still shows every product exactly once", () => {
       const plan = homepagePlan(catalogue, 4, best);
-      const shown = [...plan.hero, ...plan.drop, ...plan.ready, ...plan.rest].map((product) => product.slug);
+      const shown = [...plan.hero, ...plan.arrivals, ...plan.drop, ...plan.ready, ...plan.rest].map((product) => product.slug);
       expect(shown.sort()).toEqual(slugs(catalogue).sort());
+    });
+
+    // Owner, 2026-10-08: 199 Soar Phoenix landed and went into the new releases.
+    it("gives a new release already on the shelf its own row, never the pre-order one", () => {
+      const landed = [...catalogue, item("phoenix", "disponibile", { tags: ["novita"] })];
+      const plan = homepagePlan(landed, 4, best);
+      expect(slugs(plan.arrivals)).toEqual(["phoenix"]);
+      expect(slugs(plan.drop)).toEqual(["drake", "clock", "dran", "croc"]);
+      expect(slugs(plan.ready)).not.toContain("phoenix");
+      const shown = [...plan.hero, ...plan.arrivals, ...plan.drop, ...plan.ready, ...plan.rest].map((product) => product.slug);
+      expect(shown.sort()).toEqual(slugs(landed).sort());
     });
 
     it("falls back to the September order when no best seller can be sold", () => {
       const plan = homepagePlan(catalogue, 4, ["superion", "not-in-the-catalogue"]);
       expect(plan.heroIsBestsellers).toBe(false);
       expect(slugs(plan.hero)).toEqual(["drake", "clock", "dran", "croc"]);
+      expect(plan.arrivals).toEqual([]);
       expect(plan.drop).toEqual([]);
     });
   });
