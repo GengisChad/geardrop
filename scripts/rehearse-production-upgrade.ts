@@ -237,11 +237,14 @@ async function main(argv: readonly string[]): Promise<void> {
   }
 
   console.log("3/6 Ripristino del backup sulla copia…");
-  // Si svuotano gli schemi che il dump ricrea (public e private): il resto — auth, storage,
+  // Si svuotano gli schemi che il dump ricrea (public e private) e quelli che creano le migration
+  // da provare (management_api): una copia usata per prove precedenti li ha già, e la migration
+  // che li crea fallirebbe sulla copia senza fallire in produzione. Il resto — auth, storage,
   // realtime — è gestito dalla piattaforma e resta com'è.
   psql(copy, ["--quiet", "--command", [
     "drop schema if exists public cascade;",
     "drop schema if exists private cascade;",
+    "drop schema if exists management_api cascade;",
     "create schema public;",
     "grant usage on schema public to postgres, anon, authenticated, service_role;",
     "grant all on schema public to postgres, service_role;",
