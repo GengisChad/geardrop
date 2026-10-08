@@ -120,11 +120,13 @@ select results_eq($$select slug, stock_quantity from public.products where slug 
   $$values ('auto-last'::text, 1), ('auto-pack-a'::text, 1), ('auto-pack-b'::text, 5)$$,
   'the shelf gets back its own pieces, never the pre-ordered ones');
 
--- 26-27. The live catalogue pre-orders; the columns are still computed ---------------------
+-- 26-27. The live catalogue no longer pre-orders past its shelf; the columns are still computed --
+-- Owner, 2026-10-08 (migration 20261008170000): an empty shelf is sold out, with "Avvisami".
+-- The mechanism above stays for a product the owner deliberately switches back on.
 select is((select count(*)::int from public.products where publication_status = 'published' and slug in (
   'cobalt-dragoon-2-60c','soar-phoenix-9-60gf','saber-samurai-2-70l','blast-pegasus-a-tr','drop-attack-battle-set',
-  'sneak-attack-battle-set','glory-valkerion-lf','hurricane-enlil-is-7-55t','shatter-horus-9-65gb') and not allow_backorder),
-  0, 'every published catalogue product sells as a pre-order once it runs out');
+  'sneak-attack-battle-set','glory-valkerion-lf','hurricane-enlil-is-7-55t','shatter-horus-9-65gb') and allow_backorder),
+  0, 'no published catalogue product sells as an open pre-order once it runs out');
 select is((select count(*)::int from information_schema.columns
   where table_schema = 'public' and table_name = 'products' and column_name in ('stock_status','is_purchasable') and is_generated = 'ALWAYS'),
   2, 'stock status and purchasability stay computed from the stock');
