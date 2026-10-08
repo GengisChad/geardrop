@@ -152,6 +152,7 @@ const SORTERS: Record<SortKey, (left: Product, right: Product) => number> = {
   popolari: (left, right) => right.reviewCount - left.reviewCount,
   novita: (left, right) =>
     Number(right.tags.includes("novita")) - Number(left.tags.includes("novita"))
+    || Number(right.stock === "disponibile") - Number(left.stock === "disponibile")
     || right.reviewCount - left.reviewCount,
   "prezzo-asc": (left, right) => left.price.amount - right.price.amount,
   "prezzo-desc": (left, right) => right.price.amount - left.price.amount,

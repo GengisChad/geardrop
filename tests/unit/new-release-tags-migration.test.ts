@@ -34,17 +34,28 @@ describe("new release tags", () => {
   it("hands the tag to the newest drop, in the catalogue and in the database", () => {
     const tagged = newReleases(PRODUCTS).map((product) => product.slug);
 
-    expect(tagged).toEqual([
+    const september = [
       "cobalt-drake-4-60f",
       "mirage-clock-9-65b",
       "suppress-superion-0-70lp",
       "strike-dran-4-50ff",
       "tread-croc-tq-5-50gn",
-    ]);
-    for (const slug of tagged) expect(drop, slug).toContain(`('${slug}', 'novita')`);
+    ];
+    expect(tagged).toEqual([...september, "soar-phoenix-9-60gf"]);
+    for (const slug of september) expect(drop, slug).toContain(`('${slug}', 'novita')`);
     // The starters keep selling, they just stop leading the homepage.
     for (const slug of STARTERS) expect(drop).toContain(`'${slug}'`);
     expect(drop).toMatch(/delete from public\.product_tags[\s\S]+?'novita'::public\.promo_tag/);
+  });
+
+  // Owner, 2026-10-08: 199 Soar Phoenix landed and went straight into the new releases.
+  it("tags Soar Phoenix new when its shipment lands, in the database too", () => {
+    const restock = readFileSync(join(process.cwd(), "supabase/migrations/20261008090000_soar_phoenix_restock.sql"), "utf8")
+      .replaceAll("\r\n", "\n")
+      .toLowerCase();
+    expect(restock).toMatch(/insert into public\.product_tags[\s\S]+?'novita'::public\.promo_tag[\s\S]+?'soar-phoenix-9-60gf'/);
+    expect(restock).toContain("on conflict (product_id, tag) do nothing");
+    expect(restock).not.toMatch(/delete from public\.product_tags/);
   });
 
   it("only adds tags inside one transaction", () => {

@@ -16,7 +16,9 @@ test.describe("home", () => {
     await expect(page.getByRole("heading", { name: "Scegli. Carica. Lancia." })).toHaveCount(0);
     await expect(page.getByTestId("arena")).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Pronti da spedire" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Tutto il resto" })).toBeVisible();
+    // A new release on the shelf has its own row (owner, 2026-10-08); "Tutto il resto" holds only
+    // what no named row took, which in the reviewed catalogue is nothing.
+    await expect(page.getByRole("heading", { name: "Appena arrivati" })).toBeVisible();
     await expect(page.getByTestId("product-carousel")).toHaveCount(0);
     await expect(page.getByTestId("product-card").first()).toBeVisible();
   });
