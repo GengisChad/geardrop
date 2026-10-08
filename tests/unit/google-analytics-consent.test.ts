@@ -166,6 +166,55 @@ describe("what Google Analytics may see", () => {
   });
 });
 
+describe("where a visit came from", () => {
+  const origin = "https://geardropshop.it";
+  const landing = "?utm_source=instagram&utm_medium=bio&utm_campaign=meta-ottobre&gclid=Cj0KCQ&session_id=cs_live_secret&q=impact";
+
+  it("keeps the campaign tags on the address and nothing else a URL can carry", () => {
+    expect(analyticsPageLocation(origin, "/negozio", landing)).toBe(
+      `${origin}/negozio?utm_source=instagram&utm_medium=bio&utm_campaign=meta-ottobre`,
+    );
+    expect(analyticsPageLocation(origin, "/negozio", "?session_id=cs_live_secret")).toBe(`${origin}/negozio`);
+    expect(analyticsPageLocation(origin, "/account", landing)).toBeNull();
+  });
+
+  it("lets a click identifier through only with marketing consent", () => {
+    expect(analyticsPageLocation(origin, "/negozio", "?gclid=Cj0KCQ&srsltid=AfmBOo")).toBe(`${origin}/negozio`);
+    expect(analyticsPageLocation(origin, "/negozio", "?gclid=Cj0KCQ&srsltid=AfmBOo", { clickIds: true })).toBe(
+      `${origin}/negozio?gclid=Cj0KCQ&srsltid=AfmBOo`,
+    );
+
+    const stats = fakeWindow("/prodotto/impact-drake-9-60lr").win;
+    (stats as unknown as { location: { search: string } }).location.search = landing;
+    loadGoogleAnalytics(STATS, stats);
+    sendPageView("/prodotto/impact-drake-9-60lr", stats);
+    expect(JSON.stringify(calls(stats))).not.toContain("gclid");
+
+    const ads = fakeWindow("/prodotto/impact-drake-9-60lr").win;
+    (ads as unknown as { location: { search: string } }).location.search = landing;
+    loadGoogleAnalytics(ALL, ads);
+    sendPageView("/prodotto/impact-drake-9-60lr", ads);
+    expect(events(ads)[0]?.[2]).toMatchObject({
+      page_location: `${origin}/prodotto/impact-drake-9-60lr?utm_source=instagram&utm_medium=bio&utm_campaign=meta-ottobre&gclid=Cj0KCQ`,
+    });
+
+    // Marketing withdrawn on the running tag: the next page view goes back to campaign tags only.
+    denyMarketing(["_gcl_au"], ads);
+    sendPageView("/prodotto/impact-drake-9-60lr", ads);
+    expect(JSON.stringify(events(ads).at(-1))).not.toContain("gclid");
+  });
+
+  it("makes the page view the session's first event, ahead of what the page raised before consent", () => {
+    const { win } = fakeWindow("/prodotto/impact-drake-9-60lr");
+    (win as unknown as { location: { search: string } }).location.search = "?utm_source=youtube";
+    expect(sendGaEvent("view_item", { value: 15 }, win)).toBe("queued");
+    loadGoogleAnalytics(STATS, win);
+    sendPageView("/prodotto/impact-drake-9-60lr", win);
+    expect(events(win).map((event) => event[1])).toEqual(["page_view", "view_item"]);
+    expect(events(win)[0]?.[2]).toMatchObject({ page_location: `${origin}/prodotto/impact-drake-9-60lr?utm_source=youtube` });
+  });
+});
+
 describe("ecommerce events", () => {
   it("holds an event raised before the choice is read, sends it on acceptance, and never on refusal", () => {
     const accepted = fakeWindow().win;
@@ -174,7 +223,13 @@ describe("ecommerce events", () => {
     expect(accepted["gtag"]).toBeUndefined();
     expect(sent).toBe(0); // not marked as sent while it only waits
     loadGoogleAnalytics(STATS, accepted);
-    expect(events(accepted)).toEqual([["event", "purchase", { page_location: "https://geardropshop.it/", value: 23 }]]);
+    expect(events(accepted)).toEqual([]); // still waiting: the page view goes first
+    expect(sent).toBe(0);
+    sendPageView("/", accepted);
+    expect(events(accepted)).toEqual([
+      ["event", "page_view", { page_location: "https://geardropshop.it/", page_title: "GEAR//DROP" }],
+      ["event", "purchase", { page_location: "https://geardropshop.it/", value: 23 }],
+    ]);
     expect(sent).toBe(1);
 
     const refused = fakeWindow().win;
