@@ -28,6 +28,7 @@ import type {
   SortKey,
   StockStatus,
 } from "./types";
+import { separatePreorders } from "./separate-preorders";
 
 // The catalogue is small: one page holds it all, so nobody lands on a page with two cards.
 const DEFAULT_PER_PAGE = 24;
@@ -264,7 +265,8 @@ export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CA
         });
       }
 
-      const sellable = quoteLines.filter((line) => line.issue === null);
+      const lines = separatePreorders(quoteLines);
+      const sellable = lines.filter((line) => line.issue === null);
       const subtotal = sellable.reduce((sum, line) => sum + line.lineTotal.amount, 0);
       const isEmpty = subtotal === 0;
       const qualifies = subtotal >= FREE_SHIPPING_THRESHOLD;
@@ -291,7 +293,7 @@ export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CA
       );
 
       return {
-        lines: quoteLines,
+        lines,
         missingSlugs,
         shippingOptions,
         shippingCode: method.code,

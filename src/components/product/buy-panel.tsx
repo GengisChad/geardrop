@@ -67,6 +67,12 @@ export function BuyPanel({ product }: { product: Product }) {
               {product.availableQuantity} pre-ordini rimasti
             </p>
           ) : null}
+          {product.stock === "pre-ordine" ? (
+            // Owner, 2026-10-08: one parcel per order, so a pre-order is never mixed with pieces that ship now.
+            <p className="mt-1 text-[0.6875rem] text-grey-600" data-testid="preorder-alone">
+              Si ordina a parte, non insieme a prodotti disponibili.
+            </p>
+          ) : null}
           {product.stock === "disponibile" && namedShelf !== undefined ? (
             <p className="mt-1 tabular text-[0.6875rem] font-bold text-available" data-testid="stock-remaining">
               {namedShelf}{" "}
