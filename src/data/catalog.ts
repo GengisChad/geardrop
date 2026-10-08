@@ -170,7 +170,7 @@ export const PRODUCTS: readonly Product[] = [
   {
     slug: "buster-dran-5-70db", name: "Buster Dran 5-70DB", tagline: "Un punto solo. O passa, o niente.",
     description: "Buster Dran 5-70DB è la più estrema della linea UX: la blade ovale concentra tutta la massa su un unico contatto a punta di spada e svuota il lato opposto. Ratchet 5-70 a 7,0 mm e Bit DB (Disk Ball). Questa è la versione booster: contiene la sola trottola, senza lanciatore. Richiede lanciatore e Beystadium Beyblade X (venduti separatamente).",
-    price: eur(999), category: "beyblade-x", stock: "disponibile", availableQuantity: 26, tags: [], rating: 0, reviewCount: 0,
+    price: eur(890), compareAtPrice: eur(999), category: "beyblade-x", stock: "disponibile", availableQuantity: 26, tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["buster-dran-5-70db"],
     specs: [{ label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "UX (Unique Line)" }, { label: "Codice", value: "5-70DB" }, { label: "Componenti", value: "1 trottola" }, { label: "Nota", value: "Richiede lanciatore e Beystadium (venduti a parte)" }],
     features: [{ title: "Un solo punto d'urto", description: "Tutta la massa su un contatto a punta di spada" }, { title: "Bit Disk Ball", description: "Appoggio a disco: tiene il centro senza fermarsi" }, { title: "Ratchet 5-70", description: "Assetto medio a 7,0 mm" }, { title: "Solo la trottola", description: "Versione booster: il lanciatore non è incluso" }],
@@ -407,12 +407,12 @@ export const BUNDLES: readonly Product[] = [
   },
   // Owner, 2026-10-08: "Promo Attack", Glory Valkerion with Buster Dran at 29,99.
   {
-    slug: "promo-attack", name: "Promo Attack", tagline: "Glory Valkerion + Buster Dran. Due attacchi UX, €3,00 in meno.",
+    slug: "promo-attack", name: "Promo Attack", tagline: "Glory Valkerion + Buster Dran. Due attacchi UX, €1,91 in meno.",
     description: "Due trottole d'attacco della linea UX in un solo pacco: lo starter Glory Valkerion LF, con il Bit Low Flat a punta piatta e bassa e l'Xtreme Dash per correre sul bordo dello stadio, e il booster Buster Dran 5-70DB, la blade ovale che concentra tutta la massa su un unico contatto. Glory Valkerion include il lanciatore; Buster Dran è la versione booster, con la sola trottola. Richiede un Beystadium Beyblade X (venduto separatamente).",
-    price: eur(2999), compareAtPrice: eur(3299), category: "beyblade-x", stock: "disponibile", availableQuantity: 26, tags: ["offerta"], rating: 0, reviewCount: 0,
+    price: eur(2999), compareAtPrice: eur(3190), category: "beyblade-x", stock: "disponibile", availableQuantity: 26, tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["promo-attack"],
     specs: [{ label: "Tipo", value: "Attacco + Attacco" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "UX" }, { label: "Codici", value: "LF · 5-70DB" }, { label: "Componenti", value: "2 trottole, 1 lanciatore" }],
-    features: [{ title: "Due attacchi UX", description: "Due modi diversi di colpire, nello stesso deck" }, { title: "Lanciatore incluso", description: "Nello starter di Glory Valkerion" }, { title: "Risparmi €3,00", description: "€29,99 invece di €32,99 comprandoli separati" }, { title: "Da sapere prima di comprare", description: "Buster Dran è un booster: solo trottola, senza lanciatore" }],
+    features: [{ title: "Due attacchi UX", description: "Due modi diversi di colpire, nello stesso deck" }, { title: "Lanciatore incluso", description: "Nello starter di Glory Valkerion" }, { title: "Risparmi €1,91", description: "€29,99 invece di €31,90 comprandoli separati" }, { title: "Da sapere prima di comprare", description: "Buster Dran è un booster: solo trottola, senza lanciatore" }],
     boxContents: ["1 × Starter Glory Valkerion LF (trottola e lanciatore)", "1 × Booster Buster Dran 5-70DB (solo trottola)", "Manuali"],
     relatedSlugs: ["glory-valkerion-lf", "buster-dran-5-70db", "duo-horus-enlil"],
     bundleOf: [{ slug: "glory-valkerion-lf", quantity: 1 }, { slug: "buster-dran-5-70db", quantity: 1 }],
