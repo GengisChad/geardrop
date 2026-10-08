@@ -19,7 +19,7 @@ describe("reviewed catalogue", () => {
       { slug: "glory-valkerion-lf", price: 2300, stock: "disponibile", availableQuantity: 62, rating: 0, reviewCount: 0 },
       { slug: "shatter-horus-9-65gb", price: 1199, stock: "disponibile", availableQuantity: 118, rating: 0, reviewCount: 0 },
       { slug: "hurricane-enlil-is-7-55t", price: 999, stock: "disponibile", availableQuantity: 119, rating: 0, reviewCount: 0 },
-      { slug: "hammer-incendio-3-70h", price: 1200, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
+      { slug: "hammer-incendio-3-70h", price: 1199, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
       { slug: "shadow-shinobi-1-80mn", price: 999, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
       { slug: "wand-wizard-1-60r", price: 1490, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
       { slug: "buster-dran-5-70db", price: 999, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
