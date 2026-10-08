@@ -40,15 +40,15 @@ export function generateSupabaseSeed(): string {
       text(product.slug),
       text(product.slug.toUpperCase()),
       // A pre-order sells from its allocation, not from a shelf; one without an allocation is
-      // open, and sells through allow_backorder at zero stock. A product in stock with no count
+      // sold out until pieces arrive (no open pre-orders since 2026-10-08). A product in stock with no count
       // has no limit: the database keeps a counter the shop never shows.
       product.stock === "pre-ordine" ? 0 : (product.availableQuantity ?? UNLIMITED_STOCK),
       product.stock === "pre-ordine" && product.availableQuantity
         ? "'preorder'::public.availability_override"
         : "null::public.availability_override",
       product.stock === "pre-ordine" ? (product.availableQuantity ?? 0) : 0,
-      // A partner's consignment piece is his stock: at zero it is sold out, never a pre-order.
-      product.consignment ? "false" : "true",
+      // No open pre-orders (owner, 2026-10-08): at zero a product is sold out, never a pre-order.
+      "false",
       text(product.name),
       text(product.tagline),
       text(product.description),
@@ -213,8 +213,7 @@ select
   seed.stock_quantity,
   seed.availability_override,
   seed.preorder_allocation,
-  -- Sold out means pre-order, never a closed sale (migration 20260917140000), except for a
-  -- partner's consignment piece, which is his stock and simply sells out.
+  -- An empty shelf is sold out, never an open pre-order (migration 20261008170000).
   seed.allow_backorder,
   seed.blade_type::public.blade_type,
   seed.rating,

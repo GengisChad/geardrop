@@ -1,5 +1,5 @@
 begin;
-select plan(17);
+select plan(18);
 
 select results_eq($$select count(*)::integer from public.products$$, array[30], 'seed has the reviewed products');
 select results_eq($$select count(*)::integer from public.categories$$, array[4], 'seed has the four reviewed categories');
@@ -26,6 +26,8 @@ select results_eq($$select count(*)::integer from public.products
 select results_eq($$select slug, preorder_allocation from public.products where availability_override = 'preorder'::public.availability_override order by sort_order$$,
   $$values ('cobalt-drake-4-60f',9),('mirage-clock-9-65b',9),('suppress-superion-0-70lp',5),('strike-dran-4-50ff',9),('tread-croc-tq-5-50gn',9)$$,
   'the pre-order drop carries the allocations the owner set');
+select results_eq($$select count(*)::integer from public.products where allow_backorder$$,
+  array[0], 'no product sells past its shelf: an empty shelf is sold out, never an open pre-order (2026-10-08)');
 select is((select accept_orders from public.site_settings where singleton), false, 'order acceptance remains disabled');
 select results_eq($$select count(*)::integer from public.orders$$, array[0], 'seed invents no orders');
 select results_eq($$select count(*)::integer from public.coupons$$, array[0], 'seed invents no coupons');
