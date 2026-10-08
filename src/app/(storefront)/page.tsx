@@ -69,8 +69,8 @@ export default async function HomePage() {
     );
   }
 
-  // The owner's order (2026-10-05): the best sellers on the first screen, the pre-order drop
-  // right under them, then what ships now, then everything else. It used to open on the drop
+  // The owner's order (2026-10-05): the best sellers on the first screen, the new arrivals and
+  // the pre-order drop right under them, then what ships now, then everything else. It used to open on the drop
   // (2026-09-21); a shopper who arrives wanting what everyone buys now finds it first.
   // Clean on purpose: no fight animation, no banner in between.
   return (
@@ -90,6 +90,7 @@ export default async function HomePage() {
             }
           : {})}
       />
+      <ProductShelf testId="new-arrivals" kicker="Nuovi arrivi" title="Appena arrivati" note={STANDARD_DELIVERY} products={plan.arrivals} />
       <ProductShelf testId="preorder-drop" kicker="Nuove uscite" title="Pre-ordini aperti" note={RELEASE_DELIVERY} products={plan.drop} />
       <ProductShelf testId="ready-to-ship" kicker="Disponibili subito" title="Pronti da spedire" note={STANDARD_DELIVERY} products={plan.ready} />
       <Arsenal products={plan.rest} title="Tutto il resto" kicker="Catalogo" />

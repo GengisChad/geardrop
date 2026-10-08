@@ -28,6 +28,7 @@ import type {
   SortKey,
   StockStatus,
 } from "./types";
+import { separatePreorders } from "./separate-preorders";
 
 // The catalogue is small: one page holds it all, so nobody lands on a page with two cards.
 const DEFAULT_PER_PAGE = 24;
@@ -40,7 +41,11 @@ const byPopularity = (a: Product, b: Product) => b.reviewCount - a.reviewCount;
 
 const SORTERS: Record<SortKey, (a: Product, b: Product) => number> = {
   popolari: byPopularity,
-  novita: (a, b) => Number(b.tags.includes("novita")) - Number(a.tags.includes("novita")) || byPopularity(a, b),
+  // Among the new releases, what ships now leads what is still on pre-order (owner, 2026-10-08).
+  novita: (a, b) =>
+    Number(b.tags.includes("novita")) - Number(a.tags.includes("novita")) ||
+    Number(b.stock === "disponibile") - Number(a.stock === "disponibile") ||
+    byPopularity(a, b),
   "prezzo-asc": (a, b) => a.price.amount - b.price.amount || byPopularity(a, b),
   "prezzo-desc": (a, b) => b.price.amount - a.price.amount || byPopularity(a, b),
   nome: (a, b) => a.name.localeCompare(b.name, "it"),
@@ -260,7 +265,8 @@ export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CA
         });
       }
 
-      const sellable = quoteLines.filter((line) => line.issue === null);
+      const lines = separatePreorders(quoteLines);
+      const sellable = lines.filter((line) => line.issue === null);
       const subtotal = sellable.reduce((sum, line) => sum + line.lineTotal.amount, 0);
       const isEmpty = subtotal === 0;
       const qualifies = subtotal >= FREE_SHIPPING_THRESHOLD;
@@ -287,7 +293,7 @@ export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CA
       );
 
       return {
-        lines: quoteLines,
+        lines,
         missingSlugs,
         shippingOptions,
         shippingCode: method.code,

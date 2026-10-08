@@ -1,4 +1,4 @@
--- Populates the schema as it stood before organizations (migration 20261007200000) with a
+-- Populates the schema as it stood before organizations (migration 20261008170000) with a
 -- little of every kind of row: staff with every role and state, catalogue, bundle, coupon,
 -- promotion, a paid order with its history, stock movements, CMS, funnel counters, media and
 -- audit events. scripts/test-supabase-upgrades.ts loads it, applies the organization

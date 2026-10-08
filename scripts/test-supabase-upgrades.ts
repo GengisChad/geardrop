@@ -21,7 +21,7 @@ import { localPsql } from "../tests/e2e/support/local-psql";
  * scoping migrations then backfill them. So the replay starts from the last shop migration, and
  * the retired September pre-order catalogue replay stays retired.
  */
-const LAST_MIGRATION_BEFORE_ORGANIZATIONS = "20261007200000";
+const LAST_MIGRATION_BEFORE_ORGANIZATIONS = "20261008170000";
 
 const root = process.cwd();
 const require = createRequire(import.meta.url);

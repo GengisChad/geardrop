@@ -62,10 +62,12 @@ describe("truthful public presentation", () => {
     // BESTSELLER_SLUGS is the paid-order record rather than an impression. It used to be
     // forbidden outright, when the shop had no sales to back it.
     expect(html).toContain("I più venduti");
-    // The pre-order drop keeps its own row, under them.
+    // A new release already on the shelf gets its own row (owner, 2026-10-08), and the
+    // pre-order drop keeps its own, under them. "Tutto il resto" shows only what no named row
+    // took, which in the reviewed catalogue is nothing.
+    expect(html).toContain("Appena arrivati");
     expect(html).toContain("Pre-ordini aperti");
     expect(html).toContain("Pronti da spedire");
-    expect(html).toContain("Tutto il resto");
     // The owner took the fight animation off the homepage on 2026-09-21.
     expect(html).not.toContain("Scegli. Carica.");
     expect(html).not.toContain("Scelti per il competitivo");
@@ -105,7 +107,8 @@ describe("truthful public presentation", () => {
   });
 
   it("tells how long a pre-order may take without promising a dispatch date", () => {
-    const backorder = PRODUCTS.find((candidate) => candidate.stock === "pre-ordine" && !candidate.releasePreorder)!;
+    // Any shelf piece that runs out becomes this kind of pre-order (allow_backorder).
+    const backorder = PRODUCTS.find((candidate) => !candidate.releasePreorder && !candidate.consignment)!;
     const html = renderToStaticMarkup(<Providers><BuyPanel product={{ ...backorder, stock: "pre-ordine" }} /></Providers>);
 
     expect(html).toContain("Potrebbe arrivare tra 10/15 giorni lavorativi");

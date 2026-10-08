@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { PREORDER_ALONE_ISSUE } from "@/lib/commerce/separate-preorders";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { BUNDLES, PRODUCTS } from "@/data/catalog";
@@ -115,8 +116,10 @@ describe("cart quote with automatic pre-order", () => {
       { slug: HORUS, quantity: 1 },
       { slug: DUO, quantity: 2 },
     ]);
-    expect(packFirst.orderable).toBe(true);
     expect(packFirst.lines.map((line) => line.preorderQuantity ?? 0)).toEqual([0, 2]);
+    // Owner, 2026-10-08: pieces that ship now and a pre-order never share an order (one parcel).
+    expect(packFirst.orderable).toBe(false);
+    expect(packFirst.lines.map((line) => line.issue)).toEqual([null, PREORDER_ALONE_ISSUE]);
   });
 });
 
@@ -214,8 +217,11 @@ describe("pre-order copy and database rule", () => {
     // The legend cannot know which wait applies, so it points at the product instead of guessing.
     expect(STOCK_HINT["pre-ordine"]).toBe("Tempi indicati su ogni scheda prodotto");
     const policy = JSON.stringify([SUPPORT_PAGES, LEGAL_PAGES]);
-    // A piece bought beyond the shelf, and a drop that is not out yet: the pages say both.
-    expect(policy).toContain("10/15 giorni lavorativi");
+    // Owner, 2026-10-08: no open pre-orders, so the pages promise no 10/15-day wait; a sold-out
+    // product offers "Avvisami", and a release pre-order is ordered on its own.
+    expect(policy).not.toContain("10/15 giorni lavorativi");
+    expect(policy).toContain("Avvisami");
+    expect(policy).toContain("si ordina a parte");
     expect(policy).toContain("uscita Hasbro");
     expect(policy).toContain("20 giorni lavorativi");
     expect(policy).not.toContain("entro 14 giorni dalla conferma");

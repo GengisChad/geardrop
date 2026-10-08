@@ -50,8 +50,9 @@ export const SUPPORT_PAGES = {
       {
         heading: "Cosa significa “pre-ordine”?",
         body: [
-          "Quando i pezzi a magazzino finiscono puoi comunque ordinare il prodotto: quel pre-ordine potrebbe arrivare tra 10/15 giorni lavorativi dalla conferma dell'ordine. Il carrello e la pagina di pagamento ti indicano quali pezzi sono in pre-ordine prima di pagare.",
-          "Le nuove uscite, invece, non sono ancora distribuite: arrivano in Italia con l'uscita Hasbro, circa 20 giorni lavorativi, e poi dipende dalle consegne. La scheda del prodotto, il carrello e la pagina di pagamento indicano sempre il tempo giusto.",
+          "Si possono pre-ordinare solo le nuove uscite non ancora distribuite: arrivano in Italia con l'uscita Hasbro, circa 20 giorni lavorativi, e poi dipende dalle consegne.",
+          "Un pre-ordine si ordina a parte, mai insieme a prodotti disponibili: così ricevi ogni ordine in un solo pacco.",
+          "Quando un prodotto finisce non si può ordinare finché non torna disponibile: nella sua scheda lascia la tua email con \"Avvisami\" e ti scriviamo appena arriva.",
         ],
       },
       {
@@ -68,7 +69,6 @@ export const SUPPORT_PAGES = {
         heading: "Tempi di consegna",
         body: [
           "I prodotti disponibili vengono consegnati in 1-5 giorni lavorativi a seconda del corriere, dalla conferma del pagamento.",
-          "Un pre-ordine di un prodotto già uscito, ordinato quando il magazzino è finito, potrebbe arrivare tra 10/15 giorni lavorativi dalla conferma dell'ordine.",
           "Un pre-ordine di una nuova uscita arriva con l'uscita Hasbro: circa 20 giorni lavorativi, poi dipende dalle consegne.",
         ],
       },
@@ -90,7 +90,7 @@ export const SUPPORT_PAGES = {
       {
         heading: "Prodotti in pre-ordine",
         body: [
-          "Gli articoli dello stesso ordine vengono gestiti insieme. Per esigenze diverse, chiedi assistenza prima della conferma.",
+          "Un pre-ordine si ordina a parte, mai insieme a prodotti disponibili: ogni ordine parte in un solo pacco, quando tutti i suoi articoli sono pronti.",
         ],
       },
     ],
@@ -179,7 +179,7 @@ export const LEGAL_PAGES = {
         heading: "Prodotti e pre-ordini",
         body: [
           "Le caratteristiche essenziali di ogni prodotto sono indicate nella sua scheda; le immagini rappresentano la confezione.",
-          "Quando i pezzi a magazzino finiscono il prodotto resta acquistabile in pre-ordine: il carrello e la pagina di pagamento indicano quali pezzi sono in pre-ordine, che potrebbero arrivare tra 10/15 giorni lavorativi dalla conferma del pagamento; per le nuove uscite non ancora distribuite il tempo indicato è quello dell'uscita Hasbro, circa 20 giorni lavorativi.",
+          "Un prodotto esaurito non è acquistabile finché non torna disponibile. Si possono pre-ordinare solo le nuove uscite non ancora distribuite, che arrivano con l'uscita Hasbro, circa 20 giorni lavorativi; un pre-ordine si acquista con un ordine a parte, separato dai prodotti disponibili.",
           "Se dopo il pagamento un prodotto non può essere spedito nei tempi indicati ti avvisiamo via email e, a tua scelta, concordiamo una nuova data oppure ti rimborsiamo l'intero importo pagato, spedizione compresa, entro 14 giorni.",
         ],
       },

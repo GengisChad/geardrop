@@ -151,7 +151,7 @@ delle due app gira sul database "sbagliato". Verificato il 7 ottobre 2026 su tut
 | **App nuova su database vecchio** | Tutto il negozio: `storefrontOrganizationId()` legge `public.organizations`, che non esiste ancora, e si chiude. Catalogo in 500, checkout fermo, webhook Stripe che non registra gli ordini pagati. Pannello senza accesso (`organization_members` assente). |
 | **App vecchia su database nuovo** | Negozio e `/admin` filtrano `site_settings` su `singleton`, colonna eliminata: 500 su ogni pagina. 15 RPC del pannello chiamate con la firma vecchia (errore `42883`). Inserimenti senza `organization_id` (prodotti, categorie, pagine, media, spedizioni, profilo cliente, meta). |
 
-La seconda finestra è resa sicura da `20261007201016_keep_the_running_app_working_during_rollout.sql`
+La seconda finestra è resa sicura da `20261008171016_keep_the_running_app_working_during_rollout.sql`
 (fase *expand*): ripristina `site_settings.singleton` sulla riga dell'azienda del negozio, riempie
 `organization_id` quando manca (trigger `_fill_storefront_organization` sulle 20 tabelle che l'app
 vecchia conosce) e ricrea le 15 firme vecchie come inoltri verso quelle con l'azienda. Tutto punta
@@ -174,7 +174,7 @@ Ordine obbligatorio, con approvazione esplicita per ogni passo remoto:
    Poi rigenerare i tipi e aggiornare il contract test, che elenca le firme rimaste.
 
 Una migrazione del negozio aggiunta a `main` dopo questa branch (come
-`20261007200000_takara_consignment_products.sql`) va **prima** delle migrazioni delle aziende:
+`20261007200000_takara_consignment_products.sql` il 7 ottobre e le cinque dall'`20261008090000` all'`20261008170000` l'8) va **prima** delle migrazioni delle aziende:
 in produzione è già applicata quando arrivano queste. Se ne arriva un'altra prima del merge, le
 migrazioni delle aziende si rinumerano di nuovo dopo di essa.
 

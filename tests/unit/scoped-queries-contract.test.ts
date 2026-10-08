@@ -100,7 +100,7 @@ function scan() {
 
 /**
  * RPCs that also keep their pre-organization signature during the rollout (migration
- * 20261007201016_keep_the_running_app_working_during_rollout.sql): in the generated types they
+ * 20261008171016_keep_the_running_app_working_during_rollout.sql): in the generated types they
  * are a union where one variant takes p_organization_id and another does not.
  */
 function legacyOverloadRpcsFrom(source: string): ReadonlySet<string> {

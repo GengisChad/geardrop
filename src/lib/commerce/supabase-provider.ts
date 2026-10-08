@@ -5,6 +5,7 @@ import { checkoutErrorCode, checkoutErrorMessage } from "./checkout-errors";
 import { isUnlimitedStock } from "./live-stock-overlay";
 import { isReleasePreorder } from "./release-preorder";
 import { catalogueTraits, oneCardPerFamily } from "./variants";
+import { separatePreorders } from "./separate-preorders";
 import { STANDARD_DELIVERY } from "@/lib/labels";
 import type {
   BladeType,
@@ -152,6 +153,7 @@ const SORTERS: Record<SortKey, (left: Product, right: Product) => number> = {
   popolari: (left, right) => right.reviewCount - left.reviewCount,
   novita: (left, right) =>
     Number(right.tags.includes("novita")) - Number(left.tags.includes("novita"))
+    || Number(right.stock === "disponibile") - Number(left.stock === "disponibile")
     || right.reviewCount - left.reviewCount,
   "prezzo-asc": (left, right) => left.price.amount - right.price.amount,
   "prezzo-desc": (left, right) => right.price.amount - left.price.amount,
@@ -399,8 +401,7 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>,
       const bySlug = new Map(rows.map((row) => [row.slug, row]));
 
       const missingSlugs: string[] = [];
-      const lines: CartQuoteLine[] = [];
-      const sellable: PricingLine[] = [];
+      const quoted: { line: CartQuoteLine; pricing: PricingLine }[] = [];
 
       for (const line of request.lines) {
         const row = bySlug.get(line.slug);
@@ -409,7 +410,7 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>,
           continue;
         }
         const issue = lineIssue(row, line.quantity);
-        lines.push({
+        quoted.push({ pricing: { product_id: row.id, quantity: line.quantity }, line: {
           slug: row.slug as Product["slug"],
           name: row.name,
           quantity: line.quantity,
@@ -420,9 +421,13 @@ export function createSupabaseCommerceProvider(client: SupabaseClient<Database>,
           availableQuantity: projectedAvailability(row),
           ...(isReleasePreorder(row.slug) ? { releasePreorder: true as const } : {}),
           issue,
-        });
-        if (!issue) sellable.push({ product_id: row.id, quantity: line.quantity });
+        } });
       }
+      // A pre-order never shares an order with pieces that ship now (owner, 2026-10-08).
+      const lines = separatePreorders(quoted.map((entry) => entry.line));
+      const sellable: PricingLine[] = quoted
+        .filter((_, index) => lines[index]!.issue === null)
+        .map((entry) => entry.pricing);
 
       const freeShippingThreshold = selected
         ? ((methodRows.data ?? []).find((method) => method.code === selected.code)?.free_from_cents ?? null)

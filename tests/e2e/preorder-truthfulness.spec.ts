@@ -37,7 +37,9 @@ test.describe("truthful preorder storefront", () => {
     await expect(page.getByRole("heading", { name: "I più venduti", exact: true })).toHaveCount(1);
     await expect(page.getByRole("heading", { name: "Pre-ordini aperti", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Pronti da spedire" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Tutto il resto" })).toBeVisible();
+    // A new release on the shelf has its own row (owner, 2026-10-08); "Tutto il resto" holds only
+    // what no named row took, which in the reviewed catalogue is nothing.
+    await expect(page.getByRole("heading", { name: "Appena arrivati" })).toBeVisible();
     await expect(page.getByTestId("product-carousel")).toHaveCount(0);
     // "I più venduti" is truthful only while it deals the sales record and nothing else: the
     // label was forbidden outright when the shop had no sales to back it.
