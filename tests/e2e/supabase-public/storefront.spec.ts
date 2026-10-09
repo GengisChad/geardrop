@@ -175,7 +175,8 @@ test.describe("anonymous storefront on Supabase", () => {
   test("every published product page renders", async ({ page }) => {
     await visit(page, "/negozio");
     const hrefs = await page.getByTestId("product-card").locator("a[href^='/prodotto/']").evaluateAll(
-      (nodes) => [...new Set(nodes.map((node) => (node as HTMLAnchorElement).getAttribute("href") ?? ""))],
+      // A sold-out card also links to its own page's "Avvisami" form (#restock-form): same page.
+      (nodes) => [...new Set(nodes.map((node) => ((node as HTMLAnchorElement).getAttribute("href") ?? "").split("#")[0]!))],
     );
     expect(hrefs.length).toBe(LISTED_CARD_COUNT);
 

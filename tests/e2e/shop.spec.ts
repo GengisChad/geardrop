@@ -107,9 +107,12 @@ test.describe("catalogue", () => {
     };
 
     const panel = await openFilters();
-    // No reviewed product is sold out; that zero-count facet is intentionally disabled.
+    // A zero-count facet is disabled; since 2026-10-08 an empty shelf reads "esaurito" (no open
+    // pre-orders), so that facet is live exactly while the catalogue holds a sold-out piece.
+    const soldOut = panel.getByTestId("filter-stock-esaurito");
+    if (PRODUCTS.some((product) => product.stock === "esaurito")) await expect(soldOut).toBeEnabled();
+    else await expect(soldOut).toBeDisabled();
     // Attack blades and arena sets provide a real, nonempty filter subset.
-    await expect(panel.getByTestId("filter-stock-esaurito")).toBeDisabled();
     await panel.getByTestId("filter-type-attacco").check();
     if (isMobile) await page.getByTestId("filters-apply").click();
 
