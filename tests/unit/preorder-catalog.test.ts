@@ -22,7 +22,7 @@ describe("reviewed catalogue", () => {
       { slug: "hammer-incendio-3-70h", price: 1199, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
       { slug: "shadow-shinobi-1-80mn", price: 999, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
       { slug: "wand-wizard-1-60r", price: 1490, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
-      { slug: "buster-dran-5-70db", price: 999, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
+      { slug: "buster-dran-5-70db", price: 890, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
       // Sold loose out of the Drop Attack Battle Set, next to the other top that ships
       // without a launcher. A hundred of each, because the goods sit inside 102 unopened
       // sets and a set takes seconds to open — and a hundred clears the shelf count, so
