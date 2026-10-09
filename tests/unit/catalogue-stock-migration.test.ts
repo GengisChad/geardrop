@@ -33,8 +33,9 @@ describe("catalogue stock conversion migration", () => {
     // The catalogue has grown since (the 2026-09-21 pre-order drop), so this is the set it converted.
     expect([...slugs].sort()).toEqual([...CONVERTED].sort());
     for (const slug of slugs) {
-      // Six of them now sell as open pre-orders; none of them was dropped or closed.
-      expect(catalogue.get(slug ?? "")?.stock, slug).not.toBe("esaurito");
+      // None of them was dropped from the catalogue. Since 2026-10-08 an empty shelf reads
+      // "esaurito" with "Avvisami" (no open pre-orders), so a sold-out piece is still listed.
+      expect(catalogue.has(slug ?? ""), slug).toBe(true);
     }
   });
 
