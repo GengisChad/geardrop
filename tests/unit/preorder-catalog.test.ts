@@ -30,7 +30,7 @@ describe("reviewed catalogue", () => {
       { slug: "impact-drake-9-60lr", price: 1500, stock: "disponibile", availableQuantity: 100, rating: 0, reviewCount: 0 },
       { slug: "hover-wyvern-3-85n", price: 1500, stock: "disponibile", availableQuantity: 100, rating: 0, reviewCount: 0 },
       { slug: "cobalt-dragoon-2-60c", price: 2300, stock: "disponibile", availableQuantity: 56, rating: 0, reviewCount: 0 },
-      { slug: "blast-pegasus-a-tr", price: 2690, stock: "disponibile", availableQuantity: 56, rating: 0, reviewCount: 0 },
+      { slug: "blast-pegasus-a-tr", price: 2690, stock: "esaurito", availableQuantity: 0, rating: 0, reviewCount: 0 },
       { slug: "saber-samurai-2-70l", price: 2590, stock: "disponibile", availableQuantity: 16, rating: 0, reviewCount: 0 },
       { slug: "drop-attack-battle-set", price: 3990, stock: "disponibile", availableQuantity: 102, rating: 0, reviewCount: 0 },
       { slug: "sneak-attack-battle-set", price: 4490, stock: "disponibile", availableQuantity: 51, rating: 0, reviewCount: 0 },
