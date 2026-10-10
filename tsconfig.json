@@ -38,13 +38,17 @@
   },
   "include": [
     "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "next.config.ts",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
-    "tests/e2e"
+    "tests/e2e",
+    "tests/fixtures/workspace-boundary",
+    "apps/**/*",
+    "packages/**/*"
   ]
 }

@@ -5,5 +5,10 @@ describe("team and audit admin",()=>{
   it("formats only allowlisted scalar audit state",()=>{expect(summarizeAuditState({role:"admin",active:true,email:"secret@example.com",shipping_address_snapshot:{city:"Roma"}})).toEqual(["Ruolo: admin","Attivo: sì"]);expect(summarizeAuditState(null)).toEqual([]);});
   it("authorizes owner before creating a privileged Auth client",()=>{const source=readFileSync(join(process.cwd(),"src/app/admin/actions/team.ts"),"utf8");const guard=source.indexOf("requireStaffRole");const privileged=source.indexOf("createPrivilegedSupabaseClient");expect(guard).toBeGreaterThan(0);expect(privileged).toBeGreaterThan(guard);expect(source).toContain("inviteUserByEmail");expect(source).not.toContain("NEXT_PUBLIC_SUPABASE_SECRET");});
   it("uses generic invite errors and lifecycle RPCs",()=>{const source=readFileSync(join(process.cwd(),"src/app/admin/actions/team.ts"),"utf8");expect(source).toContain("Invito non completato");for(const rpc of ["change_staff_role","set_staff_active","revoke_staff_access"])expect(source).toContain(`rpc(\"${rpc}\"`);});
+  it("routes staff invites to the management app callback when MANAGEMENT_ORIGIN is configured",()=>{const source=readFileSync(join(process.cwd(),"src/app/admin/actions/team.ts"),"utf8");// Reads the deployment contract — no new env var invented
+expect(source).toContain("readDeploymentContract");expect(source).toContain("managementOrigin");// Redirect lands on the management auth callback, then enrolls MFA
+expect(source).toContain("/auth/callback?next=/mfa/enroll");// Falls back gracefully when origin is absent (undefined spreads nothing)
+expect(source).toContain("redirectTo?{redirectTo}:{}");// Never reads a raw env var directly
+expect(source).not.toContain("process.env.MANAGEMENT_ORIGIN");});
   it("renders team and activity without raw JSON",()=>{for(const file of ["team/page.tsx","team/[id]/page.tsx","attivita/page.tsx"]){const source=readFileSync(join(process.cwd(),"src/app/admin/(protected)",file),"utf8");expect(source).not.toContain("JSON.stringify");}});
 });

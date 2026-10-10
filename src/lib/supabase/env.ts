@@ -1,3 +1,5 @@
+import { assertStorefrontApplicationSurface } from "@/lib/app-mode";
+
 type EnvSource = Record<string, string | undefined>;
 
 function requireEnv(source: EnvSource, name: string): string {
@@ -30,9 +32,16 @@ export function readPublicSupabaseEnv(source?: EnvSource) {
   const resolved = source ?? {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    NEXT_PUBLIC_APP_SURFACE: process.env.NEXT_PUBLIC_APP_SURFACE,
+    MANAGEMENT_MODE: process.env.MANAGEMENT_MODE,
+    MANAGEMENT_ORIGIN: process.env.MANAGEMENT_ORIGIN,
+    STOREFRONT_ORIGIN: process.env.STOREFRONT_ORIGIN,
+    NEXT_PUBLIC_EXPECTED_SUPABASE_PROJECT_REF: process.env.NEXT_PUBLIC_EXPECTED_SUPABASE_PROJECT_REF,
+    LEGACY_ADMIN_MODE: process.env.LEGACY_ADMIN_MODE,
+    NODE_ENV: process.env.NODE_ENV,
   };
-  return {
-    url: requireEnv(resolved, "NEXT_PUBLIC_SUPABASE_URL"),
-    publishableKey: requireEnv(resolved, "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"),
-  };
+  const url = requireEnv(resolved, "NEXT_PUBLIC_SUPABASE_URL");
+  const publishableKey = requireEnv(resolved, "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
+  assertStorefrontApplicationSurface(resolved);
+  return { url, publishableKey };
 }

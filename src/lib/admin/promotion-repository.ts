@@ -8,11 +8,11 @@ export type PricingResources = { readonly products: readonly PricingOption[]; re
 type Promotion = Database["public"]["Tables"]["promotions"]["Row"];
 export type PromotionEditorData = { readonly promotion: Promotion; readonly productIds: readonly number[]; readonly categoryIds: readonly number[]; readonly bundleIds: readonly number[]; readonly affectedProducts: readonly PricingOption[] };
 
-export async function loadPricingResources(client: SupabaseClient<Database>): Promise<PricingResources> {
+export async function loadPricingResources(client: SupabaseClient<Database>, organizationId: number): Promise<PricingResources> {
   const [products, categories, bundles] = await Promise.all([
-    client.from("products").select("id,name,sku").order("name").limit(500),
-    client.from("categories").select("id,name,slug").order("name").limit(200),
-    client.from("bundles").select("id,title_line_one,title_line_two,slug").order("title_line_one").limit(200),
+    client.from("products").select("id,name,sku").eq("organization_id", organizationId).order("name").limit(500),
+    client.from("categories").select("id,name,slug").eq("organization_id", organizationId).order("name").limit(200),
+    client.from("bundles").select("id,title_line_one,title_line_two,slug").eq("organization_id", organizationId).order("title_line_one").limit(200),
   ]);
   if (products.error || categories.error || bundles.error) throw new Error("Impossibile caricare i target pricing");
   return {
@@ -22,19 +22,19 @@ export async function loadPricingResources(client: SupabaseClient<Database>): Pr
   };
 }
 
-export async function listPromotions(client: SupabaseClient<Database>) {
-  const result = await client.from("promotions").select("*").order("priority", { ascending: false }).order("id");
+export async function listPromotions(client: SupabaseClient<Database>, organizationId: number) {
+  const result = await client.from("promotions").select("*").eq("organization_id", organizationId).order("priority", { ascending: false }).order("id");
   if (result.error) throw new Error("Impossibile caricare le promozioni");
   return result.data ?? [];
 }
 
-export async function loadPromotionEditor(client: SupabaseClient<Database>, id: number): Promise<PromotionEditorData | null> {
+export async function loadPromotionEditor(client: SupabaseClient<Database>, organizationId: number, id: number): Promise<PromotionEditorData | null> {
   const [promotion, products, categories, bundles, resources] = await Promise.all([
-    client.from("promotions").select("*").eq("id", id).maybeSingle(),
-    client.from("promotion_products").select("product_id").eq("promotion_id", id),
-    client.from("promotion_categories").select("category_id").eq("promotion_id", id),
-    client.from("promotion_bundles").select("bundle_id").eq("promotion_id", id),
-    loadPricingResources(client),
+    client.from("promotions").select("*").eq("id", id).eq("organization_id", organizationId).maybeSingle(),
+    client.from("promotion_products").select("product_id").eq("promotion_id", id).eq("organization_id", organizationId),
+    client.from("promotion_categories").select("category_id").eq("promotion_id", id).eq("organization_id", organizationId),
+    client.from("promotion_bundles").select("bundle_id").eq("promotion_id", id).eq("organization_id", organizationId),
+    loadPricingResources(client, organizationId),
   ]);
   if (promotion.error || products.error || categories.error || bundles.error) throw new Error("Impossibile caricare la promozione");
   if (!promotion.data) return null;

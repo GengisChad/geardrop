@@ -22,17 +22,17 @@ describe("Supabase database CI workflow", () => {
     const yaml = workflow();
     const requiredFragments = [
       "actions/checkout@v4",
-      "pnpm/action-setup@v4",
+      "corepack prepare pnpm@10.34.6 --activate",
       "actions/setup-node@v4",
       "supabase/setup-cli@v1",
       "pnpm install --frozen-lockfile",
       "supabase start",
       "supabase db reset --local",
-      'psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres"',
+      'psql "postgresql://postgres:postgres@127.0.0.1:54422/postgres"',
       "supabase test db --local supabase/tests",
       "pnpm db:test:upgrades",
       "supabase db lint --local --level error --fail-on error",
-      "supabase gen types typescript --local --schema public",
+      "supabase gen types typescript --local --schema public,management_api",
       "diff --unified",
       "pnpm lint",
       "pnpm typecheck",
@@ -64,13 +64,27 @@ describe("Supabase database CI workflow", () => {
     const yaml = workflow();
 
     expect(yaml).not.toMatch(/SUPABASE_ACCESS_TOKEN/i);
-    expect(yaml).not.toMatch(/project[_ -]?ref/i);
     expect(yaml).not.toMatch(/SUPABASE_SERVICE_ROLE_KEY/i);
     expect(yaml).not.toMatch(/IBNApp/i);
     expect(yaml).not.toContain("--linked");
     expect(yaml).not.toMatch(/\bdb\s+push\b/i);
-    expect(yaml).not.toMatch(/https:\/\/[^\s]+\.supabase\.co/i);
+    expect(yaml.match(/https:\/\/[^\s]+\.supabase\.co/g)).toEqual(["https://ci-management.supabase.co"]);
     expect(yaml).not.toMatch(/migration\s+repair/i);
+  });
+
+  it("pins Corepack before frozen install and checks both independent applications", () => {
+    const yaml = workflow();
+    expect(yaml).not.toContain("11.13.1");
+    expect(yaml).not.toContain("cache: pnpm");
+    expect(yaml.indexOf("actions/setup-node@v4")).toBeLessThan(yaml.indexOf("corepack enable"));
+    expect(yaml.indexOf("corepack enable")).toBeLessThan(yaml.indexOf("corepack prepare pnpm@10.34.6 --activate"));
+    expect(yaml).toContain('test "$(pnpm --version)" = "10.34.6"');
+    expect(yaml.indexOf('test "$(pnpm --version)"')).toBeLessThan(yaml.indexOf("pnpm install --frozen-lockfile"));
+    expect(yaml).toContain("diff --unified packages/data-contract/src/database.types.ts artifacts/database.types.ts");
+    expect(yaml).not.toContain("diff --unified src/lib/supabase/database.types.ts");
+    for (const command of ["pnpm lint", "pnpm typecheck:storefront", "pnpm typecheck:management", "pnpm build:storefront", "pnpm build:management", "pnpm check:workspace-boundaries", "pnpm verify:management-manifest", "pnpm verify:manifest-isolation", "pnpm verify:build-independence"]) expect(yaml).toContain(command);
+    const pkg = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8"));
+    expect(pkg.scripts.lint).toBe("pnpm lint:storefront && pnpm lint:shared && pnpm lint:management");
   });
 
   it("exports only local CLI values and runs the serial admin browser gate", () => {
@@ -178,8 +192,14 @@ describe("admin browser configuration", () => {
     expect(source).toContain("SUPABASE_SECRET_KEY");
     expect(source).toContain("127\\.0\\.0\\.1|localhost");
     expect(source).toContain("auth.admin.createUser");
-    expect(source).toContain('execFileSync("psql"');
-    expect(source).toContain("postgresql://postgres:postgres@127.0.0.1:54322/postgres");
+    // SQL reaches the local stack only: the host psql, or psql inside its own container.
+    const psql = readFileSync(join(process.cwd(), "tests", "e2e", "support", "local-psql.ts"), "utf8");
+    expect(source).toContain("localPsql(");
+    expect(psql).toContain('execFileSync("psql"');
+    // The host URL is always loopback, and its port is the [db] port read from config.toml.
+    expect(psql).toContain("postgresql://postgres:postgres@127.0.0.1:${port}/postgres");
+    expect(psql).toMatch(/\[db\]/);
+    expect(psql).toContain('"docker", ["exec", "-i", databaseContainer()');
     expect(source).toContain('stdio: "ignore"');
     expect(source).not.toContain("console.log");
     expect(source).not.toMatch(/\.supabase\.co/i);

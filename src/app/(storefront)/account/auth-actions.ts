@@ -12,6 +12,7 @@ import {
   recoverSchema,
   registerSchema,
 } from "@/lib/auth/customer-schemas";
+import { storefrontOrganizationId } from "@/lib/org/storefront";
 import { authRedirectUrl, safeRedirectPath } from "@/lib/site-url";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -210,8 +211,10 @@ export async function updateProfileAction(
 
   // RLS pins the row to the caller: customer_profiles_own_insert and _own_update both
   // require user_id = auth.uid(), so this cannot touch anyone else's profile.
+  // A customer account belongs to the company of the shop it signed up in.
   const { error } = await client.from("customer_profiles").upsert(
     {
+      organization_id: await storefrontOrganizationId(),
       user_id: userId,
       display_name: parsed.data.displayName || null,
       phone: parsed.data.phone || null,

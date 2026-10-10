@@ -3,6 +3,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import type { Product } from "@/lib/commerce/types";
+import { storefrontOrganizationId } from "@/lib/org/storefront";
 import {
   META_TIERS,
   type MetaArchiveItem,
@@ -30,14 +31,14 @@ function published<T extends { eq(column: string, value: unknown): T }>(query: T
 
 /** The newest month, which is what `/meta` shows. */
 export async function getLatestSnapshotRow(client: Client, { includeDrafts = false }: ReadOptions = {}): Promise<MetaSnapshotRow | null> {
-  const query = client.from("meta_snapshots").select("*").order("month", { ascending: false }).limit(1);
+  const query = client.from("meta_snapshots").select("*").eq("organization_id", await storefrontOrganizationId()).order("month", { ascending: false }).limit(1);
   const result = await published(query, includeDrafts);
   if (result.error) throw new Error("Impossibile caricare il meta");
   return result.data?.[0] ?? null;
 }
 
 export async function getSnapshotRowByMonth(client: Client, month: string, { includeDrafts = false }: ReadOptions = {}): Promise<MetaSnapshotRow | null> {
-  const query = client.from("meta_snapshots").select("*").eq("month", month).limit(1);
+  const query = client.from("meta_snapshots").select("*").eq("organization_id", await storefrontOrganizationId()).eq("month", month).limit(1);
   const result = await published(query, includeDrafts);
   if (result.error) throw new Error("Impossibile caricare il meta");
   return result.data?.[0] ?? null;
@@ -50,14 +51,14 @@ export async function listRankingRows(client: Client, snapshotId: number): Promi
 }
 
 export async function listMetaVideos(client: Client, { includeDrafts = false }: ReadOptions = {}): Promise<readonly MetaVideoRow[]> {
-  const query = client.from("meta_videos").select("*").order("sort_order").order("id");
+  const query = client.from("meta_videos").select("*").eq("organization_id", await storefrontOrganizationId()).order("sort_order").order("id");
   const result = includeDrafts ? await query : await query.eq("active", true);
   if (result.error) throw new Error("Impossibile caricare i video");
   return result.data ?? [];
 }
 
 export async function listArchive(client: Client, { includeDrafts = false }: ReadOptions = {}): Promise<readonly MetaArchiveItem[]> {
-  const query = client.from("meta_snapshots").select("month,title,published_at,updated_at").order("month", { ascending: false });
+  const query = client.from("meta_snapshots").select("month,title,published_at,updated_at").eq("organization_id", await storefrontOrganizationId()).order("month", { ascending: false });
   const result = await published(query, includeDrafts);
   if (result.error) throw new Error("Impossibile caricare l'archivio del meta");
   return (result.data ?? []).map((row) => ({

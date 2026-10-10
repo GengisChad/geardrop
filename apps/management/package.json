@@ -1,0 +1,29 @@
+{
+  "name": "@geardrop/management",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "lint": "eslint .",
+    "build": "pnpm --filter @geardrop/runtime-contract --filter @geardrop/data-contract typecheck && next build",
+    "typecheck": "pnpm --filter @geardrop/runtime-contract --filter @geardrop/data-contract typecheck && next typegen && tsc --noEmit"
+  },
+  "dependencies": {
+    "@geardrop/runtime-contract": "workspace:*",
+    "@geardrop/data-contract": "workspace:*",
+    "@supabase/ssr": "0.12.3",
+    "@supabase/supabase-js": "2.110.7",
+    "server-only": "0.0.1",
+    "next": "16.2.10",
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "typescript": "5.9.3",
+    "eslint": "9.39.0",
+    "eslint-config-next": "16.2.10"
+  }
+}

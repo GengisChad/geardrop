@@ -8,9 +8,17 @@ const ownerRoutes = [
   "/admin/ordini", "/admin/spedizioni", "/admin/impostazioni",
   "/admin/impostazioni/negozio", "/admin/impostazioni/seo",
   "/admin/impostazioni/contatti", "/admin/impostazioni/social", "/admin/team", "/admin/attivita",
+  "/admin/fornitori", "/admin/carichi", "/admin/carichi/nuovo", "/admin/magazzino", "/admin/previsioni",
+  "/admin/prezzi", "/admin/prezzi/fonti", "/admin/prezzi/osservazioni", "/admin/assistente",
 ] as const;
 
 test("every Full Admin module renders real state without horizontal overflow", async ({ page }, testInfo) => {
+  // The gate serves the panel from `next dev`, which compiles a route the first time it is
+  // asked for, so the first project to run pays that cost for the whole list while the later
+  // viewports find everything warm. The default half minute covered a shorter panel than this
+  // one: tying the budget to the list keeps it right the next time a module is added, instead
+  // of leaving a number for someone to remember.
+  testInfo.setTimeout(ownerRoutes.length * 6_000);
   await login(page, "OWNER");
   for (const route of ownerRoutes) {
     const response = await page.goto(route);
@@ -23,7 +31,8 @@ test("every Full Admin module renders real state without horizontal overflow", a
 
 test("role boundaries keep editor and admin away from owner-only modules", async ({ page }) => {
   await login(page, "EDITOR");
-  for (const route of ["/admin/ordini", "/admin/promozioni", "/admin/coupon", "/admin/spedizioni", "/admin/impostazioni", "/admin/team", "/admin/attivita"]) {
+  for (const route of ["/admin/ordini", "/admin/promozioni", "/admin/coupon", "/admin/spedizioni", "/admin/impostazioni", "/admin/team", "/admin/attivita",
+    "/admin/fornitori", "/admin/carichi", "/admin/magazzino", "/admin/previsioni", "/admin/prezzi", "/admin/assistente"]) {
     await page.goto(route);
     await expect(page).toHaveURL(/\/admin$/);
   }

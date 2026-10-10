@@ -33,12 +33,14 @@ export function formatOrderNumber(orderId: number): string {
  */
 export async function placeOrder(
   client: SupabaseClient<Database>,
+  organizationId: number,
   input: PlaceOrderInput,
 ): Promise<PlacedOrder> {
   const slugs = input.lines.map((line) => line.slug);
   const { data: products, error: productError } = await client
     .from("products")
     .select("id,slug")
+    .eq("organization_id", organizationId)
     .in("slug", slugs);
   if (productError) throw productError;
 
@@ -84,6 +86,7 @@ export async function placeOrder(
     .from("orders")
     .select("order_number,total_cents")
     .eq("id", orderId)
+    .eq("organization_id", organizationId)
     .maybeSingle();
 
   return {

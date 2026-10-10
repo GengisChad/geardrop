@@ -5,6 +5,8 @@ import styles from "@/components/admin/orders/orders.module.css";
 import { requireAdminAccess } from "@/lib/admin/access";
 import { listAdminOrders } from "@/lib/admin/order-repository";
 import { normalizeAdminOrderQuery, orderPiiVisibility } from "@/lib/admin/orders";
+import { formatEuro, MISSING_COST_LABELS } from "@/lib/admin/warehouse";
+import { loadOrderProfits } from "@/lib/admin/warehouse-repository";
 import { formatPrice } from "@/lib/format";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -19,17 +21,20 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
   const client = await createSupabaseServerClient();
   const principal = await requireAdminAccess(client);
   if (principal.role === "editor") redirect("/admin");
-  const result = await listAdminOrders(client, query, principal.role);
+  const result = await listAdminOrders(client, principal.organization.id, query, principal.role);
+  const profits = await loadOrderProfits(client, principal.organization.id, result.items.map((order) => order.id));
   // Shipped orders whose buyer has not had the shipping email yet.
   const unnotified = await client
     .from("orders")
     .select("id", { count: "exact", head: true })
+    .eq("organization_id", principal.organization.id)
     .in("status", ["shipped", "completed"])
     .is("shipping_notified_at", null);
   // Delivered orders whose buyer has not been told the parcel arrived.
   const unconfirmed = await client
     .from("orders")
     .select("id", { count: "exact", head: true })
+    .eq("organization_id", principal.organization.id)
     .eq("status", "completed")
     .is("delivery_notified_at", null);
   const hrefFor = (page: number) => ({ pathname: "/admin/ordini", query: { ...params, page: String(page) } });
@@ -49,7 +54,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
       <label>Coupon<input defaultValue={query.coupon} name="coupon" placeholder="CODICE"/></label>
       <div className={styles.filterActions}><button type="submit">Filtra</button><Link href="/admin/ordini">Azzera</Link></div>
     </form>
-    {result.items.length ? <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>Ordine</th><th>Cliente</th><th>Data</th><th>Stato</th><th>Pagamento</th><th>Spedizione</th><th>Coupon</th><th>Totale</th></tr></thead><tbody>{result.items.map((order)=><tr key={order.id}><td><Link href={`/admin/ordini/${order.id}`}>{order.order_number}</Link><small>#{order.id}</small></td><td>{order.email}</td><td>{new Intl.DateTimeFormat("it-IT",{dateStyle:"medium",timeStyle:"short"}).format(new Date(order.created_at))}</td><td><span className={styles.badge}>{statusLabels[order.status]}</span></td><td>{paymentLabels[order.payment_status]}</td><td>{order.shipping_method_code}</td><td>{order.coupon_code ?? "—"}</td><td>{formatPrice({amount:order.total_cents,currency:"EUR"})}</td></tr>)}</tbody></table></div>:<p className={styles.empty}>Nessun ordine corrisponde ai filtri. Il database può essere vuoto.</p>}
+    {result.items.length ? <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>Ordine</th><th>Cliente</th><th>Data</th><th>Stato</th><th>Pagamento</th><th>Spedizione</th><th>Coupon</th><th>Totale</th><th>Profitto</th></tr></thead><tbody>{result.items.map((order)=><tr key={order.id}><td><Link href={`/admin/ordini/${order.id}`}>{order.order_number}</Link><small>#{order.id}</small></td><td>{order.email}</td><td>{new Intl.DateTimeFormat("it-IT",{dateStyle:"medium",timeStyle:"short"}).format(new Date(order.created_at))}</td><td><span className={styles.badge}>{statusLabels[order.status]}</span></td><td>{paymentLabels[order.payment_status]}</td><td>{order.shipping_method_code}</td><td>{order.coupon_code ?? "—"}</td><td>{formatPrice({amount:order.total_cents,currency:"EUR"})}</td><td>{(()=>{const profit=profits.get(order.id);if(!profit)return "—";return profit.profit_cents==null?<span className={styles.badge} title={`Manca: ${(profit.missing??[]).map((key)=>MISSING_COST_LABELS[key]??key).join(", ")}`}>incompleto</span>:formatEuro(profit.profit_cents);})()}</td></tr>)}</tbody></table></div>:<p className={styles.empty}>Nessun ordine corrisponde ai filtri. Il database può essere vuoto.</p>}
     <nav className={styles.pagination} aria-label="Paginazione ordini">{result.page>1?<Link href={hrefFor(result.page-1)}>Precedente</Link>:<span/>}<span>Pagina {result.page} di {result.pageCount}</span>{result.page<result.pageCount?<Link href={hrefFor(result.page+1)}>Successiva</Link>:<span/>}</nav>
   </div>;
 }

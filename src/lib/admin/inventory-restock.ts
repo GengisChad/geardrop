@@ -27,6 +27,7 @@ export type RestockRequestRow = Database["public"]["Tables"]["restock_requests"]
  */
 export async function getRestockDemand(
   client: SupabaseClient<Database>,
+  organizationId: number,
   slugs: readonly string[],
 ): Promise<readonly RestockDemand[]> {
   if (slugs.length === 0) return [];
@@ -47,6 +48,7 @@ export async function getRestockDemand(
   const allSlugs = [...new Set([...slugs, ...bundleComponentSlugs])];
 
   const { data, error } = await client.rpc("get_inventory_restock_demand", {
+    p_organization_id: organizationId,
     p_slugs: allSlugs,
   });
   if (error) throw new Error("Impossibile caricare i dati di domanda inventario");
@@ -84,11 +86,13 @@ export async function getRestockDemand(
  */
 export async function listPendingRestockRequests(
   client: SupabaseClient<Database>,
+  organizationId: number,
   productSlug: string,
 ): Promise<readonly RestockRequestRow[]> {
   const { data, error } = await client
     .from("restock_requests")
     .select("*")
+    .eq("organization_id", organizationId)
     .eq("product_slug", productSlug)
     .is("notified_at", null)
     .order("created_at", { ascending: true })

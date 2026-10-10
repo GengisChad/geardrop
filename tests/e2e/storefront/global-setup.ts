@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { execFileSync } from "node:child_process";
+import { localPsql } from "../support/local-psql";
 
 /**
  * Fixtures for the storefront order gate.
@@ -20,16 +20,18 @@ export default async function globalSetup(): Promise<void> {
 
   const literal = (value: string) => `'${value.replaceAll("'", "''")}'`;
   const sql = `
-    insert into public.categories (name, slug, tagline, description, active, publication_status, published_at)
+    insert into public.categories (organization_id, name, slug, tagline, description, active, publication_status, published_at)
     values (
+      (select id from public.organizations where slug = 'geardrop'),
       'Categoria checkout', ${literal(`checkout-${run}`)},
       'Categoria tecnica per il gate ordini', 'Fixture del gate ordini storefront.',
       true, 'published', now()
     );
     insert into public.products (
-      category_id, slug, sku, name, tagline, description, price_cents,
+      organization_id, category_id, slug, sku, name, tagline, description, price_cents,
       publication_status, active, stock_quantity, sort_order
     ) values (
+      (select id from public.organizations where slug = 'geardrop'),
       (select id from public.categories where slug = ${literal(`checkout-${run}`)}),
       ${literal(`checkout-product-${run}`)}, ${literal(`checkout-product-${run}`)},
       'Prodotto checkout', 'Fixture', 'Prodotto del gate ordini storefront.',
@@ -46,15 +48,11 @@ export default async function globalSetup(): Promise<void> {
     );
     -- Exactly one active method, so the option the quote picks is not a race with
     -- whatever the admin gate left behind.
-    update public.shipping_methods set active = false;
-    insert into public.shipping_methods (code, name, price_cents, free_from_cents, active, sort_order)
-    values (${literal(`checkout-standard-${run}`)}, 'Corriere test', 500, null, true, 0);
-    update public.site_settings set accept_orders = true where singleton;
+    update public.shipping_methods set active = false where organization_id = (select id from public.organizations where slug = 'geardrop');
+    insert into public.shipping_methods (organization_id, code, name, price_cents, free_from_cents, active, sort_order)
+    values ((select id from public.organizations where slug = 'geardrop'), ${literal(`checkout-standard-${run}`)}, 'Corriere test', 500, null, true, 0);
+    update public.site_settings set accept_orders = true where organization_id = (select id from public.organizations where slug = 'geardrop');
   `;
 
-  execFileSync(
-    "psql",
-    ["postgresql://postgres:postgres@127.0.0.1:54322/postgres", "--set", "ON_ERROR_STOP=1", "--command", sql],
-    { stdio: "ignore" },
-  );
+  localPsql(["--set", "ON_ERROR_STOP=1", "--command", sql], { stdio: "ignore" });
 }
