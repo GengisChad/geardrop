@@ -547,7 +547,7 @@ git commit -m "feat: split management into independent app"
 
 **File:**
 
-- Crea: `supabase/migrations/20261008171012_add_management_feature_flags.sql`
+- Crea: `supabase/migrations/20261009091012_add_management_feature_flags.sql`
 - Crea: `supabase/tests/049_management_feature_flags.test.sql`
 - Modifica: `supabase/tests/044_organization_tier_registry.test.sql:15-31`
 - Modifica: `supabase/tests/upgrades/organizations_after.sql.in`
@@ -704,7 +704,7 @@ Atteso: PASS; l'upgrade popolato conserva i dati esistenti e aggiunge flag disab
 - [ ] **Step 5: Committare flag e API**
 
 ```bash
-git add supabase/migrations/20261008171012_add_management_feature_flags.sql supabase/tests/049_management_feature_flags.test.sql supabase/tests/044_organization_tier_registry.test.sql supabase/tests/upgrades/organizations_after.sql.in supabase/config.toml packages/data-contract apps/management/package.json scripts/check-workspace-boundaries.ts src/lib/supabase/database.types.ts tests/unit/management-features.test.ts tests/unit/scoped-queries-contract.test.ts package.json pnpm-lock.yaml .github/workflows/supabase-database-ci.yml tests/unit/supabase-ci-workflow.test.ts
+git add supabase/migrations/20261009091012_add_management_feature_flags.sql supabase/tests/049_management_feature_flags.test.sql supabase/tests/044_organization_tier_registry.test.sql supabase/tests/upgrades/organizations_after.sql.in supabase/config.toml packages/data-contract apps/management/package.json scripts/check-workspace-boundaries.ts src/lib/supabase/database.types.ts tests/unit/management-features.test.ts tests/unit/scoped-queries-contract.test.ts package.json pnpm-lock.yaml .github/workflows/supabase-database-ci.yml tests/unit/supabase-ci-workflow.test.ts
 git commit -m "feat: add organization management feature gates"
 ```
 

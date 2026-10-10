@@ -119,7 +119,7 @@ select is(
 );
 
 -- While the rollout is in flight the app built before organizations still inserts without a
--- company, so 20261008171016_keep_the_running_app_working_during_rollout.sql puts such a row in
+-- company, so 20261009091016_keep_the_running_app_working_during_rollout.sql puts such a row in
 -- the storefront company. The column itself stays NOT NULL without a default, which keeps the
 -- generated types requiring it from the new app; the contract migration makes this an error again.
 select lives_ok(

@@ -1,5 +1,5 @@
 -- The app built before organizations keeps working on this schema while the new app is deployed
--- (migration 20261008171016_keep_the_running_app_working_during_rollout.sql), and it gains
+-- (migration 20261009091016_keep_the_running_app_working_during_rollout.sql), and it gains
 -- nobody any access: everything it does lands in the storefront company and passes that
 -- company's role checks.
 begin;
