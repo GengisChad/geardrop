@@ -41,18 +41,19 @@ select results_eq($$select count(*)::integer from public.navigation_menus$$, arr
 select results_eq($$select count(*)::integer from public.navigation_items$$, array[8], 'seed has the current main navigation items');
 select results_eq($$select count(*)::integer from public.footer_columns$$, array[4], 'seed has the current footer columns');
 select results_eq($$select count(*)::integer from public.footer_items$$, array[17], 'seed has the current footer links');
--- Every published product is sellable the day the seed runs, in one of the three honest ways:
--- from a shelf, from a funded pre-order allocation (the 2026-09-21 drop), or as an open
--- pre-order with no shelf at all (allow_backorder).
+-- Every published product is in one of the three honest states the day the seed runs: on a
+-- shelf, a funded pre-order allocation (the 2026-09-21 drop), or sold out with an empty shelf
+-- (no open pre-orders since 2026-10-08: the page offers "Avvisami").
 select results_eq($$select count(*)::integer from public.products where publication_status = 'published'
   and not (
     (availability_override is null and stock_quantity > 0 and preorder_allocation = 0)
     or (availability_override = 'preorder'::public.availability_override and preorder_allocation > 0 and stock_quantity = 0)
-    or (availability_override is null and stock_quantity = 0 and preorder_allocation = 0 and allow_backorder)
-  )$$, array[0], 'every published product sells from stock, from an allocation, or as an open pre-order');
-select results_eq($$select count(*)::integer from public.products
-  where publication_status = 'published' and availability_override is null and stock_quantity = 0 and allow_backorder$$,
-  array[0], 'no product opens as an open pre-order since Soar Phoenix landed (2026-10-08): all are on the shelf or funded');
+    or (availability_override is null and stock_quantity = 0 and preorder_allocation = 0 and not allow_backorder)
+  )$$, array[0], 'every published product sells from stock or an allocation, or is honestly sold out');
+select results_eq($$select slug from public.products
+  where publication_status = 'published' and stock_status = 'esaurito'::public.stock_status order by slug$$,
+  $$values ('blast-pegasus-a-tr'::text)$$,
+  'only Blast Pegasus opens sold out: the owner has none on the shelf (2026-10-09)');
 select results_eq($$select slug, preorder_allocation from public.products where availability_override = 'preorder'::public.availability_override order by sort_order$$,
   $$values ('cobalt-drake-4-60f',9),('mirage-clock-9-65b',9),('suppress-superion-0-70lp',5),('strike-dran-4-50ff',9),('tread-croc-tq-5-50gn',9)$$,
   'the pre-order drop carries the allocations the owner set');

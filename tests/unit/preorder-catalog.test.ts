@@ -22,7 +22,7 @@ describe("reviewed catalogue", () => {
       { slug: "hammer-incendio-3-70h", price: 1199, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
       { slug: "shadow-shinobi-1-80mn", price: 999, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
       { slug: "wand-wizard-1-60r", price: 1490, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
-      { slug: "buster-dran-5-70db", price: 999, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
+      { slug: "buster-dran-5-70db", price: 890, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
       // Sold loose out of the Drop Attack Battle Set, next to the other top that ships
       // without a launcher. A hundred of each, because the goods sit inside 102 unopened
       // sets and a set takes seconds to open — and a hundred clears the shelf count, so
@@ -30,7 +30,7 @@ describe("reviewed catalogue", () => {
       { slug: "impact-drake-9-60lr", price: 1500, stock: "disponibile", availableQuantity: 100, rating: 0, reviewCount: 0 },
       { slug: "hover-wyvern-3-85n", price: 1500, stock: "disponibile", availableQuantity: 100, rating: 0, reviewCount: 0 },
       { slug: "cobalt-dragoon-2-60c", price: 2300, stock: "disponibile", availableQuantity: 56, rating: 0, reviewCount: 0 },
-      { slug: "blast-pegasus-a-tr", price: 2690, stock: "disponibile", availableQuantity: 56, rating: 0, reviewCount: 0 },
+      { slug: "blast-pegasus-a-tr", price: 2690, stock: "esaurito", availableQuantity: 0, rating: 0, reviewCount: 0 },
       { slug: "saber-samurai-2-70l", price: 2590, stock: "disponibile", availableQuantity: 16, rating: 0, reviewCount: 0 },
       { slug: "drop-attack-battle-set", price: 3990, stock: "disponibile", availableQuantity: 102, rating: 0, reviewCount: 0 },
       { slug: "sneak-attack-battle-set", price: 4490, stock: "disponibile", availableQuantity: 51, rating: 0, reviewCount: 0 },

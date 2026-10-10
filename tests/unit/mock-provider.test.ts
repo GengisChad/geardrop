@@ -128,7 +128,8 @@ describe("getFacets", () => {
     const facets = await provider.getFacets({ stock: ["esaurito"] });
     const available = facets.stock.find((f) => f.value === "disponibile");
     const preorder = facets.stock.find((f) => f.value === "pre-ordine");
-    expect((available?.count ?? 0) + (preorder?.count ?? 0)).toBe(oneCardPerFamily(STOREFRONT_CATALOGUE).length);
+    const soldOut = facets.stock.find((f) => f.value === "esaurito");
+    expect((available?.count ?? 0) + (preorder?.count ?? 0) + (soldOut?.count ?? 0)).toBe(oneCardPerFamily(STOREFRONT_CATALOGUE).length);
     expect(available?.count).toBeGreaterThan(0);
     expect(preorder?.count).toBeGreaterThan(0);
   });
@@ -265,9 +266,13 @@ describe("catalogue integrity", () => {
     }
   });
 
-  it("publishes every reviewed product as available or as a funded pre-order", () => {
+  it("publishes every reviewed product as available, a funded pre-order, or honestly sold out", () => {
     const states = new Set(PRODUCTS.map((p) => p.stock));
-    expect([...states].sort()).toEqual(["disponibile", "pre-ordine"]);
+    for (const state of states) expect(["disponibile", "esaurito", "pre-ordine"]).toContain(state);
+    // Sold out means an empty shelf (owner, 2026-10-08: no open pre-orders), never a count left over.
+    for (const product of PRODUCTS.filter((p) => p.stock === "esaurito")) {
+      expect(product.availableQuantity ?? 0, product.slug).toBe(0);
+    }
     // A pre-order either names an allocation or is open; an allocation of zero would be a dead card.
     for (const product of PRODUCTS.filter((p) => p.stock === "pre-ordine")) {
       if (product.availableQuantity !== undefined) expect(product.availableQuantity, product.slug).toBeGreaterThan(0);
