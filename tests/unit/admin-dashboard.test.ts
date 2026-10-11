@@ -105,5 +105,9 @@ describe("admin navigation path behavior", () => {
     expect(isActive("/admin/prodotti/42", "/admin/prodotti")).toBe(true);
     expect(isActive("/admin/prodotti-speciali", "/admin/prodotti")).toBe(false);
     expect(isActive("/admin/prodotti", "/admin")).toBe(false);
+    // A nested section lights up alone, not with its parent.
+    expect(isActive("/admin/ordini/pre-ordini", "/admin/ordini/pre-ordini")).toBe(true);
+    expect(isActive("/admin/ordini/pre-ordini", "/admin/ordini")).toBe(false);
+    expect(isActive("/admin/ordini/42", "/admin/ordini")).toBe(true);
   });
 });
