@@ -54,7 +54,7 @@ export function deliveryClause(text: string): string {
  * the wait itself (preorderDelivery).
  */
 export const STOCK_HINT: Record<StockStatus, string> = {
-  disponibile: "Disponibilità indicata nel catalogo",
+  disponibile: "Pronto da spedire: consegna in 1-5 giorni lavorativi",
   "in-arrivo": "Disponibilità in aggiornamento",
   "pre-ordine": "Tempi indicati su ogni scheda prodotto",
   esaurito: "Attualmente non disponibile",

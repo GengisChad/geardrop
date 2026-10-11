@@ -52,7 +52,8 @@ export function Arsenal({
   if (products.length === 0) return null;
 
   const chips: readonly Group[] = [{ key: ALL, label: "Tutti", count: products.length }, ...groups];
-  const cartLabel = hydrated && count > 0 ? `${count} ${count === 1 ? "articolo" : "articoli"} nel carrello` : "Carrello vuoto";
+  // A shortcut to the cart once there is something in it; an empty cart needs no link here.
+  const cartLabel = hydrated && count > 0 ? `${count} ${count === 1 ? "articolo" : "articoli"} nel carrello` : null;
 
   return (
     <section
@@ -95,13 +96,15 @@ export function Arsenal({
               })}
             </div>
           ) : null}
-          <Link
-            href="/carrello"
-            className="gd-mono inline-flex h-9 items-center gap-2.5 self-start border border-lime/35 px-3.5 text-[0.75rem] tracking-[0.06em] text-lime transition-colors hover:bg-lime/10 lg:self-end"
-          >
-            <ShoppingCart className="size-4" aria-hidden="true" />
-            {cartLabel}
-          </Link>
+          {cartLabel ? (
+            <Link
+              href="/carrello"
+              className="gd-mono inline-flex h-9 items-center gap-2.5 self-start border border-lime/35 px-3.5 text-[0.75rem] tracking-[0.06em] text-lime transition-colors hover:bg-lime/10 lg:self-end"
+            >
+              <ShoppingCart className="size-4" aria-hidden="true" />
+              {cartLabel}
+            </Link>
+          ) : null}
         </div>
       </div>
 

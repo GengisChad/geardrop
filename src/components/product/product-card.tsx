@@ -13,6 +13,17 @@ import type { Product } from "@/lib/commerce/types";
 import { familyColours } from "@/lib/commerce/variants";
 import { cn } from "@/lib/cn";
 
+/**
+ * Availability speaks in the shop's status colours, never the product's holo palette: a red
+ * "Disponibile" read as a problem and a lime "Esaurito" read as in stock (critique, 2026-10-11).
+ * A sold-out release keeps the pre-order colour, as on its product page.
+ */
+function availabilityTone(product: Pick<Product, "stock" | "releasePreorder">): string {
+  if (product.stock === "disponibile") return "text-available";
+  if (product.stock === "esaurito") return product.releasePreorder ? "text-preorder" : "text-soldout";
+  return "text-preorder";
+}
+
 type ProductCardProps = {
   product: Product;
   /** Numbers the cards of a ranked shelf. */
@@ -99,8 +110,12 @@ export function ProductCard({
             {showTagline ? <p className="hidden text-small text-grey-600 sm:line-clamp-2">{product.tagline}</p> : null}
             {showRating ? <Rating value={product.rating} count={product.reviewCount} /> : null}
 
-            <p className="gd-mono flex flex-wrap items-baseline gap-x-2 text-[0.8125rem] tracking-[0.02em] text-[var(--f2)]">
-              {availabilityLine(product)}
+            <p
+              className={cn("gd-mono flex flex-wrap items-baseline gap-x-2 text-[0.8125rem] tracking-[0.02em]", availabilityTone(product))}
+              data-testid="card-availability"
+            >
+              {/* "pre-ordine" never breaks at its hyphen on a narrow card. */}
+              {displayName(availabilityLine(product))}
               {product.compareAtPrice ? (
                 <span className="tabular normal-case tracking-normal text-grey-400 line-through" data-testid="card-compare-price">
                   {formatPrice(product.compareAtPrice)}

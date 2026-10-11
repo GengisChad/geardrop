@@ -178,7 +178,13 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
 
           <VariantPicker current={product} colours={colours} />
 
-          <p className="mt-5 max-w-lg text-small leading-relaxed text-grey-600">{product.description}</p>
+          {/* Price, availability and the cart button sit together, before the copy: on a phone the
+              button used to land two screens below the price (critique, 2026-10-11). */}
+          <div id="buy-panel" className="mt-6">
+            <BuyPanel product={product} />
+          </div>
+
+          <p className="mt-8 max-w-lg text-small leading-relaxed text-grey-600">{product.description}</p>
 
           <ul className="mt-6 flex flex-col gap-3.5">
             {product.features.map((feature, index) => {
@@ -200,10 +206,6 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
           </ul>
 
           {product.bundleOf ? <BundleContents bundle={product} components={components} /> : null}
-
-          <div id="buy-panel" className="mt-8">
-            <BuyPanel product={product} />
-          </div>
         </div>
       </div>
 

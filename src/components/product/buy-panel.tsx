@@ -61,7 +61,10 @@ export function BuyPanel({ product }: { product: Product }) {
           <p className={cn("gd-display text-small font-bold tracking-wider", STATUS_TEXT[tone])}>
             {stockLabel(product)}
           </p>
-          <p className="text-[0.6875rem] text-grey-600">{stockHint(product)}</p>
+          <p className="text-[0.6875rem] text-grey-600">
+            {/* A consignment piece leaves the partner's warehouse, on his own timing. */}
+            {product.consignment && product.stock === "disponibile" ? "Spedito dal nostro partner: consegna in 2-6 giorni lavorativi" : stockHint(product)}
+          </p>
           {product.stock === "pre-ordine" && !product.autoPreorder && product.availableQuantity !== undefined ? (
             <p className="mt-1 tabular text-[0.6875rem] font-bold text-preorder" data-testid="preorder-remaining">
               {product.availableQuantity} pre-ordini rimasti
