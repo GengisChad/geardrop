@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buyerOf, normalizePreorderView, preorderBoard, type PreorderItemRow, type PreorderOrderRow } from "@/lib/admin/preorders";
+import { buyerOf, normalizePreorderView, PREORDER_SHIPPED_NOTE, preorderBoard, type PreorderItemRow, type PreorderOrderRow } from "@/lib/admin/preorders";
 
 const order = (id: number, createdAt: string, extra: Partial<PreorderOrderRow> = {}): PreorderOrderRow => ({
   id,
@@ -63,6 +63,36 @@ describe("pre-order desk (owner, 2026-10-11)", () => {
     expect(preorderBoard(items, orders, { view: "evasi" }).orders.map((entry) => entry.orderNumber)).toEqual(["GD-2"]);
     expect(preorderBoard(items, orders, { view: "tutti", sku: DRAKE }).orders.map((entry) => entry.orderNumber)).toEqual(["GD-2"]);
     expect(preorderBoard(items, orders, { view: "tutti" }).orders).toHaveLength(3);
+  });
+
+  // GD-H45SJKCN, 2026-10-09: the shelf pieces left, the Strike Dran pre-order never did.
+  describe("an order that ships in two parcels", () => {
+    const STRIKE = "STRIKE-DRAN-4-50FF";
+    const mixedItems = [
+      item(10, "GLORY-VALKERION-LF", 1, 0),
+      { ...item(10, STRIKE, 1, 1), product_name_snapshot: "Strike Dran 4-50FF" },
+    ];
+    const shipped = [order(10, "2026-10-07T10:00:00Z", { status: "shipped", tracking_code: "123456789012" })];
+
+    it("stays to ship when only the shelf pieces left", () => {
+      const board = preorderBoard(mixedItems, shipped);
+      expect(board.orders).toHaveLength(1);
+      expect(board.orders[0]).toMatchObject({ orderNumber: "GD-10", mixed: true, shelfShipped: true, fulfilled: false });
+      expect(board.products).toEqual([{ sku: STRIKE, name: "Strike Dran 4-50FF", openPieces: 1, openOrders: 1, shippedPieces: 0 }]);
+    });
+
+    it("moves to shipped once the pre-order parcel is noted", () => {
+      const notes = [{ order_id: 10, note: `${PREORDER_SHIPPED_NOTE} · tracking 999`, created_at: "2026-10-20T09:00:00Z" }];
+      const board = preorderBoard(mixedItems, shipped, { notes, view: "evasi" });
+      expect(board.orders[0]).toMatchObject({ fulfilled: true, preorderShippedAt: "2026-10-20T09:00:00Z" });
+      expect(board.openPieces).toBe(0);
+      expect(board.products[0]).toMatchObject({ openPieces: 0, shippedPieces: 1 });
+    });
+
+    it("ignores any other note", () => {
+      const notes = [{ order_id: 10, note: "Cliente avvisato del ritardo", created_at: "2026-10-12T09:00:00Z" }];
+      expect(preorderBoard(mixedItems, shipped, { notes }).orders[0]!.fulfilled).toBe(false);
+    });
   });
 
   it("names the buyer and where the parcel goes", () => {

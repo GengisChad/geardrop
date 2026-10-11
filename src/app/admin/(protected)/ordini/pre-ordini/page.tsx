@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { markPreorderShippedAction } from "@/app/admin/actions/orders";
 import styles from "@/components/admin/orders/orders.module.css";
 import { requireAdminAccess } from "@/lib/admin/access";
 import { listPreorderOrders } from "@/lib/admin/order-repository";
@@ -32,8 +33,8 @@ export default async function AdminPreordersPage({ searchParams }: { searchParam
   // Buyer names and addresses: managers only, the same gate as the rest of the orders section.
   if (principal.role === "editor") redirect("/admin");
 
-  const { items, orders } = await listPreorderOrders(client);
-  const board = preorderBoard(items, orders, { view, ...(sku ? { sku } : {}) });
+  const { items, orders, notes } = await listPreorderOrders(client);
+  const board = preorderBoard(items, orders, { view, notes, ...(sku ? { sku } : {}) });
   const hrefFor = (next: { vista?: PreorderView; prodotto?: string | null }) => {
     const query: Record<string, string> = {};
     const nextView = next.vista ?? view;
@@ -133,8 +134,32 @@ export default async function AdminPreordersPage({ searchParams }: { searchParam
                   </td>
                   <td>{order.destination ?? "—"}</td>
                   <td>
-                    <span className={styles.badge}>{statusLabels[order.status]}</span>
-                    {order.trackingCode ? <><br /><small>{order.trackingCode}</small></> : null}
+                    {order.preorderShippedAt ? (
+                      <>
+                        <span className={styles.badge}>Pre-ordine spedito</span>
+                        <br />
+                        <small>{date(order.preorderShippedAt)} · {order.preorderShippedNote}</small>
+                      </>
+                    ) : order.shelfShipped ? (
+                      // Shipped in two: the pieces from the shelf left, the pre-order has not.
+                      <>
+                        <span className={styles.badge}>Manca il pre-ordine</span>
+                        <br />
+                        <small>Pezzi disponibili già spediti{order.trackingCode ? ` (${order.trackingCode})` : ""}</small>
+                      </>
+                    ) : (
+                      <>
+                        <span className={styles.badge}>{statusLabels[order.status]}</span>
+                        {order.trackingCode ? <><br /><small>{order.trackingCode}</small></> : null}
+                      </>
+                    )}
+                    {order.mixed && !order.fulfilled ? (
+                      <form action={markPreorderShippedAction} style={{ display: "flex", gap: "0.4rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
+                        <input type="hidden" name="orderId" value={order.id} />
+                        <input name="tracking" placeholder="Tracking pre-ordine" aria-label={`Tracking del pre-ordine ${order.orderNumber}`} style={{ minWidth: 0, width: "9rem" }} />
+                        <button type="submit">Segna pre-ordine spedito</button>
+                      </form>
+                    ) : null}
                   </td>
                   <td>{money(order.totalCents)}</td>
                 </tr>
@@ -146,7 +171,9 @@ export default async function AdminPreordersPage({ searchParams }: { searchParam
 
       <p className={styles.notice} style={{ marginTop: "1rem" }}>
         Per spedire un pre-ordine apri l&apos;ordine, inserisci il tracking e segnalo come spedito: il cliente riceve l&apos;email e
-        l&apos;ordine passa in &quot;Già spediti&quot;.
+        l&apos;ordine passa in &quot;Già spediti&quot;. Un ordine che conteneva anche pezzi disponibili (possibile fino all&apos;8/10)
+        parte in due pacchi: quando spedisci il pre-ordine usa &quot;Segna pre-ordine spedito&quot; qui, e scrivi al cliente il tracking
+        dalla pagina dell&apos;ordine.
       </p>
     </div>
   );

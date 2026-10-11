@@ -123,23 +123,24 @@ export async function listPartnerOrders(client: SupabaseClient<Database>, consig
 }
 
 /**
- * Every paid order line with pre-ordered pieces, and its order (the pre-order desk,
- * /admin/ordini/pre-ordini). Managers only, like the rest of the orders section.
+ * The pre-order desk (/admin/ordini/pre-ordini): every paid order holding pre-ordered pieces, all
+ * its lines (so an order that also shipped pieces from the shelf is known), and the internal notes
+ * that record a pre-order parcel sent apart. Managers only, like the rest of the orders section.
  */
 export async function listPreorderOrders(client: SupabaseClient<Database>) {
-  const itemsResult = await client
-    .from("order_items")
-    .select("order_id,sku_snapshot,product_name_snapshot,quantity,preorder_quantity")
-    .gt("preorder_quantity", 0);
-  if (itemsResult.error) throw new Error("Impossibile caricare le righe in pre-ordine");
-  const items = itemsResult.data ?? [];
-  if (items.length === 0) return { items, orders: [] };
-  const orderIds = [...new Set(items.map((item) => item.order_id))];
-  const ordersResult = await client
-    .from("orders")
-    .select("id,order_number,created_at,status,payment_status,email,phone,total_cents,shipped_at,tracking_code,shipping_address_snapshot")
-    .in("id", orderIds)
-    .eq("payment_status", "paid");
-  if (ordersResult.error) throw new Error("Impossibile caricare gli ordini in pre-ordine");
-  return { items, orders: ordersResult.data ?? [] };
+  const preordered = await client.from("order_items").select("order_id").gt("preorder_quantity", 0);
+  if (preordered.error) throw new Error("Impossibile caricare le righe in pre-ordine");
+  const orderIds = [...new Set((preordered.data ?? []).map((item) => item.order_id))];
+  if (orderIds.length === 0) return { items: [], orders: [], notes: [] };
+  const [itemsResult, ordersResult, notesResult] = await Promise.all([
+    client.from("order_items").select("order_id,sku_snapshot,product_name_snapshot,quantity,preorder_quantity").in("order_id", orderIds),
+    client
+      .from("orders")
+      .select("id,order_number,created_at,status,payment_status,email,phone,total_cents,shipped_at,tracking_code,shipping_address_snapshot")
+      .in("id", orderIds)
+      .eq("payment_status", "paid"),
+    client.from("order_notes").select("order_id,note,created_at").in("order_id", orderIds).ilike("note", "PRE-ORDINE SPEDITO%"),
+  ]);
+  if (itemsResult.error || ordersResult.error || notesResult.error) throw new Error("Impossibile caricare gli ordini in pre-ordine");
+  return { items: itemsResult.data ?? [], orders: ordersResult.data ?? [], notes: notesResult.data ?? [] };
 }
