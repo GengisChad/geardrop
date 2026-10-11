@@ -1,3 +1,5 @@
+import type { Route } from "next";
+import { fillerSpan, ShopTile } from "@/components/home/shop-tile";
 import { ProductCard } from "@/components/product/product-card";
 import { Kicker } from "@/components/ui/kicker";
 import type { Product } from "@/lib/commerce/types";
@@ -9,12 +11,15 @@ export function ProductShelf({
   title,
   note,
   testId,
+  tile,
 }: {
   readonly products: readonly Product[];
   readonly kicker: string;
   readonly title: string;
   readonly note?: string;
   readonly testId: string;
+  /** Fills the empty slots of a short last row with a "see more" tile. */
+  readonly tile?: { readonly href: Route; readonly kicker: string; readonly title: string };
 }) {
   if (products.length === 0) return null;
   return (
@@ -38,6 +43,11 @@ export function ProductShelf({
             <ProductCard product={product} showTagline />
           </li>
         ))}
+        {tile ? (
+          <li className={fillerSpan(products.length, { base: 2, sm: 2, lg: 4 })} data-testid={`${testId}-tile`}>
+            <ShopTile {...tile} />
+          </li>
+        ) : null}
       </ul>
     </section>
   );

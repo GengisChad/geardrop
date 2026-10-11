@@ -6,7 +6,7 @@ import { Bell, Check, ShoppingCart } from "lucide-react";
 import { Button, type ButtonSize } from "@/components/ui/button";
 import { useCart } from "@/lib/store/cart";
 import { useToast } from "@/components/ui/toast";
-import { STOCK_CTA, isPurchasable } from "@/lib/labels";
+import { FREE_SHIPPING_FROM_LABEL, STOCK_CTA, isPurchasable } from "@/lib/labels";
 import type { StockStatus } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
 import { trackEvent } from "@/lib/funnel";
@@ -88,7 +88,13 @@ export function AddToCartButton({
     setJustAdded(true);
     clearTimeout(timer.current);
     timer.current = setTimeout(() => setJustAdded(false), 1400);
-    toast.push({ tone: "success", message: `${name} aggiunto al carrello.` });
+    // The next step is one tap away, and the free-shipping line nudges a second piece.
+    toast.push({
+      tone: "success",
+      message: "Aggiunto al carrello",
+      detail: `${name} · spedizione gratis da ${FREE_SHIPPING_FROM_LABEL}`,
+      action: { label: "Vai al carrello", href: "/carrello" },
+    });
   };
 
   if (compact) {

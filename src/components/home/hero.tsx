@@ -2,10 +2,12 @@ import type { Route } from "next";
 import Link from "next/link";
 import { Fragment } from "react";
 import { ArrowRight } from "lucide-react";
+import { fillerSpan, ShopTile } from "@/components/home/shop-tile";
 import { ProductCard } from "@/components/product/product-card";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_HERO_TITLE, NEW_RELEASES_HERO_TITLE, heroTitleLines } from "@/lib/home/hero-title";
 import { displayName } from "@/lib/holo";
+import { FREE_SHIPPING_FROM_LABEL } from "@/lib/labels";
 import type { Product } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
 
@@ -102,6 +104,10 @@ export function Hero({
               <ProductCard product={product} showTagline priority={index < 2} />
             </li>
           ))}
+          {/* A short row ends in the shop tile, not in a dead gap. */}
+          <li className={fillerSpan(shown.length, { base: 2, sm: 3, lg: 5 })} data-testid="hero-shop-tile">
+            <ShopTile href="/negozio" kicker={`Spedizione gratis da ${FREE_SHIPPING_FROM_LABEL}`} title="Vedi tutto il negozio" />
+          </li>
         </ul>
       </div>
     </section>
