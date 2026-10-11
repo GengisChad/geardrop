@@ -121,3 +121,25 @@ export async function listPartnerOrders(client: SupabaseClient<Database>, consig
   }
   return orders.map((order) => ({ order, items: itemsByOrder.get(order.id) ?? [] }));
 }
+
+/**
+ * Every paid order line with pre-ordered pieces, and its order (the pre-order desk,
+ * /admin/ordini/pre-ordini). Managers only, like the rest of the orders section.
+ */
+export async function listPreorderOrders(client: SupabaseClient<Database>) {
+  const itemsResult = await client
+    .from("order_items")
+    .select("order_id,sku_snapshot,product_name_snapshot,quantity,preorder_quantity")
+    .gt("preorder_quantity", 0);
+  if (itemsResult.error) throw new Error("Impossibile caricare le righe in pre-ordine");
+  const items = itemsResult.data ?? [];
+  if (items.length === 0) return { items, orders: [] };
+  const orderIds = [...new Set(items.map((item) => item.order_id))];
+  const ordersResult = await client
+    .from("orders")
+    .select("id,order_number,created_at,status,payment_status,email,phone,total_cents,shipped_at,tracking_code,shipping_address_snapshot")
+    .in("id", orderIds)
+    .eq("payment_status", "paid");
+  if (ordersResult.error) throw new Error("Impossibile caricare gli ordini in pre-ordine");
+  return { items, orders: ordersResult.data ?? [] };
+}
