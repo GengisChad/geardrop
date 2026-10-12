@@ -5,7 +5,7 @@
  * Opened Battle Sets (2026-10-06): the owner opens sets and sells the pieces apart. Drop Attack:
  * Impact Drake and Hover Wyvern loose on the site, the stadium alone on Vinted. Sneak Attack:
  * everything on Vinted only — the stadium and both tops, for kids who search there. Each piece's
- * stock follows its sets (supabase/migrations/20261006160100_battle_sets_open_on_demand.sql); the
+ * stock follows its sets (supabase/migrations/20261012130300_battle_sets_open_on_demand.sql); the
  * local seed mirrors it.
  */
 

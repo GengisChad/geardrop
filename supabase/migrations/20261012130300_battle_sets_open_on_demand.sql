@@ -23,21 +23,44 @@
 -- so the window only exists while a piece has none loose.
 
 begin;
-select pg_advisory_xact_lock(hashtext('20261006160100_battle_sets_open_on_demand'));
+select pg_advisory_xact_lock(hashtext('20261012130300_battle_sets_open_on_demand'));
 
 -- The stadium alone. A stock item for Vinted, not a page on the site: draft and inactive.
-insert into public.products (
-  category_id, slug, sku, name, tagline, description, price_cents,
-  publication_status, active, stock_quantity, allow_backorder, rating, review_count, sort_order
-)
-select
-  set_product.category_id, 'drop-attack-arena', 'DROP-ATTACK-ARENA', 'Beystadium Drop Attack (solo arena)',
-  'L''arena del Drop Attack Battle Set, senza trottole.',
-  'Il Beystadium del Drop Attack Battle Set, venduto da solo dopo aver tolto Impact Drake e Hover Wyvern. In vendita su Vinted, non sul sito.',
-  1000, 'draft'::public.publication_status, false, 0, false, 0, 0, 900
-from public.products as set_product
-where set_product.slug = 'drop-attack-battle-set'
-on conflict (slug) do nothing;
+-- 2026-10-12: on the organization schema (PR #51, production) slug is only unique per company,
+-- so ON CONFLICT (slug) fails; include organization_id and use the composite conflict key.
+-- PL/pgSQL plans a statement only when it runs, so the org branch is safe on CI.
+do $$
+begin
+  if to_regclass('public.organizations') is not null then
+    insert into public.products (
+      organization_id, category_id, slug, sku, name, tagline, description, price_cents,
+      publication_status, active, stock_quantity, allow_backorder, rating, review_count, sort_order
+    )
+    select
+      set_product.organization_id, set_product.category_id,
+      'drop-attack-arena', 'DROP-ATTACK-ARENA', 'Beystadium Drop Attack (solo arena)',
+      'L''arena del Drop Attack Battle Set, senza trottole.',
+      'Il Beystadium del Drop Attack Battle Set, venduto da solo dopo aver tolto Impact Drake e Hover Wyvern. In vendita su Vinted, non sul sito.',
+      1000, 'draft'::public.publication_status, false, 0, false, 0, 0, 900
+    from public.products as set_product
+    where set_product.slug = 'drop-attack-battle-set'
+    on conflict (organization_id, slug) do nothing;
+  else
+    insert into public.products (
+      category_id, slug, sku, name, tagline, description, price_cents,
+      publication_status, active, stock_quantity, allow_backorder, rating, review_count, sort_order
+    )
+    select
+      set_product.category_id, 'drop-attack-arena', 'DROP-ATTACK-ARENA', 'Beystadium Drop Attack (solo arena)',
+      'L''arena del Drop Attack Battle Set, senza trottole.',
+      'Il Beystadium del Drop Attack Battle Set, venduto da solo dopo aver tolto Impact Drake e Hover Wyvern. In vendita su Vinted, non sul sito.',
+      1000, 'draft'::public.publication_status, false, 0, false, 0, 0, 900
+    from public.products as set_product
+    where set_product.slug = 'drop-attack-battle-set'
+    on conflict (slug) do nothing;
+  end if;
+end;
+$$;
 
 create table public.battle_set_parts (
   set_product_id bigint not null references public.products(id) on delete cascade,

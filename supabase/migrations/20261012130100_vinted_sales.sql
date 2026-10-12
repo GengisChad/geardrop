@@ -11,7 +11,7 @@
 -- auto-apply; the owner and admins may apply or dismiss from the panel. Nobody writes the tables.
 
 begin;
-select pg_advisory_xact_lock(hashtext('20261006120100_vinted_sales'));
+select pg_advisory_xact_lock(hashtext('20261012130100_vinted_sales'));
 
 create table public.inbound_emails (
   id bigint generated always as identity primary key,
