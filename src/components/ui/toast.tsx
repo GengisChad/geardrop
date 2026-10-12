@@ -2,6 +2,8 @@
 
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import Link from "next/link";
+import type { Route } from "next";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, Info, X, XCircle } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -9,9 +11,14 @@ import { cn } from "@/lib/cn";
 /** Feedback tones from design system §12 "AVVISI & FEEDBACK". */
 type Tone = "success" | "info" | "error";
 
-type Toast = { id: number; tone: Tone; message: string };
+/** A next step the toast offers, such as "Vai al carrello" after an add. */
+type ToastAction = { readonly label: string; readonly href: Route };
 
-type ToastContext = { push: (toast: { tone: Tone; message: string }) => void };
+type ToastInput = { tone: Tone; message: string; detail?: string; action?: ToastAction };
+
+type Toast = ToastInput & { id: number };
+
+type ToastContext = { push: (toast: ToastInput) => void };
 
 const Context = createContext<ToastContext | null>(null);
 
@@ -31,11 +38,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const push = useCallback(
-    ({ tone, message }: { tone: Tone; message: string }) => {
+    (input: ToastInput) => {
       const id = nextId++;
       // Cap the stack so rapid adds can't bury the page.
-      setToasts((current) => [...current.slice(-2), { id, tone, message }]);
-      setTimeout(() => dismiss(id), 3600);
+      setToasts((current) => [...current.slice(-2), { ...input, id }]);
+      // A toast with a next step stays long enough to be tapped.
+      setTimeout(() => dismiss(id), input.action ? 6000 : 3600);
     },
     [dismiss],
   );
@@ -68,7 +76,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 )}
               >
                 <Icon className={cn("size-5 shrink-0", iconColor)} aria-hidden="true" />
-                <p className="flex-1 text-small text-graphite">{toast.message}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-small text-graphite">{toast.message}</p>
+                  {toast.detail ? <p className="mt-0.5 text-[0.6875rem] text-grey-600">{toast.detail}</p> : null}
+                </div>
+                {toast.action ? (
+                  <Link
+                    href={toast.action.href}
+                    onClick={() => dismiss(toast.id)}
+                    data-testid="toast-action"
+                    className="gd-display inline-flex h-11 shrink-0 items-center whitespace-nowrap bg-lime px-3.5 text-[0.75rem] font-bold tracking-wider text-void transition-colors hover:bg-lime-ink"
+                  >
+                    {toast.action.label}
+                  </Link>
+                ) : null}
                 <button
                   type="button"
                   onClick={() => dismiss(toast.id)}

@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowRight, ShoppingCart } from "lucide-react";
-import { Emblem } from "@/components/layout/logo";
+import { ShoppingCart } from "lucide-react";
+import { ShopTile } from "@/components/home/shop-tile";
 import { ProductCard } from "@/components/product/product-card";
 import { Kicker } from "@/components/ui/kicker";
 import { BLADE_TYPE_LABEL, CATEGORY_LABEL, FREE_SHIPPING_FROM_LABEL } from "@/lib/labels";
@@ -123,24 +123,7 @@ export function Arsenal({
           );
         })}
         <li className="animate-[gd-card-in_0.55s_var(--ease-out-gear)_both]">
-          <Link
-            href="/negozio"
-            className="group relative flex h-full min-h-72 flex-col justify-end gap-3 overflow-hidden border border-dashed border-lime/40 bg-[radial-gradient(circle_at_70%_25%,rgba(122,60,255,0.28),transparent_60%)] p-4 transition-colors hover:border-lime sm:p-6"
-          >
-            <Emblem
-              size={260}
-              className="pointer-events-none absolute -right-12 -top-10 w-40 opacity-35 animate-[gd-spin_20s_linear_infinite] sm:w-64"
-            />
-            <span className="gd-mono relative text-[0.625rem] uppercase tracking-[0.12em] text-lime sm:text-[0.6875rem]">
-              Spedizione gratis da {FREE_SHIPPING_FROM_LABEL}
-            </span>
-            <span className="gd-display-wide relative text-[1.45rem] font-bold leading-[0.95] sm:text-[2.1rem]">
-              Vedi tutto il negozio
-            </span>
-            <span className="gd-chamfer relative grid size-12 place-items-center bg-lime text-void transition-transform duration-200 group-hover:translate-x-1">
-              <ArrowRight className="size-5" aria-hidden="true" />
-            </span>
-          </Link>
+          <ShopTile href="/negozio" kicker={`Spedizione gratis da ${FREE_SHIPPING_FROM_LABEL}`} title="Vedi tutto il negozio" />
         </li>
       </ul>
     </section>
