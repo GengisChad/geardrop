@@ -1,10 +1,14 @@
 "use server";
 
 import { headers } from "next/headers";
+import { shippingMethodByCode } from "@/data/catalog";
 import {
   cartQuoteSchema,
+  expressCheckoutSchema,
+  PICKUP_POINT_MESSAGE,
   placeOrderSchema,
   type CartQuoteInput,
+  type ExpressCheckoutInput,
   type PlaceOrderInput,
 } from "@/lib/checkout-schema";
 import {
@@ -15,7 +19,8 @@ import {
 import { placeOrder } from "@/lib/commerce/order-intake";
 import { getCommerceProvider, resolveCommerceProviderName } from "@/lib/commerce/provider";
 import type { CartQuote, Money } from "@/lib/commerce/types";
-import { createStripeCheckout, openQuoteForStripe, stripeCheckoutEnabled } from "@/lib/payments/stripe-checkout";
+import { createStripeCheckout, openQuoteForStripe, stripeCheckoutEnabled, STRIPE_UNAVAILABLE_MESSAGE } from "@/lib/payments/stripe-checkout";
+import { EXPRESS_CHECKOUT_LOCKED_MESSAGE } from "@/lib/payments/express-checkout";
 import { authRedirectUrl, PRODUCTION_ORIGIN } from "@/lib/site-url";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -79,6 +84,13 @@ export async function submitOrder(input: PlaceOrderInput): Promise<PlaceOrderRes
       );
       if (!quote.orderable) return { ok: false, message: quote.notice ?? CHECKOUT_FALLBACK_MESSAGE };
 
+      // The quote may have overridden a stale submitted code: re-validate the pickup point
+      // against what the quote actually selected (not what the browser sent).
+      const selectedMethod = shippingMethodByCode(quote.shippingCode);
+      if (selectedMethod?.pickupPoint && (parsed.data.contact.pickupPoint ?? "").trim().length < 3) {
+        return { ok: false, message: PICKUP_POINT_MESSAGE };
+      }
+
       const checkout = await createStripeCheckout({ quote, order: parsed.data, origin: await checkoutOrigin() });
       return checkout.ok ? { ok: true, redirectUrl: checkout.url } : { ok: false, message: checkout.message };
     } catch (error) {
@@ -141,4 +153,65 @@ function emptyQuote(): CartQuote {
 
 function unavailableQuote(notice: string): CartQuote {
   return { ...emptyQuote(), notice };
+}
+
+export type ExpressCheckoutResult =
+  | { readonly ok: true; readonly redirectUrl: string }
+  | { readonly ok: false; readonly message: string };
+
+/**
+ * Starts a Stripe Checkout Session for express payment (Apple Pay / Google Pay / card),
+ * skipping the shop's own contact and address form.
+ *
+ * Stripe collects the shipping address and phone on its hosted page. The order lands in
+ * the webhook via collected_information.shipping_details (or shipping_details on older
+ * API versions) rather than payment_intent.shipping.
+ *
+ * Express is available only for Hasbro-only carts: Takara-only and mixed carts have
+ * locked shipping plans that do not include the Poste home ("standard") method.
+ */
+export async function startExpressCheckout(input: ExpressCheckoutInput): Promise<ExpressCheckoutResult> {
+  const parsed = expressCheckoutSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, message: "Il carrello contiene dati non validi. Ricarica la pagina." };
+  }
+
+  if (!stripeCheckoutEnabled()) {
+    return { ok: false, message: STRIPE_UNAVAILABLE_MESSAGE };
+  }
+
+  try {
+    const provider = await getCommerceProvider();
+    // Force shippingCode="standard" (Poste home): that is the only method express supports.
+    // If the plan does not offer it (Takara-only or mixed carts), the provider falls back to
+    // its first method and shippingCode will differ — caught below.
+    const rawQuote = await provider.quoteCart({
+      lines: toQuoteLines(parsed.data.lines),
+      shippingCode: "standard",
+    });
+    const quote = openQuoteForStripe(rawQuote);
+
+    if (!quote.orderable) {
+      return { ok: false, message: quote.notice ?? CHECKOUT_FALLBACK_MESSAGE };
+    }
+
+    // The plan must have accepted "standard"; locked plans (Takara-only, mixed) keep their own
+    // first method instead and shippingCode will not equal "standard".
+    if (quote.shippingCode !== "standard") {
+      return { ok: false, message: EXPRESS_CHECKOUT_LOCKED_MESSAGE };
+    }
+
+    const checkout = await createStripeCheckout(
+      {
+        quote,
+        order: { idempotencyKey: parsed.data.idempotencyKey, lines: parsed.data.lines },
+        origin: await checkoutOrigin(),
+        express: true,
+      },
+      process.env,
+    );
+    return checkout.ok ? { ok: true, redirectUrl: checkout.url } : { ok: false, message: checkout.message };
+  } catch (error) {
+    return { ok: false, message: checkoutErrorMessage(error) };
+  }
 }

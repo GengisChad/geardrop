@@ -8,17 +8,33 @@ export type NavItem = {
   readonly tone?: "violet" | "lime";
 };
 
-/** Header nav, transcribed from the mockups. */
-export const MAIN_NAV: readonly NavItem[] = [
-  { label: "Negozio", href: "/negozio" },
-  { label: "Beyblade X", href: "/negozio/beyblade-x" },
-  { label: "Lanciatori", href: "/negozio/lanciatori" },
-  { label: "Stadi", href: "/negozio/stadi" },
-  { label: "Accessori", href: "/negozio/accessori" },
-  { label: "Meta", href: "/meta" },
-  { label: "Nuovi arrivi", href: "/negozio?sort=novita", tone: "violet" },
-  { label: "Offerte", href: "/prodotto/duo-horus-enlil", tone: "lime" },
-];
+/**
+ * Builds the header nav with optional brand entries.
+ *
+ * "Hasbro" always appears after "Negozio". "Takara Tomy" is added only when the
+ * catalogue has at least one Takara Tomy product — pass `hasTakara: true` then.
+ */
+export function buildMainNav({ hasTakara = false }: { hasTakara?: boolean } = {}): readonly NavItem[] {
+  // The header holds eight entries at laptop widths. The two brands lead; with Takara Tomy on sale
+  // it takes the fresh slot ("Nuovi arrivi"), and the tops stay one click away under Negozio.
+  return [
+    { label: "Negozio", href: "/negozio" },
+    { label: "Hasbro", href: "/negozio/hasbro" },
+    ...(hasTakara ? [{ label: "Takara Tomy", href: "/negozio/takara-tomy" as AppHref, tone: "violet" as const }] : []),
+    { label: "Lanciatori", href: "/negozio/lanciatori" },
+    { label: "Stadi", href: "/negozio/stadi" },
+    { label: "Accessori", href: "/negozio/accessori" },
+    { label: "Meta", href: "/meta" },
+    ...(hasTakara ? [] : [{ label: "Nuovi arrivi", href: "/negozio?sort=novita" as AppHref, tone: "violet" as const }]),
+    { label: "Offerte", href: "/prodotto/duo-horus-enlil", tone: "lime" },
+  ];
+}
+
+/**
+ * Static nav used when no catalogue context is available (content seed, Supabase nav builder).
+ * Includes Hasbro but not Takara Tomy (no products in the current catalogue).
+ */
+export const MAIN_NAV: readonly NavItem[] = buildMainNav();
 
 /**
  * The row under the footer columns. The shop's own account comes first; the channel is

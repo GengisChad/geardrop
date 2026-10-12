@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { BUNDLE, BUNDLES, PRODUCTS } from "@/data/catalog";
+import { BUNDLE, BUNDLES, PRODUCTS, SHIPPING_FLAT_RATE } from "@/data/catalog";
 import { cutoutSrc, packBoxes, productImages } from "@/data/assets";
 import { bundlesContaining, piecesOf, resolveBundle, withBundles } from "@/lib/commerce/bundles";
 import { createMockProvider, STOREFRONT_CATALOGUE } from "@/lib/commerce/mock-provider";
@@ -90,7 +90,8 @@ describe("bundle stock", () => {
       "duo-horus-enlil",
       "trio-starter-arena",
     ]);
-    expect(bundlesContaining("glory-valkerion-lf", BUNDLES)).toHaveLength(0);
+    // Glory Valkerion sells alone and in the Promo Attack (owner, 2026-10-08).
+    expect(bundlesContaining("glory-valkerion-lf", BUNDLES).map((bundle) => bundle.slug)).toEqual(["promo-attack"]);
   });
 });
 
@@ -101,7 +102,7 @@ describe("pricing a cart with the duo", () => {
     const quote = await provider.quoteCart({ lines: [{ slug: "duo-horus-enlil", quantity: 1 }] });
     expect(quote.lines[0]).toMatchObject({ slug: "duo-horus-enlil", unitPrice: { amount: duo.price.amount }, availableQuantity: 4, issue: null });
     expect(quote.totals.subtotal.amount).toBe(duo.price.amount);
-    expect(quote.totals.shipping.amount).toBe(490);
+    expect(quote.totals.shipping.amount).toBe(SHIPPING_FLAT_RATE); // InPost point, 5,65 €
   });
 
   it("refuses more duos than the scarcest pack allows", async () => {

@@ -1,7 +1,8 @@
-import { BUNDLES, FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_FLAT_RATE } from "@/data/catalog";
+import { BUNDLES, FREE_SHIPPING_THRESHOLD, PARTNER_SHIPPING_METHOD, PRODUCTS, SHIPPING_METHODS, SOLD_WITHOUT_BARCODE, brandOf } from "@/data/catalog";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import type { Product } from "@/lib/commerce/types";
 import { CATEGORY_LABEL } from "@/lib/labels";
+import { availabilityDate } from "@/lib/merchant-availability";
 import { absoluteUrl, productTitle, SITE_NAME } from "@/lib/seo";
 
 /**
@@ -39,7 +40,10 @@ function offer(product: Product): string {
     `<g:link>${escape(absoluteUrl(`/prodotto/${product.slug}`))}</g:link>`,
     `<g:condition>new</g:condition>`,
     `<g:availability>${AVAILABILITY[product.stock]}</g:availability>`,
-    `<g:brand>${escape(product.unofficial ? SITE_NAME : "Hasbro")}</g:brand>`,
+    ...(AVAILABILITY[product.stock] === "backorder"
+      ? [`<g:availability_date>${availabilityDate(product)}</g:availability_date>`]
+      : []),
+    `<g:brand>${escape(product.unofficial ? SITE_NAME : brandOf(product) === "takara-tomy" ? "Takara Tomy" : "Hasbro")}</g:brand>`,
     `<g:product_type>${escape(CATEGORY_LABEL[product.category])}</g:product_type>`,
   ];
 
@@ -57,19 +61,30 @@ function offer(product: Product): string {
     rows.push(`<g:price>${euro(product.price.amount)}</g:price>`);
   }
 
-  // Only the deck cases are ours and genuinely have no barcode. Hasbro boxes do have one; until
-  // those are recorded we say nothing rather than claim an identifier does not exist.
-  if (product.unofficial) rows.push(`<g:identifier_exists>no</g:identifier_exists>`);
+  // The deck cases are ours, and pieces out of an opened set come in a bag: neither has a barcode.
+  // Hasbro boxes do have one; until those are recorded we say nothing rather than claim an
+  // identifier does not exist.
+  if (product.unofficial || SOLD_WITHOUT_BARCODE.has(product.slug)) {
+    rows.push(`<g:identifier_exists>no</g:identifier_exists>`);
+  }
+  // A kit the shop puts together is a bundle to Google, priced as one offer.
+  if (product.bundleOf) rows.push(`<g:is_bundle>yes</g:is_bundle>`);
 
   if (product.variant) {
     rows.push(`<g:item_group_id>${escape(product.variant.family)}</g:item_group_id>`);
     rows.push(`<g:color>${escape(product.variant.label)}</g:color>`);
   }
 
-  const shipping = product.price.amount >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FLAT_RATE;
-  rows.push(
-    `<g:shipping><g:country>IT</g:country><g:service>Standard</g:service><g:price>${euro(shipping)}</g:price></g:shipping>`,
-  );
+  // One row per carrier the checkout offers for this product's brand.
+  // Takara Tomy items only ship via the partner's Poste Punto Poste route.
+  // Hasbro (and unofficial) items use the regular InPost + Poste methods.
+  const free = product.price.amount >= FREE_SHIPPING_THRESHOLD;
+  const shippingMethods = brandOf(product) === "takara-tomy" && !product.unofficial ? [PARTNER_SHIPPING_METHOD] : SHIPPING_METHODS;
+  for (const method of shippingMethods) {
+    rows.push(
+      `<g:shipping><g:country>IT</g:country><g:service>${escape(method.label)}</g:service><g:price>${euro(free ? 0 : method.priceCents)}</g:price></g:shipping>`,
+    );
+  }
 
   return `<item>${rows.join("")}</item>`;
 }

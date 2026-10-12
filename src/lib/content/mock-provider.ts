@@ -1,14 +1,17 @@
+import { PRODUCTS, brandOf } from "@/data/catalog";
 import { LEGAL_PAGES, SUPPORT_PAGES } from "@/data/pages";
-import { FOOTER_NAV, MAIN_NAV, SOCIAL_LINKS } from "@/lib/navigation";
+import { FOOTER_NAV, SOCIAL_LINKS, buildMainNav } from "@/lib/navigation";
 import type { StorefrontContentProvider } from "./types";
 
 export function createMockContentProvider(): StorefrontContentProvider {
   return {
     name: "mock",
     async getChrome() {
+      const hasTakara = PRODUCTS.some((p) => brandOf(p) === "takara-tomy");
+      const nav = buildMainNav({ hasTakara });
       return {
-        desktopNavigation: MAIN_NAV,
-        mobileNavigation: MAIN_NAV,
+        desktopNavigation: nav,
+        mobileNavigation: nav,
         footerColumns: FOOTER_NAV,
         socialLinks: SOCIAL_LINKS.map(({ label, href }) => ({ label, href })),
       };

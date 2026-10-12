@@ -59,6 +59,11 @@ BUNDLES: dict[str, tuple[tuple[str, float], ...]] = {
         ("blast-pegasus-a-tr", 1.0),
         ("saber-samurai-2-70l", 1.0),
     ),
+    # Owner, 2026-10-08: Glory Valkerion starter with the Buster Dran booster.
+    "promo-attack": (
+        ("glory-valkerion-lf", 1.0),
+        ("buster-dran-5-70db", 0.85),
+    ),
 }
 
 

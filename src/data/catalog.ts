@@ -9,7 +9,46 @@
 
 import { productImages } from "@/data/assets";
 import { VARIANT_FAMILIES, type VariantColour } from "@/data/variant-families";
-import type { Bundle, Category, Product } from "@/lib/commerce/types";
+import type { Brand, BrandSlug, Bundle, Category, Product, ShippingOption } from "@/lib/commerce/types";
+
+/**
+ * The one consignment partner we work with: NerdPoint holds Takara Tomy stock and ships it
+ * himself. His email comes from the env so it can be overridden in tests or staging without
+ * touching the code. He is owed the list price minus the commission whatever the buyer paid,
+ * which is why a cart holding his pieces takes no promotion code (lib/payments/stripe-checkout.ts).
+ */
+export const CONSIGNMENT_PARTNER = {
+  key: "nerdpoint",
+  name: "NerdPoint",
+  email: (process.env["PARTNER_EMAIL"]?.trim() || "amministrazione@nerdpoint.it"),
+} as const;
+
+export type PartnerLine = {
+  readonly slug: string;
+  readonly name: string;
+  readonly quantity: number;
+  readonly unitPriceCents: number;
+  readonly commissionCents: number;
+  /** What the partner receives for these units: (unitPrice − commission) × quantity, min 0. */
+  readonly owed: number;
+};
+
+/**
+ * Picks the paid lines whose slug belongs to a consignment product and computes what the
+ * partner is owed for each one. Bundles are skipped (they never contain consignment items today).
+ */
+export function partnerLines(
+  lines: readonly { readonly slug: string; readonly name: string; readonly quantity: number; readonly unitPriceCents: number }[],
+): readonly PartnerLine[] {
+  const bySlug = new Map(PRODUCTS.map((p) => [p.slug as string, p]));
+  return lines.flatMap((line) => {
+    const product = bySlug.get(line.slug);
+    if (!product?.consignment) return [];
+    const commission = product.commissionCents ?? 0;
+    const owed = Math.max(0, (line.unitPriceCents - commission) * line.quantity);
+    return [{ slug: line.slug, name: line.name, quantity: line.quantity, unitPriceCents: line.unitPriceCents, commissionCents: commission, owed }];
+  });
+}
 
 const eur = (amount: number) => ({ amount, currency: "EUR" }) as const;
 
@@ -35,6 +74,31 @@ function deckCase({ slug, label, swatch }: VariantColour): Product {
   };
 }
 
+/**
+ * Brand descriptors for the two lines we sell. Hasbro is the Western Beyblade X line
+ * (the products we stock and ship ourselves). Takara Tomy is the original Japanese line,
+ * sold on consignment: our partner holds and ships those pieces from his warehouse.
+ */
+export const BRANDS: readonly Brand[] = [
+  {
+    slug: "hasbro",
+    name: "Hasbro",
+    tagline: "La linea ufficiale occidentale di Beyblade X.",
+    description: "I prodotti Hasbro sono la linea Beyblade X ufficiale per il mercato occidentale: trottole, lanciatori e stadi originali, acquistati dal distributore e spediti direttamente dal nostro magazzino.",
+  },
+  {
+    slug: "takara-tomy",
+    name: "Takara Tomy",
+    tagline: "L'originale giapponese. Dal Giappone al tuo stadio.",
+    description: "La linea originale giapponese di Beyblade X, l'inizio di tutto. I pezzi Takara Tomy sono venduti in consignment: il nostro partner li spedisce direttamente dal suo magazzino, in un pacco separato.",
+  },
+];
+
+/** Returns the brand a product belongs to. Absent means Hasbro. */
+export function brandOf(product: Pick<Product, "brand">): BrandSlug {
+  return product.brand ?? "hasbro";
+}
+
 export const CATEGORIES: readonly Category[] = [
   { slug: "beyblade-x", name: "Beyblade X", tagline: "Scatena la tua energia. Domina lo stadio.", description: "Tutta la collezione di trottole Beyblade X: attacco, difesa, stamina e bilanciate, pronte per ogni scontro." },
   { slug: "lanciatori", name: "Lanciatori", tagline: "Potenza e controllo nelle tue mani.", description: "Lanciatori a corda e accessori di lancio per colpi precisi e ripetibili." },
@@ -46,7 +110,7 @@ export const PRODUCTS: readonly Product[] = [
   {
     slug: "glory-valkerion-lf", name: "Glory Valkerion LF", tagline: "Attacco UX. Blade e ratchet in un pezzo.",
     description: "Glory Valkerion LF è una trottola d'attacco a rotazione destra della linea UX: la blade integra il ratchet in un unico pezzo e il Bit Low Flat (LF), a punta piatta e bassa, la spinge in movimenti rapidi e aggressivi per agganciare l'Xtreme Line e scatenare l'Xtreme Dash. Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).",
-    price: eur(2300), category: "beyblade-x", bladeType: "attacco", stock: "disponibile", availableQuantity: 25, tags: [], rating: 0, reviewCount: 0,
+    price: eur(2300), category: "beyblade-x", bladeType: "attacco", stock: "disponibile", availableQuantity: 62, tags: [], rating: 0, reviewCount: 0,
     images: productImages["glory-valkerion-lf"],
     specs: [{ label: "Tipo", value: "Attacco" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "UX (Infinity Starter Pack)" }, { label: "Codice", value: "LF" }, { label: "Componenti", value: "1 trottola, 1 lanciatore" }],
     features: [{ title: "Ratchet integrato", description: "Blade e ratchet stampati in un unico pezzo" }, { title: "Bit Low Flat", description: "Punta piatta e bassa per un attacco rapido" }, { title: "Xtreme Dash", description: "Aggancia l'Xtreme Line dello stadio e accelera" }, { title: "Starter completo", description: "Include il lanciatore" }],
@@ -56,7 +120,7 @@ export const PRODUCTS: readonly Product[] = [
   {
     slug: "shatter-horus-9-65gb", name: "Shatter Horus 9-65GB", tagline: "Stamina BX. Metallo oltre i ganci.",
     description: "Shatter Horus 9-65GB è una trottola stamina della linea BX: la blade dalla forma rotonda estende il metallo oltre i ganci del lanciatore e riveste di metallo anche il bordo del gear chip, che raffigura il dio egizio Horus. Monta il Ratchet 9-65 e il Bit GB. Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).",
-    price: eur(1199), category: "beyblade-x", bladeType: "stamina", stock: "disponibile", availableQuantity: 47, tags: [], rating: 0, reviewCount: 0,
+    price: eur(1199), category: "beyblade-x", bladeType: "stamina", stock: "disponibile", availableQuantity: 118, tags: [], rating: 0, reviewCount: 0,
     images: productImages["shatter-horus-9-65gb"],
     specs: [{ label: "Tipo", value: "Stamina" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "BX (Infinity Starter Pack)" }, { label: "Codice", value: "9-65GB" }, { label: "Componenti", value: "1 trottola, 1 lanciatore" }],
     features: [{ title: "Metallo esteso", description: "Il metallo supera i ganci del lanciatore" }, { title: "Forma rotonda", description: "Profilo tondo pensato per la resistenza" }, { title: "Starter completo", description: "Include il lanciatore" }, { title: "Compatibile Beyblade X", description: "Blade, Ratchet e Bit intercambiabili con la serie" }],
@@ -66,7 +130,7 @@ export const PRODUCTS: readonly Product[] = [
   {
     slug: "hurricane-enlil-is-7-55t", name: "Hurricane Enlil IS 7-55T", tagline: "Bilanciata CX. Blade Infinity scomponibile.",
     description: "Hurricane Enlil IS 7-55T è una trottola bilanciata a rotazione destra della linea CX: la blade Infinity si scompone in lock chip, over blade, blade metallica e assist blade per costruire l'assetto su misura, con Ratchet 7-55 e Bit T. Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).",
-    price: eur(999), category: "beyblade-x", bladeType: "bilanciato", stock: "disponibile", availableQuantity: 49, tags: [], rating: 0, reviewCount: 0,
+    price: eur(999), category: "beyblade-x", bladeType: "bilanciato", stock: "disponibile", availableQuantity: 119, tags: [], rating: 0, reviewCount: 0,
     images: productImages["hurricane-enlil-is-7-55t"],
     specs: [{ label: "Tipo", value: "Bilanciata" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "CX (Infinity Starter Pack)" }, { label: "Codice", value: "IS 7-55T" }, { label: "Componenti", value: "1 trottola, 1 lanciatore" }],
     features: [{ title: "Blade Infinity scomponibile", description: "Lock chip, over blade, blade metallica e assist blade" }, { title: "Assetto bilanciato", description: "Equilibrio tra attacco, difesa e resistenza" }, { title: "Starter completo", description: "Include il lanciatore" }, { title: "Compatibile Beyblade X", description: "Blade, Ratchet e Bit intercambiabili con la serie" }],
@@ -76,7 +140,7 @@ export const PRODUCTS: readonly Product[] = [
   {
     slug: "hammer-incendio-3-70h", name: "Hammer Incendio 3-70H", tagline: "Tre martelli. Colpisce dall'alto.",
     description: "Hammer Incendio 3-70H è costruita attorno a tre grandi lame rialzate che lavorano come martelli: il peso sta sul bordo e i colpi arrivano dall'alto. Ratchet 3-70 a 7,0 mm, che resiste allo scoppio meglio degli assetti bassi, e Bit H (Hexa). Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).",
-    price: eur(1200), category: "beyblade-x", stock: "disponibile", availableQuantity: 26, tags: [], rating: 0, reviewCount: 0,
+    price: eur(1199), category: "beyblade-x", stock: "disponibile", availableQuantity: 26, tags: [], rating: 0, reviewCount: 0,
     images: productImages["hammer-incendio-3-70h"],
     specs: [{ label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "UX (Unique Line)" }, { label: "Codice", value: "3-70H" }, { label: "Componenti", value: "1 trottola, 1 lanciatore con ripcord" }, { label: "Nota", value: "Richiede un Beystadium (venduto a parte)" }],
     features: [{ title: "Tre lame a martello", description: "Il peso sul bordo per colpire dall'alto" }, { title: "Bit Hexa", description: "Si raddrizza da sola e tiene l'assetto" }, { title: "Ratchet 3-70", description: "Assetto medio a 7,0 mm" }, { title: "Starter completo", description: "Trottola e lanciatore con ripcord inclusi" }],
@@ -106,7 +170,7 @@ export const PRODUCTS: readonly Product[] = [
   {
     slug: "buster-dran-5-70db", name: "Buster Dran 5-70DB", tagline: "Un punto solo. O passa, o niente.",
     description: "Buster Dran 5-70DB è la più estrema della linea UX: la blade ovale concentra tutta la massa su un unico contatto a punta di spada e svuota il lato opposto. Ratchet 5-70 a 7,0 mm e Bit DB (Disk Ball). Questa è la versione booster: contiene la sola trottola, senza lanciatore. Richiede lanciatore e Beystadium Beyblade X (venduti separatamente).",
-    price: eur(999), category: "beyblade-x", stock: "disponibile", availableQuantity: 26, tags: [], rating: 0, reviewCount: 0,
+    price: eur(890), compareAtPrice: eur(999), category: "beyblade-x", stock: "disponibile", availableQuantity: 26, tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["buster-dran-5-70db"],
     specs: [{ label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "UX (Unique Line)" }, { label: "Codice", value: "5-70DB" }, { label: "Componenti", value: "1 trottola" }, { label: "Nota", value: "Richiede lanciatore e Beystadium (venduti a parte)" }],
     features: [{ title: "Un solo punto d'urto", description: "Tutta la massa su un contatto a punta di spada" }, { title: "Bit Disk Ball", description: "Appoggio a disco: tiene il centro senza fermarsi" }, { title: "Ratchet 5-70", description: "Assetto medio a 7,0 mm" }, { title: "Solo la trottola", description: "Versione booster: il lanciatore non è incluso" }],
@@ -146,7 +210,7 @@ export const PRODUCTS: readonly Product[] = [
   {
     slug: "blast-pegasus-a-tr", name: "Blast Pegasus A Tr", tagline: "Attacco portatile. Clip & Rip Launcher.",
     description: "Blast Pegasus A Tr è una trottola d'attacco a rotazione destra della linea CX, venduta con il Clip & Rip Launcher: un lanciatore portatile che si aggancia a cintura e zaino e ripone il ripcord all'interno. Richiede un Beystadium Beyblade X (venduto separatamente).",
-    price: eur(2690), category: "beyblade-x", bladeType: "attacco", stock: "disponibile", availableQuantity: 56, tags: [], rating: 0, reviewCount: 0,
+    price: eur(2690), category: "beyblade-x", bladeType: "attacco", stock: "esaurito", availableQuantity: 0, tags: [], rating: 0, reviewCount: 0,
     images: productImages["blast-pegasus-a-tr"],
     specs: [{ label: "Tipo", value: "Attacco" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "CX" }, { label: "Componenti", value: "1 trottola, 1 Clip & Rip Launcher" }, { label: "Nota", value: "Richiede un Beystadium (venduto a parte)" }],
     features: [{ title: "Clip & Rip Launcher", description: "Lanciatore portatile: si aggancia e riponi il ripcord" }, { title: "Linea CX", description: "Trottola d'attacco a rotazione destra" }, { title: "X-Celerator", description: "Accelera sull'X-Celerator Rail dello stadio" }, { title: "Compatibile Beyblade X", description: "Blade, Ratchet e Bit intercambiabili con la serie" }],
@@ -238,12 +302,44 @@ export const PRODUCTS: readonly Product[] = [
   {
     slug: "soar-phoenix-9-60gf", name: "Soar Phoenix 9-60GF", tagline: "Upper attack. Colpisci verso l'alto.",
     description: "Soar Phoenix 9-60GF è una trottola d'attacco a tre lame che salgono verso l'alto per un Upper Attack capace di sollevare l'avversario, unito allo Smash che lo spinge fuori arena. Tra le blade più pesanti della serie. Lo starter include il lanciatore a corda.",
-    price: eur(3200), category: "beyblade-x", bladeType: "attacco", stock: "pre-ordine", tags: [], rating: 0, reviewCount: 0,
+    price: eur(2590), category: "beyblade-x", bladeType: "attacco", stock: "disponibile", availableQuantity: 199, tags: ["novita"], rating: 0, reviewCount: 0,
     images: productImages["soar-phoenix-9-60gf"],
     specs: [{ label: "Tipo", value: "Attacco" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codice", value: "9-60GF" }, { label: "Componenti", value: "1 trottola, 1 lanciatore a corda" }, { label: "Materiale", value: "Plastica e metallo" }],
     features: [{ title: "Upper Attack", description: "Le tre lame sollevano l'avversario da terra" }, { title: "Peso elevato", description: "Massa che domina i confronti d'attacco" }, { title: "Starter completo", description: "Include il lanciatore a corda" }, { title: "Compatibile Beyblade X", description: "Blade, Ratchet e Bit intercambiabili con la serie" }],
     boxContents: ["1 × Trottola Soar Phoenix 9-60GF", "1 × Lanciatore a corda", "Manuale"],
     relatedSlugs: ["cobalt-dragoon-2-60c", "blast-pegasus-a-tr", "saber-samurai-2-70l"],
+  },
+  // Takara Tomy, the original Japanese line, on consignment from our partner (owner, 2026-10-07):
+  // he keeps them in his warehouse and ships them himself; the shop keeps commissionCents a piece.
+  {
+    slug: "cx-00-evangelion-deck-set", name: "CX-00 Evangelion Deck Set", tagline: "Tre trottole Evangelion per i 30 anni della serie.",
+    description: "Il CX-00 Evangelion Deck Set è l'edizione Takara Tomy per i 30 anni di Evangelion: tre trottole Beyblade X ispirate alle Unità 00, 01 e 02 (EvaArc, EvaBrave ed EvaBrush), due lanciatori Winder e il box porta trottole EVA HANGAR. Prodotto originale giapponese, confezione in giapponese. Spedito dal nostro partner.",
+    price: eur(13500), category: "beyblade-x", brand: "takara-tomy", consignment: true, commissionCents: 500, stock: "disponibile", availableQuantity: 2, tags: [], rating: 0, reviewCount: 0,
+    images: productImages["cx-00-evangelion-deck-set"],
+    specs: [{ label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codice", value: "CX-00" }, { label: "Componenti", value: "3 trottole, 2 lanciatori Winder, 1 box porta trottole" }, { label: "Confezione", value: "In giapponese" }, { label: "Età", value: "Dai 6 anni (indicazione della confezione)" }],
+    features: [{ title: "30 anni di Evangelion", description: "Collaborazione ufficiale Takara Tomy" }, { title: "Tre trottole", description: "EvaArc, EvaBrave ed EvaBrush, versioni Unità 00, 01 e 02" }, { title: "Due lanciatori Winder", description: "Si gioca subito in due" }, { title: "Box EVA HANGAR", description: "Porta trottole a tema incluso" }],
+    boxContents: ["3 × Trottola Beyblade X (EvaArc, EvaBrave, EvaBrush)", "2 × Lanciatore Winder", "1 × Box porta trottole EVA HANGAR"],
+    relatedSlugs: ["ux-00-glory-valkyrie-lf", "cx-00-tigarage-ft3-60t"],
+  },
+  {
+    slug: "ux-00-glory-valkyrie-lf", name: "UX-00 Glory Valkyrie LF", tagline: "B4 Limited, Metal Coat blu.",
+    description: "UX-00 Glory Valkyrie LF è l'edizione limitata B4 (Beyblade Battle Base) di Takara Tomy, con la blade in Metal Coat blu e il Bit Low Flat (LF) a punta piatta e bassa per un attacco rapido. Lo starter include il lanciatore a corda. Prodotto originale giapponese, confezione in giapponese. Spedito dal nostro partner.",
+    price: eur(20500), category: "beyblade-x", bladeType: "attacco", brand: "takara-tomy", consignment: true, commissionCents: 500, stock: "disponibile", availableQuantity: 2, tags: [], rating: 0, reviewCount: 0,
+    images: productImages["ux-00-glory-valkyrie-lf"],
+    specs: [{ label: "Tipo", value: "Attacco" }, { label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "UX" }, { label: "Codice", value: "UX-00 LF" }, { label: "Edizione", value: "B4 Limited, Metal Coat blu" }, { label: "Componenti", value: "1 trottola, 1 lanciatore a corda" }, { label: "Confezione", value: "In giapponese" }],
+    features: [{ title: "Edizione limitata B4", description: "Venduta nei Beyblade Battle Base giapponesi" }, { title: "Metal Coat blu", description: "Finitura metallizzata della blade" }, { title: "Bit Low Flat", description: "Punta piatta e bassa per un attacco rapido" }, { title: "Starter completo", description: "Include il lanciatore a corda" }],
+    boxContents: ["1 × Trottola Glory Valkyrie LF", "1 × Lanciatore a corda"],
+    relatedSlugs: ["cx-00-evangelion-deck-set", "cx-00-tigarage-ft3-60t"],
+  },
+  {
+    slug: "cx-00-tigarage-ft3-60t", name: "CX-00 Tigarage FT3-60T", tagline: "B4 Limited, collaborazione Ultraman Tiga.",
+    description: "CX-00 Tigarage FT3-60T è l'edizione limitata B4 (Beyblade Battle Base) di Takara Tomy nata dalla collaborazione con Ultraman Tiga. Lo starter include il lanciatore e gli adesivi della collaborazione. Prodotto originale giapponese, confezione in giapponese. Spedito dal nostro partner.",
+    price: eur(10399), category: "beyblade-x", brand: "takara-tomy", consignment: true, commissionCents: 500, stock: "disponibile", availableQuantity: 2, tags: [], rating: 0, reviewCount: 0,
+    images: productImages["cx-00-tigarage-ft3-60t"],
+    specs: [{ label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "CX" }, { label: "Codice", value: "CX-00 FT3-60T" }, { label: "Edizione", value: "B4 Limited, collaborazione Ultraman Tiga" }, { label: "Componenti", value: "1 trottola, 1 lanciatore, adesivi" }, { label: "Confezione", value: "In giapponese" }],
+    features: [{ title: "Edizione limitata B4", description: "Venduta nei Beyblade Battle Base giapponesi" }, { title: "Ultraman Tiga", description: "Collaborazione ufficiale con adesivi dedicati" }, { title: "Linea CX", description: "Blade componibile della Custom Line" }, { title: "Starter completo", description: "Include il lanciatore" }],
+    boxContents: ["1 × Trottola Tigarage FT3-60T", "1 × Lanciatore", "Adesivi della collaborazione"],
+    relatedSlugs: ["ux-00-glory-valkyrie-lf", "cx-00-evangelion-deck-set"],
   },
 ];
 
@@ -257,10 +353,10 @@ export const BUNDLES: readonly Product[] = [
   {
     slug: "kit-doppio-starter-deck", name: "Kit Doppio Starter", tagline: "Due starter e il porta deck. Pronti a sfidarsi.",
     description: "Due starter Beyblade X completi di lanciatore, Shadow Shinobi 1-80MN e Hammer Incendio 3-70H, con il porta deck giallo per portarli in giro. Shadow Shinobi devia il colpo con tre lame lisce e il Bit MN la tiene in piedi; Hammer Incendio porta il peso sul bordo e colpisce dall'alto con tre lame rialzate: due modi opposti di stare in arena. Il porta deck tiene tre trottole, una per scomparto. Richiede un Beystadium Beyblade X (venduto separatamente).",
-    price: eur(3990), compareAtPrice: eur(4649), category: "beyblade-x", stock: "disponibile", tags: ["offerta"], rating: 0, reviewCount: 0,
+    price: eur(3990), compareAtPrice: eur(4648), category: "beyblade-x", stock: "disponibile", tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["kit-doppio-starter-deck"],
     specs: [{ label: "Contenuto", value: "2 starter, 2 lanciatori, 1 porta deck" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Trottole incluse", value: "Shadow Shinobi 1-80MN, Hammer Incendio 3-70H" }, { label: "Porta deck", value: "Giallo, 3 scomparti, non ufficiale" }, { label: "Nota", value: "Richiede un Beystadium (venduto a parte)" }],
-    features: [{ title: "Due starter completi", description: "Ogni trottola ha il suo lanciatore con ripcord" }, { title: "Due assetti opposti", description: "Una corre sul bordo, l'altra tiene il centro" }, { title: "Porta deck incluso", description: "Tre scomparti, uno per trottola" }, { title: "Risparmi €6,59", description: "€39,90 invece di €46,49 comprandoli separati" }],
+    features: [{ title: "Due starter completi", description: "Ogni trottola ha il suo lanciatore con ripcord" }, { title: "Due assetti opposti", description: "Una corre sul bordo, l'altra tiene il centro" }, { title: "Porta deck incluso", description: "Tre scomparti, uno per trottola" }, { title: "Risparmi €6,58", description: "€39,90 invece di €46,48 comprandoli separati" }],
     boxContents: ["1 × Starter Shadow Shinobi 1-80MN (trottola e lanciatore)", "1 × Starter Hammer Incendio 3-70H (trottola e lanciatore)", "1 × Porta Deck giallo", "Manuali"],
     relatedSlugs: ["kit-arena-drop-completo", "shadow-shinobi-1-80mn", "hammer-incendio-3-70h"],
     bundleOf: [{ slug: "shadow-shinobi-1-80mn", quantity: 1 }, { slug: "hammer-incendio-3-70h", quantity: 1 }, { slug: "porta-deck-giallo", quantity: 1 }],
@@ -268,10 +364,10 @@ export const BUNDLES: readonly Product[] = [
   {
     slug: "kit-arena-drop-completo", name: "Kit Arena Drop Attack", tagline: "Arena, quattro trottole e porta deck. Tutto in una volta.",
     description: "Tutto per cominciare e non comprare altro: il Drop Attack Battle Set — il Beystadium con l'X-Celerator Rail rialzato che porta le trottole in alto per farle piombare sull'avversario, due trottole e due lanciatori — più due starter completi, Shadow Shinobi 1-80MN e Hammer Incendio 3-70H, e il porta deck giallo. In tutto quattro trottole e quattro lanciatori, con lo stadio per farle scontrare e la custodia per portarle in giro.",
-    price: eur(7490), compareAtPrice: eur(8639), category: "beyblade-x", stock: "disponibile", tags: ["offerta"], rating: 0, reviewCount: 0,
+    price: eur(7490), compareAtPrice: eur(8638), category: "beyblade-x", stock: "disponibile", tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["kit-arena-drop-completo"],
     specs: [{ label: "Contenuto", value: "1 stadio, 4 trottole, 4 lanciatori, 1 porta deck" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Stadio", value: "Drop Attack Battle Set" }, { label: "Starter inclusi", value: "Shadow Shinobi 1-80MN, Hammer Incendio 3-70H" }, { label: "Porta deck", value: "Giallo, 3 scomparti, non ufficiale" }],
-    features: [{ title: "Si gioca subito", description: "Stadio, trottole e lanciatori in una sola scatola" }, { title: "Quattro trottole", description: "Le due del set più i due starter" }, { title: "Porta deck incluso", description: "Tre scomparti, uno per trottola" }, { title: "Risparmi €11,49", description: "€74,90 invece di €86,39 comprandoli separati" }],
+    features: [{ title: "Si gioca subito", description: "Stadio, trottole e lanciatori in una sola scatola" }, { title: "Quattro trottole", description: "Le due del set più i due starter" }, { title: "Porta deck incluso", description: "Tre scomparti, uno per trottola" }, { title: "Risparmi €11,48", description: "€74,90 invece di €86,38 comprandoli separati" }],
     boxContents: ["1 × Drop Attack Battle Set (stadio, 2 trottole, 2 lanciatori)", "1 × Starter Shadow Shinobi 1-80MN", "1 × Starter Hammer Incendio 3-70H", "1 × Porta Deck giallo", "Manuali"],
     relatedSlugs: ["kit-doppio-starter-deck", "drop-attack-battle-set", "shadow-shinobi-1-80mn"],
     bundleOf: [{ slug: "drop-attack-battle-set", quantity: 1 }, { slug: "shadow-shinobi-1-80mn", quantity: 1 }, { slug: "hammer-incendio-3-70h", quantity: 1 }, { slug: "porta-deck-giallo", quantity: 1 }],
@@ -279,10 +375,10 @@ export const BUNDLES: readonly Product[] = [
   {
     slug: "kit-arena-sneak-completo", name: "Kit Arena Sneak Attack", tagline: "Arena, quattro trottole e porta deck. Tutto in una volta.",
     description: "Tutto per cominciare e non comprare altro: il Sneak Attack Battle Set — il Beystadium verde con il rail a scomparsa che devia le trottole in una nuova direzione, due trottole e due lanciatori — più due starter completi, Shadow Shinobi 1-80MN e Hammer Incendio 3-70H, e il porta deck giallo. In tutto quattro trottole e quattro lanciatori, con lo stadio per farle scontrare e la custodia per portarle in giro.",
-    price: eur(7990), compareAtPrice: eur(9139), category: "beyblade-x", stock: "disponibile", tags: ["offerta"], rating: 0, reviewCount: 0,
+    price: eur(7990), compareAtPrice: eur(9138), category: "beyblade-x", stock: "disponibile", tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["kit-arena-sneak-completo"],
     specs: [{ label: "Contenuto", value: "1 stadio, 4 trottole, 4 lanciatori, 1 porta deck" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Stadio", value: "Sneak Attack Battle Set" }, { label: "Starter inclusi", value: "Shadow Shinobi 1-80MN, Hammer Incendio 3-70H" }, { label: "Porta deck", value: "Giallo, 3 scomparti, non ufficiale" }],
-    features: [{ title: "Si gioca subito", description: "Stadio, trottole e lanciatori in una sola scatola" }, { title: "Quattro trottole", description: "Le due del set più i due starter" }, { title: "Porta deck incluso", description: "Tre scomparti, uno per trottola" }, { title: "Risparmi €11,49", description: "€79,90 invece di €91,39 comprandoli separati" }],
+    features: [{ title: "Si gioca subito", description: "Stadio, trottole e lanciatori in una sola scatola" }, { title: "Quattro trottole", description: "Le due del set più i due starter" }, { title: "Porta deck incluso", description: "Tre scomparti, uno per trottola" }, { title: "Risparmi €11,48", description: "€79,90 invece di €91,38 comprandoli separati" }],
     boxContents: ["1 × Sneak Attack Battle Set (stadio, 2 trottole, 2 lanciatori)", "1 × Starter Shadow Shinobi 1-80MN", "1 × Starter Hammer Incendio 3-70H", "1 × Porta Deck giallo", "Manuali"],
     relatedSlugs: ["kit-doppio-starter-deck", "sneak-attack-battle-set", "shadow-shinobi-1-80mn"],
     bundleOf: [{ slug: "sneak-attack-battle-set", quantity: 1 }, { slug: "shadow-shinobi-1-80mn", quantity: 1 }, { slug: "hammer-incendio-3-70h", quantity: 1 }, { slug: "porta-deck-giallo", quantity: 1 }],
@@ -299,15 +395,27 @@ export const BUNDLES: readonly Product[] = [
     bundleOf: [{ slug: "blast-pegasus-a-tr", quantity: 1 }, { slug: "saber-samurai-2-70l", quantity: 1 }],
   },
   {
-    slug: "duo-horus-enlil", name: "Duo Shatter Horus + Hurricane Enlil", tagline: "Stamina contro bilanciata. Due starter, €2,08 in meno.",
+    slug: "duo-horus-enlil", name: "Duo Shatter Horus + Hurricane Enlil", tagline: "Stamina contro bilanciata. Due starter, €3,99 in meno.",
     description: "Il duo mette insieme due Infinity Starter Beyblade X: Shatter Horus 9-65GB, trottola stamina della linea BX con il metallo esteso oltre i ganci, e Hurricane Enlil IS 7-55T, bilanciata CX con la blade Infinity scomponibile. Ogni starter include il proprio lanciatore: due assetti opposti, pronti a sfidarsi. Richiede un Beystadium Beyblade X (venduto separatamente).",
-    price: eur(1990), compareAtPrice: eur(2198), category: "beyblade-x", stock: "disponibile", availableQuantity: 47, tags: ["offerta"], rating: 0, reviewCount: 0,
+    price: eur(1799), compareAtPrice: eur(2198), category: "beyblade-x", stock: "disponibile", availableQuantity: 47, tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["duo-horus-enlil"],
     specs: [{ label: "Tipo", value: "Stamina + Bilanciata" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "BX + CX (Infinity Starter Pack)" }, { label: "Codice", value: "9-65GB · IS 7-55T" }, { label: "Componenti", value: "2 trottole, 2 lanciatori" }],
-    features: [{ title: "Due starter completi", description: "Due trottole e due lanciatori, pronti a sfidarsi" }, { title: "Stili opposti", description: "Stamina BX contro bilanciata CX" }, { title: "Risparmi €2,08", description: "€19,90 invece di €21,98 comprandoli separati" }, { title: "Compatibile Beyblade X", description: "Blade, Ratchet e Bit intercambiabili con la serie" }],
+    features: [{ title: "Due starter completi", description: "Due trottole e due lanciatori, pronti a sfidarsi" }, { title: "Stili opposti", description: "Stamina BX contro bilanciata CX" }, { title: "Risparmi €3,99", description: "€17,99 invece di €21,98 comprandoli separati" }, { title: "Compatibile Beyblade X", description: "Blade, Ratchet e Bit intercambiabili con la serie" }],
     boxContents: ["1 × Starter Shatter Horus 9-65GB (trottola e lanciatore)", "1 × Starter Hurricane Enlil IS 7-55T (trottola e lanciatore)", "2 × Manuale"],
     relatedSlugs: ["shatter-horus-9-65gb", "hurricane-enlil-is-7-55t", "glory-valkerion-lf"],
     bundleOf: [{ slug: "shatter-horus-9-65gb", quantity: 1 }, { slug: "hurricane-enlil-is-7-55t", quantity: 1 }],
+  },
+  // Owner, 2026-10-08: "Promo Attack", Glory Valkerion with Buster Dran at 29,99.
+  {
+    slug: "promo-attack", name: "Promo Attack", tagline: "Glory Valkerion + Buster Dran. Due attacchi UX, €1,91 in meno.",
+    description: "Due trottole d'attacco della linea UX in un solo pacco: lo starter Glory Valkerion LF, con il Bit Low Flat a punta piatta e bassa e l'Xtreme Dash per correre sul bordo dello stadio, e il booster Buster Dran 5-70DB, la blade ovale che concentra tutta la massa su un unico contatto. Glory Valkerion include il lanciatore; Buster Dran è la versione booster, con la sola trottola. Richiede un Beystadium Beyblade X (venduto separatamente).",
+    price: eur(2999), compareAtPrice: eur(3190), category: "beyblade-x", stock: "disponibile", availableQuantity: 26, tags: ["offerta"], rating: 0, reviewCount: 0,
+    images: productImages["promo-attack"],
+    specs: [{ label: "Tipo", value: "Attacco + Attacco" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "UX" }, { label: "Codici", value: "LF · 5-70DB" }, { label: "Componenti", value: "2 trottole, 1 lanciatore" }],
+    features: [{ title: "Due attacchi UX", description: "Due modi diversi di colpire, nello stesso deck" }, { title: "Lanciatore incluso", description: "Nello starter di Glory Valkerion" }, { title: "Risparmi €1,91", description: "€29,99 invece di €31,90 comprandoli separati" }, { title: "Da sapere prima di comprare", description: "Buster Dran è un booster: solo trottola, senza lanciatore" }],
+    boxContents: ["1 × Starter Glory Valkerion LF (trottola e lanciatore)", "1 × Booster Buster Dran 5-70DB (solo trottola)", "Manuali"],
+    relatedSlugs: ["glory-valkerion-lf", "buster-dran-5-70db", "duo-horus-enlil"],
+    bundleOf: [{ slug: "glory-valkerion-lf", quantity: 1 }, { slug: "buster-dran-5-70db", quantity: 1 }],
   },
   {
     slug: "deck-completo-meta", name: "Deck Completo", tagline: "Tre ruoli, un deck. Attacco, difesa, Low Rush.",
@@ -336,16 +444,122 @@ export const BUNDLES: readonly Product[] = [
 /** The duo, as the managed homepage bundle banner presents it; its hero must be a product row in the database. */
 export const BUNDLE: Bundle = {
   slug: "duo-horus-enlil", eyebrow: "Offerta duo", title: ["Horus ×", "Enlil."],
-  description: "Due Infinity Starter Beyblade X, stamina contro bilanciata, a €19,90 invece di €21,98.", price: eur(1990), compareAtPrice: eur(2198),
+  description: "Due Infinity Starter Beyblade X, stamina contro bilanciata, a €17,99 invece di €21,98.", price: eur(1799), compareAtPrice: eur(2198),
   heroSlug: "shatter-horus-9-65gb", includes: ["shatter-horus-9-65gb", "hurricane-enlil-is-7-55t"],
 };
 
 /**
  * Shipping stops being charged only once the order can carry it. The stadium box is 45×45×15, so
- * every carrier bills it at its 6 kg volumetric weight and Poste adds a €5 out-of-format fee: a
- * parcel that costs far more than the €4,90 collected. At €59 a single arena plus one small piece
+ * every carrier bills it at its 6 kg volumetric weight: a parcel that costs far more than the
+ * shipping collected. At €59 a single arena plus one small piece
  * cleared the threshold and shipped a bulky box for free, so the owner raised it to €100 on
  * 2026-09-29.
  */
 export const FREE_SHIPPING_THRESHOLD = 10000;
-export const SHIPPING_FLAT_RATE = 490;
+/** The cheapest delivery the shop offers (InPost to a point or Locker), the "da 5,65 €" of every banner. */
+export const SHIPPING_FLAT_RATE = 565;
+
+export type ShippingMethodDefinition = {
+  /** Stored on the order and sent by the checkout form; "standard" is Poste to the door, the code orders already carry. */
+  readonly code: string;
+  readonly carrier: "poste" | "inpost";
+  readonly label: string;
+  readonly priceCents: number;
+  /** The buyer names the InPost point or locker the parcel goes to. */
+  readonly pickupPoint: boolean;
+};
+
+/**
+ * What the buyer picks at checkout, at what the parcel costs the shop to send (owner, 2026-10-07):
+ * an InPost point or Locker at €5,65, or Poste Italiane to the door at €6,65. The €4,90 Poste rate
+ * "non esiste". The first entry is the cheapest and the one a cart is priced with until the buyer
+ * chooses. Free shipping from FREE_SHIPPING_THRESHOLD applies to every method. BRT, DHL and others
+ * will join this list.
+ */
+export const SHIPPING_METHODS: readonly ShippingMethodDefinition[] = [
+  { code: "inpost-point", carrier: "inpost", label: "InPost · punto di ritiro o Locker", priceCents: SHIPPING_FLAT_RATE, pickupPoint: true },
+  { code: "standard", carrier: "poste", label: "Poste Italiane · consegna a casa", priceCents: 665, pickupPoint: false },
+];
+
+/**
+ * Pieces sold out of an opened Battle Set: a sealed bag with no retail box, so no barcode of their
+ * own. Merchant Center is told so; every boxed Hasbro item does have an EAN, recorded when known.
+ */
+export const SOLD_WITHOUT_BARCODE: ReadonlySet<string> = new Set(["impact-drake-9-60lr", "hover-wyvern-3-85n"]);
+
+/** Where the buyer finds the InPost point or Locker nearest to them. */
+export const INPOST_POINT_FINDER_URL = "https://inpost.it/trova-un-locker";
+
+/** Where the buyer finds the nearest Poste Italiane Punto Poste or Locker. */
+export const POSTE_POINT_FINDER_URL = "https://www.poste.it/cerca/index.html";
+
+/**
+ * The delivery method used for Takara Tomy consignment orders: our partner ships via Poste
+ * Italiane to a Punto Poste or Locker. The price is €5,00 — lower than our Poste door-delivery
+ * because it goes to a collection point, not straight to the buyer's address.
+ */
+export const PARTNER_SHIPPING_METHOD: ShippingMethodDefinition = {
+  code: "poste-point-partner",
+  carrier: "poste",
+  label: "Poste Italiane · Punto Poste o Locker",
+  priceCents: 500,
+  pickupPoint: true,
+};
+
+/** All methods the shop can use, including the partner route for Takara Tomy consignment. */
+const ALL_METHODS: readonly ShippingMethodDefinition[] = [...SHIPPING_METHODS, PARTNER_SHIPPING_METHOD];
+
+export function shippingMethodByCode(code: string | null | undefined): ShippingMethodDefinition | undefined {
+  return ALL_METHODS.find((method) => method.code === code);
+}
+
+export type ShippingPlan = {
+  /** The methods available for this cart, in preference order. */
+  readonly methods: readonly ShippingMethodDefinition[];
+  /** True when the composition forces a single method and the buyer cannot switch. */
+  readonly locked: boolean;
+  /** Human-readable description of the composition that triggered this plan. */
+  readonly composition: "hasbro-only" | "takara-only" | "mixed" | "empty";
+};
+
+/**
+ * Derives the shipping plan for a cart based on the brands it contains.
+ *
+ * - Hasbro-only (or empty): all SHIPPING_METHODS, buyer chooses.
+ * - Takara-only: only the partner's Poste Punto-Poste route, locked.
+ * - Mixed: InPost point only, locked (one shipment, two warehouses, two packs).
+ *
+ * FREE_SHIPPING_THRESHOLD applies to every plan at the quoting layer.
+ */
+export function shippingPlanFor(brands: ReadonlySet<BrandSlug>): ShippingPlan {
+  const hasHasbro = brands.has("hasbro");
+  const hasTakara = brands.has("takara-tomy");
+
+  if (hasTakara && hasHasbro) {
+    const inpost = SHIPPING_METHODS.find((m) => m.code === "inpost-point");
+    if (!inpost) throw new Error("inpost-point method missing from SHIPPING_METHODS");
+    return { methods: [inpost], locked: true, composition: "mixed" };
+  }
+  if (hasTakara) {
+    return { methods: [PARTNER_SHIPPING_METHOD], locked: true, composition: "takara-only" };
+  }
+  return { methods: SHIPPING_METHODS, locked: false, composition: brands.size === 0 ? "empty" : "hasbro-only" };
+}
+
+/**
+ * Converts a ShippingMethodDefinition to a ShippingOption for the quote.
+ * Pass `locked` to mark the option as non-switchable.
+ */
+export function toShippingOption(
+  method: ShippingMethodDefinition,
+  hint: string | null,
+  locked?: boolean,
+): ShippingOption {
+  return {
+    code: method.code,
+    label: method.label,
+    hint,
+    price: { amount: method.priceCents, currency: "EUR" },
+    ...(locked ? { locked: true } : {}),
+  };
+}

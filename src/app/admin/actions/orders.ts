@@ -11,6 +11,7 @@ import { deliveryConfirmationEmail } from "@/lib/orders/delivery-email";
 import { refundNotificationEmail } from "@/lib/orders/refund-email";
 import { shippingNotificationEmail } from "@/lib/orders/shipping-email";
 import { shippingEmailDue } from "@/lib/orders/shipping-notice";
+import { PREORDER_SHIPPED_NOTE } from "@/lib/admin/preorders";
 import type { Database } from "@/lib/supabase/database.types";
 import {
   deliverOrderSchema,
@@ -495,4 +496,21 @@ export async function notifyDeliveredOrdersAction(_previous: OrderActionState, _
   } catch (error) {
     return failure(error);
   }
+}
+
+/**
+ * Records that the pre-order parcel of an order shipped in two has gone out (the pre-order desk).
+ * It is an internal note like any other, immutable, with its author and time, and it is what moves
+ * the order to "Già spediti" on the desk. The buyer is written to from the order's own page.
+ */
+export async function markPreorderShippedAction(formData: FormData): Promise<void> {
+  const orderId = Number(text(formData, "orderId"));
+  if (!Number.isSafeInteger(orderId) || orderId <= 0) return;
+  const tracking = text(formData, "tracking").replace(/\s+/g, " ").trim().slice(0, 64);
+  const note = tracking ? `${PREORDER_SHIPPED_NOTE} · tracking ${tracking}` : PREORDER_SHIPPED_NOTE;
+  const client = await clientFor(MANAGERS);
+  const { error } = await client.rpc("add_order_note", { p_order_id: orderId, p_note: note });
+  if (error) throw new Error(failure(error).message);
+  refresh(orderId);
+  revalidatePath("/admin/ordini/pre-ordini");
 }

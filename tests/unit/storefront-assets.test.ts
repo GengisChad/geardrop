@@ -55,11 +55,13 @@ describe("storefront artwork", () => {
     // The tops sold loose out of the Battle Set start as bare renders rather than
     // packshots, and the bundles built around them are composed, not photographed.
     const looseTops = readFileSync(join(ROOT, "scripts/build-loose-tops.mjs"), "utf8");
+    // The partner's Takara Tomy photos are cut out on their own.
+    const takara = readFileSync(join(ROOT, "scripts/cutout_takara.py"), "utf8");
     for (const slug of Object.keys(productImages)) {
       // The deck cases share one picture, built by scripts/cut_deck_cases.py and render-deck-image.mjs.
       if (slug.startsWith("porta-deck-")) continue;
       expect(
-        script.includes(`"${slug}"`) || bundles.includes(`"${slug}"`) || looseTops.includes(`"${slug}"`),
+        script.includes(`"${slug}"`) || bundles.includes(`"${slug}"`) || looseTops.includes(`"${slug}"`) || takara.includes(`"${slug}"`),
         slug,
       ).toBe(true);
     }

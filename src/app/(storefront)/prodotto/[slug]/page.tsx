@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { BadgeCheck, Boxes, Crosshair, Target, Zap } from "lucide-react";
+import { BadgeCheck, Boxes, Crosshair, Target, Truck, Zap } from "lucide-react";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { BundleContents } from "@/components/product/bundle-contents";
+import { DeliverySummary } from "@/components/product/delivery-summary";
 import { BundleOffer } from "@/components/product/bundle-offer";
 import { Gallery } from "@/components/product/gallery";
 import { BuyPanel } from "@/components/product/buy-panel";
@@ -11,14 +12,15 @@ import { StickyBuyBar } from "@/components/product/sticky-buy-bar";
 import { VariantPicker } from "@/components/product/variant-picker";
 import { ProductCarousel } from "@/components/product/product-carousel";
 import { Rating } from "@/components/ui/rating";
-import { TrustBarLight } from "@/components/home/trust";
+import { GaEvent } from "@/components/analytics/ga-event";
 import { TrackPageView } from "@/components/funnel/track-page-view";
-import { BUNDLES, PRODUCTS } from "@/data/catalog";
+import { gaItem } from "@/lib/analytics/google";
+import { BRANDS, BUNDLES, PRODUCTS, brandOf } from "@/data/catalog";
 import { bundlesContaining } from "@/lib/commerce/bundles";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { familyColours, familyLead } from "@/lib/commerce/variants";
 import { formatPrice } from "@/lib/format";
-import { BLADE_TYPE_LABEL, CATEGORY_LABEL, bundleNoun, bundlePacks, preorderDelivery } from "@/lib/labels";
+import { BLADE_TYPE_LABEL, CATEGORY_LABEL, bundleNoun, bundlePacks } from "@/lib/labels";
 import { absoluteUrl, breadcrumbJsonLd, jsonLd, productDescription, productJsonLd, productTitle } from "@/lib/seo";
 
 type Params = { slug: string };
@@ -79,6 +81,14 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
   return (
     <>
       <TrackPageView event="product_view" />
+      <GaEvent
+        name="view_item"
+        params={{
+          currency: "EUR",
+          value: product.price.amount / 100,
+          items: [gaItem({ slug: product.slug, name: product.name, priceCents: product.price.amount, quantity: 1, category: CATEGORY_LABEL[product.category] })],
+        }}
+      />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(productData) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbData) }} />
 
@@ -93,7 +103,10 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
         />
       </div>
 
-      <div className="mx-auto grid max-w-[1400px] gap-8 px-4 py-6 sm:px-6 lg:grid-cols-2 lg:gap-12 lg:py-10">
+      {/* Gallery gets the flexible share; buy column is capped at 540 px (xl: 580 px) so it
+          never dominates the packshot on wide viewports. Gallery is made sticky inside its own
+          component; buy column scrolls normally. (owner, 2026-10-12) */}
+      <div className="mx-auto grid max-w-[1400px] gap-8 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,540px)] lg:gap-12 lg:py-10 xl:grid-cols-[minmax(0,1fr)_minmax(0,580px)]">
         <Gallery
           images={product.images}
           slug={product.slug}
@@ -107,9 +120,28 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
             {product.unofficial ? "Compatibile Beyblade" : "Beyblade"} <span className="text-lime-ink">X</span>
           </p>
 
+          {/* Brand kicker: shown near the title so the buyer knows which manufacturer's line it is. */}
+          {!product.unofficial ? (
+            <p className="mt-1 text-[0.6875rem] font-semibold uppercase tracking-widest text-grey-500" data-testid="product-brand">
+              {BRANDS.find((b) => b.slug === brandOf(product))?.name ?? "Hasbro"}
+            </p>
+          ) : null}
+
           <h1 className="gd-display-wide mt-3 text-[2rem] font-extrabold leading-[1.02] text-graphite sm:text-[2.5rem]">
             {product.name}
           </h1>
+
+          {/* Consignment items are shipped by our partner, not from our shelf.
+              Styled like a status line — icon + text in a subtle tinted strip — so it
+              reads with the same weight as the availability badge. (owner, 2026-10-12) */}
+          {product.consignment ? (
+            <div className="mt-3 flex items-center gap-2.5 rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2" data-testid="consignment-note">
+              <Truck className="size-3.5 shrink-0 text-violet-soft" aria-hidden="true" />
+              <p className="text-[0.6875rem] text-grey-600">
+                Spedito dal nostro partner · consegna in 2-6 giorni lavorativi
+              </p>
+            </div>
+          ) : null}
 
           {product.bundleOf ? (
             <p className="mt-3 flex items-center gap-2">
@@ -154,15 +186,45 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
 
           <VariantPicker current={product} colours={colours} />
 
-          <p className="mt-5 max-w-lg text-small leading-relaxed text-grey-600">{product.description}</p>
+          {/* Price, availability and the cart button sit together, before the copy: on a phone the
+              button used to land two screens below the price (critique, 2026-10-11). */}
+          <div id="buy-panel" className="mt-6">
+            <BuyPanel product={product} />
+          </div>
 
-          <ul className="mt-6 flex flex-col gap-3.5">
+          {/* Delivery block: shipping options, free threshold and return policy — or the partner
+              timing for consignment / the pre-order wait. Placed right under the CTA so the buyer
+              knows cost and timing before scrolling further. (owner, 2026-10-12) */}
+          <DeliverySummary product={product} />
+
+          {/* Box contents — inline compact list so the buyer sees what is in the box without
+              opening the "Contenuto della confezione" tab. (owner, 2026-10-12) */}
+          {product.boxContents.length > 0 ? (
+            <div data-testid="box-contents-inline" className="mt-4">
+              <p className="gd-display mb-2 text-[0.6875rem] font-bold tracking-wider text-grey-600">
+                Nella scatola
+              </p>
+              <ul className="flex flex-col gap-1.5">
+                {product.boxContents.map((item) => (
+                  <li key={item} className="flex items-center gap-2 text-small text-grey-600">
+                    <span className="size-1.5 shrink-0 rounded-full bg-lime" aria-hidden="true" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {/* Feature highlights — compact on desktop since delivery info now sits above.
+              The description lives in the Descrizione tab (product-details.tsx) and is
+              no longer duplicated here. (owner, 2026-10-12) */}
+          <ul className="mt-5 flex flex-col gap-2.5">
             {product.features.map((feature, index) => {
               const Icon = FEATURE_ICONS[index % FEATURE_ICONS.length] ?? Target;
               return (
-                <li key={feature.title} className="flex items-start gap-3">
-                  <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-violet-tint">
-                    <Icon className="size-4 text-violet-soft" strokeWidth={2} aria-hidden="true" />
+                <li key={feature.title} className="flex items-start gap-2.5">
+                  <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-violet-tint">
+                    <Icon className="size-3.5 text-violet-soft" strokeWidth={2} aria-hidden="true" />
                   </span>
                   <span>
                     <span className="gd-display block text-[0.6875rem] font-bold tracking-wider text-graphite">
@@ -176,16 +238,11 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
           </ul>
 
           {product.bundleOf ? <BundleContents bundle={product} components={components} /> : null}
-
-          <div id="buy-panel" className="mt-8">
-            <BuyPanel product={product} />
-          </div>
         </div>
       </div>
 
       {offer ? <BundleOffer bundle={offer} current={product} partners={partners} /> : null}
 
-      <TrustBarLight className="pb-4" {...(product.stock === "pre-ordine" ? { delivery: preorderDelivery(product.releasePreorder) } : {})} />
 
       <ProductDetails product={product} />
 

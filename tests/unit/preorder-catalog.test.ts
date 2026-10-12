@@ -16,13 +16,13 @@ describe("reviewed catalogue", () => {
       // Shop order, 2026-09-30: what sells and ships leads, and everything that cannot ship today
       // sits at the bottom. Glory Valkerion is first because it is the best seller the shop can
       // actually send — nine pieces, second only to the sold-out Suppress Superion.
-      { slug: "glory-valkerion-lf", price: 2300, stock: "disponibile", availableQuantity: 25, rating: 0, reviewCount: 0 },
-      { slug: "shatter-horus-9-65gb", price: 1199, stock: "disponibile", availableQuantity: 47, rating: 0, reviewCount: 0 },
-      { slug: "hurricane-enlil-is-7-55t", price: 999, stock: "disponibile", availableQuantity: 49, rating: 0, reviewCount: 0 },
-      { slug: "hammer-incendio-3-70h", price: 1200, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
+      { slug: "glory-valkerion-lf", price: 2300, stock: "disponibile", availableQuantity: 62, rating: 0, reviewCount: 0 },
+      { slug: "shatter-horus-9-65gb", price: 1199, stock: "disponibile", availableQuantity: 118, rating: 0, reviewCount: 0 },
+      { slug: "hurricane-enlil-is-7-55t", price: 999, stock: "disponibile", availableQuantity: 119, rating: 0, reviewCount: 0 },
+      { slug: "hammer-incendio-3-70h", price: 1199, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
       { slug: "shadow-shinobi-1-80mn", price: 999, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
       { slug: "wand-wizard-1-60r", price: 1490, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
-      { slug: "buster-dran-5-70db", price: 999, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
+      { slug: "buster-dran-5-70db", price: 890, stock: "disponibile", availableQuantity: 26, rating: 0, reviewCount: 0 },
       // Sold loose out of the Drop Attack Battle Set, next to the other top that ships
       // without a launcher. A hundred of each, because the goods sit inside 102 unopened
       // sets and a set takes seconds to open — and a hundred clears the shelf count, so
@@ -30,7 +30,7 @@ describe("reviewed catalogue", () => {
       { slug: "impact-drake-9-60lr", price: 1500, stock: "disponibile", availableQuantity: 100, rating: 0, reviewCount: 0 },
       { slug: "hover-wyvern-3-85n", price: 1500, stock: "disponibile", availableQuantity: 100, rating: 0, reviewCount: 0 },
       { slug: "cobalt-dragoon-2-60c", price: 2300, stock: "disponibile", availableQuantity: 56, rating: 0, reviewCount: 0 },
-      { slug: "blast-pegasus-a-tr", price: 2690, stock: "disponibile", availableQuantity: 56, rating: 0, reviewCount: 0 },
+      { slug: "blast-pegasus-a-tr", price: 2690, stock: "esaurito", availableQuantity: 0, rating: 0, reviewCount: 0 },
       { slug: "saber-samurai-2-70l", price: 2590, stock: "disponibile", availableQuantity: 16, rating: 0, reviewCount: 0 },
       { slug: "drop-attack-battle-set", price: 3990, stock: "disponibile", availableQuantity: 102, rating: 0, reviewCount: 0 },
       { slug: "sneak-attack-battle-set", price: 4490, stock: "disponibile", availableQuantity: 51, rating: 0, reviewCount: 0 },
@@ -46,7 +46,11 @@ describe("reviewed catalogue", () => {
       { slug: "suppress-superion-0-70lp", price: 2500, stock: "pre-ordine", availableQuantity: 5, rating: 0, reviewCount: 0 },
       { slug: "strike-dran-4-50ff", price: 2300, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
       { slug: "tread-croc-tq-5-50gn", price: 2500, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
-      { slug: "soar-phoenix-9-60gf", price: 3200, stock: "pre-ordine", availableQuantity: undefined, rating: 0, reviewCount: 0 },
+      { slug: "soar-phoenix-9-60gf", price: 2590, stock: "disponibile", availableQuantity: 199, rating: 0, reviewCount: 0 },
+      // Takara Tomy on consignment from the partner, two of each (owner, 2026-10-07).
+      { slug: "cx-00-evangelion-deck-set", price: 13500, stock: "disponibile", availableQuantity: 2, rating: 0, reviewCount: 0 },
+      { slug: "ux-00-glory-valkyrie-lf", price: 20500, stock: "disponibile", availableQuantity: 2, rating: 0, reviewCount: 0 },
+      { slug: "cx-00-tigarage-ft3-60t", price: 10399, stock: "disponibile", availableQuantity: 2, rating: 0, reviewCount: 0 },
     ]);
   });
 

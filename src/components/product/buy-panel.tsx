@@ -61,10 +61,19 @@ export function BuyPanel({ product }: { product: Product }) {
           <p className={cn("gd-display text-small font-bold tracking-wider", STATUS_TEXT[tone])}>
             {stockLabel(product)}
           </p>
-          <p className="text-[0.6875rem] text-grey-600">{stockHint(product)}</p>
+          <p className="text-[0.6875rem] text-grey-600">
+            {/* A consignment piece leaves the partner's warehouse, on his own timing. */}
+            {product.consignment && product.stock === "disponibile" ? "Pronto da spedire dal nostro partner" : stockHint(product)}
+          </p>
           {product.stock === "pre-ordine" && !product.autoPreorder && product.availableQuantity !== undefined ? (
             <p className="mt-1 tabular text-[0.6875rem] font-bold text-preorder" data-testid="preorder-remaining">
               {product.availableQuantity} pre-ordini rimasti
+            </p>
+          ) : null}
+          {product.stock === "pre-ordine" ? (
+            // Owner, 2026-10-08: one parcel per order, so a pre-order is never mixed with pieces that ship now.
+            <p className="mt-1 text-[0.6875rem] text-grey-600" data-testid="preorder-alone">
+              Si ordina a parte, non insieme a prodotti disponibili.
             </p>
           ) : null}
           {product.stock === "disponibile" && namedShelf !== undefined ? (
@@ -98,7 +107,7 @@ export function BuyPanel({ product }: { product: Product }) {
           <div className="flex-1">
             <AddToCartButton
               slug={product.slug}
-              name={product.name}
+              name={product.name} priceCents={product.price.amount}
               stock={product.stock}
               quantity={quantity}
               size="lg"
@@ -111,10 +120,14 @@ export function BuyPanel({ product }: { product: Product }) {
             size="lg"
             onClick={() => toggle(product.slug)}
             aria-pressed={isSaved}
-            className="sm:w-auto"
+            // In the narrow desktop buy column the label pushed "Aggiungi al carrello" onto two
+            // lines: there the heart stands alone, its name kept for screen readers.
+            aria-label={isSaved ? "Nei preferiti" : "Aggiungi ai preferiti"}
+            title={isSaved ? "Nei preferiti" : "Aggiungi ai preferiti"}
+            className="sm:w-auto lg:w-14 lg:px-0"
           >
             <Heart className={cn("size-4", isSaved && "text-violet-soft")} fill={isSaved ? "currentColor" : "none"} aria-hidden="true" />
-            <span className="whitespace-nowrap">{isSaved ? "Nei preferiti" : "Aggiungi ai preferiti"}</span>
+            <span className="whitespace-nowrap lg:sr-only">{isSaved ? "Nei preferiti" : "Aggiungi ai preferiti"}</span>
           </Button>
         </div>
       )}

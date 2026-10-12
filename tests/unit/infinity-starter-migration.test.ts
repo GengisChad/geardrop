@@ -39,6 +39,8 @@ describe("infinity starter preorder migration", () => {
     "blast-pegasus-a-tr": 2950,
     "drop-attack-battle-set": 4650,
     "sneak-attack-battle-set": 4500,
+    // 25,90 since its shipment landed on 2026-10-08.
+    "soar-phoenix-9-60gf": 3200,
   };
 
   it("keeps every product it published at the price and allocation of its day", () => {

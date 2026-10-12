@@ -249,6 +249,26 @@ export const productImages = {
       alt: "Kit con il Sneak Attack Battle Set, due starter Beyblade X e il porta deck",
     },
   ],
+  "promo-attack": [
+    {
+      src: "/products/promo-attack.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Promo Attack Beyblade X: confezioni Glory Valkerion LF e Buster Dran 5-70DB con la trottola Buster Dran",
+    },
+    {
+      src: "/products/glory-valkerion-lf.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Confezione Beyblade X Glory Valkerion LF",
+    },
+    {
+      src: "/products/buster-dran-5-70db.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Confezione Beyblade X Buster Dran 5-70DB",
+    },
+  ],
   "duo-pegasus-samurai": [
     {
       src: "/products/duo-pegasus-samurai.webp",
@@ -301,6 +321,30 @@ export const productImages = {
   "porta-deck-rosa": [DECK_IMAGE],
   "porta-deck-fucsia": [DECK_IMAGE],
   "porta-deck-bianco": [DECK_IMAGE],
+  "cx-00-evangelion-deck-set": [
+    {
+      src: "/products/cx-00-evangelion-deck-set.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Confezione Takara Tomy Beyblade X CX-00 Evangelion Deck Set con tre trottole e i personaggi di Evangelion",
+    },
+  ],
+  "ux-00-glory-valkyrie-lf": [
+    {
+      src: "/products/ux-00-glory-valkyrie-lf.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Confezione Takara Tomy Beyblade X UX-00 Glory Valkyrie LF B4 Limited con trottola blu metallizzata",
+    },
+  ],
+  "cx-00-tigarage-ft3-60t": [
+    {
+      src: "/products/cx-00-tigarage-ft3-60t.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Confezione Takara Tomy Beyblade X CX-00 Tigarage FT3-60T B4 Limited con Ultraman Tiga",
+    },
+  ],
 } as const satisfies Record<string, readonly ProductImage[]>;
 
 export type ProductSlug = keyof typeof productImages;

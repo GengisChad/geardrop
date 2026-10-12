@@ -43,7 +43,8 @@ describe("registered storefront content renderers", () => {
 
   it("preserves mock storefront navigation and reviewed support pages as the default source", () => {
     const mock = read("src/lib/content/mock-provider.ts");
-    expect(mock).toContain("MAIN_NAV");
+    // buildMainNav replaces the static MAIN_NAV so nav items are brand-aware at runtime.
+    expect(mock).toContain("buildMainNav");
     expect(mock).toContain("FOOTER_NAV");
     expect(mock).toContain("SUPPORT_PAGES");
   });

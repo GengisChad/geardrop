@@ -16,7 +16,9 @@ test.describe("home", () => {
     await expect(page.getByRole("heading", { name: "Scegli. Carica. Lancia." })).toHaveCount(0);
     await expect(page.getByTestId("arena")).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Pronti da spedire" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Tutto il resto" })).toBeVisible();
+    // A new release on the shelf has its own row (owner, 2026-10-08); "Tutto il resto" holds only
+    // what no named row took, which in the reviewed catalogue is nothing.
+    await expect(page.getByRole("heading", { name: "Appena arrivati" })).toBeVisible();
     await expect(page.getByTestId("product-carousel")).toHaveCount(0);
     await expect(page.getByTestId("product-card").first()).toBeVisible();
   });
@@ -59,7 +61,9 @@ test.describe("deck case colours", () => {
     await expect(page.getByTestId("variant-current")).toHaveText("Fucsia");
     // A compatible accessory never passes for a Hasbro product.
     await expect(page.getByTestId("buy-panel")).toContainText("Compatibile Beyblade");
-    await expect(page.getByTestId("buy-panel")).toContainText("non è prodotto né certificato da Hasbro");
+    // The description (including the unofficial disclaimer) moved out of the buy panel into the
+    // Descrizione tab on 2026-10-12 so the buy column is not duplicating content.
+    await expect(page.getByTestId("product-details")).toContainText("non è prodotto né certificato da Hasbro");
   });
 });
 
@@ -105,9 +109,13 @@ test.describe("catalogue", () => {
     };
 
     const panel = await openFilters();
-    // No reviewed product is sold out; that zero-count facet is intentionally disabled.
+    // A zero-count facet is disabled; since 2026-10-08 an empty shelf reads "esaurito" (no open
+    // pre-orders), so that facet is live exactly while the catalogue holds a sold-out piece.
+    const soldOut = panel.getByTestId("filter-stock-esaurito");
+    if (PRODUCTS.some((product) => product.stock === "esaurito")) await expect(soldOut).toBeEnabled();
+    // An empty option is left out of the panel, not shown disabled.
+    else await expect(soldOut).toHaveCount(0);
     // Attack blades and arena sets provide a real, nonempty filter subset.
-    await expect(panel.getByTestId("filter-stock-esaurito")).toBeDisabled();
     await panel.getByTestId("filter-type-attacco").check();
     if (isMobile) await page.getByTestId("filters-apply").click();
 

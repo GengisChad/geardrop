@@ -128,7 +128,8 @@ describe("getFacets", () => {
     const facets = await provider.getFacets({ stock: ["esaurito"] });
     const available = facets.stock.find((f) => f.value === "disponibile");
     const preorder = facets.stock.find((f) => f.value === "pre-ordine");
-    expect((available?.count ?? 0) + (preorder?.count ?? 0)).toBe(oneCardPerFamily(STOREFRONT_CATALOGUE).length);
+    const soldOut = facets.stock.find((f) => f.value === "esaurito");
+    expect((available?.count ?? 0) + (preorder?.count ?? 0) + (soldOut?.count ?? 0)).toBe(oneCardPerFamily(STOREFRONT_CATALOGUE).length);
     expect(available?.count).toBeGreaterThan(0);
     expect(preorder?.count).toBeGreaterThan(0);
   });
@@ -198,11 +199,27 @@ describe("quoteCart", () => {
     expect(quote.lines).toHaveLength(1);
   });
 
-  it("offers only the shipping option the local catalogue knows about", async () => {
+  it("offers the carriers the shop sells, at what each costs, InPost point by default", async () => {
     const quote = await provider.quoteCart({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }] });
-    expect(quote.shippingOptions.map((option) => option.code)).toEqual(["standard"]);
-    expect(quote.shippingCode).toBe("standard");
+    expect(quote.shippingOptions.map((option) => [option.code, option.price.amount])).toEqual([
+      ["inpost-point", SHIPPING_FLAT_RATE], ["standard", 665],
+    ]);
+    expect(quote.shippingCode).toBe("inpost-point");
+    expect(quote.totals.shipping.amount).toBe(SHIPPING_FLAT_RATE);
     expect(quote.shippingOptions[0]?.hint).toBe("Consegna in 1-5 giorni lavorativi, a seconda del corriere");
+  });
+
+  it("charges the carrier the buyer picks, and none above the free-shipping threshold", async () => {
+    const line = [{ slug: "cobalt-dragoon-2-60c" as const, quantity: 1 }];
+    const point = await provider.quoteCart({ lines: line, shippingCode: "inpost-point" });
+    expect([point.shippingCode, point.totals.shipping.amount]).toEqual(["inpost-point", SHIPPING_FLAT_RATE]);
+    const home = await provider.quoteCart({ lines: line, shippingCode: "standard" });
+    expect([home.shippingCode, home.totals.shipping.amount, home.totals.total.amount]).toEqual(["standard", 665, DRAGOON + 665]);
+    // A code the shop does not sell falls back to InPost point rather than to a price nobody chose.
+    const unknown = await provider.quoteCart({ lines: line, shippingCode: "brt" });
+    expect([unknown.shippingCode, unknown.totals.shipping.amount]).toEqual(["inpost-point", SHIPPING_FLAT_RATE]);
+    const big = await provider.quoteCart({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 5 }], shippingCode: "standard" });
+    expect(big.totals.shipping.amount).toBe(0);
   });
 
   it("never claims an order can be placed against the local catalogue", async () => {
@@ -249,9 +266,13 @@ describe("catalogue integrity", () => {
     }
   });
 
-  it("publishes every reviewed product as available or as a funded pre-order", () => {
+  it("publishes every reviewed product as available, a funded pre-order, or honestly sold out", () => {
     const states = new Set(PRODUCTS.map((p) => p.stock));
-    expect([...states].sort()).toEqual(["disponibile", "pre-ordine"]);
+    for (const state of states) expect(["disponibile", "esaurito", "pre-ordine"]).toContain(state);
+    // Sold out means an empty shelf (owner, 2026-10-08: no open pre-orders), never a count left over.
+    for (const product of PRODUCTS.filter((p) => p.stock === "esaurito")) {
+      expect(product.availableQuantity ?? 0, product.slug).toBe(0);
+    }
     // A pre-order either names an allocation or is open; an allocation of zero would be a dead card.
     for (const product of PRODUCTS.filter((p) => p.stock === "pre-ordine")) {
       if (product.availableQuantity !== undefined) expect(product.availableQuantity, product.slug).toBeGreaterThan(0);

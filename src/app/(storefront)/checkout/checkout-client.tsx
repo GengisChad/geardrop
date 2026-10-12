@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { cutoutSrc } from "@/data/assets";
 import Link from "next/link";
@@ -15,8 +15,10 @@ import { useCartQuote } from "@/lib/use-cart-quote";
 import { useCart } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/format";
 import { cartDelivery, preorderNote } from "@/lib/labels";
-import { checkoutSchema, type CheckoutValues } from "@/lib/checkout-schema";
+import { checkoutSchema, PICKUP_POINT_MESSAGE, pickupPointMissing, type CheckoutValues } from "@/lib/checkout-schema";
+import { INPOST_POINT_FINDER_URL, POSTE_POINT_FINDER_URL, shippingMethodByCode } from "@/data/catalog";
 import { trackEvent } from "@/lib/funnel";
+import { gaItem, sendGaEvent } from "@/lib/analytics/google";
 import { submitOrder } from "./actions";
 import type { Money } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
@@ -55,6 +57,21 @@ export function CheckoutClient() {
   // Before the customer touches a radio the backend's own default is what the totals
   // were computed with, so that is what the form shows as selected.
   const activeShipping = selectedShipping || quote?.shippingCode || "";
+
+  // GA4 begin_checkout, once, as soon as the first priced cart is in. Nothing leaves the browser
+  // unless the visitor accepted statistics.
+  const checkoutStarted = useRef(false);
+  useEffect(() => {
+    if (checkoutStarted.current || !quote || quote.lines.length === 0) return;
+    checkoutStarted.current = true;
+    sendGaEvent("begin_checkout", {
+      currency: "EUR",
+      value: quote.totals.subtotal.amount / 100,
+      items: quote.lines.map((line) =>
+        gaItem({ slug: line.slug, name: line.name, priceCents: line.unitPrice.amount, quantity: line.quantity }),
+      ),
+    });
+  }, [quote]);
 
   if (placed) {
     return (
@@ -122,7 +139,12 @@ export function CheckoutClient() {
           const result = await submitOrder({
             // The shipping code the quote was priced with wins if the customer never
             // touched the radios; the database rejects it anyway if it is not active.
-            contact: { ...values, shippingMethod: values.shippingMethod || activeShipping },
+            contact: {
+              ...values,
+              shippingMethod: values.shippingMethod || activeShipping,
+              // A point typed for a Locker and then left for home delivery must not travel with the order.
+              pickupPoint: shippingMethodByCode(values.shippingMethod || activeShipping)?.pickupPoint ? values.pickupPoint : undefined,
+            },
             lines: lines.map((line) => ({ slug: line.slug, quantity: line.quantity })),
             idempotencyKey,
           });
@@ -340,6 +362,31 @@ export function CheckoutClient() {
               <p className="text-small text-grey-600 sm:col-span-2">
                 Nessun metodo di spedizione è attivo in questo momento.
               </p>
+            ) : quote.shippingOptions.length === 1 && quote.shippingOptions[0]?.locked ? (
+              // Locked plan: exactly one method forced by the cart composition — show as read-only.
+              (() => {
+                const option = quote.shippingOptions[0]!;
+                return (
+                  <>
+                    <input type="hidden" value={option.code} {...register("shippingMethod")} />
+                    <div className="flex items-center gap-3 rounded-xl border border-grey-300 bg-grey-100 p-3.5 sm:col-span-2" data-testid="shipping-locked">
+                      <span className="flex-1">
+                        <span className="gd-display block text-small font-bold tracking-wider text-graphite">{option.label}</span>
+                        {option.hint ? <span className="block text-[0.6875rem] text-grey-600">{option.hint}</span> : null}
+                      </span>
+                      <span className="tabular text-small font-semibold text-graphite">
+                        {option.price.amount === 0 ? "Gratis" : formatPrice(option.price)}
+                      </span>
+                    </div>
+                    {/* Mixed cart: InPost is the locked method when both brands are present. */}
+                    {option.code === "inpost-point" ? (
+                      <p className="text-[0.6875rem] text-grey-600 sm:col-span-2" data-testid="mixed-cart-note">
+                        I pezzi Takara Tomy partono dal nostro partner: arrivano in due pacchi, paghi una sola spedizione.
+                      </p>
+                    ) : null}
+                  </>
+                );
+              })()
             ) : (
               quote.shippingOptions.map((option) => (
                 <label
@@ -367,6 +414,40 @@ export function CheckoutClient() {
               ))
             )}
           </div>
+
+          {/* Pickup point: InPost point/Locker or Poste Punto Poste/Locker. */}
+          {shippingMethodByCode(activeShipping)?.pickupPoint ? (
+            <Field
+              label={shippingMethodByCode(activeShipping)?.carrier === "poste" ? "Punto Poste o Locker" : "Punto InPost o Locker"}
+              htmlFor="pickupPoint"
+              error={errors.pickupPoint?.message}
+              className="mt-4"
+            >
+              <TextInput
+                id="pickupPoint"
+                autoComplete="off"
+                placeholder="Es. codice del Locker o indirizzo del punto"
+                hasError={Boolean(errors.pickupPoint)}
+                {...register("pickupPoint", {
+                  validate: (v) => !pickupPointMissing(activeShipping, v) || PICKUP_POINT_MESSAGE,
+                })}
+              />
+              <span className="mt-1.5 block text-[0.6875rem] text-grey-600">
+                Non sai qual è il più vicino?{" "}
+                <a
+                  className="font-semibold text-violet underline-offset-2 hover:underline"
+                  href={shippingMethodByCode(activeShipping)?.carrier === "poste" ? POSTE_POINT_FINDER_URL : INPOST_POINT_FINDER_URL}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  {shippingMethodByCode(activeShipping)?.carrier === "poste"
+                    ? "Cercalo sul sito Poste Italiane"
+                    : "Trovalo sulla mappa InPost"}
+                </a>{" "}
+                e copia qui il codice o l&apos;indirizzo.
+              </span>
+            </Field>
+          ) : null}
         </fieldset>
 
         <fieldset className="gd-glass-panel rounded-[--radius-glass] p-5">

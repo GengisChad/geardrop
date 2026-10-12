@@ -79,7 +79,7 @@ export function BundleOffer({
 
         <div className="flex flex-col gap-2.5 md:w-60">
           <div className={isPurchasable(bundle.stock) ? "gd-glow" : undefined}>
-            <AddToCartButton slug={bundle.slug} name={bundle.name} stock={bundle.stock} emphasis="primary" label="Aggiungi il duo" />
+            <AddToCartButton slug={bundle.slug} name={bundle.name} priceCents={bundle.price.amount} stock={bundle.stock} emphasis="primary" label="Aggiungi il duo" />
           </div>
           <Link
             href={`/prodotto/${bundle.slug}`}

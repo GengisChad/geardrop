@@ -29,8 +29,37 @@ export function Gallery({ images, slug, name, promo }: GalleryProps) {
   if (!active) return null;
 
   return (
-    <div className="flex flex-col gap-3">
-      <div data-testid="product-gallery" className="gd-glass-panel relative overflow-hidden rounded-[--radius-glass]">
+    /*
+     * Sticky on lg so the packshot stays in view while the (longer) buy column scrolls.
+     * top clears the sticky site header (h-[4.5rem] on sm+) plus a comfortable gap.
+     * On lg with 2+ images the thumbnails switch to a vertical strip on the left of the
+     * main image; on mobile they keep the horizontal row below it.
+     */
+    <div className="flex flex-col gap-3 lg:sticky lg:top-[calc(4.5rem+1.5rem)] lg:self-start">
+      <div className={cn("flex flex-col gap-3", many && "lg:flex-row lg:items-start")}>
+        {/* Vertical thumbnail strip — hidden on mobile, shown on lg when there are 2+ images */}
+        {many ? (
+          <ul className="hidden lg:flex lg:flex-col lg:gap-2">
+            {images.map((image, i) => (
+              <li key={image.src}>
+                <button
+                  type="button"
+                  onClick={() => setIndex(i)}
+                  aria-label={`Immagine ${i + 1} di ${images.length}`}
+                  aria-current={i === index}
+                  className={cn(
+                    "gd-glass-compact relative size-16 overflow-hidden rounded-lg border-2 transition-colors",
+                    i === index ? "border-violet" : "border-grey-200 hover:border-grey-400",
+                  )}
+                >
+                  <Image src={cutoutSrc(image.src) ?? image.src} alt="" aria-hidden="true" fill sizes="64px" className="object-contain p-1.5" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        <div data-testid="product-gallery" className="gd-glass-panel relative overflow-hidden rounded-[--radius-glass] lg:flex-1">
         {/* The cut-out floats in a dark art window tinted like the holographic cards. */}
         <div className="gd-product-plate relative m-2 aspect-square overflow-hidden rounded-[calc(var(--radius-glass)-0.45rem)] sm:m-3">
           <AnimatePresence mode="wait" initial={false}>
@@ -48,7 +77,7 @@ export function Gallery({ images, slug, name, promo }: GalleryProps) {
                 fill
                 priority
                 quality={90}
-                sizes="(min-width: 1024px) 620px, 92vw"
+                sizes="(min-width: 1400px) 720px, (min-width: 1024px) calc(100vw - 660px), 92vw"
                 className="object-contain p-6 drop-shadow-[0_24px_28px_rgba(0,0,0,0.55)] sm:p-10"
               />
             </motion.div>
@@ -83,7 +112,8 @@ export function Gallery({ images, slug, name, promo }: GalleryProps) {
             <GalleryArrow direction="next" onClick={() => step(1)} />
           </>
         ) : null}
-      </div>
+        </div>{/* closes product-gallery */}
+      </div>{/* closes inner flex row */}
 
       <ProductZoom
         images={images}
@@ -94,8 +124,9 @@ export function Gallery({ images, slug, name, promo }: GalleryProps) {
         onIndexChange={setIndex}
       />
 
+      {/* Horizontal thumbnails: only on mobile; lg uses the vertical strip above */}
       {many ? (
-        <ul className="flex gap-2.5">
+        <ul className="flex gap-2.5 lg:hidden">
           {images.map((image, i) => (
             <li key={image.src}>
               <button

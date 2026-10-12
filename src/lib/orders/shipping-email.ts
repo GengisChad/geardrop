@@ -23,6 +23,8 @@ export function shippingNotificationEmail(order: ShippedOrder) {
   const name = buyerFirstName(order.shippingAddress);
   const link = trackingLink(order.carrier, order.trackingCode, order.trackingUrl);
   const address = deliveryLines(order.shippingAddress);
+  // An InPost pickup goes to the point the buyer named, not to their door.
+  const addressHeading = pickupPointOf(order.shippingAddress) ? "Dove ritirarlo" : "Indirizzo di consegna";
   const subject = `Il tuo ordine ${order.orderNumber} è stato spedito · GEAR//DROP`;
 
   const courier = [
@@ -41,7 +43,7 @@ export function shippingNotificationEmail(order: ShippedOrder) {
     }
     <h2 style="font-size:16px;margin:24px 0 8px">Nel pacco</h2>
     <ul style="margin:0;padding-left:18px;line-height:1.6">${order.items.map((item) => `<li>${item.quantity} × ${escapeHtml(item.name)}</li>`).join("")}</ul>
-    ${address.length ? `<h2 style="font-size:16px;margin:24px 0 8px">Indirizzo di consegna</h2><div style="line-height:1.5">${address.map((line) => `<div>${escapeHtml(line)}</div>`).join("")}</div>` : ""}
+    ${address.length ? `<h2 style="font-size:16px;margin:24px 0 8px">${addressHeading}</h2><div style="line-height:1.5">${address.map((line) => `<div>${escapeHtml(line)}</div>`).join("")}</div>` : ""}
     <p style="margin:24px 0 0;font-size:14px;line-height:1.5">Puoi ricontrollare lo stato dell&rsquo;ordine in qualsiasi momento su <a href="https://geardropshop.it/ordine" style="color:#c6ff00">geardropshop.it/ordine</a> usando il numero ordine e questa email.</p>
     <p style="margin:16px 0 0;font-size:14px;line-height:1.5">Qualcosa non torna? Rispondi a questa email o scrivi a <a href="mailto:${SHOP_EMAIL}">${SHOP_EMAIL}</a> indicando il numero d'ordine.</p>
     <p style="margin:16px 0 0;font-size:14px">Grazie e buone battaglie!<br>GEAR//DROP</p>`,
@@ -56,7 +58,7 @@ export function shippingNotificationEmail(order: ShippedOrder) {
     "",
     "Nel pacco:",
     ...order.items.map((item) => `- ${item.quantity} × ${item.name}`),
-    ...(address.length ? ["", "Indirizzo di consegna:", ...address] : []),
+    ...(address.length ? ["", `${addressHeading}:`, ...address] : []),
     "",
     `Puoi ricontrollare lo stato dell'ordine su https://geardropshop.it/ordine (numero ordine + questa email).`,
     `Qualcosa non torna? Rispondi a questa email o scrivi a ${SHOP_EMAIL} indicando il numero d'ordine.`,
@@ -71,10 +73,19 @@ export function shippingNotificationEmail(order: ShippedOrder) {
 }
 
 /** Name, street and "CAP Città (PR)" on three lines, as a label reads; other shapes fall back to the admin's lines. */
+/** The InPost point or Locker the buyer chose at checkout, or null for a delivery to the door. */
+export function pickupPointOf(address: unknown): string | null {
+  if (!address || typeof address !== "object" || Array.isArray(address)) return null;
+  const point = (address as Record<string, unknown>)["pickupPoint"];
+  return typeof point === "string" && point.trim() ? point.trim() : null;
+}
+
 function deliveryLines(address: unknown): readonly string[] {
   if (!address || typeof address !== "object" || Array.isArray(address)) return [];
   const record = address as Record<string, unknown>;
   const value = (key: string) => (typeof record[key] === "string" ? String(record[key]).trim() : "");
+  const pickup = pickupPointOf(address);
+  if (pickup) return [value("name"), `Punto InPost o Locker: ${pickup}`, "InPost ti manda il codice per ritirarlo quando arriva."].filter(Boolean);
   if (!value("address")) return addressLines(address);
   const place = [value("postalCode"), value("city"), value("province") ? `(${value("province")})` : ""].filter(Boolean).join(" ");
   return [value("name"), value("address"), place].filter(Boolean);

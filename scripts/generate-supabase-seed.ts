@@ -1,6 +1,6 @@
 import { writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { BUNDLE, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_FLAT_RATE } from "../src/data/catalog";
+import { BUNDLE, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS, shippingMethodByCode } from "../src/data/catalog";
 import {
   CONTENT_PAGE_SEEDS,
   FOOTER_COLUMN_SEEDS,
@@ -41,13 +41,15 @@ export function generateSupabaseSeed(): string {
       text(product.slug),
       text(product.slug.toUpperCase()),
       // A pre-order sells from its allocation, not from a shelf; one without an allocation is
-      // open, and sells through allow_backorder at zero stock. A product in stock with no count
+      // sold out until pieces arrive (no open pre-orders since 2026-10-08). A product in stock with no count
       // has no limit: the database keeps a counter the shop never shows.
       product.stock === "pre-ordine" ? 0 : (product.availableQuantity ?? UNLIMITED_STOCK),
       product.stock === "pre-ordine" && product.availableQuantity
         ? "'preorder'::public.availability_override"
         : "null::public.availability_override",
       product.stock === "pre-ordine" ? (product.availableQuantity ?? 0) : 0,
+      // No open pre-orders (owner, 2026-10-08): at zero a product is sold out, never a pre-order.
+      "false",
       text(product.name),
       text(product.tagline),
       text(product.description),
@@ -197,7 +199,7 @@ on conflict (slug) do update set
   description = excluded.description,
   sort_order = excluded.sort_order;
 
-with seed(category_slug, slug, sku, stock_quantity, availability_override, preorder_allocation, name, tagline, description, price_cents, compare_at_price_cents, blade_type, rating, review_count, sort_order) as (
+with seed(category_slug, slug, sku, stock_quantity, availability_override, preorder_allocation, allow_backorder, name, tagline, description, price_cents, compare_at_price_cents, blade_type, rating, review_count, sort_order) as (
   values
 ${rows(productRows)}
 )
@@ -220,8 +222,8 @@ select
   seed.stock_quantity,
   seed.availability_override,
   seed.preorder_allocation,
-  -- Sold out means pre-order, never a closed sale (migration 20260917140000).
-  true as allow_backorder,
+  -- An empty shelf is sold out, never an open pre-order (migration 20261008170000).
+  seed.allow_backorder,
   seed.blade_type::public.blade_type,
   seed.rating,
   seed.review_count,
@@ -502,7 +504,7 @@ where singleton
   and default_seo_description is null;
 
 insert into public.shipping_methods (code, name, price_cents, free_from_cents, active, sort_order)
-values ('standard', 'Spedizione standard', ${SHIPPING_FLAT_RATE}, ${FREE_SHIPPING_THRESHOLD}, false, 0)
+values ('standard', 'Spedizione standard', ${shippingMethodByCode("standard")!.priceCents}, ${FREE_SHIPPING_THRESHOLD}, false, 0)
 on conflict (code) do update set
   name = excluded.name,
   price_cents = excluded.price_cents,

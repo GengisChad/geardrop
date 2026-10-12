@@ -36,7 +36,8 @@ export const SUPPORT_PAGES = {
       {
         heading: "Quanto costa la spedizione?",
         body: [
-          "La spedizione standard è gratuita per ordini superiori a 100€. Sotto questa soglia si applica una tariffa fissa di 4,90€.",
+          "Al checkout scegli come ricevere il pacco: in un punto di ritiro o Locker InPost 5,65 €, a casa con Poste Italiane 6,65 €.",
+          "La spedizione è gratuita, con qualsiasi corriere, per ordini da 100 €.",
           "Spediamo solo in Italia.",
         ],
       },
@@ -49,8 +50,9 @@ export const SUPPORT_PAGES = {
       {
         heading: "Cosa significa “pre-ordine”?",
         body: [
-          "Quando i pezzi a magazzino finiscono puoi comunque ordinare il prodotto: quel pre-ordine potrebbe arrivare tra 10/15 giorni lavorativi dalla conferma dell'ordine. Il carrello e la pagina di pagamento ti indicano quali pezzi sono in pre-ordine prima di pagare.",
-          "Le nuove uscite, invece, non sono ancora distribuite: arrivano in Italia con l'uscita Hasbro, circa 20 giorni lavorativi, e poi dipende dalle consegne. La scheda del prodotto, il carrello e la pagina di pagamento indicano sempre il tempo giusto.",
+          "Si possono pre-ordinare solo le nuove uscite non ancora distribuite: arrivano in Italia con l'uscita Hasbro, circa 20 giorni lavorativi, e poi dipende dalle consegne.",
+          "Un pre-ordine si ordina a parte, mai insieme a prodotti disponibili: così ricevi ogni ordine in un solo pacco.",
+          "Quando un prodotto finisce non si può ordinare finché non torna disponibile: nella sua scheda lascia la tua email con \"Avvisami\" e ti scriviamo appena arriva.",
         ],
       },
       {
@@ -67,7 +69,6 @@ export const SUPPORT_PAGES = {
         heading: "Tempi di consegna",
         body: [
           "I prodotti disponibili vengono consegnati in 1-5 giorni lavorativi a seconda del corriere, dalla conferma del pagamento.",
-          "Un pre-ordine di un prodotto già uscito, ordinato quando il magazzino è finito, potrebbe arrivare tra 10/15 giorni lavorativi dalla conferma dell'ordine.",
           "Un pre-ordine di una nuova uscita arriva con l'uscita Hasbro: circa 20 giorni lavorativi, poi dipende dalle consegne.",
         ],
       },
@@ -79,7 +80,7 @@ export const SUPPORT_PAGES = {
         heading: "Costi",
         body: [
           "Spedizione gratuita per ordini superiori a 100€.",
-          "Sotto la soglia, la spedizione standard costa 4,90€. Le opzioni disponibili sono mostrate prima della conferma.",
+          "Sotto la soglia scegli come ricevere il pacco: in un punto di ritiro o Locker InPost 5,65 €, a casa con Poste Italiane 6,65 €. Il costo è mostrato prima del pagamento.",
         ],
       },
       {
@@ -89,7 +90,7 @@ export const SUPPORT_PAGES = {
       {
         heading: "Prodotti in pre-ordine",
         body: [
-          "Gli articoli dello stesso ordine vengono gestiti insieme. Per esigenze diverse, chiedi assistenza prima della conferma.",
+          "Un pre-ordine si ordina a parte, mai insieme a prodotti disponibili: ogni ordine parte in un solo pacco, quando tutti i suoi articoli sono pronti.",
         ],
       },
     ],
@@ -148,7 +149,7 @@ export const SUPPORT_PAGES = {
 } as const satisfies Record<string, ContentPage>;
 
 /** Seller facts published on the site. Tax code, PEC and REA stay off it by the owner's choice. */
-const SELLER = {
+export const SELLER = {
   holder: "Alessia Brunetti",
   vat: "18464231002",
   office: "Via Fratelli Cervi 2, 00065 Fiano Romano (RM)",
@@ -178,7 +179,7 @@ export const LEGAL_PAGES = {
         heading: "Prodotti e pre-ordini",
         body: [
           "Le caratteristiche essenziali di ogni prodotto sono indicate nella sua scheda; le immagini rappresentano la confezione.",
-          "Quando i pezzi a magazzino finiscono il prodotto resta acquistabile in pre-ordine: il carrello e la pagina di pagamento indicano quali pezzi sono in pre-ordine, che potrebbero arrivare tra 10/15 giorni lavorativi dalla conferma del pagamento; per le nuove uscite non ancora distribuite il tempo indicato è quello dell'uscita Hasbro, circa 20 giorni lavorativi.",
+          "Un prodotto esaurito non è acquistabile finché non torna disponibile. Si possono pre-ordinare solo le nuove uscite non ancora distribuite, che arrivano con l'uscita Hasbro, circa 20 giorni lavorativi; un pre-ordine si acquista con un ordine a parte, separato dai prodotti disponibili.",
           "Se dopo il pagamento un prodotto non può essere spedito nei tempi indicati ti avvisiamo via email e, a tua scelta, concordiamo una nuova data oppure ti rimborsiamo l'intero importo pagato, spedizione compresa, entro 14 giorni.",
         ],
       },
@@ -186,7 +187,7 @@ export const LEGAL_PAGES = {
         heading: "Prezzi e spedizione",
         body: [
           "I prezzi sono espressi in euro e comprendono l'IVA.",
-          "La spedizione standard in Italia costa 4,90 € ed è gratuita per ordini da 100 €. Il totale, spedizione inclusa, è mostrato prima del pagamento.",
+          "La spedizione in Italia costa 5,65 € con InPost in un punto di ritiro o Locker e 6,65 € con Poste Italiane a casa; è gratuita per ordini da 100 €. Il totale, spedizione inclusa, è mostrato prima del pagamento.",
         ],
       },
       {
@@ -210,7 +211,7 @@ export const LEGAL_PAGES = {
           "Puoi recedere dal contratto senza indicarne il motivo entro 14 giorni dalla consegna, come previsto dagli artt. 52 e seguenti del Codice del Consumo. GEAR//DROP estende questo termine a 30 giorni dalla consegna.",
           `Per esercitarlo scrivi a ${SELLER.email} prima della scadenza indicando il riferimento dell'ordine. Puoi usare il modulo tipo in fondo a questa pagina, ma non è obbligatorio.`,
           "Restituisci i prodotti integri, completi e nella confezione originale entro 14 giorni dalla comunicazione. Le spese di restituzione sono a carico di GEAR//DROP: ti inviamo noi l'etichetta di reso.",
-          "Ti rimborsiamo tutti i pagamenti ricevuti, spedizione standard compresa, entro 14 giorni dalla comunicazione di recesso e con lo stesso metodo di pagamento. Il rimborso può essere sospeso fino al ricevimento dei prodotti o alla prova della loro spedizione. Resta a tuo carico solo la diminuzione di valore dovuta a un uso diverso da quello necessario per verificarli.",
+          "Ti rimborsiamo tutti i pagamenti ricevuti, compresa la spedizione fino al costo della consegna meno cara che offriamo (InPost in un punto di ritiro o Locker, 5,65 €), entro 14 giorni dalla comunicazione di recesso e con lo stesso metodo di pagamento. Se hai scelto un corriere più costoso, la differenza resta a tuo carico (art. 56 del Codice del consumo). Il rimborso può essere sospeso fino al ricevimento dei prodotti o alla prova della loro spedizione. Resta a tuo carico solo la diminuzione di valore dovuta a un uso diverso da quello necessario per verificarli.",
         ],
       },
       {
@@ -243,7 +244,7 @@ export const LEGAL_PAGES = {
   },
   privacy: {
     title: "Privacy e cookie",
-    lead: "Come trattiamo i dati personali. Ultimo aggiornamento: 15 settembre 2026.",
+    lead: "Come trattiamo i dati personali. Ultimo aggiornamento: 7 ottobre 2026.",
     sections: [
       {
         heading: "Titolare del trattamento",
@@ -258,7 +259,7 @@ export const LEGAL_PAGES = {
           "Ordine: nome, cognome, email, telefono, indirizzo di spedizione, note per il corriere, prodotti e importi.",
           "Pagamento: esito, metodo usato e riferimento della transazione. I dati completi della carta sono trattati esclusivamente da Stripe.",
           "Assistenza: i messaggi e i dati che ci invii. Account: se ne crei uno, l'email e le credenziali di accesso.",
-          "Navigazione: dati tecnici necessari al funzionamento del sito e statistiche aggregate e anonime sulle pagine visitate. Carrello e preferiti restano salvati nel tuo browser.",
+          "Navigazione: dati tecnici necessari al funzionamento del sito e statistiche aggregate sulle pagine visitate (anonime con Vercel Web Analytics; con Google Analytics solo se lo accetti) e, se accetti il marketing, le visite e gli acquisti arrivati dalle nostre pubblicità su Google. Carrello e preferiti restano salvati nel tuo browser.",
         ],
       },
       {
@@ -268,7 +269,8 @@ export const LEGAL_PAGES = {
           "Per adempiere agli obblighi fiscali e contabili, sulla base di un obbligo di legge (art. 6.1.c GDPR).",
           "Per rispondere alle richieste di assistenza, sulla base del contratto o di misure precontrattuali (art. 6.1.b GDPR).",
           "Per la sicurezza del sito, la prevenzione delle frodi e le statistiche anonime di visita, sulla base del legittimo interesse (art. 6.1.f GDPR).",
-          "Non usiamo i dati per profilazione né per inviarti pubblicità. Fornire i dati dell'ordine è necessario per evaderlo.",
+          "Per misurare le visite con Google Analytics e, se accetti il marketing, per misurare e mostrare le nostre pubblicità con Google Ads, solo con il tuo consenso (art. 6.1.a GDPR), che puoi revocare in qualsiasi momento da «Gestisci cookie» in fondo a ogni pagina.",
+          "Senza il tuo consenso al marketing non usiamo i tuoi dati per pubblicità, e non vendiamo dati a nessuno. Fornire i dati dell'ordine è necessario per evaderlo.",
         ],
       },
       {
@@ -285,6 +287,7 @@ export const LEGAL_PAGES = {
           "Vercel Inc. (Stati Uniti), per l'hosting del sito e le statistiche aggregate e anonime di visita.",
           "Supabase, Inc. (Stati Uniti), per la gestione degli ordini, degli account, delle giacenze e delle richieste di notifica disponibilità.",
           "Resend Inc. (Stati Uniti), per l'invio delle email relative ad ordini, spedizioni e notifiche di disponibilità.",
+          "Google Ireland Limited (Irlanda), per le statistiche di Google Analytics e, se accetti il marketing, per le pubblicità di Google Ads, solo con il tuo consenso.",
           "L'email lasciata per ricevere una notifica di disponibilità è usata esclusivamente per quella notifica e viene eliminata dopo l'invio o entro sei mesi dalla registrazione. Il tracciamento di un ordine tramite numero d'ordine ed email mostra unicamente lo stato dell'ordine e il numero di spedizione.",
           "Corrieri, per la consegna, e consulenti fiscali, per gli adempimenti contabili.",
           "I fornitori che trattano dati per nostro conto agiscono come responsabili del trattamento ai sensi dell'art. 28 GDPR.",
@@ -293,15 +296,18 @@ export const LEGAL_PAGES = {
       {
         heading: "Trasferimenti fuori dall'Unione europea",
         body: [
-          "Alcuni fornitori, come Vercel, Supabase e Resend, hanno sede negli Stati Uniti: i trasferimenti avvengono sulla base dell'EU-US Data Privacy Framework o delle clausole contrattuali standard approvate dalla Commissione europea.",
+          "Alcuni fornitori, come Vercel, Supabase, Resend e Google (tramite Google LLC), hanno sede o trattano dati negli Stati Uniti: i trasferimenti avvengono sulla base dell'EU-US Data Privacy Framework o delle clausole contrattuali standard approvate dalla Commissione europea.",
         ],
       },
       {
         heading: "Cookie",
         body: [
-          "Il sito usa solo strumenti tecnici necessari al funzionamento, come il carrello e la sessione di accesso: per questi non serve il consenso.",
-          "Le statistiche di visita (Vercel Web Analytics) non usano cookie e non identificano i visitatori.",
-          "La pagina di pagamento è gestita da Stripe sul proprio dominio, con i propri strumenti tecnici e antifrode. Non usiamo cookie di profilazione o pubblicitari.",
+          "Cookie tecnici: carrello, preferiti e sessione di accesso. Sono necessari al funzionamento del sito e non richiedono il consenso.",
+          "Cookie di statistica: Google Analytics 4 (_ga e _ga_<ID>, durata massima 2 anni; _gid, durata 24 ore), solo se accetti le «Statistiche» (o «Accetta tutto») nel banner. Ci dicono in forma aggregata quante persone visitano il sito, da dove arrivano, quali pagine guardano e quanti ordini vengono completati. Google Signals è disattivato, Google Analytics 4 non memorizza l'indirizzo IP e le pagine dell'account e di accesso non vengono misurate.",
+          "Cookie di marketing: Google Ads (sul nostro sito _gcl_au e, se arrivi da un nostro annuncio, _gcl_aw e _gcl_dc, durata 90 giorni; i cookie pubblicitari di Google sui suoi domini, fino a 13 mesi), solo se accetti il «Marketing» (o «Accetta tutto»). Servono a contare le vendite arrivate dalle nostre pubblicità su Google e a mostrare i nostri annunci a chi ha già visitato il sito. Funzionano solo insieme alle statistiche.",
+          "Se rifiuti o chiudi il banner con la X, Google Analytics e Google Ads non vengono caricati e non te lo richiediamo per sei mesi. Con «Personalizza» scegli le singole voci: la prima volta nessuna è selezionata, riaprendo il banner da «Gestisci cookie» ritrovi le scelte che hai fatto. Puoi cambiare scelta quando vuoi da «Gestisci cookie» in fondo a ogni pagina: se revochi il consenso, i cookie di Google sul nostro sito vengono cancellati.",
+          "Le statistiche di Vercel Web Analytics non usano cookie e non identificano i visitatori.",
+          "La pagina di pagamento è gestita da Stripe sul proprio dominio, con i propri strumenti tecnici e antifrode. Non usiamo altri cookie pubblicitari oltre a quelli di Google Ads descritti sopra, e solo con il tuo consenso.",
         ],
       },
       {

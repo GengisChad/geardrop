@@ -6,12 +6,13 @@
  * contract for the whole UI to keep working.
  */
 
-import { BUNDLE, BUNDLES, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_FLAT_RATE } from "@/data/catalog";
+import { BUNDLE, BUNDLES, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS, brandOf, shippingMethodByCode, shippingPlanFor, toShippingOption } from "@/data/catalog";
 import { STANDARD_DELIVERY } from "@/lib/labels";
 import { piecesOf, withBundles } from "./bundles";
 import { oneCardPerFamily } from "./variants";
 import type {
   BladeType,
+  BrandSlug,
   Bundle,
   CartQuote,
   CartQuoteLine,
@@ -27,27 +28,24 @@ import type {
   SortKey,
   StockStatus,
 } from "./types";
+import { separatePreorders } from "./separate-preorders";
 
 // The catalogue is small: one page holds it all, so nobody lands on a page with two cards.
 const DEFAULT_PER_PAGE = 24;
 
-/**
- * The one delivery option the local catalogue knows about. Real shipping options come
- * from the backend; hardcoding them is allowed here and nowhere else.
- */
-const MOCK_SHIPPING: ShippingOption = {
-  code: "standard",
-  label: "Spedizione standard",
-  hint: STANDARD_DELIVERY,
-  price: { amount: SHIPPING_FLAT_RATE, currency: "EUR" },
-};
+// No module-level shipping constants: shipping options are derived per-cart from the
+// brands present (shippingPlanFor), so the plan is computed inside quoteCart.
 
 /** Popularity is not a stored field; the mockups rank by review volume. */
 const byPopularity = (a: Product, b: Product) => b.reviewCount - a.reviewCount;
 
 const SORTERS: Record<SortKey, (a: Product, b: Product) => number> = {
   popolari: byPopularity,
-  novita: (a, b) => Number(b.tags.includes("novita")) - Number(a.tags.includes("novita")) || byPopularity(a, b),
+  // Among the new releases, what ships now leads what is still on pre-order (owner, 2026-10-08).
+  novita: (a, b) =>
+    Number(b.tags.includes("novita")) - Number(a.tags.includes("novita")) ||
+    Number(b.stock === "disponibile") - Number(a.stock === "disponibile") ||
+    byPopularity(a, b),
   "prezzo-asc": (a, b) => a.price.amount - b.price.amount || byPopularity(a, b),
   "prezzo-desc": (a, b) => b.price.amount - a.price.amount || byPopularity(a, b),
   nome: (a, b) => a.name.localeCompare(b.name, "it"),
@@ -84,6 +82,7 @@ function matches(product: Product, query: ProductQuery): boolean {
   if (query.bladeType?.length && (!product.bladeType || !query.bladeType.includes(product.bladeType))) return false;
   if (query.minPrice !== undefined && product.price.amount < query.minPrice) return false;
   if (query.maxPrice !== undefined && product.price.amount > query.maxPrice) return false;
+  if (query.brand !== undefined && brandOf(product) !== query.brand) return false;
   if (query.search) {
     const needle = normalise(query.search).trim();
     if (needle) {
@@ -266,17 +265,38 @@ export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CA
         });
       }
 
-      const sellable = quoteLines.filter((line) => line.issue === null);
+      const lines = separatePreorders(quoteLines);
+      const sellable = lines.filter((line) => line.issue === null);
       const subtotal = sellable.reduce((sum, line) => sum + line.lineTotal.amount, 0);
       const isEmpty = subtotal === 0;
       const qualifies = subtotal >= FREE_SHIPPING_THRESHOLD;
-      const shipping = isEmpty || qualifies ? 0 : SHIPPING_FLAT_RATE;
+
+      // Derive the shipping plan from the brands actually in the sellable lines.
+      const cartBrands = new Set<BrandSlug>(
+        sellable.map((line) => {
+          const product = bySlug.get(line.slug);
+          return product ? brandOf(product) : "hasbro";
+        }),
+      );
+      const plan = shippingPlanFor(cartBrands);
+
+      // The buyer's choice when it is in the plan, otherwise the plan's first (cheapest) method.
+      const requested = shippingMethodByCode(request.shippingCode);
+      const method =
+        requested && plan.methods.some((m) => m.code === requested.code)
+          ? requested
+          : plan.methods[0]!;
+
+      const shipping = isEmpty || qualifies ? 0 : method.priceCents;
+      const shippingOptions: readonly ShippingOption[] = plan.methods.map((m) =>
+        toShippingOption(m, STANDARD_DELIVERY, plan.locked || undefined),
+      );
 
       return {
-        lines: quoteLines,
+        lines,
         missingSlugs,
-        shippingOptions: [MOCK_SHIPPING],
-        shippingCode: MOCK_SHIPPING.code,
+        shippingOptions,
+        shippingCode: method.code,
         totals: {
           subtotal: { amount: subtotal, currency: "EUR" },
           discount: { amount: 0, currency: "EUR" },

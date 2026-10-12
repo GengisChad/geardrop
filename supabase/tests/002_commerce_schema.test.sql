@@ -32,7 +32,9 @@ select results_eq(
         -- Pieces of opened Battle Sets sold on Vinted: their stock follows the sets.
         'drop-attack-arena', 'sneak-attack-arena', 'rampart-aegis-gb', 'cutter-shinobi-lf',
         -- The deck cases sell without a limit: the database keeps a counter the shop never shows.
-        'porta-deck-giallo', 'porta-deck-verde-lime', 'porta-deck-azzurro', 'porta-deck-blu', 'porta-deck-rosa', 'porta-deck-fucsia', 'porta-deck-bianco')$$,
+        'porta-deck-giallo', 'porta-deck-verde-lime', 'porta-deck-azzurro', 'porta-deck-blu', 'porta-deck-rosa', 'porta-deck-fucsia', 'porta-deck-bianco',
+        -- Takara Tomy on consignment from the partner, two of each (2026-10-07).
+        'cx-00-evangelion-deck-set', 'ux-00-glory-valkyrie-lf', 'cx-00-tigarage-ft3-60t')$$,
   array[0::bigint],
   'only the owner-reviewed catalogue carries stock'
 );
@@ -115,15 +117,16 @@ select results_eq(
   'double seed keeps four categories'
 );
 select results_eq(
-  -- 27 catalogue products and four Vinted-only stock items never shown on the site: the two
-  -- stadiums alone, Rampart Aegis GB and Cutter Shinobi LF.
+  -- 30 catalogue products (27 original + 3 Takara on consignment, 2026-10-07)
+  -- and four Vinted-only stock items never shown on the site:
+  -- drop-attack-arena, sneak-attack-arena, Rampart Aegis GB, Cutter Shinobi LF.
   $$select count(*)::bigint from public.products$$,
-  array[31::bigint],
+  array[34::bigint],
   'double seed keeps the catalogue products'
 );
 select results_eq(
   $$select count(*)::bigint from public.product_images$$,
-  array[27::bigint],
+  array[30::bigint],
   'double seed keeps one image per catalogue product'
 );
 select results_eq(

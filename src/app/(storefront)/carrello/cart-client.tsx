@@ -3,8 +3,9 @@
 import Image from "next/image";
 import { cutoutSrc } from "@/data/assets";
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowRight, Loader2, Trash2, Zap } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useState } from "react";
 import { BundleNudge } from "@/components/cart/bundle-nudge";
 import { CartTotalsPanel, FreeShippingMeter } from "@/components/cart/cart-summary";
 import { QuantityStepper } from "@/components/product/quantity-stepper";
@@ -12,10 +13,12 @@ import { StockBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ProductCard } from "@/components/product/product-card";
+import { startExpressCheckout } from "@/app/(storefront)/checkout/actions";
 import { useCartQuote } from "@/lib/use-cart-quote";
 import { MAX_QUANTITY_PER_LINE, useCart } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/format";
 import { cartDelivery, preorderNote, stockLabel } from "@/lib/labels";
+import { gaItem, sendGaEvent } from "@/lib/analytics/google";
 import type { Product } from "@/lib/commerce/types";
 
 type CartClientProps = {
@@ -26,6 +29,43 @@ export function CartClient({ shelfProducts }: CartClientProps) {
   const { quote, hydrated } = useCartQuote();
   const setQuantity = useCart((s) => s.setQuantity);
   const remove = useCart((s) => s.remove);
+
+  const [expressState, setExpressState] = useState<{ pending: boolean; error: string | null }>({
+    pending: false,
+    error: null,
+  });
+
+  // Express checkout is available only when the cart is orderable and Poste home ("standard")
+  // is in the shipping plan. Takara-only and mixed carts lock to other methods.
+  const showExpressButton = Boolean(
+    quote?.orderable && quote.shippingOptions.some((opt) => opt.code === "standard"),
+  );
+
+  const handleExpressCheckout = useCallback(async () => {
+    if (!quote || expressState.pending) return;
+    setExpressState({ pending: true, error: null });
+    // GA4 begin_checkout: fires as soon as the buyer chooses the express path, the same
+    // event that checkout-client.tsx fires when the checkout form first loads.
+    sendGaEvent("begin_checkout", {
+      currency: "EUR",
+      value: quote.totals.subtotal.amount / 100,
+      items: quote.lines.map((line) =>
+        gaItem({ slug: line.slug, name: line.name, priceCents: line.unitPrice.amount, quantity: line.quantity }),
+      ),
+    });
+    const result = await startExpressCheckout({
+      lines: quote.lines.map((line) => ({ slug: line.slug, quantity: line.quantity })),
+      // Fresh key per tap: a double-tap or a back-and-retry reuses the same attempt rather
+      // than creating two sessions. The key is ephemeral: it is never stored.
+      idempotencyKey: crypto.randomUUID(),
+    });
+    if (result.ok) {
+      // Keep the pending state until the browser navigates away; no cleanup needed.
+      window.location.assign(result.redirectUrl);
+    } else {
+      setExpressState({ pending: false, error: result.message });
+    }
+  }, [quote, expressState.pending]);
 
   // Until the persisted cart is read and the server has priced it, render a skeleton
   // rather than a wrong "empty" or a locally guessed price.
@@ -172,11 +212,44 @@ export function CartClient({ shelfProducts }: CartClientProps) {
         <aside data-testid="cart-summary" className="gd-glass-panel sticky top-28 flex flex-col gap-4 rounded-[--radius-glass] p-5">
           <h2 className="gd-display text-small font-bold tracking-wider text-graphite">Riepilogo</h2>
           <FreeShippingMeter totals={quote.totals} threshold={quote.freeShippingThreshold} />
-          <CartTotalsPanel totals={quote.totals} deliveryHint={cartDelivery(quote.lines.filter((line) => !line.issue))} />
+          <CartTotalsPanel totals={quote.totals} deliveryHint={cartDelivery(quote.lines.filter((line) => !line.issue))} carrierChosenLater={quote.shippingOptions.length > 1} />
           <Button as={Link} href="/checkout" variant="primary" size="lg" fullWidth data-testid="go-to-checkout" aria-disabled={blocked}>
             Vai al checkout
             <ArrowRight className="size-4" aria-hidden="true" />
           </Button>
+          {showExpressButton ? (
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                data-testid="express-checkout"
+                disabled={expressState.pending}
+                onClick={handleExpressCheckout}
+                className="gd-display gd-chamfer-lg inline-flex w-full items-center justify-center gap-2 bg-violet px-7 py-3 text-[0.9375rem] font-bold tracking-[0.08em] text-white transition-[background-color,opacity] duration-200 hover:bg-[#8d58ff] disabled:cursor-not-allowed disabled:bg-grey-300 disabled:text-grey-600"
+              >
+                {expressState.pending ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <Zap className="size-4" aria-hidden="true" />
+                )}
+                Paga subito
+              </button>
+              <p className="text-center text-[0.6875rem] text-grey-600">
+                Apple Pay, Google Pay o carta · consegna a casa con Poste
+              </p>
+              <p className="text-center text-[0.6875rem] text-grey-600">
+                Per un Locker InPost scegli il checkout normale.
+              </p>
+              {expressState.error ? (
+                <p
+                  role="alert"
+                  data-testid="express-checkout-error"
+                  className="rounded border border-soldout/30 bg-soldout-bg px-3 py-2 text-[0.6875rem] text-soldout"
+                >
+                  {expressState.error}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           <Link href="/negozio" className="text-center text-small text-grey-600 transition-colors hover:text-violet-soft">
             Continua ad acquistare
           </Link>
@@ -190,6 +263,45 @@ export function CartClient({ shelfProducts }: CartClientProps) {
         className="gd-glass-compact fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom,0px))] z-40 border-x-0 border-b-0 lg:hidden"
         aria-hidden={blocked ? "true" : undefined}
       >
+        {showExpressButton ? (
+          // Express button above the checkout row so the bar grows minimally and the
+          // primary "Vai al checkout" stays in thumb reach at the bottom.
+          <div className="mx-auto max-w-[1400px] px-4 pb-0 pt-3 sm:px-6">
+            <button
+              type="button"
+              data-testid="express-checkout"
+              disabled={expressState.pending}
+              onClick={handleExpressCheckout}
+              // py-3 (24px) + text-small line-height (18px) = 42px; min-h-[44px] ensures WCAG AA
+              // 44px touch-target minimum (PRODUCT.md). gd-chamfer-lg matches the desktop button
+              // and every other Button secondary instance — two chamfer sizes on the same CTA
+              // would break the Holo Drop brand mark (2026-10-12, owner finding).
+              className="gd-display gd-chamfer-lg inline-flex min-h-[44px] w-full items-center justify-center gap-2 bg-violet py-3 text-small font-bold tracking-[0.08em] text-white transition-[background-color,opacity] duration-200 hover:bg-[#8d58ff] disabled:cursor-not-allowed disabled:bg-grey-300 disabled:text-grey-600"
+            >
+              {expressState.pending ? (
+                <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+              ) : (
+                <Zap className="size-3.5" aria-hidden="true" />
+              )}
+              Paga subito
+            </button>
+            {/* Honest disclosure: express locks delivery to Poste a casa; buyers who prefer InPost
+                must use the regular checkout. Mirrors the desktop sidebar copy (PRODUCT.md:
+                "A promise the shop cannot keep is a bug", 2026-10-12, owner finding). */}
+            <p className="mt-1 text-center text-[0.6875rem] text-grey-600">
+              Solo Poste a casa · per InPost usa il checkout normale.
+            </p>
+            {expressState.error ? (
+              <p
+                role="alert"
+                data-testid="express-checkout-error"
+                className="mt-1 text-[0.625rem] text-soldout"
+              >
+                {expressState.error}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
         <div className="mx-auto flex max-w-[1400px] items-center gap-3 px-4 py-3 sm:px-6">
           <div className="min-w-0 flex-1">
             <p className="gd-display text-[0.6875rem] font-bold text-grey-600 tracking-wider">

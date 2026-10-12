@@ -27,6 +27,7 @@ describe("Glory Valkerion name restore", () => {
   });
 
   it("leaves no trace of the wrong name in the catalogue", () => {
-    expect(JSON.stringify(PRODUCTS)).not.toMatch(/valkyrie/i);
+    // Hasbro's top is Valkerion. Takara Tomy's own release really is called Glory Valkyrie.
+    expect(JSON.stringify(PRODUCTS.filter((product) => product.brand !== "takara-tomy"))).not.toMatch(/valkyrie/i);
   });
 });
