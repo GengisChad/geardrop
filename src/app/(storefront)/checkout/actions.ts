@@ -20,6 +20,7 @@ import { placeOrder } from "@/lib/commerce/order-intake";
 import { getCommerceProvider, resolveCommerceProviderName } from "@/lib/commerce/provider";
 import type { CartQuote, Money } from "@/lib/commerce/types";
 import { createStripeCheckout, openQuoteForStripe, stripeCheckoutEnabled, STRIPE_UNAVAILABLE_MESSAGE } from "@/lib/payments/stripe-checkout";
+import { EXPRESS_CHECKOUT_LOCKED_MESSAGE } from "@/lib/payments/express-checkout";
 import { authRedirectUrl, PRODUCTION_ORIGIN } from "@/lib/site-url";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -153,15 +154,6 @@ function emptyQuote(): CartQuote {
 function unavailableQuote(notice: string): CartQuote {
   return { ...emptyQuote(), notice };
 }
-
-/**
- * Shown when the cart's shipping plan does not include Poste home ("standard").
- *
- * Takara-only and mixed Hasbro+Takara carts are locked to partner or InPost routes;
- * the buyer reaches them via the normal checkout where they pick the method explicitly.
- */
-export const EXPRESS_CHECKOUT_LOCKED_MESSAGE =
-  "La consegna rapida non è disponibile per questo carrello: usa il checkout normale per scegliere il metodo di spedizione.";
 
 export type ExpressCheckoutResult =
   | { readonly ok: true; readonly redirectUrl: string }

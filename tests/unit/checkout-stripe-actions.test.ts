@@ -23,7 +23,8 @@ vi.mock("@/lib/payments/stripe-checkout", async (importOriginal) => ({
 vi.mock("next/headers", () => ({ headers: async () => new Headers({ origin: originMock() }) }));
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: vi.fn() }));
 
-const { requestCartQuote, submitOrder, startExpressCheckout, EXPRESS_CHECKOUT_LOCKED_MESSAGE } = await import("@/app/(storefront)/checkout/actions");
+const { requestCartQuote, submitOrder, startExpressCheckout } = await import("@/app/(storefront)/checkout/actions");
+const { EXPRESS_CHECKOUT_LOCKED_MESSAGE } = await import("@/lib/payments/express-checkout");
 
 const order = {
   contact: {
