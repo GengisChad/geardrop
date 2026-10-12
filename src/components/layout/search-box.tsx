@@ -109,15 +109,20 @@ export function SearchBox() {
   const isSearching = value.trim().length >= 2;
 
   // Derive the navigable options. Memoised so activateOption (a useCallback) does not
-  // re-create on every keystroke — only when the results or query length changes.
+  // re-create on every keystroke — only when the results, query length, or loading state
+  // changes. `loading` is included so the catalog fallback link only appears once the
+  // fetch has settled with zero results — not while the request is still in-flight
+  // (owner, accessibility fix 2026-10-12).
   const options: readonly Option[] = useMemo(
     () =>
       isSearching && results.length > 0
         ? [...results.map((r): Option => ({ kind: "product", slug: r.slug })), { kind: "see-all" }]
-        : !isSearching
-          ? QUICK_LINKS.map((l): Option => ({ kind: "link", href: l.href }))
-          : [],
-    [isSearching, results],
+        : isSearching && results.length === 0 && !loading
+          ? [{ kind: "link", href: "/negozio" }]
+          : !isSearching
+            ? QUICK_LINKS.map((l): Option => ({ kind: "link", href: l.href }))
+            : [],
+    [isSearching, results, loading],
   );
 
   // Clamp activeIndex to the current option count so a stale index from a previous
@@ -213,6 +218,8 @@ export function SearchBox() {
     [options, value, router, close],
   );
 
+
+
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     const count = options.length;
 
@@ -243,11 +250,15 @@ export function SearchBox() {
   const activeOptionId = safeActiveIndex >= 0 ? `${listboxId}-opt-${safeActiveIndex}` : undefined;
 
   // Polite announcement: screen readers hear the result count once a fetch settles.
+  // Use the correct Italian singular "risultato" when exactly one item is found
+  // (accessibility fix 2026-10-12).
   const announcement =
     showResults && !displayLoading
       ? displayResults.length === 0
         ? `Nessun risultato per ${value.trim()}`
-        : `${displayResults.length} risultati per ${value.trim()}`
+        : displayResults.length === 1
+          ? `1 risultato per ${value.trim()}`
+          : `${displayResults.length} risultati per ${value.trim()}`
       : "";
 
   // ── Panel inner content ───────────────────────────────────────────────────────
@@ -262,9 +273,16 @@ export function SearchBox() {
       {/* Quick-links section (empty query) */}
       {showQuickLinks && (
         <>
-          <p className="gd-display px-4 pt-3 pb-2 text-[0.6875rem] tracking-[0.06em] text-grey-400">
+          {/* role="separator" is a valid owned child of listbox (unlike <p>); aria-label
+              carries the visible text so screen readers still announce it
+              (accessibility fix 2026-10-12). */}
+          <div
+            role="separator"
+            aria-label="Sfoglia"
+            className="gd-display px-4 pt-3 pb-2 text-[0.6875rem] tracking-[0.06em] text-grey-400"
+          >
             Sfoglia
-          </p>
+          </div>
           {QUICK_LINKS.map((link, i) => (
             <Link
               key={link.href}
@@ -272,6 +290,7 @@ export function SearchBox() {
               role="option"
               id={`${listboxId}-opt-${i}`}
               aria-selected={safeActiveIndex === i}
+              tabIndex={-1}
               onClick={close}
               className={cn(
                 "flex min-h-[44px] items-center px-4 py-2.5 text-small text-graphite",
@@ -297,19 +316,33 @@ export function SearchBox() {
           )}
 
           {noResults && (
-            <div className="px-4 py-5">
-              <p className="text-small text-grey-600">
+            <>
+              {/* The "no results" message is informational; the live region already
+                  announced it, so sighted keyboard users see it while AT users rely
+                  on the announcement. */}
+              <p className="px-4 pt-5 pb-2 text-small text-grey-600">
                 Nessun risultato per{" "}
                 <span className="font-semibold text-graphite">&ldquo;{value.trim()}&rdquo;</span>
               </p>
+              {/* Rendered as role="option" so arrow-key navigation can reach the CTA
+                  (accessibility fix 2026-10-12). The matching entry in options[] ensures
+                  aria-activedescendant and the activeIndex machinery cover it. */}
               <Link
                 href="/negozio"
+                role="option"
+                id={`${listboxId}-opt-0`}
+                aria-selected={safeActiveIndex === 0}
+                tabIndex={-1}
                 onClick={close}
-                className="mt-2 inline-block text-small text-violet-soft underline-offset-2 hover:underline"
+                className={cn(
+                  "flex min-h-[44px] items-center px-4 pb-4 text-small text-violet-soft",
+                  "underline-offset-2 transition-colors duration-150 hover:underline",
+                  safeActiveIndex === 0 && "bg-white/[0.08]",
+                )}
               >
                 Sfoglia il catalogo
               </Link>
-            </div>
+            </>
           )}
 
           {displayResults.map((item, i) => (
@@ -319,6 +352,7 @@ export function SearchBox() {
               role="option"
               id={`${listboxId}-opt-${i}`}
               aria-selected={safeActiveIndex === i}
+              tabIndex={-1}
               onClick={close}
               className={cn(
                 "flex min-h-[44px] items-center gap-3 px-3 py-2",
@@ -369,6 +403,7 @@ export function SearchBox() {
               role="option"
               id={`${listboxId}-opt-${displayResults.length}`}
               aria-selected={safeActiveIndex === displayResults.length}
+              tabIndex={-1}
               onClick={close}
               className={cn(
                 "flex min-h-[44px] items-center justify-between px-4 py-3",
@@ -429,7 +464,10 @@ export function SearchBox() {
   );
 
   return (
-    <div ref={containerRef} className="relative flex items-center gap-1.5">
+    // z-[103] keeps this container above the z-[101] backdrop so pointer events on the
+    // input are not swallowed by the backdrop while the panel is open (accessibility
+    // fix 2026-10-12).
+    <div ref={containerRef} className="relative z-[103] flex items-center gap-1.5">
       {/* Polite live region — screen readers hear the count after each fetch without interruption */}
       <span role="status" aria-live="polite" aria-atomic="true" className="sr-only">
         {announcement}
