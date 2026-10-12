@@ -108,3 +108,18 @@ export const cartQuoteSchema = z.object({
 });
 
 export type CartQuoteInput = z.infer<typeof cartQuoteSchema>;
+
+/**
+ * What the browser sends to start an express Stripe Checkout (no contact form).
+ * The buyer's address and phone are collected by Stripe on its hosted page.
+ *
+ * Reuses the same line and key shapes as placeOrderSchema so the server-side
+ * validation is identical: no unit price, no personal data until Stripe has it.
+ */
+export const expressCheckoutSchema = z.object({
+  lines: placeOrderSchema.shape.lines,
+  /** Fresh UUID per attempt: prevents double-redirects on accidental double-taps. */
+  idempotencyKey: placeOrderSchema.shape.idempotencyKey,
+});
+
+export type ExpressCheckoutInput = z.infer<typeof expressCheckoutSchema>;

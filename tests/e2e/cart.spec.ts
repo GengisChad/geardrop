@@ -244,3 +244,37 @@ test.describe("checkout", () => {
     await expect(page.getByTestId("checkout-form")).toHaveCount(0);
   });
 });
+
+/**
+ * Express checkout ("Paga subito") button — public gate tests.
+ *
+ * The gate runs against the mock provider (no STRIPE_SECRET_KEY), so the action will
+ * refuse with a "pagamento non disponibile" message. The button itself must be visible
+ * in the cart summary for a Hasbro-only cart, mirroring how "Vai al checkout" and the
+ * place-order button report "ordini non ancora attivi" without Stripe configured.
+ */
+test.describe("express checkout button", () => {
+  test("'Paga subito' is visible in the cart summary for a Hasbro-only cart", async ({ page }) => {
+    await page.goto("/prodotto/cobalt-dragoon-2-60c");
+    await buyPanel(page).getByTestId("add-to-cart").click();
+    await page.goto("/carrello");
+
+    // The button appears in the desktop aside summary and, on mobile viewports, also in
+    // the sticky bar. Check the summary (always rendered regardless of viewport).
+    await expect(page.getByTestId("cart-summary").getByTestId("express-checkout")).toBeVisible();
+  });
+
+  test("clicking 'Paga subito' without Stripe configured shows an inline error", async ({ page }) => {
+    await page.goto("/prodotto/cobalt-dragoon-2-60c");
+    await buyPanel(page).getByTestId("add-to-cart").click();
+    await page.goto("/carrello");
+
+    // Without a Stripe key the action returns an error; the button must display it
+    // inline (role=alert) instead of navigating away, matching the "ordini non attivi"
+    // honesty pattern used elsewhere on the public gate.
+    await page.getByTestId("cart-summary").getByTestId("express-checkout").click();
+    await expect(page.getByTestId("express-checkout-error").first()).toBeVisible();
+    // The cart must survive: nothing was ordered.
+    await expect(page.getByTestId("cart-count")).toHaveText("1");
+  });
+});

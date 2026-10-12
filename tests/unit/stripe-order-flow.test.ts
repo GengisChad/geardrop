@@ -196,6 +196,104 @@ describe("paid checkout mapping", () => {
     expect(checkout?.shipping.city).toBe("");
   });
 
+  it("reads the shipping address from collected_information.shipping_details (express checkout, new API)", () => {
+    // Express sessions: no payment_intent.shipping; Stripe puts the collected address in
+    // collected_information.shipping_details (API versions ≥ ~2024).
+    const expressSession: StripeSessionForOrder = {
+      ...paidSession,
+      payment_intent: { id: "pi_express_1", shipping: null },
+      customer_details: { email: "buyer@example.com", phone: "3331234567", name: null, address: null },
+      collected_information: {
+        shipping_details: {
+          name: "Laura Bianchi",
+          address: { line1: "Via Verdi 42", line2: null, postal_code: "00100", city: "Roma", state: "RM", country: "IT" },
+        },
+      },
+    };
+    const checkout = paidCheckoutFromStripe(expressSession, lineItems);
+    expect(checkout).not.toBeNull();
+    expect(checkout?.shipping.name).toBe("Laura Bianchi");
+    expect(checkout?.shipping.address).toBe("Via Verdi 42");
+    expect(checkout?.shipping.city).toBe("Roma");
+    expect(checkout?.shipping.postalCode).toBe("00100");
+    expect(checkout?.shipping.province).toBe("RM");
+    // Phone from customer_details (no payment_intent.shipping.phone in express)
+    expect(checkout?.phone).toBe("3331234567");
+  });
+
+  it("reads the shipping address from shipping_details (express checkout, older API)", () => {
+    // Older Stripe API versions expose the collected address at session.shipping_details
+    // instead of inside collected_information.
+    const expressSessionOldApi: StripeSessionForOrder = {
+      ...paidSession,
+      payment_intent: { id: "pi_express_2", shipping: null },
+      customer_details: { email: "buyer@example.com", phone: "3391234567", name: null, address: null },
+      shipping_details: {
+        name: "Carlo Verdi",
+        address: { line1: "Corso Garibaldi 10", line2: null, postal_code: "20121", city: "Milano", state: "MI", country: "IT" },
+      },
+    };
+    const checkout = paidCheckoutFromStripe(expressSessionOldApi, lineItems);
+    expect(checkout).not.toBeNull();
+    expect(checkout?.shipping.name).toBe("Carlo Verdi");
+    expect(checkout?.shipping.city).toBe("Milano");
+  });
+
+  it("prefers payment_intent.shipping over collected_information (form-based sessions unchanged)", () => {
+    // A form-based session has payment_intent.shipping set by the site; collected_information
+    // might also be present on new API versions — payment_intent.shipping must win.
+    const mixedSession: StripeSessionForOrder = {
+      ...paidSession,
+      collected_information: {
+        shipping_details: {
+          name: "Should Not Win",
+          address: { line1: "Wrong Street", postal_code: "99999", city: "Wrong City", state: "XX", country: "IT" },
+        },
+      },
+    };
+    const checkout = paidCheckoutFromStripe(mixedSession, lineItems);
+    // payment_intent.shipping from paidSession must take precedence
+    expect(checkout?.shipping.name).toBe("Mario Rossi");
+    expect(checkout?.shipping.city).toBe("Trieste");
+  });
+
+  it("reads an express session within Stripe's four expansion levels", async () => {
+    // loadPaidCheckout now requests expand[]=collected_information; the fake Stripe client
+    // must accept that expansion without throwing the 4-level depth error.
+    const requested: string[] = [];
+    const expressSession: StripeSessionForOrder = {
+      ...paidSession,
+      collected_information: {
+        shipping_details: {
+          name: "Express Buyer",
+          address: { line1: "Via Express 1", postal_code: "10100", city: "Torino", state: "TO", country: "IT" },
+        },
+      },
+    };
+    // A custom Stripe client that returns the express session and records requested paths.
+    const expressStripe: StripeClient = {
+      async get<T>(path: string): Promise<T | null> {
+        requested.push(path);
+        for (const expand of new URLSearchParams(path.split("?")[1] ?? "").getAll("expand[]")) {
+          if (expand.split(".").length > 4)
+            throw new Error(`Stripe GET → 400: You cannot expand more than 4 levels of a property. Property: ${expand}`);
+        }
+        const route = path.split("?")[0]!;
+        if (route === `/checkout/sessions/${paidSession.id}`) return expressSession as T;
+        if (route === `/checkout/sessions/${paidSession.id}/line_items`) return { data: lineItems } as T;
+        return null as T | null;
+      },
+      async post<T>(): Promise<T> {
+        throw new Error("the webhook never writes to Stripe");
+      },
+    };
+    const checkout = await loadPaidCheckout(paidSession.id, expressStripe);
+    // No error thrown = expansion levels are within limit
+    expect(checkout?.reference).toBe("GD-FL3NHC8W");
+    // collected_information.shipping_details is a single level — well within the 4-level limit
+    expect(requested.some((r) => r.includes("expand%5B%5D=collected_information") || r.includes("expand[]=collected_information"))).toBe(true);
+  });
+
   it("resolves every catalogue product from its Stripe id", () => {
     for (const product of PRODUCTS) {
       expect(slugFromStripeId(`gd_${product.slug.replaceAll("-", "_")}`)).toBe(product.slug);
