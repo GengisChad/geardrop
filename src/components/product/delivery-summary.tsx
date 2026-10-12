@@ -44,9 +44,15 @@ export function DeliverySummary({ product }: DeliverySummaryProps) {
             <Truck className="mt-0.5 size-3.5 shrink-0 text-violet-soft" aria-hidden="true" />
             <span>Spedito dal nostro partner · 2-6 giorni lavorativi</span>
           </li>
+          {/* Free-shipping threshold applies to every plan at the quoting layer, Takara carts
+              included — showing it here keeps the promise consistent with checkout (owner, 2026-10-12).
+              The 30-day return row is intentionally absent: that policy covers GearDrop-fulfilled
+              orders only; NerdPoint's terms are not codified yet. */}
           <li className="flex items-start gap-2.5 text-small text-grey-600">
-            <RotateCcw className="mt-0.5 size-3.5 shrink-0 text-violet-soft" aria-hidden="true" />
-            <span>Reso gratuito entro 30 giorni</span>
+            <Truck className="mt-0.5 size-3.5 shrink-0 text-lime" aria-hidden="true" />
+            <span>
+              Gratis da {freeLabel}
+            </span>
           </li>
         </ul>
       ) : isPreorder ? (
