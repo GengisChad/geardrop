@@ -34,7 +34,7 @@ export function Header({ navigation, mobileNavigation }: {
                     href={item.href as Route}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "gd-display relative block px-2 py-3 text-[0.75rem] font-semibold tracking-[0.04em] transition-colors xl:px-3.5 xl:text-[0.875rem] xl:tracking-[0.06em]",
+                      "gd-display relative block whitespace-nowrap px-2 py-3 text-[0.75rem] font-semibold tracking-[0.04em] transition-colors xl:px-3.5 xl:text-[0.875rem] xl:tracking-[0.06em]",
                       "after:absolute after:inset-x-2 after:bottom-1.5 xl:after:inset-x-3.5 after:h-0.5 after:origin-left after:scale-x-0 after:bg-lime",
                       "after:shadow-[0_0_12px_#c6ff00] after:transition-transform after:duration-300 hover:after:scale-x-100",
                       item.tone === "lime" && "text-lime",

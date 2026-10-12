@@ -449,7 +449,8 @@ export function SearchBox() {
                 // Common
                 "fixed z-[102] overflow-hidden",
                 // Mobile (< sm = 640 px): full-width, scrollable, right below header (h-16 = 64px)
-                "inset-x-0 top-16 max-h-[70dvh] overflow-y-auto",
+                // Below the 4rem header and the ~4.0625rem search strip on a phone.
+                "inset-x-0 top-[8.0625rem] max-h-[calc(100dvh-8.0625rem-5rem)] overflow-y-auto",
                 // Desktop (≥ sm): narrow anchored panel; position read from CSS vars above
                 "sm:inset-x-[unset] sm:max-h-none sm:w-[460px]",
                 "sm:top-[var(--sp-top,80px)] sm:right-[var(--sp-right,0px)]",
@@ -482,7 +483,13 @@ export function SearchBox() {
             animate={{ width: "auto", opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden"
+            // On a phone the header has no room for the field: it drops below the header as a
+            // full-width strip, as before instant search (the header's backdrop-filter makes
+            // "fixed" relative to the header, so top-full is right under it).
+            // On desktop the field opens over the navigation instead of pushing it: eight menu
+            // items plus a 15rem field overflowed the header at 1280-1440px and pushed the cart
+            // icon off screen.
+            className="overflow-hidden max-sm:fixed max-sm:inset-x-0 max-sm:top-full max-sm:w-auto! max-sm:border-b max-sm:border-white/[0.07] max-sm:bg-void/95 max-sm:px-3 max-sm:py-2.5 max-sm:backdrop-blur-md lg:absolute lg:right-full lg:top-1/2 lg:mr-1.5 lg:-translate-y-1/2 lg:bg-void"
             role="search"
             onSubmit={(event) => {
               event.preventDefault();
@@ -511,7 +518,7 @@ export function SearchBox() {
               placeholder="Cerca un Beyblade"
               data-testid="search-input"
               autoComplete="off"
-              className="h-11 w-full border border-white/10 bg-white/[0.05] px-4 text-base text-graphite placeholder:text-grey-400 focus:border-lime focus:outline-none sm:w-44 sm:text-small lg:w-60"
+              className="h-11 w-full border border-white/10 bg-white/[0.05] px-4 text-base text-graphite placeholder:text-grey-400 focus:border-lime focus:outline-none sm:w-44 sm:text-small lg:w-72 xl:w-80"
             />
           </motion.form>
         ) : null}
