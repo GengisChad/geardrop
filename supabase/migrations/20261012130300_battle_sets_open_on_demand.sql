@@ -76,15 +76,32 @@ create policy battle_set_parts_manager_read on public.battle_set_parts for selec
   using (private.has_staff_role(array['owner'::public.staff_role, 'admin'::public.staff_role]));
 grant select on public.battle_set_parts to authenticated;
 
-insert into public.battle_set_parts (set_product_id, part_product_id)
-select set_product.id, part.id
-from public.products as set_product
--- Filter by organization so a slug shared across companies (Oryvenne) never yields a
--- cross-company row that would break the composite FK added in 130500 (2026-10-12).
-join public.products as part on part.slug in ('impact-drake-9-60lr', 'hover-wyvern-3-85n', 'drop-attack-arena')
-  and part.organization_id = set_product.organization_id
-where set_product.slug = 'drop-attack-battle-set'
-on conflict do nothing;
+-- With companies (production, PR #51) a slug is unique only within one company: the set and
+-- its pieces are looked up inside Gear Drop, so a slug Oryvenne might share never yields a
+-- cross-company row (which the composite FK of 130500 would refuse). Without companies (CI on
+-- main) the plain lookup stands. PL/pgSQL plans a branch only when it runs, so the company
+-- branch is safe on the CI schema (2026-10-12: a plain "organization_id" here broke CI).
+do $parts$
+begin
+  if to_regclass('public.organizations') is not null then
+    insert into public.battle_set_parts (set_product_id, part_product_id)
+    select set_product.id, part.id
+    from public.products as set_product
+    join public.products as part on part.slug in ('impact-drake-9-60lr', 'hover-wyvern-3-85n', 'drop-attack-arena')
+      and part.organization_id = set_product.organization_id
+    where set_product.slug = 'drop-attack-battle-set'
+      and set_product.organization_id = (select id from public.organizations where slug = 'geardrop')
+    on conflict do nothing;
+  else
+    insert into public.battle_set_parts (set_product_id, part_product_id)
+    select set_product.id, part.id
+    from public.products as set_product
+    join public.products as part on part.slug in ('impact-drake-9-60lr', 'hover-wyvern-3-85n', 'drop-attack-arena')
+    where set_product.slug = 'drop-attack-battle-set'
+    on conflict do nothing;
+  end if;
+end
+$parts$;
 
 create or replace function private.follow_battle_sets()
 returns trigger language plpgsql security definer set search_path = '' as $$
