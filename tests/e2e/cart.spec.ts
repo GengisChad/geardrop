@@ -246,35 +246,21 @@ test.describe("checkout", () => {
 });
 
 /**
- * Express checkout ("Paga subito") button — public gate tests.
- *
- * The gate runs against the mock provider (no STRIPE_SECRET_KEY), so the action will
- * refuse with a "pagamento non disponibile" message. The button itself must be visible
- * in the cart summary for a Hasbro-only cart, mirroring how "Vai al checkout" and the
- * place-order button report "ordini non ancora attivi" without Stripe configured.
+ * Express checkout ("Paga subito") on the public gate. The gate runs on the mock provider with
+ * no order backend and no Stripe key, so the quote is not orderable: the express button must not
+ * be offered at all (it would only lead to a refusal), while the cart keeps its normal path. The
+ * button's own logic (orderable carts, Poste home only, locked Takara/mixed plans, the Stripe
+ * session it opens) is covered by tests/unit/checkout-stripe-actions.test.ts and
+ * tests/unit/stripe-checkout.test.ts.
  */
 test.describe("express checkout button", () => {
-  test("'Paga subito' is visible in the cart summary for a Hasbro-only cart", async ({ page }) => {
+  test("is not offered while orders are not active", async ({ page }) => {
     await page.goto("/prodotto/cobalt-dragoon-2-60c");
     await buyPanel(page).getByTestId("add-to-cart").click();
     await page.goto("/carrello");
 
-    // The button appears in the desktop aside summary and, on mobile viewports, also in
-    // the sticky bar. Check the summary (always rendered regardless of viewport).
-    await expect(page.getByTestId("cart-summary").getByTestId("express-checkout")).toBeVisible();
-  });
-
-  test("clicking 'Paga subito' without Stripe configured shows an inline error", async ({ page }) => {
-    await page.goto("/prodotto/cobalt-dragoon-2-60c");
-    await buyPanel(page).getByTestId("add-to-cart").click();
-    await page.goto("/carrello");
-
-    // Without a Stripe key the action returns an error; the button must display it
-    // inline (role=alert) instead of navigating away, matching the "ordini non attivi"
-    // honesty pattern used elsewhere on the public gate.
-    await page.getByTestId("cart-summary").getByTestId("express-checkout").click();
-    await expect(page.getByTestId("express-checkout-error").first()).toBeVisible();
-    // The cart must survive: nothing was ordered.
-    await expect(page.getByTestId("cart-count")).toHaveText("1");
+    await expect(page.getByTestId("cart-line")).toHaveCount(1);
+    await expect(page.getByTestId("express-checkout")).toHaveCount(0);
+    await expect(page.getByTestId("express-checkout-error")).toHaveCount(0);
   });
 });
