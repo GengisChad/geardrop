@@ -79,7 +79,10 @@ grant select on public.battle_set_parts to authenticated;
 insert into public.battle_set_parts (set_product_id, part_product_id)
 select set_product.id, part.id
 from public.products as set_product
+-- Filter by organization so a slug shared across companies (Oryvenne) never yields a
+-- cross-company row that would break the composite FK added in 130500 (2026-10-12).
 join public.products as part on part.slug in ('impact-drake-9-60lr', 'hover-wyvern-3-85n', 'drop-attack-arena')
+  and part.organization_id = set_product.organization_id
 where set_product.slug = 'drop-attack-battle-set'
 on conflict do nothing;
 
@@ -257,7 +260,16 @@ declare
   link record;
   target integer;
 begin
-  select * into sealed from public.products where slug = 'drop-attack-battle-set' for update;
+  -- Scope to Gear Drop when the organization schema is present (PR #51, production);
+  -- otherwise fall back to the plain slug for CI (2026-10-12).
+  if to_regclass('public.organizations') is not null then
+    select * into sealed from public.products
+    where slug = 'drop-attack-battle-set'
+      and organization_id = (select id from public.organizations where slug = 'geardrop')
+    for update;
+  else
+    select * into sealed from public.products where slug = 'drop-attack-battle-set' for update;
+  end if;
   if not found then
     return;
   end if;

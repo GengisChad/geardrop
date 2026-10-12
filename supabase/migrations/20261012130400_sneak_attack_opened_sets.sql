@@ -72,7 +72,10 @@ $$;
 insert into public.battle_set_parts (set_product_id, part_product_id)
 select set_product.id, piece.id
 from public.products as set_product
+-- Filter by organization so a slug shared across companies (Oryvenne) never yields a
+-- cross-company row that would break the composite FK added in 130500 (2026-10-12).
 join public.products as piece on piece.slug in ('rampart-aegis-gb', 'cutter-shinobi-lf', 'sneak-attack-arena')
+  and piece.organization_id = set_product.organization_id
 where set_product.slug = 'sneak-attack-battle-set'
 on conflict do nothing;
 
