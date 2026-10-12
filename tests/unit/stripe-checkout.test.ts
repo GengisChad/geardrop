@@ -17,6 +17,7 @@ import {
   retrieveCheckoutSession,
   stripeCheckoutEnabled,
   type StripePriceRow,
+  type ExpressOrderRef,
 } from "@/lib/payments/stripe-checkout";
 
 const ORIGIN = "https://geardropshop.it";
@@ -278,5 +279,118 @@ describe("stripe checkout result", () => {
       { slug: "shadow-shinobi-1-80mn", quantity: 2 },
     ]);
     expect(checkoutLines(undefined)).toEqual([]);
+  });
+});
+
+// ----- express checkout session fields -----
+
+const expressKey = "9f8e7d6c-5b4a-4321-8765-a1b2c3d4e5f6";
+const expressOrderRef: ExpressOrderRef = {
+  idempotencyKey: expressKey,
+  lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }],
+};
+
+describe("express checkout session fields", () => {
+  it("omits customer_email and all payment_intent_data.shipping fields", async () => {
+    const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }], "standard");
+    const fields = buildCheckoutSessionFields(
+      { quote, order: expressOrderRef, origin: ORIGIN, express: true },
+      matchStripePrices(quote, catalogPrices)!,
+    );
+
+    expect(Object.keys(fields)).not.toContain("customer_email");
+    expect(Object.keys(fields).some((k) => k.startsWith("payment_intent_data[shipping]"))).toBe(false);
+  });
+
+  it("enables shipping address collection (Italy only) and phone collection", async () => {
+    const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }], "standard");
+    const fields = buildCheckoutSessionFields(
+      { quote, order: expressOrderRef, origin: ORIGIN, express: true },
+      matchStripePrices(quote, catalogPrices)!,
+    );
+
+    expect(fields["shipping_address_collection[allowed_countries][0]"]).toBe("IT");
+    expect(fields["phone_number_collection[enabled]"]).toBe("true");
+    expect(fields["metadata[express]"]).toBe("true");
+  });
+
+  it("sets shipping_method=standard and uses the Poste home method label and price", async () => {
+    const poste = SHIPPING_METHODS.find((m) => m.code === "standard")!;
+    const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }], "standard");
+    const fields = buildCheckoutSessionFields(
+      { quote, order: expressOrderRef, origin: ORIGIN, express: true },
+      matchStripePrices(quote, catalogPrices)!,
+    );
+
+    expect(fields["metadata[shipping_method]"]).toBe("standard");
+    expect(fields["shipping_options[0][shipping_rate_data][display_name]"]).toBe(poste.label);
+    expect(fields["shipping_options[0][shipping_rate_data][fixed_amount][amount]"]).toBe(poste.priceCents);
+  });
+
+  it("shows free shipping label above the threshold in express mode", async () => {
+    const poste = SHIPPING_METHODS.find((m) => m.code === "standard")!;
+    const quote = await quoteFor(
+      [{ slug: "drop-attack-battle-set", quantity: 2 }, { slug: "cobalt-dragoon-2-60c", quantity: 1 }],
+      "standard",
+    );
+    const fields = buildCheckoutSessionFields(
+      { quote, order: { ...expressOrderRef, lines: quote.lines }, origin: ORIGIN, express: true },
+      matchStripePrices(quote, catalogPrices)!,
+    );
+
+    expect(fields["shipping_options[0][shipping_rate_data][fixed_amount][amount]"]).toBe(0);
+    expect(fields["shipping_options[0][shipping_rate_data][display_name]"]).toBe(
+      `Spedizione gratuita · ${poste.label}`,
+    );
+  });
+
+  it("keeps the consignment promo-code rule: off when the cart holds a partner's piece", async () => {
+    // Takara piece: consignment rule applies; the test checks the field value only — the
+    // startExpressCheckout action refuses Takara carts before reaching the builder.
+    const quote = await quoteFor([{ slug: "ux-00-glory-valkyrie-lf", quantity: 1 }], "standard");
+    const fields = buildCheckoutSessionFields(
+      { quote, order: { idempotencyKey: expressKey, lines: [{ slug: "ux-00-glory-valkyrie-lf", quantity: 1 }] }, origin: ORIGIN, express: true },
+      matchStripePrices(quote, catalogPrices)!,
+    );
+
+    expect(fields["allow_promotion_codes"]).toBe("false");
+  });
+
+  it("carries pre-order metadata and custom text in express mode just as in standard mode", async () => {
+    const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }], "standard");
+    const preorderQuote: CartQuote = {
+      ...quote,
+      lines: quote.lines.map((line) => ({ ...line, stock: "pre-ordine" as const })),
+    };
+    const fields = buildCheckoutSessionFields(
+      { quote: preorderQuote, order: expressOrderRef, origin: ORIGIN, express: true },
+      matchStripePrices(preorderQuote, catalogPrices)!,
+    );
+
+    expect(fields["metadata[preorder]"]).toBe("cobalt-dragoon-2-60c x1");
+    expect(fields["custom_text[submit][message]"]).toContain("In pre-ordine");
+  });
+
+  it("keeps all common fields: mode, locale, reference, line_items, success/cancel URLs", async () => {
+    const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }], "standard");
+    const fields = buildCheckoutSessionFields(
+      { quote, order: expressOrderRef, origin: ORIGIN, express: true },
+      matchStripePrices(quote, catalogPrices)!,
+    );
+    const reference = orderReference(expressKey);
+
+    expect(fields).toMatchObject({
+      mode: "payment",
+      locale: "it",
+      client_reference_id: reference,
+      "metadata[order_ref]": reference,
+      "metadata[shipping_method]": "standard",
+      "payment_intent_data[description]": `Ordine ${reference} · GEAR//DROP`,
+      "payment_intent_data[metadata][order_ref]": reference,
+      success_url: `${ORIGIN}/checkout/successo?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${ORIGIN}/carrello`,
+      "line_items[0][price]": "price_cobalt-dragoon-2-60c",
+      "line_items[0][quantity]": 1,
+    });
   });
 });

@@ -23,7 +23,8 @@ vi.mock("@/lib/payments/stripe-checkout", async (importOriginal) => ({
 vi.mock("next/headers", () => ({ headers: async () => new Headers({ origin: originMock() }) }));
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: vi.fn() }));
 
-const { requestCartQuote, submitOrder } = await import("@/app/(storefront)/checkout/actions");
+const { requestCartQuote, submitOrder, startExpressCheckout } = await import("@/app/(storefront)/checkout/actions");
+const { EXPRESS_CHECKOUT_LOCKED_MESSAGE } = await import("@/lib/payments/express-checkout");
 
 const order = {
   contact: {
@@ -113,5 +114,97 @@ describe("checkout with Stripe and no order database", () => {
       message: checkoutErrorMessage({ message: CHECKOUT_UNAVAILABLE }),
     });
     expect(createStripeCheckoutMock).not.toHaveBeenCalled();
+  });
+});
+
+const IDEMPOTENCY_KEY = "9f8e7d6c-5b4a-4321-8765-a1b2c3d4e5f6";
+const EXPRESS_SESSION_URL = "https://checkout.stripe.com/c/pay/cs_live_express_123";
+
+describe("startExpressCheckout", () => {
+  it("creates a Stripe session and returns the redirect URL for a Hasbro-only cart", async () => {
+    createStripeCheckoutMock.mockResolvedValue({ ok: true, url: EXPRESS_SESSION_URL });
+
+    const result = await startExpressCheckout({
+      lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }],
+      idempotencyKey: IDEMPOTENCY_KEY,
+    });
+
+    expect(result).toEqual({ ok: true, redirectUrl: EXPRESS_SESSION_URL });
+    const [input] = createStripeCheckoutMock.mock.calls[0]!;
+    // The session must declare express mode
+    expect(input.express).toBe(true);
+    // Stripe, not the site, collects the address: no contact in the order
+    expect(input.order).not.toHaveProperty("contact");
+    // Quoted with Poste home, which is the only express-compatible method
+    expect(input.quote.shippingCode).toBe("standard");
+  });
+
+  it("passes the idempotency key through to the session builder", async () => {
+    createStripeCheckoutMock.mockResolvedValue({ ok: true, url: EXPRESS_SESSION_URL });
+
+    await startExpressCheckout({
+      lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }],
+      idempotencyKey: IDEMPOTENCY_KEY,
+    });
+
+    const [input] = createStripeCheckoutMock.mock.calls[0]!;
+    expect(input.order.idempotencyKey).toBe(IDEMPOTENCY_KEY);
+  });
+
+  it("refuses an unoorderable cart (mixed pre-orders, line issues, etc.)", async () => {
+    // A quantity beyond the allocation marks the line as having an issue, making it non-orderable.
+    const scarce = PRODUCTS.find((p) => (p.availableQuantity ?? Infinity) < MAX_QUANTITY_PER_LINE)!;
+
+    const result = await startExpressCheckout({
+      lines: [{ slug: scarce.slug, quantity: (scarce.availableQuantity ?? 0) + 1 }],
+      idempotencyKey: IDEMPOTENCY_KEY,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(createStripeCheckoutMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses a Takara-only cart (locked to partner Poste-point, not standard)", async () => {
+    // The Takara piece triggers the partner shipping plan which has no "standard" method.
+    const result = await startExpressCheckout({
+      lines: [{ slug: "ux-00-glory-valkyrie-lf", quantity: 1 }],
+      idempotencyKey: IDEMPOTENCY_KEY,
+    });
+
+    expect(result).toEqual({ ok: false, message: EXPRESS_CHECKOUT_LOCKED_MESSAGE });
+    expect(createStripeCheckoutMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses an invalid cart payload (malformed slug or invalid key)", async () => {
+    expect(
+      await startExpressCheckout({ lines: [{ slug: "INVALID SLUG!", quantity: 1 }], idempotencyKey: IDEMPOTENCY_KEY }),
+    ).toMatchObject({ ok: false });
+    expect(
+      await startExpressCheckout({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }], idempotencyKey: "not-a-uuid" }),
+    ).toMatchObject({ ok: false });
+    expect(createStripeCheckoutMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses when Stripe is not configured", async () => {
+    stripeEnabledMock.mockReturnValue(false);
+
+    const result = await startExpressCheckout({
+      lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }],
+      idempotencyKey: IDEMPOTENCY_KEY,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(createStripeCheckoutMock).not.toHaveBeenCalled();
+  });
+
+  it("surfaces the Stripe error message on session creation failure", async () => {
+    createStripeCheckoutMock.mockResolvedValue({ ok: false, message: "Il pagamento non è disponibile." });
+
+    const result = await startExpressCheckout({
+      lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }],
+      idempotencyKey: IDEMPOTENCY_KEY,
+    });
+
+    expect(result).toEqual({ ok: false, message: "Il pagamento non è disponibile." });
   });
 });
