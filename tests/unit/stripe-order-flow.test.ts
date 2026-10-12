@@ -257,9 +257,9 @@ describe("paid checkout mapping", () => {
     expect(checkout?.shipping.city).toBe("Trieste");
   });
 
-  it("reads an express session within Stripe's four expansion levels", async () => {
-    // loadPaidCheckout now requests expand[]=collected_information; the fake Stripe client
-    // must accept that expansion without throwing the 4-level depth error.
+  it("reads an express session without asking Stripe to expand its address", async () => {
+    // collected_information arrives with the session by default and is not expandable: an
+    // expand[] for it would fail the read of every paid order, so none is requested.
     const requested: string[] = [];
     const expressSession: StripeSessionForOrder = {
       ...paidSession,
@@ -277,6 +277,8 @@ describe("paid checkout mapping", () => {
         for (const expand of new URLSearchParams(path.split("?")[1] ?? "").getAll("expand[]")) {
           if (expand.split(".").length > 4)
             throw new Error(`Stripe GET → 400: You cannot expand more than 4 levels of a property. Property: ${expand}`);
+          if (expand.startsWith("collected_information") || expand.startsWith("shipping_details"))
+            throw new Error(`Stripe GET → 400: This property cannot be expanded (${expand}).`);
         }
         const route = path.split("?")[0]!;
         if (route === `/checkout/sessions/${paidSession.id}`) return expressSession as T;
@@ -288,10 +290,10 @@ describe("paid checkout mapping", () => {
       },
     };
     const checkout = await loadPaidCheckout(paidSession.id, expressStripe);
-    // No error thrown = expansion levels are within limit
     expect(checkout?.reference).toBe("GD-FL3NHC8W");
-    // collected_information.shipping_details is a single level — well within the 4-level limit
-    expect(requested.some((r) => r.includes("expand%5B%5D=collected_information") || r.includes("expand[]=collected_information"))).toBe(true);
+    // payment_intent.shipping wins when present; the express address is the fallback.
+    expect(checkout?.shipping.city).toBeTruthy();
+    expect(requested.some((r) => r.includes("collected_information"))).toBe(false);
   });
 
   it("resolves every catalogue product from its Stripe id", () => {

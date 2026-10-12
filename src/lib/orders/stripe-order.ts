@@ -257,10 +257,11 @@ export async function loadPaidCheckout(sessionId: string, stripe: StripeClient):
   // payment_intent carries the shipping address, the breakdown the discounts. Stripe expands at
   // most four levels deep, so the promotion code inside a discount stays an id and is read on its
   // own: asking for it inline fails the whole read, and with it every paid order.
-  // collected_information is added for express sessions (Stripe collected the address); on
-  // form-based sessions it is absent or empty, which is harmless.
+  // An express session's address (collected_information / shipping_details) comes back with the
+  // session by default. It is not an expandable field: asking to expand it would fail the read,
+  // and with it every paid order, so nothing is added to the expansions here.
   const session = await stripe.get<StripeSessionForOrder>(
-    `/checkout/sessions/${sessionId}?expand[]=payment_intent&expand[]=total_details.breakdown&expand[]=collected_information`,
+    `/checkout/sessions/${sessionId}?expand[]=payment_intent&expand[]=total_details.breakdown`,
   );
   if (!session) return null;
   const items = await stripe.get<{ readonly data: readonly StripeLineItemForOrder[] }>(
