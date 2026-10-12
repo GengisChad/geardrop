@@ -388,7 +388,7 @@ describe("express checkout session fields", () => {
       "payment_intent_data[description]": `Ordine ${reference} · GEAR//DROP`,
       "payment_intent_data[metadata][order_ref]": reference,
       success_url: `${ORIGIN}/checkout/successo?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${ORIGIN}/checkout`,
+      cancel_url: `${ORIGIN}/carrello`,
       "line_items[0][price]": "price_cobalt-dragoon-2-60c",
       "line_items[0][quantity]": 1,
     });

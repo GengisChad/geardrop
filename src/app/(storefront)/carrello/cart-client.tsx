@@ -272,7 +272,11 @@ export function CartClient({ shelfProducts }: CartClientProps) {
               data-testid="express-checkout"
               disabled={expressState.pending}
               onClick={handleExpressCheckout}
-              className="gd-display gd-chamfer inline-flex w-full items-center justify-center gap-2 bg-violet py-2.5 text-small font-bold tracking-[0.08em] text-white transition-[background-color,opacity] duration-200 hover:bg-[#8d58ff] disabled:cursor-not-allowed disabled:bg-grey-300 disabled:text-grey-600"
+              // py-3 (24px) + text-small line-height (18px) = 42px; min-h-[44px] ensures WCAG AA
+              // 44px touch-target minimum (PRODUCT.md). gd-chamfer-lg matches the desktop button
+              // and every other Button secondary instance — two chamfer sizes on the same CTA
+              // would break the Holo Drop brand mark (2026-10-12, owner finding).
+              className="gd-display gd-chamfer-lg inline-flex min-h-[44px] w-full items-center justify-center gap-2 bg-violet py-3 text-small font-bold tracking-[0.08em] text-white transition-[background-color,opacity] duration-200 hover:bg-[#8d58ff] disabled:cursor-not-allowed disabled:bg-grey-300 disabled:text-grey-600"
             >
               {expressState.pending ? (
                 <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
@@ -281,6 +285,12 @@ export function CartClient({ shelfProducts }: CartClientProps) {
               )}
               Paga subito
             </button>
+            {/* Honest disclosure: express locks delivery to Poste a casa; buyers who prefer InPost
+                must use the regular checkout. Mirrors the desktop sidebar copy (PRODUCT.md:
+                "A promise the shop cannot keep is a bug", 2026-10-12, owner finding). */}
+            <p className="mt-1 text-center text-[0.6875rem] text-grey-600">
+              Solo Poste a casa · per InPost usa il checkout normale.
+            </p>
             {expressState.error ? (
               <p
                 role="alert"

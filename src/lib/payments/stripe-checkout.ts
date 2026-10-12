@@ -201,6 +201,10 @@ export function buildCheckoutSessionFields(
     fields["shipping_address_collection[allowed_countries][0]"] = "IT";
     fields["phone_number_collection[enabled]"] = "true";
     fields["metadata[express]"] = "true";
+    // Override the shared cancel_url: express sessions originate from the cart, so cancelling
+    // should bring the buyer back to /carrello, not to the checkout form they deliberately
+    // bypassed (2026-10-12, owner finding).
+    fields["cancel_url"] = `${origin}/carrello`;
   }
 
   quote.lines.forEach((line, index) => {
