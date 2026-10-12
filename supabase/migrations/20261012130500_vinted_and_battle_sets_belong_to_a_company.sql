@@ -36,10 +36,12 @@ begin
   -- -----------------------------------------------------------------------
   -- 1a. inbound_emails: organization_id — always Gear Drop.
   -- -----------------------------------------------------------------------
-  alter table public.inbound_emails
-    add column organization_id bigint
-      not null default geardrop_id
-      references public.organizations(id) on delete restrict;
+  -- DDL takes no PL/pgSQL variables: the company id is spelled into the statement. A dry run
+  -- against production (2026-10-12) failed on "default geardrop_id" as a column reference.
+  execute format(
+    'alter table public.inbound_emails add column organization_id bigint not null default %s references public.organizations(id) on delete restrict',
+    geardrop_id
+  );
   -- Column backfilled via the default; drop it so future rows must supply it explicitly
   -- (or rely on the BEFORE INSERT trigger below).
   alter table public.inbound_emails alter column organization_id drop default;
@@ -47,10 +49,12 @@ begin
   -- -----------------------------------------------------------------------
   -- 1b. vinted_sales: organization_id — always Gear Drop.
   -- -----------------------------------------------------------------------
-  alter table public.vinted_sales
-    add column organization_id bigint
-      not null default geardrop_id
-      references public.organizations(id) on delete restrict;
+  -- DDL takes no PL/pgSQL variables: the company id is spelled into the statement. A dry run
+  -- against production (2026-10-12) failed on "default geardrop_id" as a column reference.
+  execute format(
+    'alter table public.vinted_sales add column organization_id bigint not null default %s references public.organizations(id) on delete restrict',
+    geardrop_id
+  );
   alter table public.vinted_sales alter column organization_id drop default;
 
   -- -----------------------------------------------------------------------
