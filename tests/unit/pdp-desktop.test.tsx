@@ -82,14 +82,27 @@ describe("DeliverySummary — consignment (Takara)", () => {
   });
 });
 
-describe("DeliverySummary — release pre-order", () => {
-  it("shows the release delivery copy, not the 10/15-day copy", () => {
-    const html = renderToStaticMarkup(
+describe("DeliverySummary — what every buyer reads next to the button", () => {
+  const render = (product: (typeof PRODUCTS)[number]) =>
+    renderToStaticMarkup(
       <Providers>
-        <DeliverySummary product={releasePreorder} />
+        <DeliverySummary product={product} />
       </Providers>,
     );
-    expect(html).toContain("uscita Hasbro");
-    expect(html).not.toContain("10/15 giorni lavorativi");
+
+  it("says payment happens on Stripe, for shop and partner pieces alike", () => {
+    expect(render(hasbro)).toContain("Pagamento sicuro sulla pagina di Stripe");
+    expect(render(consignment)).toContain("Pagamento sicuro sulla pagina di Stripe");
+  });
+
+  it("gives a pre-order its shipping prices, leaving the wait to the status panel above", () => {
+    const html = render(releasePreorder);
+    expect(html).not.toContain("uscita Hasbro");
+    expect(html).toContain(eur(inpost.priceCents));
+    expect(html).toContain(eur(poste.priceCents));
+  });
+
+  it("promises no 30-day return on a partner piece", () => {
+    expect(render(consignment)).not.toContain("30 giorni");
   });
 });

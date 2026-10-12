@@ -12,7 +12,6 @@ import { StickyBuyBar } from "@/components/product/sticky-buy-bar";
 import { VariantPicker } from "@/components/product/variant-picker";
 import { ProductCarousel } from "@/components/product/product-carousel";
 import { Rating } from "@/components/ui/rating";
-import { TrustBarLight } from "@/components/home/trust";
 import { GaEvent } from "@/components/analytics/ga-event";
 import { TrackPageView } from "@/components/funnel/track-page-view";
 import { gaItem } from "@/lib/analytics/google";
@@ -21,7 +20,7 @@ import { bundlesContaining } from "@/lib/commerce/bundles";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { familyColours, familyLead } from "@/lib/commerce/variants";
 import { formatPrice } from "@/lib/format";
-import { BLADE_TYPE_LABEL, CATEGORY_LABEL, bundleNoun, bundlePacks, preorderDelivery } from "@/lib/labels";
+import { BLADE_TYPE_LABEL, CATEGORY_LABEL, bundleNoun, bundlePacks } from "@/lib/labels";
 import { absoluteUrl, breadcrumbJsonLd, jsonLd, productDescription, productJsonLd, productTitle } from "@/lib/seo";
 
 type Params = { slug: string };
@@ -244,7 +243,6 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
 
       {offer ? <BundleOffer bundle={offer} current={product} partners={partners} /> : null}
 
-      <TrustBarLight className="pb-4" {...(product.stock === "pre-ordine" ? { delivery: preorderDelivery(product.releasePreorder) } : {})} />
 
       <ProductDetails product={product} />
 
