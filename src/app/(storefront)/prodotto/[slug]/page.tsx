@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { BadgeCheck, Boxes, Crosshair, Target, Zap } from "lucide-react";
+import { BadgeCheck, Boxes, Crosshair, Target, Truck, Zap } from "lucide-react";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { BundleContents } from "@/components/product/bundle-contents";
+import { DeliverySummary } from "@/components/product/delivery-summary";
 import { BundleOffer } from "@/components/product/bundle-offer";
 import { Gallery } from "@/components/product/gallery";
 import { BuyPanel } from "@/components/product/buy-panel";
@@ -103,7 +104,10 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
         />
       </div>
 
-      <div className="mx-auto grid max-w-[1400px] gap-8 px-4 py-6 sm:px-6 lg:grid-cols-2 lg:gap-12 lg:py-10">
+      {/* Gallery gets the flexible share; buy column is capped at 540 px (xl: 580 px) so it
+          never dominates the packshot on wide viewports. Gallery is made sticky inside its own
+          component; buy column scrolls normally. (owner, 2026-10-12) */}
+      <div className="mx-auto grid max-w-[1400px] gap-8 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,540px)] lg:gap-12 lg:py-10 xl:grid-cols-[minmax(0,1fr)_minmax(0,580px)]">
         <Gallery
           images={product.images}
           slug={product.slug}
@@ -128,11 +132,16 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
             {product.name}
           </h1>
 
-          {/* Consignment items are shipped by our partner, not from our shelf. */}
+          {/* Consignment items are shipped by our partner, not from our shelf.
+              Styled like a status line — icon + text in a subtle tinted strip — so it
+              reads with the same weight as the availability badge. (owner, 2026-10-12) */}
           {product.consignment ? (
-            <p className="mt-2 text-[0.6875rem] text-grey-600" data-testid="consignment-note">
-              Spedito dal nostro partner · consegna in 2-6 giorni lavorativi
-            </p>
+            <div className="mt-3 flex items-center gap-2.5 rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2" data-testid="consignment-note">
+              <Truck className="size-3.5 shrink-0 text-violet-soft" aria-hidden="true" />
+              <p className="text-[0.6875rem] text-grey-600">
+                Spedito dal nostro partner · consegna in 2-6 giorni lavorativi
+              </p>
+            </div>
           ) : null}
 
           {product.bundleOf ? (
@@ -184,15 +193,39 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
             <BuyPanel product={product} />
           </div>
 
-          <p className="mt-8 max-w-lg text-small leading-relaxed text-grey-600">{product.description}</p>
+          {/* Delivery block: shipping options, free threshold and return policy — or the partner
+              timing for consignment / the pre-order wait. Placed right under the CTA so the buyer
+              knows cost and timing before scrolling further. (owner, 2026-10-12) */}
+          <DeliverySummary product={product} />
 
-          <ul className="mt-6 flex flex-col gap-3.5">
+          {/* Box contents — inline compact list so the buyer sees what is in the box without
+              opening the "Contenuto della confezione" tab. (owner, 2026-10-12) */}
+          {product.boxContents.length > 0 ? (
+            <div data-testid="box-contents-inline" className="mt-4">
+              <p className="gd-display mb-2 text-[0.6875rem] font-bold tracking-wider text-grey-600">
+                Nella scatola
+              </p>
+              <ul className="flex flex-col gap-1.5">
+                {product.boxContents.map((item) => (
+                  <li key={item} className="flex items-center gap-2 text-small text-grey-600">
+                    <span className="size-1.5 shrink-0 rounded-full bg-lime" aria-hidden="true" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {/* Feature highlights — compact on desktop since delivery info now sits above.
+              The description lives in the Descrizione tab (product-details.tsx) and is
+              no longer duplicated here. (owner, 2026-10-12) */}
+          <ul className="mt-5 flex flex-col gap-2.5">
             {product.features.map((feature, index) => {
               const Icon = FEATURE_ICONS[index % FEATURE_ICONS.length] ?? Target;
               return (
-                <li key={feature.title} className="flex items-start gap-3">
-                  <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-violet-tint">
-                    <Icon className="size-4 text-violet-soft" strokeWidth={2} aria-hidden="true" />
+                <li key={feature.title} className="flex items-start gap-2.5">
+                  <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-violet-tint">
+                    <Icon className="size-3.5 text-violet-soft" strokeWidth={2} aria-hidden="true" />
                   </span>
                   <span>
                     <span className="gd-display block text-[0.6875rem] font-bold tracking-wider text-graphite">

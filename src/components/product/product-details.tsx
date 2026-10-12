@@ -68,7 +68,7 @@ export function ProductDetails({ product }: { product: Product }) {
   const [active, setActive] = useState(panels[0]?.id ?? "");
 
   return (
-    <section className="mx-auto max-w-[1400px] px-4 py-10 sm:px-6">
+    <section data-testid="product-details" className="mx-auto max-w-[1400px] px-4 py-10 sm:px-6">
       {/* Desktop: tabs */}
       <div className="gd-glass-panel hidden rounded-[--radius-glass] lg:block">
         <div role="tablist" aria-label="Dettagli prodotto" className="flex border-b border-grey-200">
@@ -108,18 +108,19 @@ export function ProductDetails({ product }: { product: Product }) {
         )}
       </div>
 
-      {/* Mobile: accordion */}
+      {/* Mobile: accordion — Descrizione opens by default so the buyer reads it without a tap
+          (the description was removed from the buy column on 2026-10-12, owner). */}
       <div className="flex flex-col gap-3 lg:hidden">
         {panels.map((panel) => (
-          <AccordionItem key={panel.id} label={panel.label} content={panel.content} />
+          <AccordionItem key={panel.id} label={panel.label} content={panel.content} initialOpen={panel.id === "descrizione"} />
         ))}
       </div>
     </section>
   );
 }
 
-function AccordionItem({ label, content }: { label: string; content: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
+function AccordionItem({ label, content, initialOpen = false }: { label: string; content: React.ReactNode; initialOpen?: boolean }) {
+  const [open, setOpen] = useState(initialOpen);
   return (
     <div className="gd-glass-panel overflow-hidden rounded-[--radius-glass]">
       <button
