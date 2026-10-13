@@ -28,7 +28,7 @@ export function DeliverySummary({ product }: DeliverySummaryProps) {
     </>
   );
   const free: Row = { key: "free", icon: Truck, tone: "text-lime", text: `Gratis da ${eur(FREE_SHIPPING_THRESHOLD)}` };
-  const stripe: Row = { key: "stripe", icon: Lock, tone: "text-violet-soft", text: "Pagamento sicuro sulla pagina di Stripe" };
+  const stripe: Row = { key: "stripe", icon: Lock, tone: "text-violet-soft", text: "Pagamento sicuro su Stripe: carta, PayPal, Apple Pay, Google Pay" };
 
   const rows: readonly Row[] = product.consignment
     ? [

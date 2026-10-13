@@ -198,7 +198,7 @@ describe("the withdrawal clause", () => {
   it("refunds delivery up to the cheapest InPost Locker rate, as the Codice del consumo allows", async () => {
     const { LEGAL_PAGES } = await import("@/data/pages");
     const text = JSON.stringify(LEGAL_PAGES);
-    expect(text).toContain("fino al costo della consegna meno cara che offriamo (InPost Locker, 4,90 €)");
+    expect(text).toContain("fino al costo della consegna meno cara proposta per il tuo ordine (di norma InPost Locker, 4,90 €)");
     expect(text).toContain("art. 56 del Codice del consumo");
   });
 });

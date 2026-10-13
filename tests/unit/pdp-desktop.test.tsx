@@ -98,8 +98,8 @@ describe("DeliverySummary — what every buyer reads next to the button", () => 
     );
 
   it("says payment happens on Stripe, for shop and partner pieces alike", () => {
-    expect(render(hasbro)).toContain("Pagamento sicuro sulla pagina di Stripe");
-    expect(render(consignment)).toContain("Pagamento sicuro sulla pagina di Stripe");
+    expect(render(hasbro)).toContain("Pagamento sicuro su Stripe: carta, PayPal, Apple Pay, Google Pay");
+    expect(render(consignment)).toContain("Pagamento sicuro su Stripe: carta, PayPal, Apple Pay, Google Pay");
   });
 
   it("gives a pre-order its shipping prices, leaving the wait to the status panel above", () => {

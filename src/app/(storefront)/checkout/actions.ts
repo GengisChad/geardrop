@@ -160,7 +160,8 @@ export type ExpressCheckoutResult =
   | { readonly ok: false; readonly message: string };
 
 /**
- * Starts a Stripe Checkout Session for express payment (Apple Pay / Google Pay / card),
+ * Starts a Stripe Checkout Session for express payment (card, PayPal, Apple Pay, Google Pay and
+ * whatever else is enabled in the Stripe Dashboard: the session uses dynamic payment methods),
  * skipping the shop's own contact and address form.
  *
  * Stripe collects the shipping address and phone on its hosted page. The order lands in

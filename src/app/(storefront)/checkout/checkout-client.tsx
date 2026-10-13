@@ -15,7 +15,7 @@ import { useCartQuote } from "@/lib/use-cart-quote";
 import { useCart } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/format";
 import { cartDelivery, preorderNote } from "@/lib/labels";
-import { checkoutSchema, PICKUP_POINT_MESSAGE, pickupPointMissing, type CheckoutValues } from "@/lib/checkout-schema";
+import { checkoutSchema, PICKUP_POINT_MESSAGE, pickupPointCopy, pickupPointMissing, type CheckoutValues } from "@/lib/checkout-schema";
 import { INPOST_POINT_FINDER_URL, POSTE_POINT_FINDER_URL, shippingMethodByCode } from "@/data/catalog";
 import { trackEvent } from "@/lib/funnel";
 import { gaItem, sendGaEvent } from "@/lib/analytics/google";
@@ -392,7 +392,8 @@ export function CheckoutClient() {
                 <label
                   key={option.code}
                   className={cn(
-                    "flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 transition-colors",
+                    // Three carriers since 2026-10-13: an odd last card spans the row instead of leaving a hole.
+                    "flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 transition-colors sm:odd:last:col-span-2",
                     activeShipping === option.code ? "border-violet bg-violet-tint" : "border-grey-300 hover:border-grey-400",
                   )}
                 >
@@ -415,17 +416,10 @@ export function CheckoutClient() {
             )}
           </div>
 
-          {/* Pickup point: InPost point/Locker or Poste Punto Poste/Locker. */}
+          {/* Pickup point: InPost Locker, InPost punto di ritiro or the partner's Punto Poste/Locker. */}
           {shippingMethodByCode(activeShipping)?.pickupPoint ? (
             <Field
-              label={
-                // 2026-10-13: split inpost-locker / inpost-point radios need distinct labels.
-                shippingMethodByCode(activeShipping)?.carrier === "poste"
-                  ? "Punto Poste o Locker"
-                  : shippingMethodByCode(activeShipping)?.code === "inpost-locker"
-                  ? "Locker InPost"
-                  : "Punto di ritiro InPost"
-              }
+              label={pickupPointCopy(shippingMethodByCode(activeShipping)).label}
               htmlFor="pickupPoint"
               error={errors.pickupPoint?.message}
               className="mt-4"
@@ -433,14 +427,7 @@ export function CheckoutClient() {
               <TextInput
                 id="pickupPoint"
                 autoComplete="off"
-                placeholder={
-                  // 2026-10-13: code-aware placeholder mirrors the split radios above.
-                  shippingMethodByCode(activeShipping)?.code === "inpost-locker"
-                    ? "Es. codice o nome del Locker"
-                    : shippingMethodByCode(activeShipping)?.carrier === "inpost"
-                    ? "Es. nome o indirizzo del punto"
-                    : "Es. codice del Locker o indirizzo del punto"
-                }
+                placeholder={pickupPointCopy(shippingMethodByCode(activeShipping)).placeholder}
                 hasError={Boolean(errors.pickupPoint)}
                 {...register("pickupPoint", {
                   validate: (v) => !pickupPointMissing(activeShipping, v) || PICKUP_POINT_MESSAGE,
