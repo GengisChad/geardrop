@@ -294,7 +294,7 @@ export const LEGAL_PAGES = {
           "Vercel Inc. (Stati Uniti), per l'hosting del sito e le statistiche aggregate e anonime di visita.",
           "Supabase, Inc. (Stati Uniti), per la gestione degli ordini, degli account, delle giacenze e delle richieste di notifica disponibilità.",
           "Resend Inc. (Stati Uniti), per l'invio delle email relative ad ordini, spedizioni e notifiche di disponibilità.",
-          "Google Ireland Limited (Irlanda), per le statistiche di Google Analytics e, se accetti il marketing, per le pubblicità di Google Ads, solo con il tuo consenso.",
+          "Google Ireland Limited (Irlanda), per le statistiche di Google Analytics e, se accetti il marketing, per le pubblicità di Google Ads, solo con il tuo consenso. Se dopo un acquisto scegli di partecipare al sondaggio Google Customer Reviews, Google riceve la tua email, il numero d'ordine e la data di consegna prevista per mandarti il sondaggio: il programma è di Google e segue la sua informativa privacy. Senza quel clic non riceve nulla.",
           "L'email lasciata per ricevere una notifica di disponibilità è usata esclusivamente per quella notifica e viene eliminata dopo l'invio o entro sei mesi dalla registrazione. Il tracciamento di un ordine tramite numero d'ordine ed email mostra unicamente lo stato dell'ordine e il numero di spedizione.",
           "Corrieri, per la consegna, e consulenti fiscali, per gli adempimenti contabili.",
           "I fornitori che trattano dati per nostro conto agiscono come responsabili del trattamento ai sensi dell'art. 28 GDPR.",

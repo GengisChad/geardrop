@@ -12,12 +12,18 @@ const RELEASE_WORKING_DAYS = 20;
  * the delay the product page states, counted in working days from today.
  */
 export function availabilityDate(product: Pick<Product, "releasePreorder">, now: Date = new Date()): string {
-  const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  let remaining = product.releasePreorder ? RELEASE_WORKING_DAYS : PREORDER_WORKING_DAYS;
+  const date = addWorkingDays(now, product.releasePreorder ? RELEASE_WORKING_DAYS : PREORDER_WORKING_DAYS);
+  return `${date.toISOString().slice(0, 10)}T00:00:00Z`;
+}
+
+/** Midnight UTC of the day `days` working days (Monday to Friday) after `from`. */
+export function addWorkingDays(from: Date, days: number): Date {
+  const date = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate()));
+  let remaining = days;
   while (remaining > 0) {
     date.setUTCDate(date.getUTCDate() + 1);
     const day = date.getUTCDay();
     if (day !== 0 && day !== 6) remaining -= 1;
   }
-  return `${date.toISOString().slice(0, 10)}T00:00:00Z`;
+  return date;
 }

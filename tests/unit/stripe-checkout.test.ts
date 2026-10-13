@@ -270,6 +270,7 @@ describe("stripe checkout result", () => {
         { slug: "cobalt-dragoon-2-60c", quantity: 1 },
         { slug: "shadow-shinobi-1-80mn", quantity: 2 },
       ],
+      preorderSlugs: [],
     });
   });
 
