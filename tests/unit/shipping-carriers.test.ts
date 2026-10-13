@@ -173,6 +173,19 @@ describe("what Google is told about shipping", () => {
     // Takara Tomy pieces ship from the partner by one route; the rest offer all three Hasbro carriers.
     for (const chunk of items) expect(shipping(chunk)).toHaveLength(chunk.includes("<g:brand>Takara Tomy</g:brand>") ? 1 : 3);
   }, 60_000);
+
+  it("files every item under Battle Tops or Battle Top Accessories, never left to Google to guess", async () => {
+    const { GET } = await import("@/app/google-merchant.xml/route");
+    const xml = await (await GET()).text();
+    const items = xml.split("<item>").slice(1);
+    const category = (id: string) =>
+      items.find((chunk) => chunk.includes(`<g:id>${id}</g:id>`))?.match(/<g:google_product_category>(\d+)<\/g:google_product_category>/)?.[1];
+    for (const chunk of items) expect(chunk).toMatch(/<g:google_product_category>(6329|6794)<\/g:google_product_category>/);
+    expect(category("soar-phoenix-9-60gf")).toBe("6329"); // a top
+    expect(category("kit-arena-drop-completo")).toBe("6329"); // a kit built on tops
+    expect(category("drop-attack-battle-set")).toBe("6794"); // the stadium set
+    expect(category("porta-deck-giallo")).toBe("6794"); // a deck case, not a skateboard deck
+  }, 60_000);
 });
 
 describe("the shipping email", () => {
