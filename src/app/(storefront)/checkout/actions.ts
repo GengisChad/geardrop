@@ -204,7 +204,7 @@ export async function startExpressCheckout(input: ExpressCheckoutInput): Promise
     const checkout = await createStripeCheckout(
       {
         quote,
-        order: { idempotencyKey: parsed.data.idempotencyKey, lines: parsed.data.lines },
+        order: { idempotencyKey: parsed.data.idempotencyKey, lines: parsed.data.lines, attribution: parsed.data.attribution },
         origin: await checkoutOrigin(),
         express: true,
       },

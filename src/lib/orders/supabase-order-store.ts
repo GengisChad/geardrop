@@ -37,6 +37,21 @@ export function createSupabaseOrderStore(client = createPrivilegedSupabaseClient
       });
       const row = result.data?.[0];
       if (result.error || !row) throw new Error(`record_stripe_checkout_order: ${result.error?.message ?? "no row"}`);
+      if (checkout.attribution) {
+        // A separate write rather than another RPC argument: the channel is a label next to the
+        // order, and losing it must never lose the order, which is already safely recorded here.
+        const visit = checkout.attribution;
+        const tagged = await client
+          .from("orders")
+          .update({
+            attribution_source: visit.source,
+            attribution_medium: visit.medium,
+            attribution_campaign: visit.campaign ?? null,
+            attribution_landing: visit.landing ?? null,
+          })
+          .eq("id", row.order_id);
+        if (tagged.error) console.error("[orders] channel not saved:", tagged.error.message);
+      }
       // One order line per checkout line, written in the same order. The order is already safe,
       // so an unreadable split only costs the email its pre-order flags, never the notification.
       const items = await client.from("order_items").select("preorder_quantity").eq("order_id", row.order_id).order("id");

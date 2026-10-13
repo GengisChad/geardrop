@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { visitSourceSchema } from "@/lib/attribution";
 import { shippingMethodByCode } from "@/data/catalog";
 import { MAX_QUANTITY_PER_LINE } from "@/lib/commerce/limits";
 
@@ -90,6 +91,8 @@ export const placeOrderSchema = z.object({
   couponCode: z.string().trim().max(80).optional(),
   /** Stable for the life of one checkout attempt, so a retry cannot double-order. */
   idempotencyKey: z.uuid(),
+  /** Channel of the visit (see lib/attribution). Dropped, never rejected, when malformed. */
+  attribution: visitSourceSchema,
 });
 
 export type PlaceOrderInput = z.infer<typeof placeOrderSchema>;
@@ -120,6 +123,7 @@ export const expressCheckoutSchema = z.object({
   lines: placeOrderSchema.shape.lines,
   /** Fresh UUID per attempt: prevents double-redirects on accidental double-taps. */
   idempotencyKey: placeOrderSchema.shape.idempotencyKey,
+  attribution: visitSourceSchema,
 });
 
 export type ExpressCheckoutInput = z.infer<typeof expressCheckoutSchema>;
