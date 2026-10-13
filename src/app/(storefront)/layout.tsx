@@ -1,5 +1,6 @@
 import { CookieConsent } from "@/components/analytics/cookie-consent";
 import { StorefrontAnalytics } from "@/components/analytics/storefront-analytics";
+import { VisitSource } from "@/components/analytics/visit-source";
 import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
@@ -24,6 +25,8 @@ export default async function StorefrontLayout({ children }: { children: React.R
       <BottomTabBar />
       <StorefrontAnalytics enabled={analyticsEnabled} />
       <CookieConsent enabled={googleAnalyticsEnabled} />
+      {/* Not tied to cookie consent: it keeps a channel label for the order, not an identifier. */}
+      <VisitSource />
     </>
   );
 }

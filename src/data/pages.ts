@@ -259,7 +259,7 @@ export const LEGAL_PAGES = {
           "Ordine: nome, cognome, email, telefono, indirizzo di spedizione, note per il corriere, prodotti e importi.",
           "Pagamento: esito, metodo usato e riferimento della transazione. I dati completi della carta sono trattati esclusivamente da Stripe.",
           "Assistenza: i messaggi e i dati che ci invii. Account: se ne crei uno, l'email e le credenziali di accesso.",
-          "Navigazione: dati tecnici necessari al funzionamento del sito e statistiche aggregate sulle pagine visitate (anonime con Vercel Web Analytics; con Google Analytics solo se lo accetti) e, se accetti il marketing, le visite e gli acquisti arrivati dalle nostre pubblicità su Google. Carrello e preferiti restano salvati nel tuo browser.",
+          "Navigazione: dati tecnici necessari al funzionamento del sito e statistiche aggregate sulle pagine visitate (anonime con Vercel Web Analytics; con Google Analytics solo se lo accetti) e, se accetti il marketing, le visite e gli acquisti arrivati dalle nostre pubblicità su Google. Carrello e preferiti restano salvati nel tuo browser. Quando fai un ordine registriamo anche da quale canale è arrivata la visita (per esempio «Google Ads», «Instagram» o «diretto», più la pagina d'arrivo): è un'etichetta generica, senza identificativi, che ci dice quali canali portano gli ordini.",
         ],
       },
       {
@@ -302,7 +302,7 @@ export const LEGAL_PAGES = {
       {
         heading: "Cookie",
         body: [
-          "Cookie tecnici: carrello, preferiti e sessione di accesso. Sono necessari al funzionamento del sito e non richiedono il consenso.",
+          "Cookie tecnici: carrello, preferiti e sessione di accesso. Sono necessari al funzionamento del sito e non richiedono il consenso. Per la durata della sola visita il browser conserva anche il canale di provenienza (per esempio «Google Ads» o «Instagram»): un'etichetta di prima parte, senza identificativi, che viene cancellata alla chiusura della scheda e serve solo a sapere quale canale ha portato un ordine.",
           "Cookie di statistica: Google Analytics 4 (_ga e _ga_<ID>, durata massima 2 anni; _gid, durata 24 ore), solo se accetti le «Statistiche» (o «Accetta tutto») nel banner. Ci dicono in forma aggregata quante persone visitano il sito, da dove arrivano, quali pagine guardano e quanti ordini vengono completati. Google Signals è disattivato, Google Analytics 4 non memorizza l'indirizzo IP e le pagine dell'account e di accesso non vengono misurate.",
           "Cookie di marketing: Google Ads (sul nostro sito _gcl_au e, se arrivi da un nostro annuncio, _gcl_aw e _gcl_dc, durata 90 giorni; i cookie pubblicitari di Google sui suoi domini, fino a 13 mesi), solo se accetti il «Marketing» (o «Accetta tutto»). Servono a contare le vendite arrivate dalle nostre pubblicità su Google e a mostrare i nostri annunci a chi ha già visitato il sito. Funzionano solo insieme alle statistiche.",
           "Se rifiuti o chiudi il banner con la X, Google Analytics e Google Ads non vengono caricati e non te lo richiediamo per sei mesi. Con «Personalizza» scegli le singole voci: la prima volta nessuna è selezionata, riaprendo il banner da «Gestisci cookie» ritrovi le scelte che hai fatto. Puoi cambiare scelta quando vuoi da «Gestisci cookie» in fondo a ogni pagina: se revochi il consenso, i cookie di Google sul nostro sito vengono cancellati.",

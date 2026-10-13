@@ -23,6 +23,7 @@ import { submitOrder } from "./actions";
 import type { Money } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
 import { PROVINCES } from "@/data/provinces";
+import { visitSourceForCheckout } from "@/lib/attribution";
 
 // Updated step labels to reflect the real flow.
 const STEPS = ["I tuoi dati", "Pagamento su Stripe"] as const;
@@ -147,6 +148,7 @@ export function CheckoutClient() {
             },
             lines: lines.map((line) => ({ slug: line.slug, quantity: line.quantity })),
             idempotencyKey,
+            ...visitSourceForCheckout(),
           });
           if (!result.ok) {
             // The cart is deliberately left untouched: nothing was ordered.

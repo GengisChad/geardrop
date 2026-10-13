@@ -1,4 +1,5 @@
 import { BUNDLES, PRODUCTS, shippingMethodByCode } from "@/data/catalog";
+import { parseVisitSource, type VisitSource } from "@/lib/attribution";
 import { isReleasePreorder } from "@/lib/commerce/release-preorder";
 import { stripeProductId, type StripeClient } from "@/lib/payments/stripe-api";
 
@@ -53,6 +54,8 @@ export type PaidCheckout = {
   readonly couponCode: string | null;
   readonly totalCents: number;
   readonly createdAt: string;
+  /** Channel of the visit that placed the order, from the session metadata; null when absent. */
+  readonly attribution?: VisitSource | null | undefined;
 };
 
 type StripeAddress = {
@@ -248,6 +251,7 @@ export function paidCheckoutFromStripe(
     couponCode,
     totalCents: session.amount_total ?? Math.max(0, subtotal - discountCents + shippingCents),
     createdAt: new Date(session.created * 1000).toISOString(),
+    attribution: attributionFrom(session.metadata),
   };
 }
 
@@ -289,4 +293,15 @@ async function withPromotionCode(session: StripeSessionForOrder, stripe: StripeC
     console.error("[orders] promotion code not readable:", error instanceof Error ? error.message : String(error));
     return session;
   }
+}
+
+/** The visit's channel as the checkout wrote it into the session metadata, validated again. */
+export function attributionFrom(metadata: Readonly<Record<string, string>> | null | undefined): VisitSource | null {
+  if (!metadata?.["source"] || !metadata["medium"]) return null;
+  return parseVisitSource({
+    source: metadata["source"],
+    medium: metadata["medium"],
+    ...(metadata["campaign"] ? { campaign: metadata["campaign"] } : {}),
+    ...(metadata["landing"] ? { landing: metadata["landing"] } : {}),
+  });
 }

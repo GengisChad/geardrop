@@ -1,4 +1,5 @@
 import "server-only";
+import type { VisitSource } from "@/lib/attribution";
 
 import { createHash } from "node:crypto";
 import { PRODUCTS, SHIPPING_METHODS, shippingMethodByCode } from "@/data/catalog";
@@ -102,6 +103,7 @@ function truncate(value: string, limit: number): string {
 export type ExpressOrderRef = {
   readonly idempotencyKey: string;
   readonly lines: readonly { readonly slug: string; readonly quantity: number }[];
+  readonly attribution?: VisitSource | undefined;
 };
 
 export type CheckoutSessionInput =
@@ -177,6 +179,15 @@ export function buildCheckoutSessionFields(
     "shipping_options[0][shipping_rate_data][fixed_amount][currency]": "eur",
     "shipping_options[0][shipping_rate_data][tax_behavior]": "inclusive",
   };
+
+  // The channel of the visit rides with the session, so the webhook can file it with the order.
+  const visit = input.order.attribution;
+  if (visit) {
+    fields["metadata[source]"] = visit.source;
+    fields["metadata[medium]"] = visit.medium;
+    if (visit.campaign) fields["metadata[campaign]"] = visit.campaign;
+    if (visit.landing) fields["metadata[landing]"] = visit.landing;
+  }
 
   if (!express) {
     // Standard checkout: the address was already collected and validated on the site;

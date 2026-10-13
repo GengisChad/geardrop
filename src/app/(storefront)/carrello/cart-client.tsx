@@ -20,6 +20,7 @@ import { formatPrice } from "@/lib/format";
 import { cartDelivery, preorderNote, stockLabel } from "@/lib/labels";
 import { gaItem, sendGaEvent } from "@/lib/analytics/google";
 import type { Product } from "@/lib/commerce/types";
+import { visitSourceForCheckout } from "@/lib/attribution";
 
 type CartClientProps = {
   shelfProducts: Product[];
@@ -58,6 +59,7 @@ export function CartClient({ shelfProducts }: CartClientProps) {
       // Fresh key per tap: a double-tap or a back-and-retry reuses the same attempt rather
       // than creating two sessions. The key is ephemeral: it is never stored.
       idempotencyKey: crypto.randomUUID(),
+      ...visitSourceForCheckout(),
     });
     if (result.ok) {
       // Keep the pending state until the browser navigates away; no cleanup needed.

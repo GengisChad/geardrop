@@ -1313,6 +1313,10 @@ export type Database = {
       }
       orders: {
         Row: {
+          attribution_campaign: string | null
+          attribution_landing: string | null
+          attribution_medium: string | null
+          attribution_source: string | null
           billing_address_snapshot: Json
           coupon_code: string | null
           created_at: string
@@ -1350,6 +1354,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          attribution_campaign?: string | null
+          attribution_landing?: string | null
+          attribution_medium?: string | null
+          attribution_source?: string | null
           billing_address_snapshot: Json
           coupon_code?: string | null
           created_at?: string
@@ -1387,6 +1395,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          attribution_campaign?: string | null
+          attribution_landing?: string | null
+          attribution_medium?: string | null
+          attribution_source?: string | null
           billing_address_snapshot?: Json
           coupon_code?: string | null
           created_at?: string
