@@ -286,6 +286,8 @@ export type CheckoutSessionSummary = {
   readonly shippingCents: number | null;
   /** What was bought, read back from the session's own metadata ("slug xN, …"). */
   readonly lines: readonly { readonly slug: string; readonly quantity: number }[];
+  /** Slugs the buyer was told are pre-ordered (the session's "preorder" metadata). */
+  readonly preorderSlugs?: readonly string[];
 };
 
 type StripeCheckoutSession = {
@@ -295,7 +297,7 @@ type StripeCheckoutSession = {
   readonly amount_total: number | null;
   readonly customer_details?: { readonly email?: string | null } | null;
   readonly total_details?: { readonly amount_shipping?: number | null } | null;
-  readonly metadata?: { readonly lines?: string } | null;
+  readonly metadata?: { readonly lines?: string; readonly preorder?: string } | null;
 };
 
 /** The "slug xN, slug xN" list the session was created with; anything else is skipped. */
@@ -330,6 +332,7 @@ export async function retrieveCheckoutSession(
       email: session.customer_details?.email ?? null,
       shippingCents: session.total_details?.amount_shipping ?? null,
       lines: checkoutLines(session.metadata?.lines),
+      preorderSlugs: checkoutLines(session.metadata?.preorder).map((line) => line.slug),
     };
   } catch (error) {
     console.error("[stripe-checkout]", error instanceof Error ? error.message : error);
