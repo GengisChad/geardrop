@@ -20,8 +20,6 @@ type Row = { readonly key: string; readonly icon: typeof Truck; readonly tone: s
  * Prices always come from the catalogue constants, so they cannot drift from checkout.
  */
 export function DeliverySummary({ product }: DeliverySummaryProps) {
-  const inpost = SHIPPING_METHODS.find((m) => m.code === "inpost-point")!;
-  const poste = SHIPPING_METHODS.find((m) => m.code === "standard")!;
   const method = (label: string, cents: number) => (
     <>
       <span className="font-medium text-graphite">{label}</span>
@@ -43,9 +41,10 @@ export function DeliverySummary({ product }: DeliverySummaryProps) {
         stripe,
       ]
     : [
+        // All Hasbro methods in preference order (owner, 2026-10-13): Locker 4,90, punto di
+        // ritiro 5,65, Poste a casa 6,65. Prices come from SHIPPING_METHODS so they cannot drift.
         // A pre-order's wait is not repeated here: the status panel right above already says it.
-        { key: "inpost", icon: Truck, tone: "text-violet-soft", text: method(inpost.label, inpost.priceCents) },
-        { key: "poste", icon: Truck, tone: "text-violet-soft", text: method(poste.label, poste.priceCents) },
+        ...SHIPPING_METHODS.map((m) => ({ key: m.code, icon: Truck, tone: "text-violet-soft", text: method(m.label, m.priceCents) })),
         free,
         { key: "returns", icon: RotateCcw, tone: "text-violet-soft", text: "Reso gratuito entro 30 giorni" },
         stripe,

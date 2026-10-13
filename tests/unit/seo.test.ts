@@ -103,7 +103,12 @@ describe("structured data", () => {
         priceCurrency: "EUR",
         availability: "https://schema.org/PreOrder",
         itemCondition: "https://schema.org/NewCondition",
-        shippingDetails: [{ shippingRate: { value: (SHIPPING_FLAT_RATE / 100).toFixed(2), currency: "EUR" }, shippingDestination: { addressCountry: "IT" } }, {}],
+        // Updated 2026-10-13: three methods (Locker 4,90, punto di ritiro 5,65, Poste 6,65).
+        shippingDetails: [
+          { shippingRate: { value: (SHIPPING_FLAT_RATE / 100).toFixed(2), currency: "EUR" }, shippingDestination: { addressCountry: "IT" } },
+          { shippingRate: { value: (SHIPPING_METHODS[1]!.priceCents / 100).toFixed(2), currency: "EUR" }, shippingDestination: { addressCountry: "IT" } },
+          {},
+        ],
         hasMerchantReturnPolicy: { merchantReturnDays: 30, returnFees: "https://schema.org/FreeReturn" },
       },
     });
@@ -113,14 +118,16 @@ describe("structured data", () => {
   it("marks sold-out stock and free shipping from the threshold", () => {
     expect(productJsonLd({ ...glory, stock: "esaurito" }).offers.availability).toBe("https://schema.org/OutOfStock");
     // Every carrier the checkout offers is free from the threshold, and costs what it costs below it.
+    // Updated 2026-10-13: three methods (Locker, punto di ritiro, Poste).
     expect(
       productJsonLd({ ...glory, price: { amount: FREE_SHIPPING_THRESHOLD, currency: "EUR" } }).offers.shippingDetails.map(
         (details) => details.shippingRate.value,
       ),
-    ).toEqual(["0.00", "0.00"]);
+    ).toEqual(["0.00", "0.00", "0.00"]);
     expect(productJsonLd({ ...glory, price: { amount: 2300, currency: "EUR" } }).offers.shippingDetails.map((details) => [details.shippingLabel, details.shippingRate.value])).toEqual([
       [SHIPPING_METHODS[0]!.label, (SHIPPING_METHODS[0]!.priceCents / 100).toFixed(2)],
       [SHIPPING_METHODS[1]!.label, (SHIPPING_METHODS[1]!.priceCents / 100).toFixed(2)],
+      [SHIPPING_METHODS[2]!.label, (SHIPPING_METHODS[2]!.priceCents / 100).toFixed(2)],
     ]);
   });
 
@@ -162,9 +169,12 @@ describe("the shop as Google's OnlineStore", () => {
         service.fulfillmentType.replace("https://schema.org/", ""),
         service.shippingConditions.map((condition) => condition.shippingRate.value),
       ]),
+    // Updated 2026-10-13: three methods — Locker and punto di ritiro are both CollectionPoint,
+    // Poste is FulfillmentTypeDelivery. SHIPPING_METHODS[0] = Locker, [1] = punto di ritiro, [2] = Poste.
     ).toEqual([
       [SHIPPING_METHODS[0]!.label, "FulfillmentTypeCollectionPoint", [SHIPPING_METHODS[0]!.priceCents / 100, 0]],
-      [SHIPPING_METHODS[1]!.label, "FulfillmentTypeDelivery", [SHIPPING_METHODS[1]!.priceCents / 100, 0]],
+      [SHIPPING_METHODS[1]!.label, "FulfillmentTypeCollectionPoint", [SHIPPING_METHODS[1]!.priceCents / 100, 0]],
+      [SHIPPING_METHODS[2]!.label, "FulfillmentTypeDelivery", [SHIPPING_METHODS[2]!.priceCents / 100, 0]],
     ]);
     // The two bands meet at the threshold without a gap or an overlap.
     for (const service of services) {

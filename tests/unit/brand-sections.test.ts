@@ -165,15 +165,30 @@ describe("mock quoteCart — mixed cart", () => {
   });
 });
 
-describe("mock quoteCart — hasbro-only cart (unchanged behaviour)", () => {
+describe("mock quoteCart — hasbro-only cart (updated 2026-10-13: three methods, Locker default)", () => {
   const provider = createMockProvider();
 
-  it("still offers both SHIPPING_METHODS, not locked, InPost default", async () => {
+  it("offers all three SHIPPING_METHODS, not locked, InPost Locker cheapest and default", async () => {
     const quote = await provider.quoteCart({ lines: [{ slug: HASBRO_PRODUCT.slug, quantity: 1 }] });
-    expect(quote.shippingOptions).toHaveLength(2);
+    // Updated 2026-10-13: three methods (Locker, punto di ritiro, Poste); default is Locker at 490.
+    expect(quote.shippingOptions).toHaveLength(3);
     expect(quote.shippingOptions.every((o) => !o.locked)).toBe(true);
-    expect(quote.shippingCode).toBe("inpost-point");
-    expect(quote.totals.shipping.amount).toBe(565);
+    expect(quote.shippingCode).toBe("inpost-locker");
+    expect(quote.totals.shipping.amount).toBe(490);
+  });
+
+  it("mixed cart stays locked to inpost-point at 565, not the new Locker (owner, 2026-10-13)", async () => {
+    const mixedProvider = createMockProvider([HASBRO_PRODUCT, TAKARA_PRODUCT]);
+    const quote = await mixedProvider.quoteCart({
+      lines: [
+        { slug: HASBRO_PRODUCT.slug, quantity: 1 },
+        { slug: TAKARA_PRODUCT.slug, quantity: 1 },
+      ],
+    });
+    expect(quote.shippingOptions).toHaveLength(1);
+    expect(quote.shippingOptions[0]!.code).toBe("inpost-point");
+    expect(quote.shippingOptions[0]!.price.amount).toBe(565);
+    expect(quote.shippingOptions[0]!.locked).toBe(true);
   });
 
   it("free at the threshold", async () => {
