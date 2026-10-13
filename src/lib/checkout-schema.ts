@@ -48,7 +48,8 @@ export const checkoutSchema = z.object({
   notes: z.string().trim().max(300, "Massimo 300 caratteri.").optional(),
 });
 
-export const PICKUP_POINT_MESSAGE = "Scrivi il punto di ritiro o il Locker dove ritirare il pacco.";
+// 2026-10-13: generic wording covers both inpost-locker and inpost-point after the split.
+export const PICKUP_POINT_MESSAGE = "Scrivi il punto o Locker dove ritirare il pacco.";
 
 /** A pickup method needs the point it delivers to: three characters at least (a Locker code). */
 export function pickupPointMissing(shippingMethod: string | undefined, pickupPoint: string | undefined): boolean {

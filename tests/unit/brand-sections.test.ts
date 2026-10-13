@@ -331,9 +331,9 @@ describe("checkout server refusal — pickup point missing", () => {
     const pickupPointMissing = method?.pickupPoint && "".trim().length < 3;
     expect(pickupPointMissing).toBe(true);
 
-    // The message is carrier-neutral
+    // The message is carrier-neutral (updated 2026-10-13: shorter generic phrasing covers inpost-locker and inpost-point after the split)
     expect(PICKUP_POINT_MESSAGE).toBe(
-      "Scrivi il punto di ritiro o il Locker dove ritirare il pacco.",
+      "Scrivi il punto o Locker dove ritirare il pacco.",
     );
   });
 
