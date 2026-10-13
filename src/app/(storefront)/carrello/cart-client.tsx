@@ -236,7 +236,7 @@ export function CartClient({ shelfProducts }: CartClientProps) {
                 Paga subito
               </button>
               <p className="text-center text-[0.6875rem] text-grey-600">
-                Apple Pay, Google Pay o carta · consegna a casa con Poste
+                Carta, PayPal, Apple Pay o Google Pay · consegna a casa con Poste
               </p>
               <p className="text-center text-[0.6875rem] text-grey-600">
                 Per un Locker InPost scegli il checkout normale.

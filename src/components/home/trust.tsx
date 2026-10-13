@@ -5,12 +5,12 @@ import { FREE_SHIPPING_FROM_LABEL, SHIPPING_FLAT_LABEL, STANDARD_DELIVERY } from
 type TrustItem = { readonly Icon: typeof Truck; readonly title: string; readonly sub: string };
 
 /**
- * The three promises checkout actually keeps: Stripe payment, flat shipping, free returns. The
+ * The three promises checkout actually keeps: Stripe payment (card and PayPal, owner 2026-10-13), flat shipping, free returns. The
  * delivery time is the in-stock one unless the page sells a pre-order.
  */
 function trustItems(delivery: string): readonly TrustItem[] {
   return [
-    { Icon: Lock, title: "Pagamento sicuro", sub: "Paghi sulla pagina protetta di Stripe." },
+    { Icon: Lock, title: "Pagamento sicuro", sub: "Carta, PayPal, Apple Pay o Google Pay sulla pagina protetta di Stripe." },
     { Icon: Truck, title: `Spedizione da ${SHIPPING_FLAT_LABEL}`, sub: `${delivery}. Gratis da ${FREE_SHIPPING_FROM_LABEL}. Solo in Italia.` },
     { Icon: RotateCcw, title: "Reso gratuito", sub: "30 giorni per ripensarci: la spedizione del reso la paghiamo noi." },
   ];

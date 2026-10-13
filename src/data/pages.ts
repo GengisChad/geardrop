@@ -36,9 +36,16 @@ export const SUPPORT_PAGES = {
       {
         heading: "Quanto costa la spedizione?",
         body: [
-          "Al checkout scegli come ricevere il pacco: in un punto di ritiro o Locker InPost 5,65 €, a casa con Poste Italiane 6,65 €.",
+          "Al checkout scegli come ricevere il pacco: Locker InPost 4,90 €, punto di ritiro InPost 5,65 € o a casa con Poste Italiane 6,65 €.",
           "La spedizione è gratuita, con qualsiasi corriere, per ordini da 100 €.",
           "Spediamo solo in Italia.",
+        ],
+      },
+      {
+        heading: "Come posso pagare?",
+        body: [
+          "Paghi sulla pagina protetta di Stripe con carta di credito o debito, PayPal, Apple Pay, Google Pay, Revolut Pay o gli altri metodi che Stripe ti propone.",
+          "Apple Pay e Google Pay compaiono sui dispositivi dove li hai attivati. I dati della carta li vede solo Stripe: GEAR//DROP non li riceve né li conserva.",
         ],
       },
       {
@@ -80,7 +87,7 @@ export const SUPPORT_PAGES = {
         heading: "Costi",
         body: [
           "Spedizione gratuita per ordini superiori a 100€.",
-          "Sotto la soglia scegli come ricevere il pacco: in un punto di ritiro o Locker InPost 5,65 €, a casa con Poste Italiane 6,65 €. Il costo è mostrato prima del pagamento.",
+          "Sotto la soglia scegli come ricevere il pacco: Locker InPost 4,90 €, punto di ritiro InPost 5,65 € o a casa con Poste Italiane 6,65 €. Il costo è mostrato prima del pagamento.",
         ],
       },
       {
@@ -187,13 +194,13 @@ export const LEGAL_PAGES = {
         heading: "Prezzi e spedizione",
         body: [
           "I prezzi sono espressi in euro e comprendono l'IVA.",
-          "La spedizione in Italia costa 5,65 € con InPost in un punto di ritiro o Locker e 6,65 € con Poste Italiane a casa; è gratuita per ordini da 100 €. Il totale, spedizione inclusa, è mostrato prima del pagamento.",
+          "La spedizione in Italia costa 4,90 € con InPost Locker, 5,65 € con InPost punto di ritiro e 6,65 € con Poste Italiane a casa; è gratuita per ordini da 100 €. Il totale, spedizione inclusa, è mostrato prima del pagamento.",
         ],
       },
       {
         heading: "Ordine e pagamento",
         body: [
-          "Dopo aver inserito i dati di spedizione vieni indirizzato alla pagina di pagamento sicura di Stripe, dove paghi in modo sicuro. I dati della carta sono trattati solo da Stripe: GEAR//DROP non li riceve né li conserva.",
+          "Dopo aver inserito i dati di spedizione vieni indirizzato alla pagina di pagamento sicura di Stripe, dove paghi con carta, PayPal o gli altri metodi che Stripe ti propone. I dati della carta sono trattati solo da Stripe: GEAR//DROP non li riceve né li conserva.",
           "Il contratto si conclude quando il pagamento è completato. Ricevi la conferma con il riferimento dell'ordine (GD-XXXXXXXX) e la ricevuta via email.",
           "In caso di errore evidente di prezzo, di quantità non più disponibile o di sospetto di frode, GEAR//DROP può annullare l'ordine rimborsandolo integralmente.",
         ],
@@ -211,7 +218,7 @@ export const LEGAL_PAGES = {
           "Puoi recedere dal contratto senza indicarne il motivo entro 14 giorni dalla consegna, come previsto dagli artt. 52 e seguenti del Codice del Consumo. GEAR//DROP estende questo termine a 30 giorni dalla consegna.",
           `Per esercitarlo scrivi a ${SELLER.email} prima della scadenza indicando il riferimento dell'ordine. Puoi usare il modulo tipo in fondo a questa pagina, ma non è obbligatorio.`,
           "Restituisci i prodotti integri, completi e nella confezione originale entro 14 giorni dalla comunicazione. Le spese di restituzione sono a carico di GEAR//DROP: ti inviamo noi l'etichetta di reso.",
-          "Ti rimborsiamo tutti i pagamenti ricevuti, compresa la spedizione fino al costo della consegna meno cara che offriamo (InPost in un punto di ritiro o Locker, 5,65 €), entro 14 giorni dalla comunicazione di recesso e con lo stesso metodo di pagamento. Se hai scelto un corriere più costoso, la differenza resta a tuo carico (art. 56 del Codice del consumo). Il rimborso può essere sospeso fino al ricevimento dei prodotti o alla prova della loro spedizione. Resta a tuo carico solo la diminuzione di valore dovuta a un uso diverso da quello necessario per verificarli.",
+          "Ti rimborsiamo tutti i pagamenti ricevuti, compresa la spedizione fino al costo della consegna meno cara proposta per il tuo ordine (di norma InPost Locker, 4,90 €), entro 14 giorni dalla comunicazione di recesso e con lo stesso metodo di pagamento. Se hai scelto un corriere più costoso, la differenza resta a tuo carico (art. 56 del Codice del consumo). Il rimborso può essere sospeso fino al ricevimento dei prodotti o alla prova della loro spedizione. Resta a tuo carico solo la diminuzione di valore dovuta a un uso diverso da quello necessario per verificarli.",
         ],
       },
       {

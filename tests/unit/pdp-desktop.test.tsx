@@ -15,6 +15,8 @@ import { formatPrice } from "@/lib/format";
 /** Strip trailing ",00" the way eur() in delivery-summary does. */
 const eur = (cents: number) => formatPrice({ amount: cents, currency: "EUR" }).replace(/,00$/, "");
 
+// All three Hasbro methods (owner, 2026-10-13): Locker 4,90, punto di ritiro 5,65, Poste 6,65.
+const locker = SHIPPING_METHODS.find((m) => m.code === "inpost-locker")!;
 const inpost = SHIPPING_METHODS.find((m) => m.code === "inpost-point")!;
 const poste = SHIPPING_METHODS.find((m) => m.code === "standard")!;
 
@@ -38,7 +40,12 @@ describe("DeliverySummary — Hasbro in-stock", () => {
     );
   });
 
-  it("shows the InPost price from SHIPPING_METHODS", () => {
+  it("shows the InPost Locker price from SHIPPING_METHODS", () => {
+    expect(html).toContain(locker.label);
+    expect(html).toContain(eur(locker.priceCents));
+  });
+
+  it("shows the InPost punto di ritiro price from SHIPPING_METHODS", () => {
     expect(html).toContain(inpost.label);
     expect(html).toContain(eur(inpost.priceCents));
   });
@@ -91,8 +98,8 @@ describe("DeliverySummary — what every buyer reads next to the button", () => 
     );
 
   it("says payment happens on Stripe, for shop and partner pieces alike", () => {
-    expect(render(hasbro)).toContain("Pagamento sicuro sulla pagina di Stripe");
-    expect(render(consignment)).toContain("Pagamento sicuro sulla pagina di Stripe");
+    expect(render(hasbro)).toContain("Pagamento sicuro su Stripe: carta, PayPal, Apple Pay, Google Pay");
+    expect(render(consignment)).toContain("Pagamento sicuro su Stripe: carta, PayPal, Apple Pay, Google Pay");
   });
 
   it("gives a pre-order its shipping prices, leaving the wait to the status panel above", () => {

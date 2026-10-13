@@ -457,7 +457,10 @@ where singleton
   and default_seo_description is null;
 
 insert into public.shipping_methods (code, name, price_cents, free_from_cents, active, sort_order)
-values ('standard', 'Spedizione standard', ${shippingMethodByCode("standard")!.priceCents}, ${FREE_SHIPPING_THRESHOLD}, false, 0)
+values
+  ('inpost-locker', 'InPost · Locker', ${shippingMethodByCode("inpost-locker")!.priceCents}, ${FREE_SHIPPING_THRESHOLD}, false, 0),
+  ('inpost-point', 'InPost · punto di ritiro', ${shippingMethodByCode("inpost-point")!.priceCents}, ${FREE_SHIPPING_THRESHOLD}, false, 1),
+  ('standard', 'Spedizione standard', ${shippingMethodByCode("standard")!.priceCents}, ${FREE_SHIPPING_THRESHOLD}, false, 2)
 on conflict (code) do update set
   name = excluded.name,
   price_cents = excluded.price_cents,

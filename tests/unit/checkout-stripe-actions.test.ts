@@ -36,8 +36,8 @@ const order = {
     postalCode: "20121",
     province: "MI",
     phone: "+39 333 1234567",
-    // InPost to a point or Locker is the cheapest method and the default selection.
-    shippingMethod: "inpost-point",
+    // InPost Locker is the cheapest method and the default selection (owner, 2026-10-13).
+    shippingMethod: "inpost-locker",
     pickupPoint: "Locker Milano Centrale",
   },
   lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }],
@@ -74,7 +74,7 @@ describe("checkout with Stripe and no order database", () => {
     const [input] = createStripeCheckoutMock.mock.calls[0]!;
     expect(input.origin).toBe("http://localhost:3000");
     expect(input.order).toEqual(order);
-    // The cart is one Cobalt Dragoon plus InPost point shipping; both numbers come from the catalogue.
+    // The cart is one Cobalt Dragoon plus InPost Locker shipping; both numbers come from the catalogue.
     const dragoon = PRODUCTS.find((product) => product.slug === "cobalt-dragoon-2-60c")!.price.amount;
     expect(input.quote.totals.total).toEqual({ amount: dragoon + SHIPPING_FLAT_RATE, currency: "EUR" });
   });

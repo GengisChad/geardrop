@@ -456,8 +456,6 @@ export const BUNDLE: Bundle = {
  * 2026-09-29.
  */
 export const FREE_SHIPPING_THRESHOLD = 10000;
-/** The cheapest delivery the shop offers (InPost to a point or Locker), the "da 5,65 €" of every banner. */
-export const SHIPPING_FLAT_RATE = 565;
 
 export type ShippingMethodDefinition = {
   /** Stored on the order and sent by the checkout form; "standard" is Poste to the door, the code orders already carry. */
@@ -470,16 +468,26 @@ export type ShippingMethodDefinition = {
 };
 
 /**
- * What the buyer picks at checkout, at what the parcel costs the shop to send (owner, 2026-10-07):
- * an InPost point or Locker at €5,65, or Poste Italiane to the door at €6,65. The €4,90 Poste rate
- * "non esiste". The first entry is the cheapest and the one a cart is priced with until the buyer
- * chooses. Free shipping from FREE_SHIPPING_THRESHOLD applies to every method. BRT, DHL and others
+ * What the buyer picks at checkout, at what the parcel costs the shop to send (owner, 2026-10-13):
+ * InPost Locker at €4,90 (cheapest, default), InPost punto di ritiro (shops/kiosks) at €5,65,
+ * or Poste Italiane to the door at €6,65. Note: the old €4,90 Poste rate "non esiste" (owner,
+ * 2026-10-07); this €4,90 is a real InPost Locker rate added 2026-10-13.
+ * The first entry is the cheapest and the one a cart is priced with until the buyer chooses.
+ * Free shipping from FREE_SHIPPING_THRESHOLD applies to every method. BRT, DHL and others
  * will join this list.
  */
 export const SHIPPING_METHODS: readonly ShippingMethodDefinition[] = [
-  { code: "inpost-point", carrier: "inpost", label: "InPost · punto di ritiro o Locker", priceCents: SHIPPING_FLAT_RATE, pickupPoint: true },
+  { code: "inpost-locker", carrier: "inpost", label: "InPost · Locker", priceCents: 490, pickupPoint: true },
+  { code: "inpost-point", carrier: "inpost", label: "InPost · punto di ritiro", priceCents: 565, pickupPoint: true },
   { code: "standard", carrier: "poste", label: "Poste Italiane · consegna a casa", priceCents: 665, pickupPoint: false },
 ];
+
+/**
+ * Derived from the cheapest entry in SHIPPING_METHODS: the "da X €" shown on every banner.
+ * Currently InPost Locker at €4,90 (owner, 2026-10-13). Changing the first SHIPPING_METHODS
+ * entry automatically updates every banner, label and SEO string that imports this constant.
+ */
+export const SHIPPING_FLAT_RATE = Math.min(...SHIPPING_METHODS.map((m) => m.priceCents));
 
 /**
  * Pieces sold out of an opened Battle Set: a sealed bag with no retail box, so no barcode of their

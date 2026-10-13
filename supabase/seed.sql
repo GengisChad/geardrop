@@ -821,11 +821,17 @@ Gli accessori compatibili, come i porta deck, non sono prodotti da Hasbro: la lo
 
 ## Quanto costa la spedizione?
 
-Al checkout scegli come ricevere il pacco: in un punto di ritiro o Locker InPost 5,65 €, a casa con Poste Italiane 6,65 €.
+Al checkout scegli come ricevere il pacco: Locker InPost 4,90 €, punto di ritiro InPost 5,65 € o a casa con Poste Italiane 6,65 €.
 
 La spedizione è gratuita, con qualsiasi corriere, per ordini da 100 €.
 
 Spediamo solo in Italia.
+
+## Come posso pagare?
+
+Paghi sulla pagina protetta di Stripe con carta di credito o debito, PayPal, Apple Pay, Google Pay, Revolut Pay o gli altri metodi che Stripe ti propone.
+
+Apple Pay e Google Pay compaiono sui dispositivi dove li hai attivati. I dati della carta li vede solo Stripe: GEAR//DROP non li riceve né li conserva.
 
 ## Cosa significa “in arrivo”?
 
@@ -856,7 +862,7 @@ Spediamo solo in Italia.
 
 Spedizione gratuita per ordini superiori a 100€.
 
-Sotto la soglia scegli come ricevere il pacco: in un punto di ritiro o Locker InPost 5,65 €, a casa con Poste Italiane 6,65 €. Il costo è mostrato prima del pagamento.
+Sotto la soglia scegli come ricevere il pacco: Locker InPost 4,90 €, punto di ritiro InPost 5,65 € o a casa con Poste Italiane 6,65 €. Il costo è mostrato prima del pagamento.
 
 ## Tracciamento
 
@@ -1006,7 +1012,10 @@ where singleton
   and default_seo_description is null;
 
 insert into public.shipping_methods (code, name, price_cents, free_from_cents, active, sort_order)
-values ('standard', 'Spedizione standard', 665, 10000, false, 0)
+values
+  ('inpost-locker', 'InPost · Locker', 490, 10000, false, 0),
+  ('inpost-point', 'InPost · punto di ritiro', 565, 10000, false, 1),
+  ('standard', 'Spedizione standard', 665, 10000, false, 2)
 on conflict (code) do update set
   name = excluded.name,
   price_cents = excluded.price_cents,

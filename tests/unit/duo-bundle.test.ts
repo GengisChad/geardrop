@@ -102,7 +102,7 @@ describe("pricing a cart with the duo", () => {
     const quote = await provider.quoteCart({ lines: [{ slug: "duo-horus-enlil", quantity: 1 }] });
     expect(quote.lines[0]).toMatchObject({ slug: "duo-horus-enlil", unitPrice: { amount: duo.price.amount }, availableQuantity: 4, issue: null });
     expect(quote.totals.subtotal.amount).toBe(duo.price.amount);
-    expect(quote.totals.shipping.amount).toBe(SHIPPING_FLAT_RATE); // InPost point, 5,65 €
+    expect(quote.totals.shipping.amount).toBe(SHIPPING_FLAT_RATE); // InPost Locker, 4,90 € (owner, 2026-10-13)
   });
 
   it("refuses more duos than the scarcest pack allows", async () => {

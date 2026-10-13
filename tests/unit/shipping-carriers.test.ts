@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { INPOST_POINT_FINDER_URL, SHIPPING_METHODS, shippingMethodByCode } from "@/data/catalog";
+import { INPOST_POINT_FINDER_URL, SHIPPING_FLAT_RATE, SHIPPING_METHODS, shippingMethodByCode } from "@/data/catalog";
 import { checkoutFormSchema, placeOrderSchema, type PlaceOrderInput } from "@/lib/checkout-schema";
 import { shipmentChoice } from "@/lib/admin/orders";
 import { createMockProvider } from "@/lib/commerce/mock-provider";
@@ -9,9 +9,10 @@ import { paidCheckoutFromStripe, shippingChoice, type PaidCheckout } from "@/lib
 import { buildCheckoutSessionFields, openQuoteForStripe } from "@/lib/payments/stripe-checkout";
 
 /*
- * The owner's rule (2026-10-07): the buyer picks the carrier, and pays what it costs the shop —
- * InPost to a point or Locker 5,65 €, Poste Italiane to the door 6,65 €. The old €4,90 Poste rate
- * "non esiste". InPost point is the cheapest, the default selection, and the cart's "da" price.
+ * The owner's rule (2026-10-13): the buyer picks the carrier, and pays what it costs the shop —
+ * InPost Locker 4,90 € (cheapest, default), InPost punto di ritiro 5,65 €, Poste Italiane to the
+ * door 6,65 €. Note: the old €4,90 was a non-existent Poste rate (owner, 2026-10-07); this
+ * €4,90 is the real InPost Locker rate added 2026-10-13.
  */
 
 const contact = {
@@ -37,12 +38,31 @@ const quoteWith = async (shippingCode: string) =>
   openQuoteForStripe(await createMockProvider().quoteCart({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }], shippingCode } as CartQuoteRequest));
 
 describe("the carriers", () => {
+  // Updated 2026-10-13: added InPost Locker at 4,90 as the new cheapest entry; inpost-point
+  // relabelled from "InPost · punto di ritiro o Locker" to "InPost · punto di ritiro" since
+  // the Locker now has its own entry.
   it("cost what the owner pays to send the parcel", () => {
     expect(SHIPPING_METHODS.map((method) => [method.code, method.carrier, method.priceCents, method.pickupPoint])).toEqual([
+      ["inpost-locker", "inpost", 490, true],
       ["inpost-point", "inpost", 565, true],
       ["standard", "poste", 665, false],
     ]);
     expect(INPOST_POINT_FINDER_URL).toBe("https://inpost.it/trova-un-locker");
+  });
+
+  it("the Locker is the cheapest and default method at 4,90 (owner, 2026-10-13)", () => {
+    const locker = SHIPPING_METHODS[0]!;
+    expect(locker.code).toBe("inpost-locker");
+    expect(locker.priceCents).toBe(490);
+    expect(locker.pickupPoint).toBe(true);
+    // SHIPPING_FLAT_RATE is derived from the cheapest method, so banners read "da 4,90 €".
+    expect(SHIPPING_FLAT_RATE).toBe(490);
+  });
+
+  it("the Locker requires a pickup point name, like the punto di ritiro", () => {
+    expect(checkoutFormSchema.safeParse({ ...contact, shippingMethod: "inpost-locker" }).success).toBe(false);
+    expect(checkoutFormSchema.safeParse({ ...contact, shippingMethod: "inpost-locker", pickupPoint: "  " }).success).toBe(false);
+    expect(checkoutFormSchema.safeParse({ ...contact, shippingMethod: "inpost-locker", pickupPoint: "LOC001" }).success).toBe(true);
   });
 });
 
@@ -77,8 +97,9 @@ describe("the Stripe payment page", () => {
 
 describe("the paid order", () => {
   it("records the carrier and the point from the session, and nothing for older sessions", () => {
+    // Updated 2026-10-13: inpost-point relabelled to "InPost · punto di ritiro".
     expect(shippingChoice({ shipping_method: "inpost-point", pickup_point: " MIL123M " })).toEqual({
-      method: "inpost-point", methodLabel: "InPost · punto di ritiro o Locker", pickupPoint: "MIL123M",
+      method: "inpost-point", methodLabel: "InPost · punto di ritiro", pickupPoint: "MIL123M",
     });
     // inpost-home no longer exists in the catalogue; an older session that used it falls back to nothing,
     // the same as any other unrecognised code.
@@ -86,6 +107,8 @@ describe("the paid order", () => {
     expect(shippingChoice({ order_ref: "GD-OLD" })).toEqual({});
     expect(shippingChoice({ shipping_method: "brt" })).toEqual({});
     expect(shippingMethodByCode("standard")?.label).toBe("Poste Italiane · consegna a casa");
+    expect(shippingMethodByCode("inpost-locker")?.label).toBe("InPost · Locker");
+    expect(shippingMethodByCode("inpost-point")?.label).toBe("InPost · punto di ritiro");
   });
 
   const session = {
@@ -113,17 +136,20 @@ describe("the paid order", () => {
   const checkout = paidCheckoutFromStripe(session, items) as PaidCheckout;
 
   it("keeps the choice in the shipping snapshot the order stores", () => {
-    expect(checkout.shipping).toMatchObject({ method: "inpost-point", methodLabel: "InPost · punto di ritiro o Locker", pickupPoint: "MIL123M" });
+    // The session was placed with inpost-point; the snapshot records whatever label the catalogue
+    // had at order time. The new label "InPost · punto di ritiro" applies to future orders.
+    expect(checkout.shipping).toMatchObject({ method: "inpost-point", methodLabel: "InPost · punto di ritiro", pickupPoint: "MIL123M" });
     expect(checkout.shippingCents).toBe(565);
     // The panel reads it back from the stored snapshot.
-    expect(shipmentChoice(checkout.shipping)).toEqual({ method: "inpost-point", label: "InPost · punto di ritiro o Locker", pickupPoint: "MIL123M" });
+    expect(shipmentChoice(checkout.shipping)).toEqual({ method: "inpost-point", label: "InPost · punto di ritiro", pickupPoint: "MIL123M" });
     expect(shipmentChoice({ name: "Old order" })).toEqual({ method: null, label: null, pickupPoint: null });
   });
 
   it("tells the owner and the buyer which carrier, and where to collect", () => {
     const recorded = { id: 9, orderNumber: "GD-INPOST", preorderQuantities: [0] };
     for (const email of [ownerOrderEmail(checkout, recorded), customerOrderEmail(checkout, recorded)]) {
-      expect(email.text).toContain("Spedizione: InPost · punto di ritiro o Locker");
+      // Updated 2026-10-13: inpost-point relabelled; the email text reflects the current label.
+      expect(email.text).toContain("Spedizione: InPost · punto di ritiro");
       expect(email.text).toContain("Punto InPost: MIL123M");
     }
   });
@@ -135,15 +161,17 @@ describe("what Google is told about shipping", () => {
     const xml = await (await GET()).text();
     const item = (id: string) => xml.split("<item>").find((chunk) => chunk.includes(`<g:id>${id}</g:id>`)) ?? "";
     const shipping = (chunk: string) => [...chunk.matchAll(/<g:service>([^<]+)<\/g:service><g:price>([^<]+)<\/g:price>/g)].map((m) => [m[1], m[2]]);
+    // Updated 2026-10-13: three Hasbro methods (Locker 4,90, punto di ritiro 5,65, Poste 6,65).
     expect(shipping(item("cobalt-dragoon-2-60c"))).toEqual([
-      ["InPost · punto di ritiro o Locker", "5.65 EUR"],
+      ["InPost · Locker", "4.90 EUR"],
+      ["InPost · punto di ritiro", "5.65 EUR"],
       ["Poste Italiane · consegna a casa", "6.65 EUR"],
     ]);
-    // Every offer carries both, so Shopping can show the cheapest one on any item.
+    // Every Hasbro offer carries all three, so Shopping can show the cheapest on any item.
     const items = xml.split("<item>").slice(1);
     expect(items.length).toBeGreaterThan(0);
-    // Takara Tomy pieces ship from the partner by one route; the rest offer both carriers.
-    for (const chunk of items) expect(shipping(chunk)).toHaveLength(chunk.includes("<g:brand>Takara Tomy</g:brand>") ? 1 : 2);
+    // Takara Tomy pieces ship from the partner by one route; the rest offer all three Hasbro carriers.
+    for (const chunk of items) expect(shipping(chunk)).toHaveLength(chunk.includes("<g:brand>Takara Tomy</g:brand>") ? 1 : 3);
   }, 60_000);
 });
 
@@ -166,10 +194,11 @@ describe("the shipping email", () => {
 });
 
 describe("the withdrawal clause", () => {
-  it("refunds delivery up to the cheapest InPost rate, as the Codice del consumo allows", async () => {
+  // Updated 2026-10-13: cheapest method is now InPost Locker at 4,90 €.
+  it("refunds delivery up to the cheapest InPost Locker rate, as the Codice del consumo allows", async () => {
     const { LEGAL_PAGES } = await import("@/data/pages");
     const text = JSON.stringify(LEGAL_PAGES);
-    expect(text).toContain("fino al costo della consegna meno cara che offriamo (InPost in un punto di ritiro o Locker, 5,65 €)");
+    expect(text).toContain("fino al costo della consegna meno cara proposta per il tuo ordine (di norma InPost Locker, 4,90 €)");
     expect(text).toContain("art. 56 del Codice del consumo");
   });
 });
