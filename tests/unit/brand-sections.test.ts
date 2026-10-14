@@ -332,7 +332,7 @@ describe("checkout server refusal — pickup point missing", () => {
     expect(pickupPointMissing).toBe(true);
 
     // The message is carrier-neutral: it serves the InPost Locker, the InPost punto and the Punto Poste.
-    expect(PICKUP_POINT_MESSAGE).toBe("Indica il punto dove ritirare il pacco.");
+    expect(PICKUP_POINT_MESSAGE).toBe("Indica il Locker o il punto dove ritirare il pacco.");
   });
 
   it("names the pickup the buyer picked (Locker and punto di ritiro are separate since 2026-10-13)", async () => {

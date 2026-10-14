@@ -225,7 +225,7 @@ test.describe("checkout", () => {
     await expect(page.getByRole("link", { name: "Trovalo sulla mappa InPost" })).toHaveAttribute("href", "https://inpost.it/trova-un-locker");
     await page.locator("#pickupPoint").focus();
     await page.locator("#pickupPoint").blur();
-    await expect(page.getByText("Indica il punto dove ritirare il pacco.")).toBeVisible();
+    await expect(page.getByText("Indica il Locker o il punto dove ritirare il pacco.")).toBeVisible();
 
     // Switching to Poste hides the pickup field and updates the price to 6,65.
     await shipping.getByText("Poste Italiane · consegna a casa").click();

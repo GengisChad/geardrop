@@ -49,12 +49,14 @@ export const checkoutSchema = z.object({
   notes: z.string().trim().max(300, "Massimo 300 caratteri.").optional(),
 });
 
-// One message for every pickup method: InPost Locker, InPost punto di ritiro and the partner's Punto Poste.
-export const PICKUP_POINT_MESSAGE = "Indica il punto dove ritirare il pacco.";
+// One message for every pickup method: the InPost Locker (the default), the Poste Italiane punto di
+// ritiro and the partner's Punto Poste. The Locker is named because it is what most buyers pick.
+export const PICKUP_POINT_MESSAGE = "Indica il Locker o il punto dove ritirare il pacco.";
 
 /**
- * Label and example for the pickup field. Since 2026-10-13 the InPost Locker and the InPost punto
- * di ritiro are separate choices (owner), so the field names the one the buyer picked.
+ * Label and example for the pickup field, naming the choice the buyer picked: the InPost Locker
+ * (since 2026-10-13) or a Poste Italiane punto di ritiro (since 2026-10-14, and the partner's route).
+ * The InPost branch without a Locker only serves orders placed with the retired inpost-point.
  */
 export function pickupPointCopy(method: { readonly code: string; readonly carrier: string } | undefined): {
   readonly label: string;
