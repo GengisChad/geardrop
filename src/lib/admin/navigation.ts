@@ -21,6 +21,8 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { label: "Ordini", href: "/admin/ordini", disabled: false },
   // Owner, 2026-10-11: who paid for a pre-order and whether it has shipped.
   { label: "Pre-ordini", href: "/admin/ordini/pre-ordini", disabled: false },
+  // 2026-10-06: Vinted sales management section (PR #50).
+  { label: "Vinted", href: "/admin/vinted", disabled: false },
   { label: "Spedizioni", href: "/admin/spedizioni", disabled: false },
   { label: "Impostazioni", href: "/admin/impostazioni", disabled: false },
   { label: "Team", href: "/admin/team", disabled: false },

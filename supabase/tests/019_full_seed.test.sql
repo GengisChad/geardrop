@@ -1,7 +1,9 @@
 begin;
 select plan(18);
 
-select results_eq($$select count(*)::integer from public.products$$, array[30], 'seed has the reviewed products');
+-- 30 catalogue products (27 original + 3 Takara on consignment, 2026-10-07)
+-- and four Vinted-only stock items (arenas + Rampart Aegis GB + Cutter Shinobi LF).
+select results_eq($$select count(*)::integer from public.products$$, array[34], 'seed has the reviewed products');
 select results_eq($$select count(*)::integer from public.categories$$, array[4], 'seed has the four reviewed categories');
 select results_eq($$select count(*)::integer from public.product_images where is_primary and published$$, array[30], 'seed has one reviewed primary image per product');
 select results_eq($$select count(*)::integer from public.bundles$$, array[1], 'seed has the reviewed bundle');
