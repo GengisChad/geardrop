@@ -110,7 +110,7 @@ export const PRODUCTS: readonly Product[] = [
   {
     slug: "glory-valkerion-lf", name: "Glory Valkerion LF", tagline: "Attacco UX. Blade e ratchet in un pezzo.",
     description: "Glory Valkerion LF è una trottola d'attacco a rotazione destra della linea UX: la blade integra il ratchet in un unico pezzo e il Bit Low Flat (LF), a punta piatta e bassa, la spinge in movimenti rapidi e aggressivi per agganciare l'Xtreme Line e scatenare l'Xtreme Dash. Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).",
-    price: eur(2300), category: "beyblade-x", bladeType: "attacco", stock: "disponibile", availableQuantity: 62, tags: [], rating: 0, reviewCount: 0,
+    price: eur(1999), category: "beyblade-x", bladeType: "attacco", stock: "disponibile", availableQuantity: 62, tags: [], rating: 0, reviewCount: 0,
     images: productImages["glory-valkerion-lf"],
     specs: [{ label: "Tipo", value: "Attacco" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "UX (Infinity Starter Pack)" }, { label: "Codice", value: "LF" }, { label: "Componenti", value: "1 trottola, 1 lanciatore" }],
     features: [{ title: "Ratchet integrato", description: "Blade e ratchet stampati in un unico pezzo" }, { title: "Bit Low Flat", description: "Punta piatta e bassa per un attacco rapido" }, { title: "Xtreme Dash", description: "Aggancia l'Xtreme Line dello stadio e accelera" }, { title: "Starter completo", description: "Include il lanciatore" }],
@@ -180,7 +180,7 @@ export const PRODUCTS: readonly Product[] = [
   {
     slug: "impact-drake-9-60lr", name: "Impact Drake 9-60LR", tagline: "Il Low Rush al prezzo di un booster.",
     description: "Impact Drake 9-60LR è la trottola d'attacco del Drop Attack Battle Set, qui venduta da sola: Ratchet 9-60 e Bit LR (Low Rush), due pezzi che nelle classifiche dei tornei compaiono spesso sotto blade diverse. Arriva imbustata e sigillata, estratta dal set e senza confezione singola. Non include il lanciatore. Richiede lanciatore e Beystadium Beyblade X (venduti separatamente).",
-    price: eur(1500), category: "beyblade-x", stock: "disponibile", availableQuantity: 100, tags: [], rating: 0, reviewCount: 0,
+    price: eur(1399), category: "beyblade-x", stock: "disponibile", availableQuantity: 100, tags: [], rating: 0, reviewCount: 0,
     images: productImages["impact-drake-9-60lr"],
     specs: [{ label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codice", value: "9-60LR" }, { label: "Componenti", value: "1 trottola" }, { label: "Confezione", value: "Imbustata e sigillata, estratta dal Battle Set" }, { label: "Nota", value: "Richiede lanciatore e Beystadium (venduti a parte)" }],
     features: [{ title: "Ratchet 9-60", description: "Assetto basso a 6,0 mm, nove punti di contatto" }, { title: "Bit Low Rush", description: "Punta bassa che scatta e riprende quota" }, { title: "Solo la trottola", description: "Il lanciatore non è incluso" }, { title: "Da sapere prima di comprare", description: "Estratta dal Drop Attack Battle Set: imbustata e sigillata, senza la sua confezione" }],
@@ -190,7 +190,7 @@ export const PRODUCTS: readonly Product[] = [
   {
     slug: "hover-wyvern-3-85n", name: "Hover Wyvern 3-85N", tagline: "Difesa alta. Resta in piedi.",
     description: "Hover Wyvern 3-85N è la trottola da difesa del Drop Attack Battle Set, qui venduta da sola: blade Hover Wyvern, Ratchet 3-85 fra i più alti della serie e Bit N (Needle). Arriva imbustata e sigillata, estratta dal set e senza confezione singola. Non include il lanciatore. Richiede lanciatore e Beystadium Beyblade X (venduti separatamente).",
-    price: eur(1500), category: "beyblade-x", stock: "disponibile", availableQuantity: 100, tags: [], rating: 0, reviewCount: 0,
+    price: eur(1399), category: "beyblade-x", stock: "disponibile", availableQuantity: 100, tags: [], rating: 0, reviewCount: 0,
     images: productImages["hover-wyvern-3-85n"],
     specs: [{ label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codice", value: "3-85N" }, { label: "Componenti", value: "1 trottola" }, { label: "Confezione", value: "Imbustata e sigillata, estratta dal Battle Set" }, { label: "Nota", value: "Richiede lanciatore e Beystadium (venduti a parte)" }],
     features: [{ title: "Ratchet 3-85", description: "Fra gli assetti più alti: tiene la trottola lontana dai colpi" }, { title: "Bit Needle", description: "Punta sottile, attrito minimo" }, { title: "Solo la trottola", description: "Il lanciatore non è incluso" }, { title: "Da sapere prima di comprare", description: "Estratta dal Drop Attack Battle Set: imbustata e sigillata, senza la sua confezione" }],
@@ -200,7 +200,7 @@ export const PRODUCTS: readonly Product[] = [
   {
     slug: "cobalt-dragoon-2-60c", name: "Cobalt Dragoon 2-60C", tagline: "Attacco left-spin. Smash devastante.",
     description: "Cobalt Dragoon 2-60C è una trottola d'attacco a rotazione sinistra (left-spin): quattro lame inclinate verso l'alto concentrano uno Smash Attack estremo, mentre il Ratchet 2-60 e il Bit Cyclone bilanciano velocità e stabilità. Lo starter include il lanciatore a corda left-spin dedicato.",
-    price: eur(2300), category: "beyblade-x", bladeType: "attacco", stock: "disponibile", availableQuantity: 56, tags: [], rating: 0, reviewCount: 0,
+    price: eur(1990), category: "beyblade-x", bladeType: "attacco", stock: "disponibile", availableQuantity: 56, tags: [], rating: 0, reviewCount: 0,
     images: productImages["cobalt-dragoon-2-60c"],
     specs: [{ label: "Tipo", value: "Attacco (left-spin)" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codice", value: "2-60C" }, { label: "Componenti", value: "1 trottola, 1 lanciatore a corda" }, { label: "Materiale", value: "Plastica e metallo" }],
     features: [{ title: "Rotazione sinistra", description: "Left-spin che spiazza gli assetti a rotazione destra" }, { title: "Smash estremo", description: "Quattro lame inclinate per KO potenti" }, { title: "Starter completo", description: "Include il lanciatore a corda dedicato" }, { title: "Compatibile Beyblade X", description: "Blade, Ratchet e Bit intercambiabili con la serie" }],
@@ -302,7 +302,7 @@ export const PRODUCTS: readonly Product[] = [
   {
     slug: "soar-phoenix-9-60gf", name: "Soar Phoenix 9-60GF", tagline: "Upper attack. Colpisci verso l'alto.",
     description: "Soar Phoenix 9-60GF è una trottola d'attacco a tre lame che salgono verso l'alto per un Upper Attack capace di sollevare l'avversario, unito allo Smash che lo spinge fuori arena. Tra le blade più pesanti della serie. Lo starter include il lanciatore a corda.",
-    price: eur(2590), category: "beyblade-x", bladeType: "attacco", stock: "disponibile", availableQuantity: 199, tags: ["novita"], rating: 0, reviewCount: 0,
+    price: eur(2490), category: "beyblade-x", bladeType: "attacco", stock: "disponibile", availableQuantity: 199, tags: ["novita"], rating: 0, reviewCount: 0,
     images: productImages["soar-phoenix-9-60gf"],
     specs: [{ label: "Tipo", value: "Attacco" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codice", value: "9-60GF" }, { label: "Componenti", value: "1 trottola, 1 lanciatore a corda" }, { label: "Materiale", value: "Plastica e metallo" }],
     features: [{ title: "Upper Attack", description: "Le tre lame sollevano l'avversario da terra" }, { title: "Peso elevato", description: "Massa che domina i confronti d'attacco" }, { title: "Starter completo", description: "Include il lanciatore a corda" }, { title: "Compatibile Beyblade X", description: "Blade, Ratchet e Bit intercambiabili con la serie" }],
@@ -406,35 +406,38 @@ export const BUNDLES: readonly Product[] = [
     bundleOf: [{ slug: "shatter-horus-9-65gb", quantity: 1 }, { slug: "hurricane-enlil-is-7-55t", quantity: 1 }],
   },
   // Owner, 2026-10-08: "Promo Attack", Glory Valkerion with Buster Dran at 29,99.
+  // 2026-10-14: price to 26,99; Glory Valkerion dropped to 19,99, compareAtPrice 19,99+8,90=28,89, saving 1,90.
   {
-    slug: "promo-attack", name: "Promo Attack", tagline: "Glory Valkerion + Buster Dran. Due attacchi UX, €1,91 in meno.",
+    slug: "promo-attack", name: "Promo Attack", tagline: "Glory Valkerion + Buster Dran. Due attacchi UX, €1,90 in meno.",
     description: "Due trottole d'attacco della linea UX in un solo pacco: lo starter Glory Valkerion LF, con il Bit Low Flat a punta piatta e bassa e l'Xtreme Dash per correre sul bordo dello stadio, e il booster Buster Dran 5-70DB, la blade ovale che concentra tutta la massa su un unico contatto. Glory Valkerion include il lanciatore; Buster Dran è la versione booster, con la sola trottola. Richiede un Beystadium Beyblade X (venduto separatamente).",
-    price: eur(2999), compareAtPrice: eur(3190), category: "beyblade-x", stock: "disponibile", availableQuantity: 26, tags: ["offerta"], rating: 0, reviewCount: 0,
+    price: eur(2699), compareAtPrice: eur(2889), category: "beyblade-x", stock: "disponibile", availableQuantity: 26, tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["promo-attack"],
     specs: [{ label: "Tipo", value: "Attacco + Attacco" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "UX" }, { label: "Codici", value: "LF · 5-70DB" }, { label: "Componenti", value: "2 trottole, 1 lanciatore" }],
-    features: [{ title: "Due attacchi UX", description: "Due modi diversi di colpire, nello stesso deck" }, { title: "Lanciatore incluso", description: "Nello starter di Glory Valkerion" }, { title: "Risparmi €1,91", description: "€29,99 invece di €31,90 comprandoli separati" }, { title: "Da sapere prima di comprare", description: "Buster Dran è un booster: solo trottola, senza lanciatore" }],
+    features: [{ title: "Due attacchi UX", description: "Due modi diversi di colpire, nello stesso deck" }, { title: "Lanciatore incluso", description: "Nello starter di Glory Valkerion" }, { title: "Risparmi €1,90", description: "€26,99 invece di €28,89 comprandoli separati" }, { title: "Da sapere prima di comprare", description: "Buster Dran è un booster: solo trottola, senza lanciatore" }],
     boxContents: ["1 × Starter Glory Valkerion LF (trottola e lanciatore)", "1 × Booster Buster Dran 5-70DB (solo trottola)", "Manuali"],
     relatedSlugs: ["glory-valkerion-lf", "buster-dran-5-70db", "duo-horus-enlil"],
     bundleOf: [{ slug: "glory-valkerion-lf", quantity: 1 }, { slug: "buster-dran-5-70db", quantity: 1 }],
   },
   {
+    // 2026-10-14: Cobalt Dragoon 19,90 + Shadow Shinobi 9,99 + Impact Drake 13,99 = compareAt 43,88; saving 3,98.
     slug: "deck-completo-meta", name: "Deck Completo", tagline: "Tre ruoli, un deck. Attacco, difesa, Low Rush.",
     description: "Tre trottole che coprono i tre ruoli di un deck: Cobalt Dragoon 2-60C, l'unico attacco a rotazione sinistra del catalogo; Shadow Shinobi 1-80MN, che devia il colpo invece di rimbalzarlo; e Impact Drake 9-60LR, che porta il Ratchet 9-60 e il Bit Low Rush. I due starter includono il proprio lanciatore; Impact Drake arriva imbustato, estratto dal Battle Set e senza lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).",
-    price: eur(3990), compareAtPrice: eur(4799), category: "beyblade-x", stock: "disponibile", availableQuantity: 26, tags: ["offerta"], rating: 0, reviewCount: 0,
+    price: eur(3990), compareAtPrice: eur(4388), category: "beyblade-x", stock: "disponibile", availableQuantity: 26, tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["deck-completo-meta"],
     specs: [{ label: "Tipo", value: "Attacco + Difesa + Attacco basso" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codici", value: "2-60C · 1-80MN · 9-60LR" }, { label: "Componenti", value: "3 trottole, 2 lanciatori" }],
-    features: [{ title: "Un deck intero", description: "Tre ruoli diversi, non tre trottole a caso" }, { title: "Ratchet 9-60 e Bit Low Rush", description: "Due pezzi che girano spesso nelle build da torneo" }, { title: "Risparmi €8,09", description: "€39,90 invece di €47,99 comprandoli separati" }, { title: "Da sapere prima di comprare", description: "Impact Drake è imbustato, estratto dal Battle Set e senza lanciatore" }],
+    features: [{ title: "Un deck intero", description: "Tre ruoli diversi, non tre trottole a caso" }, { title: "Ratchet 9-60 e Bit Low Rush", description: "Due pezzi che girano spesso nelle build da torneo" }, { title: "Risparmi €3,98", description: "€39,90 invece di €43,88 comprandoli separati" }, { title: "Da sapere prima di comprare", description: "Impact Drake è imbustato, estratto dal Battle Set e senza lanciatore" }],
     boxContents: ["1 × Starter Cobalt Dragoon 2-60C (trottola e lanciatore)", "1 × Starter Shadow Shinobi 1-80MN (trottola e lanciatore)", "1 × Trottola Impact Drake 9-60LR imbustata"],
     relatedSlugs: ["impact-drake-9-60lr", "cobalt-dragoon-2-60c", "trio-starter-arena"],
     bundleOf: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }, { slug: "shadow-shinobi-1-80mn", quantity: 1 }, { slug: "impact-drake-9-60lr", quantity: 1 }],
   },
   {
+    // 2026-10-14: Shatter Horus 11,99 + Hurricane Enlil 9,99 + Hover Wyvern 13,99 = compareAt 35,97; saving 6,07.
     slug: "trio-starter-arena", name: "Trio Starter", tagline: "Stamina, bilanciata, difesa. Si parte da qui.",
     description: "Tre trottole per chi comincia e vuole già tre assetti diversi: Shatter Horus 9-65GB, stamina BX con il metallo esteso oltre i ganci; Hurricane Enlil IS 7-55T, bilanciata CX con la blade Infinity scomponibile; e Hover Wyvern 3-85N, difesa con il Ratchet 3-85 fra i più alti della serie. I due starter includono il proprio lanciatore; Hover Wyvern arriva imbustato, estratto dal Battle Set e senza lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).",
-    price: eur(2990), compareAtPrice: eur(3698), category: "beyblade-x", stock: "disponibile", availableQuantity: 47, tags: ["offerta"], rating: 0, reviewCount: 0,
+    price: eur(2990), compareAtPrice: eur(3597), category: "beyblade-x", stock: "disponibile", availableQuantity: 47, tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["trio-starter-arena"],
     specs: [{ label: "Tipo", value: "Stamina + Bilanciata + Difesa" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codici", value: "9-65GB · IS 7-55T · 3-85N" }, { label: "Componenti", value: "3 trottole, 2 lanciatori" }],
-    features: [{ title: "Tre assetti opposti", description: "Stamina, bilanciata e difesa in un colpo solo" }, { title: "Blade Infinity scomponibile", description: "Hurricane Enlil si smonta per costruire l'assetto su misura" }, { title: "Risparmi €7,08", description: "€29,90 invece di €36,98 comprandoli separati" }, { title: "Da sapere prima di comprare", description: "Hover Wyvern è imbustato, estratto dal Battle Set e senza lanciatore" }],
+    features: [{ title: "Tre assetti opposti", description: "Stamina, bilanciata e difesa in un colpo solo" }, { title: "Blade Infinity scomponibile", description: "Hurricane Enlil si smonta per costruire l'assetto su misura" }, { title: "Risparmi €6,07", description: "€29,90 invece di €35,97 comprandoli separati" }, { title: "Da sapere prima di comprare", description: "Hover Wyvern è imbustato, estratto dal Battle Set e senza lanciatore" }],
     boxContents: ["1 × Starter Shatter Horus 9-65GB (trottola e lanciatore)", "1 × Starter Hurricane Enlil IS 7-55T (trottola e lanciatore)", "1 × Trottola Hover Wyvern 3-85N imbustata"],
     relatedSlugs: ["hover-wyvern-3-85n", "duo-horus-enlil", "deck-completo-meta"],
     bundleOf: [{ slug: "shatter-horus-9-65gb", quantity: 1 }, { slug: "hurricane-enlil-is-7-55t", quantity: 1 }, { slug: "hover-wyvern-3-85n", quantity: 1 }],
@@ -468,18 +471,34 @@ export type ShippingMethodDefinition = {
 };
 
 /**
- * What the buyer picks at checkout, at what the parcel costs the shop to send (owner, 2026-10-13):
- * InPost Locker at €4,90 (cheapest, default), InPost punto di ritiro (shops/kiosks) at €5,65,
- * or Poste Italiane to the door at €6,65. Note: the old €4,90 Poste rate "non esiste" (owner,
- * 2026-10-07); this €4,90 is a real InPost Locker rate added 2026-10-13.
+ * What the buyer picks at checkout, at what the parcel costs the shop to send.
+ * History (owner decisions):
+ *   2026-10-07 — InPost punto di ritiro 5,65 + Poste Italiane a casa 6,65.
+ *   2026-10-13 — InPost Locker 4,90 added as the cheapest and default method.
+ *   2026-10-14 — InPost punto di ritiro replaced by Poste Italiane punto di ritiro at the same
+ *                5,65; mixed Hasbro+Takara carts locked to poste-point instead of inpost-point.
+ *
+ * Note: the old €4,90 Poste rate "non esiste" (owner, 2026-10-07); this €4,90 is a real
+ * InPost Locker rate added 2026-10-13.
  * The first entry is the cheapest and the one a cart is priced with until the buyer chooses.
  * Free shipping from FREE_SHIPPING_THRESHOLD applies to every method. BRT, DHL and others
  * will join this list.
  */
 export const SHIPPING_METHODS: readonly ShippingMethodDefinition[] = [
   { code: "inpost-locker", carrier: "inpost", label: "InPost · Locker", priceCents: 490, pickupPoint: true },
-  { code: "inpost-point", carrier: "inpost", label: "InPost · punto di ritiro", priceCents: 565, pickupPoint: true },
+  { code: "poste-point", carrier: "poste", label: "Poste Italiane · punto di ritiro", priceCents: 565, pickupPoint: true },
   { code: "standard", carrier: "poste", label: "Poste Italiane · consegna a casa", priceCents: 665, pickupPoint: false },
+];
+
+/**
+ * Retired shipping methods: no longer offered for new orders but still resolvable for display
+ * in historical orders that were placed when these codes were active. Added to ALL_METHODS so
+ * shippingMethodByCode() can still look them up for admin pages, emails and the webhook.
+ * The checkout validation (quoteCart) never returns these codes.
+ */
+const RETIRED_SHIPPING_METHODS: readonly ShippingMethodDefinition[] = [
+  // 2026-10-07–2026-10-13: InPost punto di ritiro replaced by poste-point on 2026-10-14.
+  { code: "inpost-point", carrier: "inpost", label: "InPost · punto di ritiro", priceCents: 565, pickupPoint: true },
 ];
 
 /**
@@ -514,8 +533,11 @@ export const PARTNER_SHIPPING_METHOD: ShippingMethodDefinition = {
   pickupPoint: true,
 };
 
-/** All methods the shop can use, including the partner route for Takara Tomy consignment. */
-const ALL_METHODS: readonly ShippingMethodDefinition[] = [...SHIPPING_METHODS, PARTNER_SHIPPING_METHOD];
+/**
+ * All methods the shop can use, including the partner route for Takara Tomy consignment and
+ * retired codes kept for historical order display. Retired codes are never offered at checkout.
+ */
+const ALL_METHODS: readonly ShippingMethodDefinition[] = [...SHIPPING_METHODS, PARTNER_SHIPPING_METHOD, ...RETIRED_SHIPPING_METHODS];
 
 export function shippingMethodByCode(code: string | null | undefined): ShippingMethodDefinition | undefined {
   return ALL_METHODS.find((method) => method.code === code);
@@ -535,7 +557,8 @@ export type ShippingPlan = {
  *
  * - Hasbro-only (or empty): all SHIPPING_METHODS, buyer chooses.
  * - Takara-only: only the partner's Poste Punto-Poste route, locked.
- * - Mixed: InPost point only, locked (one shipment, two warehouses, two packs).
+ * - Mixed: Poste punto di ritiro only, locked (owner, 2026-10-14 — one shipment, two warehouses,
+ *   two packs; was inpost-point from 2026-10-07 until 2026-10-14).
  *
  * FREE_SHIPPING_THRESHOLD applies to every plan at the quoting layer.
  */
@@ -544,9 +567,9 @@ export function shippingPlanFor(brands: ReadonlySet<BrandSlug>): ShippingPlan {
   const hasTakara = brands.has("takara-tomy");
 
   if (hasTakara && hasHasbro) {
-    const inpost = SHIPPING_METHODS.find((m) => m.code === "inpost-point");
-    if (!inpost) throw new Error("inpost-point method missing from SHIPPING_METHODS");
-    return { methods: [inpost], locked: true, composition: "mixed" };
+    const postePoint = SHIPPING_METHODS.find((m) => m.code === "poste-point");
+    if (!postePoint) throw new Error("poste-point method missing from SHIPPING_METHODS");
+    return { methods: [postePoint], locked: true, composition: "mixed" };
   }
   if (hasTakara) {
     return { methods: [PARTNER_SHIPPING_METHOD], locked: true, composition: "takara-only" };

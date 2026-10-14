@@ -459,7 +459,7 @@ where singleton
 insert into public.shipping_methods (code, name, price_cents, free_from_cents, active, sort_order)
 values
   ('inpost-locker', 'InPost · Locker', ${shippingMethodByCode("inpost-locker")!.priceCents}, ${FREE_SHIPPING_THRESHOLD}, false, 0),
-  ('inpost-point', 'InPost · punto di ritiro', ${shippingMethodByCode("inpost-point")!.priceCents}, ${FREE_SHIPPING_THRESHOLD}, false, 1),
+  ('poste-point', 'Poste Italiane · punto di ritiro', ${shippingMethodByCode("poste-point")!.priceCents}, ${FREE_SHIPPING_THRESHOLD}, false, 1),
   ('standard', 'Spedizione standard', ${shippingMethodByCode("standard")!.priceCents}, ${FREE_SHIPPING_THRESHOLD}, false, 2)
 on conflict (code) do update set
   name = excluded.name,

@@ -233,11 +233,11 @@ test.describe("checkout", () => {
     await expect(page.getByTestId("cart-shipping")).toHaveText(euro(665));
     await expect(page.locator("#pickupPoint")).toHaveCount(0);
 
-    // Switching back to InPost punto di ritiro restores the pickup field at 5,65.
-    await shipping.getByText("InPost · punto di ritiro").click();
+    // Switching back to Poste punto di ritiro restores the pickup field at 5,65 (2026-10-14: poste-point).
+    await shipping.getByText("Poste Italiane · punto di ritiro").click();
     await expect(page.getByTestId("cart-total")).toHaveText(euro(DRAGOON + 565));
     await expect(page.locator("#pickupPoint")).toBeVisible();
-    await expect(page.getByLabel("Punto di ritiro InPost")).toBeVisible();
+    await expect(page.getByLabel("Punto Poste o Locker")).toBeVisible();
   });
 
   test("checkout with an empty cart offers nothing to pay for", async ({ page }) => {

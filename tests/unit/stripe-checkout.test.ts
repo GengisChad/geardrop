@@ -186,10 +186,10 @@ describe("stripe checkout session", () => {
   });
 
   it("ships free above the threshold", async () => {
-    // Two arenas and a pack clear the threshold whatever the owner sets it to.
+    // Two arenas and two packs clear the threshold whatever the owner sets it to.
     const quote = await quoteFor([
       { slug: "drop-attack-battle-set", quantity: 2 },
-      { slug: "cobalt-dragoon-2-60c", quantity: 1 },
+      { slug: "cobalt-dragoon-2-60c", quantity: 2 },
     ]);
     const fields = buildCheckoutSessionFields({ quote, order, origin: ORIGIN }, matchStripePrices(quote, catalogPrices)!);
 
@@ -331,7 +331,7 @@ describe("express checkout session fields", () => {
   it("shows free shipping label above the threshold in express mode", async () => {
     const poste = SHIPPING_METHODS.find((m) => m.code === "standard")!;
     const quote = await quoteFor(
-      [{ slug: "drop-attack-battle-set", quantity: 2 }, { slug: "cobalt-dragoon-2-60c", quantity: 1 }],
+      [{ slug: "drop-attack-battle-set", quantity: 2 }, { slug: "cobalt-dragoon-2-60c", quantity: 2 }],
       "standard",
     );
     const fields = buildCheckoutSessionFields(

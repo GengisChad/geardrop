@@ -85,7 +85,19 @@ function deliveryLines(address: unknown): readonly string[] {
   const record = address as Record<string, unknown>;
   const value = (key: string) => (typeof record[key] === "string" ? String(record[key]).trim() : "");
   const pickup = pickupPointOf(address);
-  if (pickup) return [value("name"), `Punto InPost o Locker: ${pickup}`, "InPost ti manda il codice per ritirarlo quando arriva."].filter(Boolean);
+  if (pickup) {
+    // Carrier-aware: derive from the method code stored in the shipping snapshot.
+    const method = value("method");
+    const isPoste = method.startsWith("poste");
+    const isInpost = method.startsWith("inpost");
+    const pointLabel = isPoste ? `Punto Poste o Locker: ${pickup}` : isInpost ? `Punto InPost o Locker: ${pickup}` : `Punto di ritiro: ${pickup}`;
+    const pickupNote = isPoste
+      ? "Poste Italiane ti avvisa quando il pacco è disponibile al ritiro."
+      : isInpost
+        ? "InPost ti manda il codice per ritirarlo quando arriva."
+        : "Il corriere ti avvisa quando il pacco è disponibile.";
+    return [value("name"), pointLabel, pickupNote].filter(Boolean);
+  }
   if (!value("address")) return addressLines(address);
   const place = [value("postalCode"), value("city"), value("province") ? `(${value("province")})` : ""].filter(Boolean).join(" ");
   return [value("name"), value("address"), place].filter(Boolean);
