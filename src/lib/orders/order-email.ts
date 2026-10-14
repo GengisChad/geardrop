@@ -42,10 +42,18 @@ const dateFormatter = new Intl.DateTimeFormat("it-IT", {
 function addressBlock(checkout: PaidCheckout): readonly string[] {
   const { shipping } = checkout;
   const place = [shipping.postalCode, shipping.city, shipping.province ? `(${shipping.province})` : ""].filter(Boolean).join(" ");
-  // Which carrier, and for InPost to a point the point itself: what the parcel is booked on.
+  // Which carrier, and for a pickup method the point itself: what the parcel is booked on.
+  // Carrier-aware: derive label from the method code stored in the shipping snapshot.
+  const pickupLabel = (() => {
+    if (!shipping.pickupPoint) return "";
+    const method = shipping.method ?? "";
+    if (method.startsWith("poste")) return `Punto di ritiro Poste: ${shipping.pickupPoint}`;
+    if (method.startsWith("inpost")) return `Punto InPost: ${shipping.pickupPoint}`;
+    return `Punto di ritiro: ${shipping.pickupPoint}`;
+  })();
   const carrier = [
     shipping.methodLabel ? `Spedizione: ${shipping.methodLabel}` : "",
-    shipping.pickupPoint ? `Punto InPost: ${shipping.pickupPoint}` : "",
+    pickupLabel,
   ];
   return [shipping.name, shipping.address, place, shipping.country, ...carrier].filter(Boolean);
 }

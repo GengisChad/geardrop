@@ -380,8 +380,8 @@ export function CheckoutClient() {
                         {option.price.amount === 0 ? "Gratis" : formatPrice(option.price)}
                       </span>
                     </div>
-                    {/* Mixed cart: InPost is the locked method when both brands are present. */}
-                    {option.code === "inpost-point" ? (
+                    {/* Mixed cart: Poste punto di ritiro is the locked method when both brands are present (owner, 2026-10-14). */}
+                    {option.code === "poste-point" ? (
                       <p className="text-[0.6875rem] text-grey-600 sm:col-span-2" data-testid="mixed-cart-note">
                         I pezzi Takara Tomy partono dal nostro partner: arrivano in due pacchi, paghi una sola spedizione.
                       </p>

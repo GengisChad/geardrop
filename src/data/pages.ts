@@ -36,7 +36,7 @@ export const SUPPORT_PAGES = {
       {
         heading: "Quanto costa la spedizione?",
         body: [
-          "Al checkout scegli come ricevere il pacco: Locker InPost 4,90 €, punto di ritiro InPost 5,65 € o a casa con Poste Italiane 6,65 €.",
+          "Al checkout scegli come ricevere il pacco: Locker InPost 4,90 €, punto di ritiro Poste Italiane 5,65 € o a casa con Poste Italiane 6,65 €.",
           "La spedizione è gratuita, con qualsiasi corriere, per ordini da 100 €.",
           "Spediamo solo in Italia.",
         ],
@@ -87,7 +87,7 @@ export const SUPPORT_PAGES = {
         heading: "Costi",
         body: [
           "Spedizione gratuita per ordini superiori a 100€.",
-          "Sotto la soglia scegli come ricevere il pacco: Locker InPost 4,90 €, punto di ritiro InPost 5,65 € o a casa con Poste Italiane 6,65 €. Il costo è mostrato prima del pagamento.",
+          "Sotto la soglia scegli come ricevere il pacco: Locker InPost 4,90 €, punto di ritiro Poste Italiane 5,65 € o a casa con Poste Italiane 6,65 €. Il costo è mostrato prima del pagamento.",
         ],
       },
       {
@@ -194,7 +194,7 @@ export const LEGAL_PAGES = {
         heading: "Prezzi e spedizione",
         body: [
           "I prezzi sono espressi in euro e comprendono l'IVA.",
-          "La spedizione in Italia costa 4,90 € con InPost Locker, 5,65 € con InPost punto di ritiro e 6,65 € con Poste Italiane a casa; è gratuita per ordini da 100 €. Il totale, spedizione inclusa, è mostrato prima del pagamento.",
+          "La spedizione in Italia costa 4,90 € con InPost Locker, 5,65 € con Poste Italiane punto di ritiro e 6,65 € con Poste Italiane a casa; è gratuita per ordini da 100 €. Il totale, spedizione inclusa, è mostrato prima del pagamento.",
         ],
       },
       {

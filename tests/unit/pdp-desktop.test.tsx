@@ -15,9 +15,9 @@ import { formatPrice } from "@/lib/format";
 /** Strip trailing ",00" the way eur() in delivery-summary does. */
 const eur = (cents: number) => formatPrice({ amount: cents, currency: "EUR" }).replace(/,00$/, "");
 
-// All three Hasbro methods (owner, 2026-10-13): Locker 4,90, punto di ritiro 5,65, Poste 6,65.
+// All three Hasbro methods (owner, 2026-10-14): Locker 4,90, Poste punto di ritiro 5,65, Poste a casa 6,65.
 const locker = SHIPPING_METHODS.find((m) => m.code === "inpost-locker")!;
-const inpost = SHIPPING_METHODS.find((m) => m.code === "inpost-point")!;
+const inpost = SHIPPING_METHODS.find((m) => m.code === "poste-point")!;
 const poste = SHIPPING_METHODS.find((m) => m.code === "standard")!;
 
 // A plain in-stock Hasbro product.
@@ -45,7 +45,7 @@ describe("DeliverySummary — Hasbro in-stock", () => {
     expect(html).toContain(eur(locker.priceCents));
   });
 
-  it("shows the InPost punto di ritiro price from SHIPPING_METHODS", () => {
+  it("shows the Poste punto di ritiro price from SHIPPING_METHODS (2026-10-14: poste-point)", () => {
     expect(html).toContain(inpost.label);
     expect(html).toContain(eur(inpost.priceCents));
   });

@@ -203,7 +203,7 @@ describe("quoteCart", () => {
   it("offers the three carriers the shop sells, InPost Locker cheapest and default", async () => {
     const quote = await provider.quoteCart({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }] });
     expect(quote.shippingOptions.map((option) => [option.code, option.price.amount])).toEqual([
-      ["inpost-locker", SHIPPING_FLAT_RATE], ["inpost-point", 565], ["standard", 665],
+      ["inpost-locker", SHIPPING_FLAT_RATE], ["poste-point", 565], ["standard", 665],
     ]);
     expect(quote.shippingCode).toBe("inpost-locker");
     expect(quote.totals.shipping.amount).toBe(SHIPPING_FLAT_RATE);
@@ -214,14 +214,14 @@ describe("quoteCart", () => {
     const line = [{ slug: "cobalt-dragoon-2-60c" as const, quantity: 1 }];
     const locker = await provider.quoteCart({ lines: line, shippingCode: "inpost-locker" });
     expect([locker.shippingCode, locker.totals.shipping.amount]).toEqual(["inpost-locker", SHIPPING_FLAT_RATE]);
-    const point = await provider.quoteCart({ lines: line, shippingCode: "inpost-point" });
-    expect([point.shippingCode, point.totals.shipping.amount]).toEqual(["inpost-point", 565]);
+    const point = await provider.quoteCart({ lines: line, shippingCode: "poste-point" });
+    expect([point.shippingCode, point.totals.shipping.amount]).toEqual(["poste-point", 565]);
     const home = await provider.quoteCart({ lines: line, shippingCode: "standard" });
     expect([home.shippingCode, home.totals.shipping.amount, home.totals.total.amount]).toEqual(["standard", 665, DRAGOON + 665]);
     // A code the shop does not sell falls back to InPost Locker (first/cheapest) rather than to a price nobody chose.
     const unknown = await provider.quoteCart({ lines: line, shippingCode: "brt" });
     expect([unknown.shippingCode, unknown.totals.shipping.amount]).toEqual(["inpost-locker", SHIPPING_FLAT_RATE]);
-    const big = await provider.quoteCart({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 5 }], shippingCode: "standard" });
+    const big = await provider.quoteCart({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 6 }], shippingCode: "standard" });
     expect(big.totals.shipping.amount).toBe(0);
   });
 
