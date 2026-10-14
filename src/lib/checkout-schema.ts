@@ -50,7 +50,7 @@ export const checkoutSchema = z.object({
 });
 
 // One message for every pickup method: InPost Locker, InPost punto di ritiro and the partner's Punto Poste.
-export const PICKUP_POINT_MESSAGE = "Indica il Locker o il punto dove ritirare il pacco.";
+export const PICKUP_POINT_MESSAGE = "Indica il punto dove ritirare il pacco.";
 
 /**
  * Label and example for the pickup field. Since 2026-10-13 the InPost Locker and the InPost punto
@@ -60,7 +60,7 @@ export function pickupPointCopy(method: { readonly code: string; readonly carrie
   readonly label: string;
   readonly placeholder: string;
 } {
-  if (method?.carrier === "poste") return { label: "Punto Poste o Locker", placeholder: "Es. codice del Locker o indirizzo del punto" };
+  if (method?.carrier === "poste") return { label: "Punto di ritiro Poste Italiane", placeholder: "Es. nome o indirizzo del punto" };
   if (method?.code === "inpost-locker") return { label: "Locker InPost", placeholder: "Es. codice o indirizzo del Locker" };
   return { label: "Punto di ritiro InPost", placeholder: "Es. nome o indirizzo del punto" };
 }

@@ -332,7 +332,7 @@ describe("checkout server refusal — pickup point missing", () => {
     expect(pickupPointMissing).toBe(true);
 
     // The message is carrier-neutral: it serves the InPost Locker, the InPost punto and the Punto Poste.
-    expect(PICKUP_POINT_MESSAGE).toBe("Indica il Locker o il punto dove ritirare il pacco.");
+    expect(PICKUP_POINT_MESSAGE).toBe("Indica il punto dove ritirare il pacco.");
   });
 
   it("names the pickup the buyer picked (Locker and punto di ritiro are separate since 2026-10-13)", async () => {
@@ -341,9 +341,9 @@ describe("checkout server refusal — pickup point missing", () => {
     expect(pickupPointCopy(shippingMethodByCode("inpost-locker")).label).toBe("Locker InPost");
     // inpost-point retired 2026-10-14 but still resolves for legacy display
     expect(pickupPointCopy(shippingMethodByCode("inpost-point")).label).toBe("Punto di ritiro InPost");
-    // poste-point and poste-point-partner both have carrier "poste" → "Punto Poste o Locker"
-    expect(pickupPointCopy(shippingMethodByCode("poste-point")).label).toBe("Punto Poste o Locker");
-    expect(pickupPointCopy(shippingMethodByCode("poste-point-partner")).label).toBe("Punto Poste o Locker");
+    // poste-point and poste-point-partner both have carrier "poste" → "Punto di ritiro Poste Italiane"
+    expect(pickupPointCopy(shippingMethodByCode("poste-point")).label).toBe("Punto di ritiro Poste Italiane");
+    expect(pickupPointCopy(shippingMethodByCode("poste-point-partner")).label).toBe("Punto di ritiro Poste Italiane");
   });
 
   it("passes when a pickup point of ≥ 3 chars is present", async () => {

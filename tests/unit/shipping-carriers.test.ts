@@ -212,7 +212,7 @@ describe("the shipping email", () => {
       items: [{ name: "Cobalt Dragoon 2-60C", quantity: 1 }],
     });
     expect(email.text).toContain("Dove ritirarlo:");
-    expect(email.text).toContain("Punto Poste o Locker: RM001");
+    expect(email.text).toContain("Punto di ritiro Poste: RM001");
     expect(email.text).not.toContain("Via Roma 1");
   });
 

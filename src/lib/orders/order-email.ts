@@ -47,7 +47,7 @@ function addressBlock(checkout: PaidCheckout): readonly string[] {
   const pickupLabel = (() => {
     if (!shipping.pickupPoint) return "";
     const method = shipping.method ?? "";
-    if (method.startsWith("poste")) return `Punto Poste o Locker: ${shipping.pickupPoint}`;
+    if (method.startsWith("poste")) return `Punto di ritiro Poste: ${shipping.pickupPoint}`;
     if (method.startsWith("inpost")) return `Punto InPost: ${shipping.pickupPoint}`;
     return `Punto di ritiro: ${shipping.pickupPoint}`;
   })();

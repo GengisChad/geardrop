@@ -90,7 +90,7 @@ function deliveryLines(address: unknown): readonly string[] {
     const method = value("method");
     const isPoste = method.startsWith("poste");
     const isInpost = method.startsWith("inpost");
-    const pointLabel = isPoste ? `Punto Poste o Locker: ${pickup}` : isInpost ? `Punto InPost o Locker: ${pickup}` : `Punto di ritiro: ${pickup}`;
+    const pointLabel = isPoste ? `Punto di ritiro Poste: ${pickup}` : isInpost ? `Punto InPost o Locker: ${pickup}` : `Punto di ritiro: ${pickup}`;
     const pickupNote = isPoste
       ? "Poste Italiane ti avvisa quando il pacco è disponibile al ritiro."
       : isInpost
