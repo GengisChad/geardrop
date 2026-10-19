@@ -314,7 +314,8 @@ export const PRODUCTS: readonly Product[] = [
   {
     slug: "cx-00-evangelion-deck-set", name: "CX-00 Evangelion Deck Set", tagline: "Tre trottole Evangelion per i 30 anni della serie.",
     description: "Il CX-00 Evangelion Deck Set è l'edizione Takara Tomy per i 30 anni di Evangelion: tre trottole Beyblade X ispirate alle Unità 00, 01 e 02 (EvaArc, EvaBrave ed EvaBrush), due lanciatori Winder e il box porta trottole EVA HANGAR. Prodotto originale giapponese, confezione in giapponese. Spedito dal nostro partner.",
-    price: eur(13500), category: "beyblade-x", brand: "takara-tomy", consignment: true, commissionCents: 500, stock: "disponibile", availableQuantity: 2, tags: [], rating: 0, reviewCount: 0,
+    // Owner, 2026-10-19: NerdPoint consignment stock sold out; restocking is a new movement when NerdPoint ships new pieces.
+    price: eur(13500), category: "beyblade-x", brand: "takara-tomy", consignment: true, commissionCents: 500, stock: "esaurito", availableQuantity: 0, tags: [], rating: 0, reviewCount: 0,
     images: productImages["cx-00-evangelion-deck-set"],
     specs: [{ label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codice", value: "CX-00" }, { label: "Componenti", value: "3 trottole, 2 lanciatori Winder, 1 box porta trottole" }, { label: "Confezione", value: "In giapponese" }, { label: "Età", value: "Dai 6 anni (indicazione della confezione)" }],
     features: [{ title: "30 anni di Evangelion", description: "Collaborazione ufficiale Takara Tomy" }, { title: "Tre trottole", description: "EvaArc, EvaBrave ed EvaBrush, versioni Unità 00, 01 e 02" }, { title: "Due lanciatori Winder", description: "Si gioca subito in due" }, { title: "Box EVA HANGAR", description: "Porta trottole a tema incluso" }],
@@ -324,7 +325,8 @@ export const PRODUCTS: readonly Product[] = [
   {
     slug: "ux-00-glory-valkyrie-lf", name: "UX-00 Glory Valkyrie LF", tagline: "B4 Limited, Metal Coat blu.",
     description: "UX-00 Glory Valkyrie LF è l'edizione limitata B4 (Beyblade Battle Base) di Takara Tomy, con la blade in Metal Coat blu e il Bit Low Flat (LF) a punta piatta e bassa per un attacco rapido. Lo starter include il lanciatore a corda. Prodotto originale giapponese, confezione in giapponese. Spedito dal nostro partner.",
-    price: eur(20500), category: "beyblade-x", bladeType: "attacco", brand: "takara-tomy", consignment: true, commissionCents: 500, stock: "disponibile", availableQuantity: 2, tags: [], rating: 0, reviewCount: 0,
+    // Owner, 2026-10-19: NerdPoint consignment stock sold out; restocking is a new movement when NerdPoint ships new pieces.
+    price: eur(20500), category: "beyblade-x", bladeType: "attacco", brand: "takara-tomy", consignment: true, commissionCents: 500, stock: "esaurito", availableQuantity: 0, tags: [], rating: 0, reviewCount: 0,
     images: productImages["ux-00-glory-valkyrie-lf"],
     specs: [{ label: "Tipo", value: "Attacco" }, { label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "UX" }, { label: "Codice", value: "UX-00 LF" }, { label: "Edizione", value: "B4 Limited, Metal Coat blu" }, { label: "Componenti", value: "1 trottola, 1 lanciatore a corda" }, { label: "Confezione", value: "In giapponese" }],
     features: [{ title: "Edizione limitata B4", description: "Venduta nei Beyblade Battle Base giapponesi" }, { title: "Metal Coat blu", description: "Finitura metallizzata della blade" }, { title: "Bit Low Flat", description: "Punta piatta e bassa per un attacco rapido" }, { title: "Starter completo", description: "Include il lanciatore a corda" }],
@@ -334,7 +336,8 @@ export const PRODUCTS: readonly Product[] = [
   {
     slug: "cx-00-tigarage-ft3-60t", name: "CX-00 Tigarage FT3-60T", tagline: "B4 Limited, collaborazione Ultraman Tiga.",
     description: "CX-00 Tigarage FT3-60T è l'edizione limitata B4 (Beyblade Battle Base) di Takara Tomy nata dalla collaborazione con Ultraman Tiga. Lo starter include il lanciatore e gli adesivi della collaborazione. Prodotto originale giapponese, confezione in giapponese. Spedito dal nostro partner.",
-    price: eur(10399), category: "beyblade-x", brand: "takara-tomy", consignment: true, commissionCents: 500, stock: "disponibile", availableQuantity: 2, tags: [], rating: 0, reviewCount: 0,
+    // Owner, 2026-10-19: NerdPoint consignment stock sold out; restocking is a new movement when NerdPoint ships new pieces.
+    price: eur(10399), category: "beyblade-x", brand: "takara-tomy", consignment: true, commissionCents: 500, stock: "esaurito", availableQuantity: 0, tags: [], rating: 0, reviewCount: 0,
     images: productImages["cx-00-tigarage-ft3-60t"],
     specs: [{ label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "CX" }, { label: "Codice", value: "CX-00 FT3-60T" }, { label: "Edizione", value: "B4 Limited, collaborazione Ultraman Tiga" }, { label: "Componenti", value: "1 trottola, 1 lanciatore, adesivi" }, { label: "Confezione", value: "In giapponese" }],
     features: [{ title: "Edizione limitata B4", description: "Venduta nei Beyblade Battle Base giapponesi" }, { title: "Ultraman Tiga", description: "Collaborazione ufficiale con adesivi dedicati" }, { title: "Linea CX", description: "Blade componibile della Custom Line" }, { title: "Starter completo", description: "Include il lanciatore" }],
