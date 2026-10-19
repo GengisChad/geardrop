@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { PRODUCTS, SHIPPING_FLAT_RATE, SHIPPING_METHODS } from "@/data/catalog";
 import type { PlaceOrderInput } from "@/lib/checkout-schema";
 import { createMockProvider } from "@/lib/commerce/mock-provider";
-import type { CartQuote, CartQuoteRequest } from "@/lib/commerce/types";
+import type { CartQuote, CartQuoteRequest, Product } from "@/lib/commerce/types";
 import { stripeProductId, type StripeClient } from "@/lib/payments/stripe-api";
 import {
   STRIPE_BLOCKED_NOTICE,
@@ -99,6 +99,17 @@ describe("stripe checkout switch", () => {
   });
 });
 
+// Owner, 2026-10-19: all three Takara NerdPoint products are sold out, so a live slug returns
+// an esaurito issue-line. The mock provider would set sellable = [], isEmpty = true, and
+// shipping = 0 via the empty-cart shortcut — never reaching shippingPlanFor. This in-stock
+// fixture keeps the real slug (it must stay in CONSIGNMENT_SLUGS, which is set at module-load
+// from PRODUCTS) but overrides stock/availableQuantity so the partner plan is exercised.
+const TAKARA_INSTOCK_FIXTURE: Product = {
+  ...(PRODUCTS.find((p) => p.slug === "ux-00-glory-valkyrie-lf")!),
+  stock: "disponibile",
+  availableQuantity: 5,
+};
+
 describe("stripe checkout session", () => {
   it("derives a short reference that is stable for one attempt", () => {
     const reference = orderReference(order.idempotencyKey);
@@ -169,9 +180,22 @@ describe("stripe checkout session", () => {
   });
 
   it("takes no promotion code on a cart holding the partner's consignment piece", async () => {
+    // Owner, 2026-10-19: the real Takara slug is esaurito, so quoteFor would return an empty
+    // sellable set and shipping = 0 via the empty-cart shortcut — never reaching shippingPlanFor.
+    // Call createMockProvider directly with an in-stock fixture so the partner plan is exercised:
+    // cartBrands = {'takara-tomy'} → shippingPlanFor → PARTNER_SHIPPING_METHOD; subtotal = €205
+    // qualifies for free shipping → shipping = 0 for the right reason.
     // The partner is owed his price whatever the buyer paid: a code would come out of the commission.
-    const quote = await quoteFor([{ slug: "ux-00-glory-valkyrie-lf", quantity: 1 }]);
-    const fields = buildCheckoutSessionFields({ quote, order: { ...order, contact: { ...order.contact, shippingMethod: "poste-point-partner", pickupPoint: "Locker Milano 12" } }, origin: ORIGIN }, matchStripePrices(quote, catalogPrices)!);
+    const quote = openQuoteForStripe(
+      await createMockProvider([TAKARA_INSTOCK_FIXTURE]).quoteCart({
+        lines: [{ slug: TAKARA_INSTOCK_FIXTURE.slug, quantity: 1 }],
+        shippingCode: "poste-point-partner",
+      } as CartQuoteRequest),
+    );
+    const fields = buildCheckoutSessionFields(
+      { quote, order: { ...order, contact: { ...order.contact, shippingMethod: "poste-point-partner", pickupPoint: "Locker Milano 12" } }, origin: ORIGIN },
+      matchStripePrices(quote, catalogPrices)!,
+    );
     expect(fields["allow_promotion_codes"]).toBe("false");
     expect(fields["shipping_options[0][shipping_rate_data][fixed_amount][amount]"]).toBe(0);
   });
