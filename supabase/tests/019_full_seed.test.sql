@@ -22,8 +22,8 @@ select results_eq($$select count(*)::integer from public.products where publicat
   )$$, array[0], 'every published product sells from stock or an allocation, or is honestly sold out');
 select results_eq($$select slug from public.products
   where publication_status = 'published' and stock_status = 'esaurito'::public.stock_status order by slug$$,
-  $$values ('blast-pegasus-a-tr'::text)$$,
-  'only Blast Pegasus opens sold out: the owner has none on the shelf (2026-10-09)');
+  $$values ('blast-pegasus-a-tr'::text),('cx-00-evangelion-deck-set'::text),('cx-00-tigarage-ft3-60t'::text),('ux-00-glory-valkyrie-lf'::text)$$,
+  'four products open sold out: Blast Pegasus (2026-10-09) and the three Takara NerdPoint pieces (2026-10-19)');
 select results_eq($$select slug, preorder_allocation from public.products where availability_override = 'preorder'::public.availability_override order by sort_order$$,
   $$values ('cobalt-drake-4-60f',9),('mirage-clock-9-65b',9),('suppress-superion-0-70lp',5),('strike-dran-4-50ff',9),('tread-croc-tq-5-50gn',9)$$,
   'the pre-order drop carries the allocations the owner set');
