@@ -35,26 +35,28 @@ function fakeClient(options: FakeOptions = {}) {
     data: options.orderId === undefined ? 42 : options.orderId,
     error: options.rpcError ?? null,
   }));
+  /** Every equality filter, as `table.column=value`. */
+  const filters: string[] = [];
 
   const from = vi.fn((table: string) => {
+    const eq = <T>(next: T) => (column: string, value: unknown) => {
+      filters.push(`${table}.${column}=${String(value)}`);
+      return next;
+    };
     if (table === "products") {
-      return {
-        select: () => ({
-          in: async () => ({
-            data: options.products ?? [{ id: 7, slug: "wizard-arrow-4-80b" }],
-            error: null,
-          }),
+      const products = {
+        in: async () => ({
+          data: options.products ?? [{ id: 7, slug: "wizard-arrow-4-80b" }],
+          error: null,
         }),
       };
+      return { select: () => ({ eq: eq(products) }) };
     }
-    return {
-      select: () => ({
-        eq: () => ({ maybeSingle: async () => ({ data: options.orderRow ?? null, error: null }) }),
-      }),
-    };
+    const row = { maybeSingle: async () => ({ data: options.orderRow ?? null, error: null }) };
+    return { select: () => ({ eq: eq({ eq: eq(row) }) }) };
   });
 
-  return { client: { from, rpc } as never, rpc, from };
+  return { client: { from, rpc } as never, rpc, from, filters };
 }
 
 describe("formatOrderNumber", () => {
@@ -76,7 +78,7 @@ describe("formatOrderNumber", () => {
 describe("placeOrder", () => {
   it("sends only identifiers and quantities to the database", async () => {
     const { client, rpc } = fakeClient();
-    await placeOrder(client, input);
+    await placeOrder(client, 1, input);
 
     const args = rpc.mock.calls[0]?.[1] as Record<string, unknown>;
     expect(args["p_lines"]).toEqual([{ product_id: 7, quantity: 2 }]);
@@ -86,7 +88,7 @@ describe("placeOrder", () => {
 
   it("never lets the caller name the customer", async () => {
     const { client, rpc } = fakeClient();
-    await placeOrder(client, input);
+    await placeOrder(client, 1, input);
 
     const args = rpc.mock.calls[0]?.[1] as Record<string, unknown>;
     expect(Object.keys(args)).not.toContain("p_customer_id");
@@ -95,8 +97,8 @@ describe("placeOrder", () => {
 
   it("passes the idempotency key straight through, so a retry is not a second order", async () => {
     const { client, rpc } = fakeClient();
-    await placeOrder(client, input);
-    await placeOrder(client, input);
+    await placeOrder(client, 1, input);
+    await placeOrder(client, 1, input);
 
     const first = rpc.mock.calls[0]?.[1] as Record<string, unknown>;
     const second = rpc.mock.calls[1]?.[1] as Record<string, unknown>;
@@ -106,7 +108,7 @@ describe("placeOrder", () => {
 
   it("snapshots the delivery address and keeps courier notes with it", async () => {
     const { client, rpc } = fakeClient();
-    await placeOrder(client, { ...input, contact: { ...contact, notes: "Citofono Rossi" } });
+    await placeOrder(client, 1, { ...input, contact: { ...contact, notes: "Citofono Rossi" } });
 
     const args = rpc.mock.calls[0]?.[1] as Record<string, Record<string, unknown>>;
     expect(args["p_shipping_address"]).toMatchObject({
@@ -122,7 +124,7 @@ describe("placeOrder", () => {
 
   it("normalises an absent coupon to the empty string the SQL treats as null", async () => {
     const { client, rpc } = fakeClient();
-    await placeOrder(client, input);
+    await placeOrder(client, 1, input);
 
     const args = rpc.mock.calls[0]?.[1] as Record<string, unknown>;
     expect(args["p_coupon_code"]).toBe("");
@@ -130,7 +132,7 @@ describe("placeOrder", () => {
 
   it("reads the authoritative order number back when the buyer may see it", async () => {
     const { client } = fakeClient({ orderRow: { order_number: "GD-00000042", total_cents: 5488 } });
-    const order = await placeOrder(client, input);
+    const order = await placeOrder(client, 1, input);
 
     expect(order.orderNumber).toBe("GD-00000042");
     expect(order.total).toEqual({ amount: 5488, currency: "EUR" });
@@ -138,23 +140,30 @@ describe("placeOrder", () => {
 
   it("derives the number, and reports no total, for a guest who cannot read the row", async () => {
     const { client } = fakeClient({ orderRow: null, orderId: 42 });
-    const order = await placeOrder(client, input);
+    const order = await placeOrder(client, 1, input);
 
     expect(order.orderNumber).toBe("GD-00000042");
     expect(order.total).toBeNull();
   });
 
+  it("resolves slugs and reads the order back inside the shop's company only", async () => {
+    const { client, filters } = fakeClient({ orderRow: { order_number: "GD-00000042", total_cents: 5488 } });
+    await placeOrder(client, 5, input);
+
+    expect(filters).toEqual(["products.organization_id=5", "orders.id=42", "orders.organization_id=5"]);
+  });
+
   it("refuses a cart line whose product no longer resolves", async () => {
     const { client, rpc } = fakeClient({ products: [] });
 
-    await expect(placeOrder(client, input)).rejects.toThrow("GD_PRICING_PRODUCT_UNAVAILABLE");
+    await expect(placeOrder(client, 1, input)).rejects.toThrow("GD_PRICING_PRODUCT_UNAVAILABLE");
     expect(rpc).not.toHaveBeenCalled();
   });
 
   it("propagates a database refusal instead of inventing an order", async () => {
     const { client } = fakeClient({ rpcError: { message: "GD_ORDER_INTAKE_DISABLED" }, orderId: null });
 
-    await expect(placeOrder(client, input)).rejects.toMatchObject({
+    await expect(placeOrder(client, 1, input)).rejects.toMatchObject({
       message: "GD_ORDER_INTAKE_DISABLED",
     });
   });

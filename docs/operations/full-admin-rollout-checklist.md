@@ -9,6 +9,9 @@ Questa checklist non è autorizzazione al rollout. Ogni casella richiede evidenz
 - [ ] Migration applicate da database vuoto in ordine cronologico.
 - [ ] Seed eseguito due volte senza diff o duplicati.
 - [ ] Tutti i pgTAP e database lint verdi.
+- [ ] Registro tier 044 verde: ogni tabella `public` classificata A/B/C/G.
+- [ ] `pnpm db:test:upgrades` verde: il database popolato pre-aziende passa tutto a Gear Drop.
+- [ ] Contract test `scoped-queries-contract` verde: ogni query su righe di un'azienda la nomina.
 - [ ] Tipi Supabase generati identici al file versionato.
 - [ ] Unit, admin browser, public browser, lint, typecheck e build verdi.
 - [ ] Nessun secret, project ref, linked command, `db push` o riferimento IBNApp nel diff/workflow.
@@ -20,6 +23,8 @@ Questa checklist non è autorizzazione al rollout. Ogni casella richiede evidenz
 - [ ] Utente non-staff respinto con messaggio generico.
 - [ ] Matrice owner/admin/editor verificata per ogni modulo.
 - [ ] RLS attiva; RPC di mutazione negate ad anon e ruoli non autorizzati.
+- [ ] Isolamento aziende: e2e `organization-isolation.spec.ts` verde; Oryvenne con
+      `storefront_public = false` non espone righe allo storefront.
 - [ ] Server Actions autenticate, autorizzate e validate con Zod.
 - [ ] Nessun mock, metrica finta, HTML arbitrario, SQL libero o segreto nella UI admin.
 - [ ] Dashboard vuota mostra zero e liste vuote, senza confronti inventati.

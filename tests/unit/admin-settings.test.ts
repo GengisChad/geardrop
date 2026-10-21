@@ -7,6 +7,9 @@ describe("admin settings", () => {
   it("validates shipping costs, thresholds, unique areas, estimates, and order", () => {
     expect(shippingMethodSchema.safeParse({ name:"Standard",code:"standard",description:null,priceCents:500,freeFromCents:5000,countryCodes:["IT","FR"],estimateMinDays:2,estimateMaxDays:5,active:true,sortOrder:1 }).success).toBe(true);
     expect(shippingMethodSchema.safeParse({ name:"Bad",code:"bad",description:null,priceCents:-1,freeFromCents:null,countryCodes:["IT","IT"],estimateMinDays:8,estimateMaxDays:2,active:true,sortOrder:0 }).success).toBe(false);
+    // What the courier costs the shop feeds the order profit; unknown stays null, never negative.
+    expect(shippingMethodSchema.parse({ name:"Standard",code:"standard",description:null,priceCents:490,freeFromCents:null,countryCodes:["IT"],estimateMinDays:1,estimateMaxDays:2,active:true,sortOrder:0 }).courierCostCents).toBeNull();
+    expect(shippingMethodSchema.safeParse({ name:"Standard",code:"standard",description:null,priceCents:490,freeFromCents:null,courierCostCents:-1,countryCodes:["IT"],estimateMinDays:1,estimateMaxDays:2,active:true,sortOrder:0 }).success).toBe(false);
   });
 
   it("validates typed store, SEO, and social values", () => {

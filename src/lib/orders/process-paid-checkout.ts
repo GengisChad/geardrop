@@ -33,12 +33,16 @@ export type OrderStore = {
   markOwnerNotified(orderId: number): Promise<void>;
   /** Returns products from this order whose stock is now at or below their low-stock threshold. */
   lowStock?(orderId: number): Promise<readonly LowStockProduct[]>;
+  /** Saves the fee the payment provider kept, for the order's profit. */
+  recordPaymentFee?(orderId: number, feeCents: number): Promise<void>;
 };
 
 export type ProcessDependencies = {
   readonly loadCheckout: (sessionId: string) => Promise<PaidCheckout | null>;
   readonly store: OrderStore;
   readonly sendEmail: (message: EmailMessage) => Promise<EmailResult>;
+  /** The fee kept on this checkout's payment; null while not settled. */
+  readonly paymentFee?: (checkout: PaidCheckout) => Promise<number | null>;
   readonly env?: Env;
 };
 
@@ -71,6 +75,17 @@ export async function processPaidCheckout(sessionId: string, deps: ProcessDepend
     order = await deps.store.record(checkout);
   } catch (error) {
     return { status: "failed", step: "record", detail: message(error) };
+  }
+
+  // The payment fee feeds the order's profit only: a failure never holds the order back, and a
+  // later retry of the same event, or staff typing it, completes it.
+  if (deps.paymentFee && deps.store.recordPaymentFee) {
+    try {
+      const fee = await deps.paymentFee(checkout);
+      if (fee !== null) await deps.store.recordPaymentFee(order.id, fee);
+    } catch (error) {
+      console.error("[orders] payment fee not recorded:", message(error));
+    }
   }
 
   // Low-stock check: failures must never block the owner notification.

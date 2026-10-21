@@ -72,6 +72,7 @@ function escapePostgrestPattern(value: string): string {
 
 export async function listAdminProducts(
   client: SupabaseClient<Database>,
+  organizationId: number,
   query: AdminProductQuery,
 ): Promise<AdminProductListPage> {
   const pageSize = Math.min(50, Math.max(10, query.pageSize));
@@ -81,6 +82,7 @@ export async function listAdminProducts(
   let productsQuery = client
     .from("products")
     .select(listSelect, { count: "exact" })
+    .eq("organization_id", organizationId)
     .eq("images.is_primary", true)
     .eq("images.media_asset.status", "ready");
 
@@ -105,7 +107,7 @@ export async function listAdminProducts(
 
   const [productsResult, categoriesResult] = await Promise.all([
     productsQuery.order(sort.column, { ascending: sort.ascending }).order("id", { ascending: sort.ascending }).range(from, to),
-    client.from("categories").select("id,name,slug,active").order("sort_order"),
+    client.from("categories").select("id,name,slug,active").eq("organization_id", organizationId).order("sort_order"),
   ]);
 
   if (productsResult.error || categoriesResult.error) {
@@ -157,19 +159,20 @@ export async function listAdminProducts(
 
 export async function loadAdminProductEditor(
   client: SupabaseClient<Database>,
+  organizationId: number,
   id: number,
 ): Promise<AdminProductEditorData | null> {
   const [product, categories, images, specs, features, boxContents, tags, relations, candidates, readyMediaRows] = await Promise.all([
-    client.from("products").select("*").eq("id", id).maybeSingle(),
-    client.from("categories").select("id,name,slug,active").order("sort_order"),
-    client.from("product_images").select("*").eq("product_id", id).order("sort_order"),
+    client.from("products").select("*").eq("id", id).eq("organization_id", organizationId).maybeSingle(),
+    client.from("categories").select("id,name,slug,active").eq("organization_id", organizationId).order("sort_order"),
+    client.from("product_images").select("*").eq("product_id", id).eq("organization_id", organizationId).order("sort_order"),
     client.from("product_specs").select("*").eq("product_id", id).order("sort_order"),
     client.from("product_features").select("*").eq("product_id", id).order("sort_order"),
     client.from("product_box_contents").select("*").eq("product_id", id).order("sort_order"),
     client.from("product_tags").select("*").eq("product_id", id),
-    client.from("product_relations").select("*").eq("product_id", id).order("sort_order"),
-    client.from("products").select("id,name,sku").neq("id", id).order("name").limit(200),
-    client.from("media_assets").select("id,object_path,original_filename,alt_text,width,height").eq("status", "ready").order("created_at", { ascending: false }).limit(200),
+    client.from("product_relations").select("*").eq("product_id", id).eq("organization_id", organizationId).order("sort_order"),
+    client.from("products").select("id,name,sku").eq("organization_id", organizationId).neq("id", id).order("name").limit(200),
+    client.from("media_assets").select("id,object_path,original_filename,alt_text,width,height").eq("organization_id", organizationId).eq("status", "ready").order("created_at", { ascending: false }).limit(200),
   ]);
 
   const results = [product, categories, images, specs, features, boxContents, tags, relations, candidates, readyMediaRows];
@@ -205,8 +208,8 @@ export async function loadAdminProductEditor(
   };
 }
 
-export async function loadAdminProductCreateContext(client: SupabaseClient<Database>) {
-  const { data, error } = await client.from("categories").select("id,name,slug,active").order("sort_order");
+export async function loadAdminProductCreateContext(client: SupabaseClient<Database>, organizationId: number) {
+  const { data, error } = await client.from("categories").select("id,name,slug,active").eq("organization_id", organizationId).order("sort_order");
   if (error) throw new Error("Impossibile caricare le categorie");
   return data ?? [];
 }
@@ -238,8 +241,8 @@ export async function loadProductDeletionImpact(
   };
 }
 
-export async function listAdminProductsForCsv(client: SupabaseClient<Database>) {
-  const { data, error } = await client.from("products").select("id,name,sku,slug,publication_status,active,stock_status,stock_quantity,price_cents,updated_at").order("updated_at", { ascending: false });
+export async function listAdminProductsForCsv(client: SupabaseClient<Database>, organizationId: number) {
+  const { data, error } = await client.from("products").select("id,name,sku,slug,publication_status,active,stock_status,stock_quantity,price_cents,updated_at").eq("organization_id", organizationId).order("updated_at", { ascending: false });
   if (error) throw new Error("Impossibile esportare il catalogo");
   return data ?? [];
 }

@@ -6,7 +6,8 @@ node_modules/
 # next
 /.next/
 /out/
-next-env.d.ts
+/next-env.d.ts
+/apps/management/.next/
 
 # production
 /build
@@ -32,6 +33,10 @@ yarn-error.log*
 # env
 .env
 .env*.local
+
+# backup and dumps of the shop database: they hold customers' personal data
+/backup/
+*.dump
 
 # vercel
 .vercel

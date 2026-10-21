@@ -69,6 +69,7 @@ export function OrderActions({ orderId, status, paymentStatus, role, tracking, s
       <label>Corriere<select defaultValue={carrierByLabel(tracking.carrier)?.id ?? suggestedCarrierId} name="carrierId" required>{CARRIERS.map((carrier) => <option key={carrier.id} value={carrier.id}>{carrier.label}</option>)}</select></label>
       <label>Codice di tracciamento<input autoComplete="off" defaultValue={tracking.code ?? ""} inputMode="text" maxLength={240} name="code" placeholder="Es. 018207900244"/></label>
       <label>Link di tracciamento (solo se il corriere è “Altro”)<input defaultValue={carrierByLabel(tracking.carrier)?.trackingUrl ? "" : tracking.url ?? ""} name="url" placeholder="https://" type="url"/></label>
+      <label>Costo corriere per noi (€, facoltativo)<input inputMode="decimal" name="courierCost" placeholder="Es. 4,00 — per il profitto"/></label>
       <button disabled={shipPending} type="submit">{shipPending ? "Invio…" : status === "shipped" ? "Aggiorna e avvisa" : "Spedisci e avvisa"}</button><Feedback state={shipState}/>
     </form> : null}
 

@@ -9,8 +9,8 @@ export const dynamic = "force-dynamic";
 
 export default async function NewAdminCategoryPage() {
   const client = await createSupabaseServerClient();
-  await requireAdminAccess(client);
-  const readyMedia = await loadAdminCategoryCreateContext(client);
+  const principal = await requireAdminAccess(client);
+  const readyMedia = await loadAdminCategoryCreateContext(client, principal.organization.id);
   return <div className={styles.page}><header className={styles.heading}><div><p>Categorie / Nuova</p><h1>Nuova categoria</h1><span>Bozza reale. Nessuna pubblicazione automatica.</span></div><Link href="/admin/categorie">Torna alle categorie</Link></header><CategoryEditorForm data={null} readyMedia={readyMedia} /></div>;
 }
 

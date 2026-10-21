@@ -23,9 +23,10 @@ export type AdminCategoryEditorData = {
   readonly readyMedia: readonly AdminReadyCatalogMedia[];
 };
 
-async function readyMedia(client: SupabaseClient<Database>): Promise<readonly AdminReadyCatalogMedia[]> {
+async function readyMedia(client: SupabaseClient<Database>, organizationId: number): Promise<readonly AdminReadyCatalogMedia[]> {
   const { data, error } = await client.from("media_assets")
     .select("id,object_path,original_filename,alt_text")
+    .eq("organization_id", organizationId)
     .eq("status", "ready")
     .order("created_at", { ascending: false })
     .limit(200);
@@ -37,10 +38,10 @@ async function readyMedia(client: SupabaseClient<Database>): Promise<readonly Ad
   }))).filter((media): media is AdminReadyCatalogMedia => media !== null);
 }
 
-export async function listAdminCategories(client: SupabaseClient<Database>) {
+export async function listAdminCategories(client: SupabaseClient<Database>, organizationId: number) {
   const [categories, media] = await Promise.all([
-    client.from("categories").select("*, products(count)", { count: "exact" }).order("sort_order").order("id"),
-    readyMedia(client),
+    client.from("categories").select("*, products(count)", { count: "exact" }).eq("organization_id", organizationId).order("sort_order").order("id"),
+    readyMedia(client, organizationId),
   ]);
   if (categories.error) throw new Error("Impossibile caricare le categorie");
   const previewById = new Map(media.map((item) => [item.id, item.previewUrl]));
@@ -55,19 +56,20 @@ export async function listAdminCategories(client: SupabaseClient<Database>) {
 
 export async function loadAdminCategoryEditor(
   client: SupabaseClient<Database>,
+  organizationId: number,
   id: number,
 ): Promise<AdminCategoryEditorData | null> {
   const [category, products, media] = await Promise.all([
-    client.from("categories").select("*").eq("id", id).maybeSingle(),
-    client.from("products").select("id,name,sku,publication_status").eq("category_id", id).order("name"),
-    readyMedia(client),
+    client.from("categories").select("*").eq("id", id).eq("organization_id", organizationId).maybeSingle(),
+    client.from("products").select("id,name,sku,publication_status").eq("category_id", id).eq("organization_id", organizationId).order("name"),
+    readyMedia(client, organizationId),
   ]);
   if (category.error || products.error) throw new Error("Impossibile caricare la categoria");
   if (!category.data) return null;
   return { category: category.data, products: products.data ?? [], readyMedia: media };
 }
 
-export async function loadAdminCategoryCreateContext(client: SupabaseClient<Database>) {
-  return readyMedia(client);
+export async function loadAdminCategoryCreateContext(client: SupabaseClient<Database>, organizationId: number) {
+  return readyMedia(client, organizationId);
 }
 

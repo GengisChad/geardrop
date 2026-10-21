@@ -20,18 +20,18 @@ export type AdminBundleEditorData = {
   readonly readyMedia: readonly AdminReadyCatalogMedia[];
 };
 
-export async function listAdminBundles(client: SupabaseClient<Database>) {
+export async function listAdminBundles(client: SupabaseClient<Database>, organizationId: number) {
   const [bundles, media] = await Promise.all([
-    client.from("bundles").select("*", { count: "exact" }).order("sort_order").order("id"),
-    loadAdminCategoryCreateContext(client),
+    client.from("bundles").select("*", { count: "exact" }).eq("organization_id", organizationId).order("sort_order").order("id"),
+    loadAdminCategoryCreateContext(client, organizationId),
   ]);
   if (bundles.error) throw new Error("Impossibile caricare i bundle");
   if (!bundles.data?.length) return { items: [], total: 0 } as const;
   const bundleIds = bundles.data.map((bundle) => bundle.id);
   const heroIds = [...new Set(bundles.data.map((bundle) => bundle.hero_product_id))];
   const [bundleItems, heroes] = await Promise.all([
-    client.from("bundle_items").select("bundle_id").in("bundle_id", bundleIds),
-    client.from("products").select("id,name").in("id", heroIds),
+    client.from("bundle_items").select("bundle_id").in("bundle_id", bundleIds).eq("organization_id", organizationId),
+    client.from("products").select("id,name").in("id", heroIds).eq("organization_id", organizationId),
   ]);
   if (bundleItems.error || heroes.error) throw new Error("Impossibile caricare i dettagli bundle");
   const previewById = new Map(media.map((item) => [item.id, item.previewUrl]));
@@ -47,28 +47,29 @@ export async function listAdminBundles(client: SupabaseClient<Database>) {
   return { items, total: bundles.count ?? 0 } as const;
 }
 
-async function productOptions(client: SupabaseClient<Database>) {
-  const result = await client.from("products").select("id,name,sku,publication_status").order("name").limit(500);
+async function productOptions(client: SupabaseClient<Database>, organizationId: number) {
+  const result = await client.from("products").select("id,name,sku,publication_status").eq("organization_id", organizationId).order("name").limit(500);
   if (result.error) throw new Error("Impossibile caricare i prodotti bundle");
   return result.data ?? [];
 }
 
 export async function loadAdminBundleEditor(
   client: SupabaseClient<Database>,
+  organizationId: number,
   id: number,
 ): Promise<AdminBundleEditorData | null> {
   const [bundle, items, products, media] = await Promise.all([
-    client.from("bundles").select("*").eq("id", id).maybeSingle(),
-    client.from("bundle_items").select("*").eq("bundle_id", id).order("sort_order"),
-    productOptions(client),
-    loadAdminCategoryCreateContext(client),
+    client.from("bundles").select("*").eq("id", id).eq("organization_id", organizationId).maybeSingle(),
+    client.from("bundle_items").select("*").eq("bundle_id", id).eq("organization_id", organizationId).order("sort_order"),
+    productOptions(client, organizationId),
+    loadAdminCategoryCreateContext(client, organizationId),
   ]);
   if (bundle.error || items.error) throw new Error("Impossibile caricare il bundle");
   if (!bundle.data) return null;
   return { bundle: bundle.data, items: items.data ?? [], products, readyMedia: media };
 }
 
-export async function loadAdminBundleCreateContext(client: SupabaseClient<Database>) {
-  const [products, readyMedia] = await Promise.all([productOptions(client), loadAdminCategoryCreateContext(client)]);
+export async function loadAdminBundleCreateContext(client: SupabaseClient<Database>, organizationId: number) {
+  const [products, readyMedia] = await Promise.all([productOptions(client, organizationId), loadAdminCategoryCreateContext(client, organizationId)]);
   return { products, readyMedia } as const;
 }

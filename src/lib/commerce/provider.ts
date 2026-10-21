@@ -6,6 +6,7 @@ import { loadLiveCatalogue } from "./live-stock";
 import { createMockProvider } from "./mock-provider";
 import { createSupabaseCommerceProvider } from "./supabase-provider";
 import type { CommerceProvider } from "./types";
+import { storefrontOrganizationId } from "@/lib/org/storefront";
 import { createSupabasePublicClient } from "@/lib/supabase/public";
 import { cacheStorefrontRead, STOREFRONT_CACHE_TAGS } from "@/lib/storefront/cache";
 
@@ -18,8 +19,8 @@ export function resolveCommerceProviderName(
   throw new Error(`Provider commerce non supportato: ${value}`);
 }
 
-function cachedSupabaseProvider(): CommerceProvider {
-  const provider = createSupabaseCommerceProvider(createSupabasePublicClient());
+async function cachedSupabaseProvider(): Promise<CommerceProvider> {
+  const provider = createSupabaseCommerceProvider(createSupabasePublicClient(), await storefrontOrganizationId());
   const tags = [
     STOREFRONT_CACHE_TAGS.products,
     STOREFRONT_CACHE_TAGS.categories,

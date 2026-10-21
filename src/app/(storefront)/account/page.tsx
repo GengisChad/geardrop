@@ -5,6 +5,7 @@ import { Heart, LogOut, MapPin, Package, ShoppingCart } from "lucide-react";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { ProfileForm } from "@/components/auth/profile-form";
 import { getCustomerSession } from "@/lib/auth/customer";
+import { storefrontOrganizationId } from "@/lib/org/storefront";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { AppHref } from "@/lib/routes";
 import { logoutAction } from "./auth-actions";
@@ -49,6 +50,7 @@ export default async function AccountPage() {
     client
       .from("orders")
       .select("id, order_number, status, total_cents, created_at")
+      .eq("organization_id", await storefrontOrganizationId())
       .order("created_at", { ascending: false })
       .limit(10),
     client.from("customer_addresses").select("id, label, line_one, postal_code, city, province").limit(5),

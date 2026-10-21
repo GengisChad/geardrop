@@ -130,17 +130,20 @@ describe("admin shell state", () => {
 
 describe("admin dashboard data", () => {
   it("uses the role-safe real aggregate without duplicating global settings", () => {
-    const dashboard = source("src/lib/admin/dashboard.ts");
+    // The legacy module became an adapter over the neutral reader both apps share (Task 6), so
+    // the contract holds for the whole path, adapter plus implementation: the aggregate is still
+    // the role-safe one, still scoped to the company, and neither file reads site_settings.
+    const dashboard = source("src/lib/admin/dashboard.ts") + source("packages/data-contract/src/operations/dashboard.ts");
     const page = source("src/app/admin/(protected)/page.tsx");
 
-    expect(dashboard).toContain('rpc("get_admin_dashboard_metrics")');
+    expect(dashboard).toMatch(/rpc\(\s*"get_admin_dashboard_metrics"\s*,\s*\{\s*p_organization_id:\s*organizationId\s*,?\s*\}\s*\)/);
     expect(dashboard).not.toContain('.from("site_settings")');
     expect(page).not.toContain("acceptOrders");
     expect(dashboard).toContain("publication_status");
     expect(dashboard).toContain("low_stock_threshold");
     expect(dashboard).toContain("availability_override");
     expect(dashboard).toContain("stock_status");
-    expect(dashboard).toContain("commerceValue===null?null");
+    expect(dashboard).toMatch(/commerceValue\s*===\s*null\s*\?\s*null/);
     expect(page).not.toMatch(/percentuale|rispetto a|vs\. /i);
   });
 });

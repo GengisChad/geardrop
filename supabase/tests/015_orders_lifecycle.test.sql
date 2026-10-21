@@ -1,4 +1,34 @@
 begin;
+-- Organization compatibility for fixtures written before organizations existed (see
+-- supabase/tests/044). Inside this rolled-back transaction every organization-scoped table
+-- defaults to Gear Drop, and every staff profile is mirrored as a Gear Drop member with the
+-- same role and state. Company isolation itself is tested without these shortcuts in 041-044.
+do $legacy_organization$
+declare
+  geardrop bigint := (select id from public.organizations where slug = 'geardrop');
+  target text;
+begin
+  for target in
+    select c.table_name
+    from information_schema.columns as c
+    join information_schema.tables as t on t.table_schema = c.table_schema and t.table_name = c.table_name
+    where c.table_schema = 'public' and c.column_name = 'organization_id'
+      and t.table_type = 'BASE TABLE' and c.table_name <> 'organization_members'
+  loop
+    execute format('alter table public.%I alter column organization_id set default %s', target, geardrop);
+  end loop;
+end
+$legacy_organization$;
+create function private.legacy_mirror_staff_membership() returns trigger language plpgsql set search_path = '' as $legacy_mirror$
+begin
+  insert into public.organization_members (organization_id, user_id, role, active)
+  values ((select id from public.organizations where slug = 'geardrop'), new.user_id, new.role, new.active)
+  on conflict (organization_id, user_id) do update set role = excluded.role, active = excluded.active;
+  return new;
+end
+$legacy_mirror$;
+create trigger legacy_mirror_staff_membership after insert or update of role, active on public.staff_profiles
+  for each row execute function private.legacy_mirror_staff_membership();
 select plan(33);
 select has_table('public','order_notes','order notes exist');
 select has_table('public','order_status_events','order status events exist');
@@ -19,7 +49,7 @@ insert into public.products(category_id,slug,sku,name,tagline,description,price_
 values((select id from public.categories where slug='orders-cat'),'orders-product','orders-product','Original snapshot','Orders','Orders',1000,'published',true,5);
 insert into public.shipping_methods(code,name,price_cents,active) values('orders-standard','Standard',500,true);
 insert into public.coupons(code,discount_kind,discount_value,active) values('ORDER100','fixed',100,true);
-update public.site_settings set accept_orders=true where singleton;
+update public.site_settings set accept_orders=true where organization_id = (select id from public.organizations where slug = 'geardrop');
 
 select lives_ok($$select public.create_order('guest@example.com',null,'{"recipient":"Guest"}','{"recipient":"Guest"}',jsonb_build_array(jsonb_build_object('product_id',(select id from public.products where sku='orders-product'),'quantity',2,'total_cents',1)),'order100','orders-standard','00000000-0000-0000-0000-000000001599')$$,'order is created from authoritative rows');
 select results_eq($$select subtotal_cents,discount_cents,shipping_cents,total_cents from public.orders where email='guest@example.com'$$,$$select 2000::integer,100::integer,500::integer,2400::integer$$,'server recalculates all integer-cent totals');

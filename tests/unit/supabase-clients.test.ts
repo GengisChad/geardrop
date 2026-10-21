@@ -1,6 +1,9 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { NextRequest } from "next/server";
+import { describe, expect, it, vi } from "vitest";
+import { config, proxy } from "@/proxy";
+import * as supabaseProxy from "@/lib/supabase/proxy";
 
 function source(path: string): string {
   return readFileSync(join(process.cwd(), path), "utf8");
@@ -29,18 +32,25 @@ describe("Supabase client boundaries", () => {
     expect(combined).not.toContain("getSession(");
   });
 
-  it("does not require Supabase environment for the mock storefront", () => {
-    const proxy = source("src/proxy.ts");
-
-    // The matcher covers the authenticated surfaces only — staff, customer account and
-    // the auth callback. Everything the anonymous storefront serves stays off it, so a
-    // mock deployment never reaches for Supabase environment on a catalogue request.
-    for (const route of ["/admin/:path*", "/account/:path*", "/auth/:path*", "/api/preview"]) {
-      expect(proxy).toContain(route);
+  it("classifies all requests without requiring Supabase for the mock storefront", async () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_SURFACE", "storefront");
+    vi.stubEnv("LEGACY_ADMIN_MODE", "enabled");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "");
+    const refresh = vi.spyOn(supabaseProxy, "refreshSupabaseSession");
+    try {
+      expect(config.matcher).toEqual(["/:path*"]);
+      for (const route of ["/negozio", "/admin", "/account", "/auth/callback", "/api/preview"]) {
+        const response = await proxy(new NextRequest(`https://geardropshop.it${route}`));
+        expect(response.status, route).toBe(200);
+      }
+      expect(refresh.mock.calls.map(([request]) => request.nextUrl.pathname)).toEqual([
+        "/admin", "/account", "/auth/callback", "/api/preview",
+      ]);
+    } finally {
+      refresh.mockRestore();
+      vi.unstubAllEnvs();
     }
-
-    expect(proxy).not.toContain("_next/static");
-    expect(proxy).not.toContain('"/:path*"');
   });
 
   it("binds every Supabase client boundary to the generated Database type", () => {

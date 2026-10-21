@@ -9,6 +9,8 @@ type MovementRow = Database["public"]["Tables"]["inventory_movements"]["Row"];
 export type AdminInventoryQuery = {
   readonly q: string;
   readonly lowStock: boolean;
+  /** Only products without a known cost (owners and admins: editors cannot read costs). */
+  readonly missingCost: boolean;
   readonly productId: number | null;
   readonly page: number;
   readonly pageSize: number;
@@ -41,6 +43,7 @@ export function normalizeAdminInventoryQuery(input: QueryRecord): AdminInventory
   return {
     q: (first(input.q) ?? "").trim().slice(0, 100),
     lowStock: first(input.lowStock) === "true",
+    missingCost: first(input.costo) === "mancante",
     productId: Number.isSafeInteger(productId) && productId > 0 ? productId : null,
     page: Number.isSafeInteger(page) && page > 0 ? page : 1,
     pageSize: Number.isSafeInteger(pageSize) ? Math.min(50, Math.max(10, pageSize)) : 20,
@@ -53,11 +56,16 @@ function escapePostgrestPattern(value: string): string {
 
 export async function listAdminInventory(
   client: SupabaseClient<Database>,
+  organizationId: number,
   query: AdminInventoryQuery,
 ): Promise<AdminInventoryPage> {
   const from = (query.page - 1) * query.pageSize;
   const to = from + query.pageSize - 1;
-  let productsQuery = client.from("products").select("*", { count: "exact" });
+  // Without a cost row the embedded inventory_cost_state is null: PostgREST filters on that.
+  let productsQuery = query.missingCost
+    ? client.from("products").select("*, inventory_cost_state(product_id)", { count: "exact" })
+      .eq("organization_id", organizationId).is("inventory_cost_state", null)
+    : client.from("products").select("*", { count: "exact" }).eq("organization_id", organizationId);
 
   if (query.q) {
     const pattern = `%${escapePostgrestPattern(query.q)}%`;
@@ -69,6 +77,7 @@ export async function listAdminInventory(
   let movementsQuery = client
     .from("inventory_movements")
     .select("*, product:products(name,sku)")
+    .eq("organization_id", organizationId)
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
     .limit(50);
@@ -96,8 +105,10 @@ export async function listAdminInventory(
       id: movement.id,
       note: movement.note,
       order_id: movement.order_id,
+      organization_id: movement.organization_id,
       product_id: movement.product_id,
       reason: movement.reason,
+      receipt_line_id: movement.receipt_line_id,
       stock_after: movement.stock_after,
       productName: product?.name ?? "Prodotto rimosso",
       productSku: product?.sku ?? "—",
@@ -107,7 +118,8 @@ export async function listAdminInventory(
   const pageCount = Math.max(1, Math.ceil(total / query.pageSize));
 
   return {
-    items: productsResult.data ?? [],
+    items: ((productsResult.data ?? []) as unknown as readonly (ProductRow & { inventory_cost_state?: unknown })[])
+      .map(({ inventory_cost_state: _cost, ...product }) => product),
     movements,
     total,
     page: Math.min(query.page, pageCount),

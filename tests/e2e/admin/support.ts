@@ -1,6 +1,6 @@
 import { expect, type Page, type TestInfo } from "@playwright/test";
 
-type Staff = "OWNER" | "ADMIN" | "EDITOR";
+type Staff = "OWNER" | "ADMIN" | "EDITOR" | "ORYVENNE_OWNER";
 
 export async function login(page: Page, role: Staff = "OWNER"): Promise<void> {
   const email = process.env[`ADMIN_E2E_${role}_EMAIL`];

@@ -32,8 +32,8 @@ function checked(formData: FormData, key: string): boolean {
 async function verifiedStaff() {
   const client = await createSupabaseServerClient();
   await requireUser(client);
-  await requireStaffRole(client, STAFF_ROLES);
-  return client;
+  const principal = await requireStaffRole(client, STAFF_ROLES);
+  return { client, organizationId: principal.organization.id };
 }
 
 function refreshCategories(slug?: string): void {
@@ -67,9 +67,10 @@ export async function saveCategoryAction(
   const parsedId = text(formData, "id") ? categoryIdSchema.safeParse(text(formData, "id")) : null;
   if (!parsed.success || (parsedId && !parsedId.success)) return { ok: false, message: "Controlla i dati inseriti." };
 
-  const client = await verifiedStaff();
+  const { client, organizationId } = await verifiedStaff();
   const input = parsed.data;
   const record: CategoryInsert = {
+    organization_id: organizationId,
     name: input.name,
     slug: input.slug,
     tagline: input.tagline,
@@ -88,7 +89,7 @@ export async function saveCategoryAction(
     refreshCategories(result.data.slug);
     redirect(`/admin/categorie/${result.data.id}?created=1`);
   }
-  const result = await client.from("categories").update(record).eq("id", parsedId.data);
+  const result = await client.from("categories").update(record).eq("id", parsedId.data).eq("organization_id", organizationId);
   if (result.error) return { ok: false, message: "Categoria non salvata. Verifica slug e media." };
   refreshCategories(input.slug);
   return { ok: true, message: "Categoria salvata." };
@@ -100,7 +101,7 @@ export async function reorderCategoriesAction(
 ): Promise<CategoryActionState> {
   const parsed = categoryIdsSchema.safeParse(formData.getAll("categoryIds"));
   if (!parsed.success) return { ok: false, message: "Ordine categorie non valido." };
-  const client = await verifiedStaff();
+  const { client } = await verifiedStaff();
   const { error } = await client.rpc("reorder_categories", { p_category_ids: parsed.data });
   if (error) return { ok: false, message: "Ordine non salvato. Ricarica e riprova." };
   refreshCategories();

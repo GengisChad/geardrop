@@ -42,10 +42,10 @@ function escapePostgrestPattern(value: string): string {
   return value.replace(/[,%_()]/g, (character) => `\\${character}`);
 }
 
-export async function listAdminMedia(client: Client, input: AdminMediaQuery): Promise<AdminMediaPage> {
+export async function listAdminMedia(client: Client, organizationId: number, input: AdminMediaQuery): Promise<AdminMediaPage> {
   const from = (input.page - 1) * input.pageSize;
   const to = from + input.pageSize - 1;
-  let query = client.from("media_assets").select("*", { count: "exact" }).eq("status", input.status);
+  let query = client.from("media_assets").select("*", { count: "exact" }).eq("organization_id", organizationId).eq("status", input.status);
   if (input.q) {
     const pattern = `%${escapePostgrestPattern(input.q)}%`;
     query = query.or(`original_filename.ilike.${pattern},alt_text.ilike.${pattern},object_path.ilike.${pattern}`);
@@ -57,7 +57,7 @@ export async function listAdminMedia(client: Client, input: AdminMediaQuery): Pr
   const ids = rows.map((row) => row.id);
   const usage = new Map<number, number>();
   if (ids.length > 0) {
-    const usageResult = await client.from("product_images").select("media_asset_id").in("media_asset_id", ids);
+    const usageResult = await client.from("product_images").select("media_asset_id").in("media_asset_id", ids).eq("organization_id", organizationId);
     if (usageResult.error) throw new Error("Impossibile caricare gli utilizzi media");
     for (const row of usageResult.data ?? []) {
       if (row.media_asset_id !== null) usage.set(row.media_asset_id, (usage.get(row.media_asset_id) ?? 0) + 1);
@@ -92,10 +92,12 @@ function rowToAsset(row: Database["public"]["Tables"]["media_assets"]["Row"]): P
   };
 }
 
-export function createMediaRepository(client: Client): MediaRepository {
+/** Media of one company: uploads are filed under it, lookups never cross into another. */
+export function createMediaRepository(client: Client, organizationId: number): MediaRepository {
   return {
     async reserve(input: MediaReservation) {
       const { data, error } = await client.from("media_assets").insert({
+        organization_id: organizationId,
         bucket_id: "product-images",
         object_path: input.objectPath,
         original_filename: input.originalFilename,
@@ -111,7 +113,7 @@ export function createMediaRepository(client: Client): MediaRepository {
       return data.id;
     },
     async get(id) {
-      const { data, error } = await client.from("media_assets").select("*").eq("id", id).maybeSingle();
+      const { data, error } = await client.from("media_assets").select("*").eq("id", id).eq("organization_id", organizationId).maybeSingle();
       if (error) throw error;
       return data ? rowToAsset(data) : null;
     },

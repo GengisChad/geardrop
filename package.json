@@ -4,11 +4,24 @@
   "private": true,
   "description": "GEAR//DROP - store Beyblade X per la community italiana",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "pnpm dev:storefront",
+    "build": "pnpm build:storefront",
     "start": "next start",
-    "lint": "eslint .",
-    "typecheck": "next typegen && tsc --noEmit",
+    "lint": "pnpm lint:storefront && pnpm lint:shared && pnpm lint:management",
+    "typecheck": "pnpm typecheck:storefront",
+    "dev:storefront": "next dev",
+    "lint:storefront": "eslint src tests scripts next.config.ts playwright.config.ts playwright.admin.config.ts playwright.storefront.config.ts",
+    "lint:shared": "eslint packages/runtime-contract/src packages/data-contract/src",
+    "build:storefront": "pnpm --filter @geardrop/runtime-contract --filter @geardrop/data-contract typecheck && next build",
+    "typecheck:storefront": "pnpm --filter @geardrop/runtime-contract --filter @geardrop/data-contract typecheck && next typegen && tsc --noEmit",
+    "dev:management": "pnpm --dir apps/management dev",
+    "lint:management": "pnpm --dir apps/management lint",
+    "build:management": "pnpm --dir apps/management build",
+    "typecheck:management": "pnpm --dir apps/management typecheck",
+    "check:workspace-boundaries": "tsx scripts/check-workspace-boundaries.ts",
+    "verify:management-manifest": "tsx scripts/verify-management-build-manifest.ts",
+    "verify:manifest-isolation": "tsx scripts/verify-build-manifest-isolation.ts",
+    "verify:build-independence": "tsx scripts/verify-build-independence.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
@@ -21,9 +34,11 @@
     "db:test": "supabase test db --local supabase/tests",
     "db:test:upgrades": "tsx scripts/test-supabase-upgrades.ts",
     "db:lint": "supabase db lint --local --level error --fail-on error",
-    "db:types": "supabase gen types typescript --local --schema public > src/lib/supabase/database.types.ts",
+    "db:types": "supabase gen types typescript --local --schema public,management_api > packages/data-contract/src/database.types.ts && node -e \"const fs = require('node:fs'); const path = 'packages/data-contract/src/database.types.ts'; fs.writeFileSync(path, fs.readFileSync(path, 'utf8').trimEnd() + '\\n');\"",
     "seed:supabase": "tsx scripts/generate-supabase-seed.ts",
     "stripe:products": "tsx scripts/sync-stripe-products.ts",
+    "beta:rehearse": "tsx scripts/rehearse-production-upgrade.ts",
+    "beta:fees": "tsx scripts/backfill-payment-fees.ts",
     "yt:seo": "tsx scripts/youtube-seo.ts",
     "seo:indexnow": "tsx scripts/indexnow.ts",
     "shots": "playwright test --config playwright.shots.config.ts",
@@ -33,6 +48,8 @@
     "typegen": "next typegen"
   },
   "dependencies": {
+    "@geardrop/runtime-contract": "workspace:*",
+    "@geardrop/data-contract": "workspace:*",
     "@supabase/ssr": "0.12.3",
     "@supabase/supabase-js": "2.110.7",
     "@vercel/analytics": "2.0.1",
@@ -65,5 +82,5 @@
     "typescript": "5.9.3",
     "vitest": "4.1.10"
   },
-  "packageManager": "pnpm@11.13.1"
+  "packageManager": "pnpm@10.34.6"
 }

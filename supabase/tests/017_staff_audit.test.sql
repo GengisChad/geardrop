@@ -1,4 +1,34 @@
 begin;
+-- Organization compatibility for fixtures written before organizations existed (see
+-- supabase/tests/044). Inside this rolled-back transaction every organization-scoped table
+-- defaults to Gear Drop, and every staff profile is mirrored as a Gear Drop member with the
+-- same role and state. Company isolation itself is tested without these shortcuts in 041-044.
+do $legacy_organization$
+declare
+  geardrop bigint := (select id from public.organizations where slug = 'geardrop');
+  target text;
+begin
+  for target in
+    select c.table_name
+    from information_schema.columns as c
+    join information_schema.tables as t on t.table_schema = c.table_schema and t.table_name = c.table_name
+    where c.table_schema = 'public' and c.column_name = 'organization_id'
+      and t.table_type = 'BASE TABLE' and c.table_name <> 'organization_members'
+  loop
+    execute format('alter table public.%I alter column organization_id set default %s', target, geardrop);
+  end loop;
+end
+$legacy_organization$;
+create function private.legacy_mirror_staff_membership() returns trigger language plpgsql set search_path = '' as $legacy_mirror$
+begin
+  insert into public.organization_members (organization_id, user_id, role, active)
+  values ((select id from public.organizations where slug = 'geardrop'), new.user_id, new.role, new.active)
+  on conflict (organization_id, user_id) do update set role = excluded.role, active = excluded.active;
+  return new;
+end
+$legacy_mirror$;
+create trigger legacy_mirror_staff_membership after insert or update of role, active on public.staff_profiles
+  for each row execute function private.legacy_mirror_staff_membership();
 select plan(38);
 select has_type('public','staff_invite_status','staff invite status exists');
 select has_column('public','staff_profiles','invite_email','invite email exists');
@@ -11,10 +41,10 @@ select has_column('public','audit_events','request_id','audit request id exists'
 select has_column('public','audit_events','request_method','audit method exists');
 select has_column('public','audit_events','request_path','audit path exists');
 select has_column('public','audit_events','request_user_agent','audit user agent exists');
-select has_function('public','change_staff_role',array['uuid','staff_role'],'role RPC exists');
-select has_function('public','set_staff_active',array['uuid','boolean'],'active RPC exists');
+select has_function('public','change_staff_role',array['bigint', 'uuid','staff_role'],'role RPC exists');
+select has_function('public','set_staff_active',array['bigint', 'uuid','boolean'],'active RPC exists');
 select has_function('public','revoke_staff_access',array['uuid'],'revoke RPC exists');
-select has_function('public','record_staff_invite',array['uuid','text','text','staff_role'],'invite recording RPC exists');
+select has_function('public','record_staff_invite',array['bigint', 'uuid','text','text','staff_role'],'invite recording RPC exists');
 select has_function('public','record_staff_login',array[]::text[],'login lifecycle RPC exists');
 
 insert into auth.users(instance_id,id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at,confirmation_token,email_change,email_change_token_new,recovery_token) values
@@ -28,7 +58,7 @@ insert into public.staff_profiles(user_id,role,display_name,invite_email) values
 ('00000000-0000-0000-0000-000000001703','admin','Admin','staff-admin@example.com'),('00000000-0000-0000-0000-000000001704','editor','Editor','staff-editor@example.com');
 
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000001701',true);set local role authenticated;
-select lives_ok($$select public.record_staff_invite('00000000-0000-0000-0000-000000001705','staff-invited@example.com','Invited Editor','editor')$$,'owner records invite with caller identity');
+select lives_ok($$select public.record_staff_invite((select id from public.organizations where slug = 'geardrop'), '00000000-0000-0000-0000-000000001705','staff-invited@example.com','Invited Editor','editor')$$,'owner records invite with caller identity');
 reset role;
 select results_eq($$select created_by from public.staff_profiles where user_id='00000000-0000-0000-0000-000000001705'$$,array['00000000-0000-0000-0000-000000001701'::uuid],'invite profile stores owner actor');
 select results_eq($$select actor_user_id from public.audit_events where action='staff.invited' and entity_id='00000000-0000-0000-0000-000000001705'$$,array['00000000-0000-0000-0000-000000001701'::uuid],'invite audit stores owner actor');
@@ -41,28 +71,28 @@ set local role anon;
 select throws_ok($$insert into public.staff_profiles(user_id,role,display_name) values('00000000-0000-0000-0000-000000001799','editor','Public')$$,'42501','permission denied for table staff_profiles','public cannot create staff accounts');
 reset role;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000001703',true);set local role authenticated;
-select throws_ok($$select public.change_staff_role('00000000-0000-0000-0000-000000001704','admin')$$,'42501','GD_STAFF_OWNER_REQUIRED','admin cannot change roles');
+select throws_ok($$select public.change_staff_role((select id from public.organizations where slug = 'geardrop'), '00000000-0000-0000-0000-000000001704','admin')$$,'42501','GD_STAFF_OWNER_REQUIRED','admin cannot change roles');
 reset role;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000001704',true);set local role authenticated;
-select throws_ok($$select public.set_staff_active('00000000-0000-0000-0000-000000001703',false)$$,'42501','GD_STAFF_OWNER_REQUIRED','editor cannot change staff status');
+select throws_ok($$select public.set_staff_active((select id from public.organizations where slug = 'geardrop'), '00000000-0000-0000-0000-000000001703',false)$$,'42501','GD_STAFF_OWNER_REQUIRED','editor cannot change staff status');
 reset role;
 
 select set_config('request.headers','{"x-request-id":"req-staff-1","user-agent":"Admin Test Agent","x-secret":"must-not-copy"}',true);
 select set_config('request.method','post',true);select set_config('request.path','/admin/team',true);
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000001701',true);set local role authenticated;
-select throws_ok($$select public.change_staff_role('00000000-0000-0000-0000-000000001701','admin')$$,'22023','GD_STAFF_SELF_CHANGE','owner cannot change own role while another owner exists');
-select lives_ok($$select public.change_staff_role('00000000-0000-0000-0000-000000001702','admin')$$,'owner changes another role');
-select throws_ok($$select public.set_staff_active('00000000-0000-0000-0000-000000001701',false)$$,'55000','GD_STAFF_LAST_OWNER','last active owner cannot be disabled');
+select throws_ok($$select public.change_staff_role((select id from public.organizations where slug = 'geardrop'), '00000000-0000-0000-0000-000000001701','admin')$$,'22023','GD_STAFF_SELF_CHANGE','owner cannot change own role while another owner exists');
+select lives_ok($$select public.change_staff_role((select id from public.organizations where slug = 'geardrop'), '00000000-0000-0000-0000-000000001702','admin')$$,'owner changes another role');
+select throws_ok($$select public.set_staff_active((select id from public.organizations where slug = 'geardrop'), '00000000-0000-0000-0000-000000001701',false)$$,'55000','GD_STAFF_LAST_OWNER','last active owner cannot be disabled');
 reset role;
 select results_eq($$select role::text from public.staff_profiles where user_id='00000000-0000-0000-0000-000000001702'$$,array['admin'::text],'role change persists');
 
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000001701',true);set local role authenticated;
-select lives_ok($$select public.change_staff_role('00000000-0000-0000-0000-000000001702','owner')$$,'owner role can be restored');
+select lives_ok($$select public.change_staff_role((select id from public.organizations where slug = 'geardrop'), '00000000-0000-0000-0000-000000001702','owner')$$,'owner role can be restored');
 select lives_ok($$select public.revoke_staff_access('00000000-0000-0000-0000-000000001702')$$,'second owner can be revoked safely');
 reset role;
 select results_eq($$select active,invite_status::text from public.staff_profiles where user_id='00000000-0000-0000-0000-000000001702'$$,$$select false,'revoked'::text$$,'revocation updates active status');
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000001701',true);set local role authenticated;
-select lives_ok($$select public.set_staff_active('00000000-0000-0000-0000-000000001702',true)$$,'owner can reactivate staff');
+select lives_ok($$select public.set_staff_active((select id from public.organizations where slug = 'geardrop'), '00000000-0000-0000-0000-000000001702',true)$$,'owner can reactivate staff');
 reset role;
 select results_eq($$select active,invite_status::text from public.staff_profiles where user_id='00000000-0000-0000-0000-000000001702'$$,$$select true,'active'::text$$,'reactivation clears revoked status');
 select results_eq($$select before_state->>'role',after_state->>'role' from public.audit_events where action='staff.role_changed' and entity_id='00000000-0000-0000-0000-000000001702' order by id limit 1$$,$$select 'owner'::text,'admin'::text$$,'audit stores role before and after');

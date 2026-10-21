@@ -37,8 +37,8 @@ function nullableDateTime(formData: FormData, key: string): string | null {
 async function verifiedStaff() {
   const client = await createSupabaseServerClient();
   await requireUser(client);
-  await requireStaffRole(client, STAFF_ROLES);
-  return client;
+  const principal = await requireStaffRole(client, STAFF_ROLES);
+  return { client, organizationId: principal.organization.id };
 }
 
 function refreshContent(): void {
@@ -55,11 +55,13 @@ function refreshContent(): void {
 
 async function mediaAreReady(
   client: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  organizationId: number,
   ids: readonly (number | null)[],
 ): Promise<boolean> {
   const requested = [...new Set(ids.filter((id): id is number => id !== null))];
   if (requested.length === 0) return true;
-  const result = await client.from("media_assets").select("id").in("id", requested).eq("status", "ready");
+  const result = await client.from("media_assets").select("id").in("id", requested)
+    .eq("organization_id", organizationId).eq("status", "ready");
   return !result.error && (result.data?.length ?? 0) === requested.length;
 }
 
@@ -87,12 +89,13 @@ export async function saveHomepageSectionAction(
     targetIds: formData.getAll("targetIds"),
   });
   if (!parsed.success) return { ok: false, message: "Controlla tipo, contenuti, link, date e target." };
-  const client = await verifiedStaff();
+  const { client, organizationId } = await verifiedStaff();
   const input = parsed.data;
-  if (!await mediaAreReady(client, [input.desktopMediaAssetId, input.mobileMediaAssetId])) {
+  if (!await mediaAreReady(client, organizationId, [input.desktopMediaAssetId, input.mobileMediaAssetId])) {
     return { ok: false, message: "Seleziona solo media con stato ready." };
   }
   const result = await client.rpc("save_homepage_section", {
+    p_organization_id: organizationId,
     p_section: {
       id: input.id ?? null,
       section_key: input.sectionKey,
@@ -120,7 +123,7 @@ export async function saveHomepageSectionAction(
 
 export async function publishHomepageSectionAction(formData: FormData): Promise<void> {
   const id = homepageSectionIdSchema.parse(text(formData, "id"));
-  const client = await verifiedStaff();
+  const { client } = await verifiedStaff();
   const { error } = await client.rpc("publish_homepage_section", { p_section_id: id });
   if (error) throw new Error("Pubblicazione sezione non completata");
   refreshContent();
@@ -134,7 +137,7 @@ export async function reorderHomepageSectionsAction(
   if (ids.some((id) => !id.success)) return { ok: false, message: "Ordine sezioni non valido." };
   const sectionIds = ids.map((id) => id.data as number);
   if (!sectionIds.length || new Set(sectionIds).size !== sectionIds.length) return { ok: false, message: "Ordine sezioni non valido." };
-  const client = await verifiedStaff();
+  const { client } = await verifiedStaff();
   const { error } = await client.rpc("reorder_homepage_sections", { p_section_ids: sectionIds });
   if (error) return { ok: false, message: "Ordine non salvato. Ricarica e riprova." };
   refreshContent();
@@ -160,9 +163,10 @@ export async function saveContentPageAction(
     sortOrder: Number(text(formData, "sortOrder")),
   });
   if (!parsed.success) return { ok: false, message: "Controlla Markdown, SEO, stato e date." };
-  const client = await verifiedStaff();
+  const { client, organizationId } = await verifiedStaff();
   const input = parsed.data;
   const record: ContentPageInsert = {
+    organization_id: organizationId,
     slug: input.slug,
     title: input.title,
     excerpt: input.excerpt,
@@ -178,7 +182,7 @@ export async function saveContentPageAction(
     sort_order: input.sortOrder,
   };
   const result = input.id
-    ? await client.from("content_pages").update(record).eq("id", input.id).select("id").single()
+    ? await client.from("content_pages").update(record).eq("id", input.id).eq("organization_id", organizationId).select("id").single()
     : await client.from("content_pages").insert(record).select("id").single();
   if (result.error) return { ok: false, message: "Pagina non salvata. Verifica slug univoco." };
   refreshContent();
@@ -202,9 +206,10 @@ export async function saveNavigationTreeAction(
   try { raw = JSON.parse(text(formData, "tree")); } catch { return { ok: false, message: "Albero navigazione non valido." }; }
   const parsed = navigationTreeSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, message: "Controlla struttura e link navigazione." };
-  const client = await verifiedStaff();
+  const { client, organizationId } = await verifiedStaff();
   const input = parsed.data;
   const result = await client.rpc("save_navigation_tree", {
+    p_organization_id: organizationId,
     p_tree: {
       menu: {
         key: input.menu.key,
@@ -228,8 +233,9 @@ export async function saveFooterConfigurationAction(
   try { raw = JSON.parse(text(formData, "configuration")); } catch { return { ok: false, message: "Configurazione footer non valida." }; }
   const parsed = footerConfigurationSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, message: "Controlla colonne, link, visibilità e URL." };
-  const client = await verifiedStaff();
+  const { client, organizationId } = await verifiedStaff();
   const result = await client.rpc("save_footer_configuration", {
+    p_organization_id: organizationId,
     p_configuration: {
       columns: parsed.data.columns.map((column) => ({
         key: column.key,

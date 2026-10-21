@@ -33,7 +33,7 @@ export default async function AdminPreordersPage({ searchParams }: { searchParam
   // Buyer names and addresses: managers only, the same gate as the rest of the orders section.
   if (principal.role === "editor") redirect("/admin");
 
-  const { items, orders, notes } = await listPreorderOrders(client);
+  const { items, orders, notes } = await listPreorderOrders(client, principal.organization.id);
   const board = preorderBoard(items, orders, { view, notes, ...(sku ? { sku } : {}) });
   const hrefFor = (next: { vista?: PreorderView; prodotto?: string | null }) => {
     const query: Record<string, string> = {};

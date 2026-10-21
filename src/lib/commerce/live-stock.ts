@@ -1,6 +1,7 @@
 import "server-only";
 
 import { PRODUCTS } from "@/data/catalog";
+import { storefrontOrganizationId } from "@/lib/org/storefront";
 import { createSupabasePublicClient } from "@/lib/supabase/public";
 import { hasPublicSupabaseEnv } from "@/lib/supabase/env";
 import { cacheStorefrontRead, STOREFRONT_CACHE_TAGS } from "@/lib/storefront/cache";
@@ -33,6 +34,7 @@ export async function loadLiveCatalogue(): Promise<readonly Product[]> {
       const result = await createSupabasePublicClient()
         .from("products")
         .select("slug,stock_status,stock_quantity,preorder_allocation,availability_override,allow_backorder")
+        .eq("organization_id", await storefrontOrganizationId())
         .in(
           "slug",
           PRODUCTS.map((product) => product.slug),

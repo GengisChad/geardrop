@@ -1,20 +1,70 @@
 import "server-only";
-import type { SupabaseClient } from "@supabase/supabase-js";import type { Database } from "@/lib/supabase/database.types";
-type DashboardProduct=Pick<Database["public"]["Tables"]["products"]["Row"],"availability_override"|"low_stock_threshold"|"manage_stock"|"publication_status"|"stock_quantity"|"stock_status">;
-export type DashboardMetrics={readonly total:number;readonly published:number;readonly draft:number;readonly archived:number;readonly soldOut:number;readonly lowStock:number;readonly preorder:number};
-export type DashboardMovement={readonly id:number;readonly delta:number;readonly stockAfter:number;readonly reason:string;readonly note:string|null;readonly createdAt:string;readonly productName:string;readonly sku:string};
-export type DashboardData={readonly metrics:DashboardMetrics;readonly activeCoupons:number;readonly activePromotions:number;readonly commerce:{readonly orderCount:number;readonly revenueCents:number;readonly grossRevenueCents:number;readonly refundedCents:number;readonly refundedOrderCount:number;readonly unpaidOrderCount:number;readonly averageOrderValueCents:number;readonly latestOrders:readonly{readonly id:number;readonly orderNumber:string;readonly status:string;readonly paymentStatus:string;readonly totalCents:number;readonly createdAt:string}[]}|null;readonly movements:readonly DashboardMovement[];readonly staffActivity:readonly{readonly id:number;readonly action:string;readonly entityType:string;readonly entityId:string;readonly createdAt:string;readonly actorName:string}[]|null};
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/database.types";
 
-export function summarizeDashboardProducts(products:readonly DashboardProduct[]):DashboardMetrics{return products.reduce<DashboardMetrics>((metrics,product)=>({total:metrics.total+1,published:metrics.published+Number(product.publication_status==="published"),draft:metrics.draft+Number(product.publication_status==="draft"),archived:metrics.archived+Number(product.publication_status==="archived"),soldOut:metrics.soldOut+Number(product.manage_stock&&product.stock_status==="esaurito"&&product.publication_status!=="archived"),lowStock:metrics.lowStock+Number(product.manage_stock&&product.stock_quantity>0&&product.stock_quantity<=product.low_stock_threshold&&product.publication_status!=="archived"),preorder:metrics.preorder+Number(product.availability_override==="preorder")}),{total:0,published:0,draft:0,archived:0,soldOut:0,lowStock:0,preorder:0});}
-function record(value:unknown):Record<string,unknown>{return value&&typeof value==="object"&&!Array.isArray(value)?value as Record<string,unknown>:{};}function integer(value:unknown):number{return typeof value==="number"&&Number.isSafeInteger(value)?value:0;}function text(value:unknown):string{return typeof value==="string"?value:"";}function rows(value:unknown):readonly unknown[]{return Array.isArray(value)?value:[];}
-export function mapDashboardPayload(value:unknown):DashboardData{const root=record(value);const products=record(root.products);const commerceValue=root.commerce===null?null:record(root.commerce);return{metrics:{total:integer(products.total),published:integer(products.published),draft:integer(products.draft),archived:integer(products.archived),soldOut:integer(products.sold_out),lowStock:integer(products.low_stock),preorder:integer(products.preorder)},activeCoupons:integer(root.active_coupons),activePromotions:integer(root.active_promotions),commerce:commerceValue===null?null:{orderCount:integer(commerceValue.order_count),revenueCents:integer(commerceValue.revenue_cents),grossRevenueCents:integer(commerceValue.gross_revenue_cents),refundedCents:integer(commerceValue.refunded_cents),refundedOrderCount:integer(commerceValue.refunded_order_count),unpaidOrderCount:integer(commerceValue.unpaid_order_count),averageOrderValueCents:integer(commerceValue.average_order_value_cents),latestOrders:rows(commerceValue.latest_orders).map(item=>{const row=record(item);return{id:integer(row.id),orderNumber:text(row.order_number),status:text(row.status),paymentStatus:text(row.payment_status),totalCents:integer(row.total_cents),createdAt:text(row.created_at)}})},movements:rows(root.stock_movements).map(item=>{const row=record(item);return{id:integer(row.id),delta:integer(row.delta),stockAfter:integer(row.stock_after),reason:text(row.reason),note:typeof row.note==="string"?row.note:null,createdAt:text(row.created_at),productName:text(row.product_name)||"Prodotto non disponibile",sku:text(row.sku)||"—"}}),staffActivity:root.staff_activity===null?null:rows(root.staff_activity).map(item=>{const row=record(item);return{id:integer(row.id),action:text(row.action),entityType:text(row.entity_type),entityId:text(row.entity_id),createdAt:text(row.created_at),actorName:text(row.actor_name)||"Sistema"}})}};
-export async function loadAdminDashboard(client:SupabaseClient<Database>):Promise<DashboardData>{const result=await client.rpc("get_admin_dashboard_metrics");if(result.error)throw new Error("Impossibile caricare i dati operativi della dashboard");return mapDashboardPayload(result.data);}
+// ---------------------------------------------------------------------------
+// Re-export dei tipi e delle funzioni pure dal package neutrale.
+// Il test legacy (tests/unit/admin-dashboard.test.ts) continua a importare
+// da "@/lib/admin/dashboard" e non deve essere modificato.
+// ---------------------------------------------------------------------------
+export type {
+  DashboardMetrics,
+  DashboardMovement,
+  DashboardStaffActivity,
+  DashboardCommerceData,
+  DashboardData,
+  OperationsDashboard,
+} from "@geardrop/data-contract";
 
+export {
+  summarizeDashboardProducts,
+  mapDashboardPayload,
+  loadOperationsDashboard,
+} from "@geardrop/data-contract";
+
+// ---------------------------------------------------------------------------
+// Adapter legacy: lancia un'eccezione in caso di "unavailable", mappa
+// "empty" e "loaded" al tipo piatto DashboardData esistente.
+// Comportamento invariato rispetto alla versione precedente.
+// ---------------------------------------------------------------------------
+import {
+  loadOperationsDashboard as _loadOperationsDashboard,
+} from "@geardrop/data-contract";
+import type { DashboardData } from "@geardrop/data-contract";
+
+export async function loadAdminDashboard(
+  client: SupabaseClient<Database>,
+  organizationId: number,
+): Promise<DashboardData> {
+  const result = await _loadOperationsDashboard(client as Parameters<typeof _loadOperationsDashboard>[0], organizationId);
+  if (result.status === "unavailable") {
+    throw new Error("Impossibile caricare i dati operativi della dashboard");
+  }
+  // Sia "loaded" sia "empty" contengono i dati reali; la UI legacy riceve
+  // sempre il payload piatto, il discriminatore è solo per la UI management.
+  return {
+    metrics: result.metrics,
+    activeCoupons: result.activeCoupons,
+    activePromotions: result.activePromotions,
+    commerce: result.commerce,
+    movements: result.movements,
+    staffActivity: result.staffActivity,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Funnel: specifico dell'admin legacy, rimane in questo modulo.
+// Non fa parte della management overview.
+// ---------------------------------------------------------------------------
 export type FunnelRow = { readonly day: string; readonly event: string; readonly count: number };
 
 /** Daily funnel event counts for the last `days` days. Returns empty array on error (manager permission). */
-export async function loadFunnelStats(client: SupabaseClient<Database>, days: 7 | 30): Promise<readonly FunnelRow[]> {
-  const result = await client.rpc("read_funnel_stats", { p_days: days });
+export async function loadFunnelStats(
+  client: SupabaseClient<Database>,
+  organizationId: number,
+  days: 7 | 30,
+): Promise<readonly FunnelRow[]> {
+  const result = await client.rpc("read_funnel_stats", { p_organization_id: organizationId, p_days: days });
   if (result.error) return [];
   return (result.data ?? []).map((row) => ({
     day: String(row.day),

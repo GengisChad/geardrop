@@ -40,6 +40,7 @@ const PRODUCT_SECTION_TYPES = new Set([
  * different, silently-substituted one.
  */
 export async function resolveHomepageSections(
+  organizationId: number,
   sections: readonly HomepageSection[],
   commerce: CommerceProvider,
 ): Promise<readonly ResolvedHomepageSection[]> {
@@ -60,13 +61,13 @@ export async function resolveHomepageSections(
   // id → slug maps, published + active only, one batch query per relation kind.
   const [productRows, categoryRows, bundleRows] = await Promise.all([
     productIds.length > 0
-      ? client.from("products").select("id, slug").in("id", productIds).eq("publication_status", "published").eq("active", true)
+      ? client.from("products").select("id, slug").in("id", productIds).eq("organization_id", organizationId).eq("publication_status", "published").eq("active", true)
       : Promise.resolve({ data: [] as { id: number; slug: string }[] }),
     categoryIds.length > 0
-      ? client.from("categories").select("id, slug").in("id", categoryIds).eq("publication_status", "published").eq("active", true)
+      ? client.from("categories").select("id, slug").in("id", categoryIds).eq("organization_id", organizationId).eq("publication_status", "published").eq("active", true)
       : Promise.resolve({ data: [] as { id: number; slug: string }[] }),
     bundleIds.length > 0
-      ? client.from("bundles").select("id, slug").in("id", bundleIds).eq("active", true)
+      ? client.from("bundles").select("id, slug").in("id", bundleIds).eq("organization_id", organizationId).eq("active", true)
       : Promise.resolve({ data: [] as { id: number; slug: string }[] }),
   ]);
 

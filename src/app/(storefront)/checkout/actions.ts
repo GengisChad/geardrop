@@ -17,11 +17,14 @@ import {
   checkoutErrorMessage,
 } from "@/lib/commerce/checkout-errors";
 import { placeOrder } from "@/lib/commerce/order-intake";
+import { assertCheckoutIntakeOpen, commerceWriteBlockedMessage } from "@/lib/commerce/write-guard";
+import { storefrontOrganizationId } from "@/lib/org/storefront";
 import { getCommerceProvider, resolveCommerceProviderName } from "@/lib/commerce/provider";
 import type { CartQuote, Money } from "@/lib/commerce/types";
 import { createStripeCheckout, openQuoteForStripe, stripeCheckoutEnabled, STRIPE_UNAVAILABLE_MESSAGE } from "@/lib/payments/stripe-checkout";
 import { EXPRESS_CHECKOUT_LOCKED_MESSAGE } from "@/lib/payments/express-checkout";
 import { authRedirectUrl, PRODUCTION_ORIGIN } from "@/lib/site-url";
+import { createSupabasePublicClient } from "@/lib/supabase/public";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type PlaceOrderResult =
@@ -51,7 +54,11 @@ export async function requestCartQuote(input: CartQuoteInput): Promise<CartQuote
       ...(parsed.data.shippingCode ? { shippingCode: parsed.data.shippingCode } : {}),
       ...(parsed.data.couponCode ? { couponCode: parsed.data.couponCode } : {}),
     });
-    return stripeCheckoutEnabled() ? openQuoteForStripe(quote) : quote;
+    const priced = stripeCheckoutEnabled() ? openQuoteForStripe(quote) : quote;
+    // Maintenance closes the payment step but keeps the cart on screen. `accept_orders` is
+    // already part of the database quote, and submitOrder enforces it again before any write.
+    const blocked = await orderIntakeBlock({ acceptOrders: false });
+    return blocked ? closedQuote(priced, blocked) : priced;
   } catch (error) {
     return unavailableQuote(checkoutErrorMessage(error));
   }
@@ -70,6 +77,9 @@ export async function submitOrder(input: PlaceOrderInput): Promise<PlaceOrderRes
   if (!parsed.success) {
     return { ok: false, message: "Controlla i dati inseriti e riprova." };
   }
+
+  const blocked = await orderIntakeBlock({ acceptOrders: true });
+  if (blocked) return { ok: false, message: blocked };
 
   if (stripeCheckoutEnabled()) {
     // No order database: the catalogue prices the cart again here, whatever the browser
@@ -106,10 +116,34 @@ export async function submitOrder(input: PlaceOrderInput): Promise<PlaceOrderRes
 
   try {
     const client = await createSupabaseServerClient();
-    const order = await placeOrder(client, parsed.data);
+    const order = await placeOrder(client, await storefrontOrganizationId(), parsed.data);
     return { ok: true, orderNumber: order.orderNumber, total: order.total };
   } catch (error) {
     return { ok: false, message: checkoutErrorMessage(error) };
+  }
+}
+
+/**
+ * The shop switches, read before any quote or payment. Null means the checkout may proceed.
+ *
+ * Only an order backend is guarded: with neither Stripe nor the database configured the flow
+ * already refuses, and offline mock development must not need Supabase. `accept_orders` is
+ * enforced only on the database checkout (see `write-guard.ts` for why Stripe is exempt).
+ */
+async function orderIntakeBlock(options: { readonly acceptOrders: boolean }): Promise<string | null> {
+  const databaseCheckout = resolveCommerceProviderName() === "supabase";
+  if (!stripeCheckoutEnabled() && !databaseCheckout) return null;
+  try {
+    // The switches of this shop's company; a lookup that fails closes the checkout.
+    await assertCheckoutIntakeOpen(createSupabasePublicClient(), await storefrontOrganizationId(), {
+      requireAcceptOrders: databaseCheckout && options.acceptOrders,
+    });
+    return null;
+  } catch (error) {
+    return (
+      commerceWriteBlockedMessage(error, "customer") ??
+      "Non riusciamo a verificare lo stato del negozio. Riprova tra qualche minuto."
+    );
   }
 }
 
@@ -151,6 +185,11 @@ function emptyQuote(): CartQuote {
   };
 }
 
+/** The same cart, closed: lines and totals stay visible, the payment step does not open. */
+function closedQuote(quote: CartQuote, notice: string): CartQuote {
+  return { ...quote, orderIntake: "closed", orderable: false, notice };
+}
+
 function unavailableQuote(notice: string): CartQuote {
   return { ...emptyQuote(), notice };
 }
@@ -180,6 +219,11 @@ export async function startExpressCheckout(input: ExpressCheckoutInput): Promise
   if (!stripeCheckoutEnabled()) {
     return { ok: false, message: STRIPE_UNAVAILABLE_MESSAGE };
   }
+
+  // The same shop switches as submitOrder: an express payment is an order too, and maintenance
+  // must stop it before Stripe opens a payment page.
+  const blocked = await orderIntakeBlock({ acceptOrders: true });
+  if (blocked) return { ok: false, message: blocked };
 
   try {
     const provider = await getCommerceProvider();

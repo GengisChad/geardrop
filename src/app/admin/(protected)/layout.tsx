@@ -16,7 +16,7 @@ export default async function ProtectedAdminLayout({ children }: { children: Rea
       .select("display_name")
       .eq("user_id", principal.userId)
       .single(),
-    client.from("site_settings").select("accept_orders").eq("singleton", true).maybeSingle(),
+    client.from("site_settings").select("accept_orders").eq("organization_id", principal.organization.id).maybeSingle(),
   ]);
 
   if (profileResult.error || settingsResult.error) {
@@ -27,6 +27,8 @@ export default async function ProtectedAdminLayout({ children }: { children: Rea
     <AdminShell
       acceptOrders={settingsResult.data?.accept_orders ?? false}
       displayName={profileResult.data.display_name}
+      organization={principal.organization}
+      organizations={principal.organizations}
       role={principal.role}
     >
       {children}

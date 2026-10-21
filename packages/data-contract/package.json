@@ -1,0 +1,7 @@
+{
+  "name": "@geardrop/data-contract", "version": "1.0.0", "private": true, "sideEffects": false,
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "dependencies": { "@supabase/supabase-js": "2.110.7" },
+  "devDependencies": { "typescript": "5.9.3" }
+}

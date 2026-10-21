@@ -1,4 +1,34 @@
 begin;
+-- Organization compatibility for fixtures written before organizations existed (see
+-- supabase/tests/044). Inside this rolled-back transaction every organization-scoped table
+-- defaults to Gear Drop, and every staff profile is mirrored as a Gear Drop member with the
+-- same role and state. Company isolation itself is tested without these shortcuts in 041-044.
+do $legacy_organization$
+declare
+  geardrop bigint := (select id from public.organizations where slug = 'geardrop');
+  target text;
+begin
+  for target in
+    select c.table_name
+    from information_schema.columns as c
+    join information_schema.tables as t on t.table_schema = c.table_schema and t.table_name = c.table_name
+    where c.table_schema = 'public' and c.column_name = 'organization_id'
+      and t.table_type = 'BASE TABLE' and c.table_name <> 'organization_members'
+  loop
+    execute format('alter table public.%I alter column organization_id set default %s', target, geardrop);
+  end loop;
+end
+$legacy_organization$;
+create function private.legacy_mirror_staff_membership() returns trigger language plpgsql set search_path = '' as $legacy_mirror$
+begin
+  insert into public.organization_members (organization_id, user_id, role, active)
+  values ((select id from public.organizations where slug = 'geardrop'), new.user_id, new.role, new.active)
+  on conflict (organization_id, user_id) do update set role = excluded.role, active = excluded.active;
+  return new;
+end
+$legacy_mirror$;
+create trigger legacy_mirror_staff_membership after insert or update of role, active on public.staff_profiles
+  for each row execute function private.legacy_mirror_staff_membership();
 select plan(27);
 
 -- Fixtures -----------------------------------------------------------------------
@@ -132,14 +162,14 @@ select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000003101'
 
 select results_eq(
   $$select product_slug, pending_notices::int, preorder_demand::int
-      from public.get_inventory_restock_demand(array['restock-pub','restock-pub2','restock-draft'])
+      from public.get_inventory_restock_demand((select id from public.organizations where slug = 'geardrop'), array['restock-pub','restock-pub2','restock-draft'])
       order by product_slug$$,
   $$values ('restock-draft'::text, 0, 0), ('restock-pub'::text, 2, 0), ('restock-pub2'::text, 1, 0)$$,
   'get_inventory_restock_demand returns correct pending notice counts');
 
 -- No pre-order demand yet (no active orders with preorder_quantity > 0).
 select is(
-  (select coalesce(sum(preorder_demand)::int,0) from public.get_inventory_restock_demand(array['restock-pub'])),
+  (select coalesce(sum(preorder_demand)::int,0) from public.get_inventory_restock_demand((select id from public.organizations where slug = 'geardrop'), array['restock-pub'])),
   0,
   'preorder_demand is zero when there are no active preorder orders');
 reset role;
@@ -148,7 +178,7 @@ reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000003102',true);
 select is(
-  (select count(*)::int from public.get_inventory_restock_demand(array['restock-pub'])),
+  (select count(*)::int from public.get_inventory_restock_demand((select id from public.organizations where slug = 'geardrop'), array['restock-pub'])),
   0,
   'editor gets no rows from get_inventory_restock_demand (guard returns empty)');
 reset role;
@@ -170,7 +200,7 @@ select is(
   'a delivered request is deleted');
 
 select is(
-  (select pending_notices::int from public.get_inventory_restock_demand(array['restock-pub'])),
+  (select pending_notices::int from public.get_inventory_restock_demand((select id from public.organizations where slug = 'geardrop'), array['restock-pub'])),
   1,
   'one request remains pending after marking one notified');
 reset role;
@@ -226,7 +256,7 @@ select (select id from public.orders where order_number='GD-RESTOCK-TEST'),
 set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000003101',true);
 select is(
-  (select preorder_demand::int from public.get_inventory_restock_demand(array['restock-pub'])),
+  (select preorder_demand::int from public.get_inventory_restock_demand((select id from public.organizations where slug = 'geardrop'), array['restock-pub'])),
   2,
   'preorder_demand counts preorder_quantity from confirmed/processing orders');
 reset role;

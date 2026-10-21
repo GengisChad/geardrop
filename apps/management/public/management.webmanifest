@@ -1,0 +1,33 @@
+{
+  "id": "/",
+  "name": "Gestionale",
+  "short_name": "Gestionale",
+  "description": "Pannello di gestione operativa",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#161616",
+  "theme_color": "#161616",
+  "lang": "it",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icons/gestionale-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/gestionale-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/gestionale-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

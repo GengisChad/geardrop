@@ -19,6 +19,7 @@ Usare esattamente i nomi in `.env.example`. Non inventarne altri:
 | `SUPABASE_SECRET_KEY` | Preview, **server-only** | secret key del progetto |
 | `COMMERCE_PROVIDER` | Preview | `mock` |
 | `CONTENT_PROVIDER` | Preview | `mock` |
+| `NEXT_PUBLIC_STOREFRONT_ORGANIZATION` | Preview | `geardrop` — l'azienda il cui negozio questo deployment serve (vedi `multi-organization-foundation.md`) |
 | `GEARDROP_OWNER_EMAILS` | non impostare in Vercel | usata solo dalla procedura one-shot locale/DB, mai da un runtime deployato |
 
 In Vercel, marcare `SUPABASE_SECRET_KEY` come variabile server-only (mai esposta al bundle

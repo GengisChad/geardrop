@@ -18,7 +18,7 @@ const date = (data: FormData, key: string) => {
 };
 const euros = (data: FormData, key: string) => Math.round(Number(text(data, key).replace(",", ".") || 0) * 100);
 const ids = (data: FormData, key: string) => data.getAll(key).map(String);
-async function managerClient() { const client = await createSupabaseServerClient(); await requireUser(client); await requireStaffRole(client, MANAGER_ROLES); return client; }
+async function managerClient() { const client = await createSupabaseServerClient(); await requireUser(client); const principal = await requireStaffRole(client, MANAGER_ROLES); return { client, organizationId: principal.organization.id }; }
 function refresh() { revalidateTag("products", "max"); revalidateTag("promotions", "max"); revalidatePath("/admin/promozioni"); revalidatePath("/negozio"); revalidatePath("/"); }
 
 export async function savePromotionAction(_previous: PromotionActionState, formData: FormData): Promise<PromotionActionState> {
@@ -31,8 +31,9 @@ export async function savePromotionAction(_previous: PromotionActionState, formD
     productIds: ids(formData, "productIds"), categoryIds: ids(formData, "categoryIds"), bundleIds: ids(formData, "bundleIds"),
   });
   if (!parsed.success) return { ok: false, message: "Controlla sconto, regole, date e target." };
-  const client = await managerClient(); const input = parsed.data;
+  const { client, organizationId } = await managerClient(); const input = parsed.data;
   const saved = await client.rpc("save_promotion_with_targets", {
+    p_organization_id: organizationId,
     p_promotion: {
       id: input.id ?? null, name: input.name, description: input.description,
       discount_kind: input.discountKind, discount_value: input.discountValue,
@@ -51,8 +52,8 @@ export async function savePromotionAction(_previous: PromotionActionState, formD
 }
 
 export async function togglePromotionAction(formData: FormData): Promise<void> {
-  const id = promotionIdSchema.parse(text(formData, "id")); const client = await managerClient();
-  const current = await client.from("promotions").select("active").eq("id", id).single();
-  if (current.error || (await client.from("promotions").update({ active: !current.data.active }).eq("id", id)).error) throw new Error("Stato promozione non aggiornato");
+  const id = promotionIdSchema.parse(text(formData, "id")); const { client, organizationId } = await managerClient();
+  const current = await client.from("promotions").select("active").eq("id", id).eq("organization_id", organizationId).single();
+  if (current.error || (await client.from("promotions").update({ active: !current.data.active }).eq("id", id).eq("organization_id", organizationId)).error) throw new Error("Stato promozione non aggiornato");
   refresh();
 }

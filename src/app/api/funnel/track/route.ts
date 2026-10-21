@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { storefrontOrganizationId } from "@/lib/org/storefront";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -24,7 +25,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     const client = await createSupabaseServerClient();
     // Fire-and-forget: the RPC whitelists events server-side too.
-    await client.rpc("track_storefront_event", { p_event: event });
+    await client.rpc("track_storefront_event", { p_event: event, p_organization_id: await storefrontOrganizationId() });
 
     return NextResponse.json({ ok: true });
   } catch {

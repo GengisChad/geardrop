@@ -4,6 +4,7 @@ import styles from "@/components/admin/homepage/homepage.module.css";
 import { requireAdminAccess } from "@/lib/admin/access";
 import { listHomepageSections } from "@/lib/content/repository";
 import { getCommerceProvider } from "@/lib/commerce/provider";
+import { storefrontOrganizationId } from "@/lib/org/storefront";
 import { newReleases } from "@/lib/home/product-selection";
 import { resolveHomepageSections } from "@/lib/storefront/homepage-resolver";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -13,14 +14,33 @@ export const fetchCache = "force-no-store";
 
 export default async function AdminHomepagePreviewPage() {
   const client = await createSupabaseServerClient();
-  await requireAdminAccess(client);
+  const principal = await requireAdminAccess(client);
+  const organizationId = principal.organization.id;
+  if (await storefrontOrganizationId().catch(() => null) !== organizationId) {
+    return (
+      <div className={styles.page}>
+        <header className={styles.pageHeading}>
+          <div>
+            <p>CMS / Preview autenticata</p>
+            <h1>Anteprima homepage</h1>
+            <span>{principal.organization.name} non ha un negozio online collegato a questo sito.</span>
+          </div>
+          <Link href="/admin/homepage">Torna all’editor</Link>
+        </header>
+        <div className={styles.emptyState}>
+          <strong>Anteprima non disponibile</strong>
+          <p>L’anteprima usa il catalogo pubblico del negozio: si attiva quando l’azienda avrà il suo sito.</p>
+        </div>
+      </div>
+    );
+  }
 
   // The same renderer the public homepage uses, only fed the draft-inclusive section list
   // an authenticated admin is allowed to see. One renderer, two audiences — never a
   // preview that looks different from what ships.
   const commerce = await getCommerceProvider();
   const [sections, featured, latest, bestSellers, bundle, hero, all] = await Promise.all([
-    listHomepageSections(client, { includeDrafts: true }),
+    listHomepageSections(client, organizationId, { includeDrafts: true }),
     commerce.listProducts({ sort: "popolari", perPage: 6 }),
     commerce.listProducts({ sort: "novita", perPage: 6 }),
     commerce.listProducts({ sort: "popolari", category: "beyblade-x", perPage: 5 }),
@@ -31,7 +51,7 @@ export default async function AdminHomepagePreviewPage() {
 
   // Same card selection as the public homepage: new releases first, else the leading featured products.
   const releases = newReleases(all.items);
-  const resolved = all.items.length > 0 ? await resolveHomepageSections(sections, commerce) : [];
+  const resolved = all.items.length > 0 ? await resolveHomepageSections(organizationId, sections, commerce) : [];
   const fallback: ManagedHomepageFallback | null = all.items.length > 0
     ? {
         heroProducts: (releases.length > 0 ? releases : featured.items).slice(0, 3),

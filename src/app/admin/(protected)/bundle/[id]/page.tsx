@@ -14,7 +14,7 @@ export default async function EditAdminBundlePage({ params }: { params: Promise<
   if (!parsedId.success) notFound();
   const client = await createSupabaseServerClient();
   const principal = await requireAdminAccess(client);
-  const data = await loadAdminBundleEditor(client, parsedId.data);
+  const data = await loadAdminBundleEditor(client, principal.organization.id, parsedId.data);
   if (!data) notFound();
   return <div className={styles.page}><header className={styles.heading}><div><p>Bundle / {data.bundle.id}</p><h1>{data.bundle.title_line_one}</h1><span>{data.bundle.active ? "attivo" : "bozza"} · {data.items.length} prodotti reali</span></div><Link href="/admin/bundle">Torna ai bundle</Link></header><BundleEditorForm data={data} products={data.products} readyMedia={data.readyMedia} role={principal.role} /></div>;
 }

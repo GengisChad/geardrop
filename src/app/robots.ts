@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { PRODUCTION_ORIGIN } from "@/lib/site-url";
 import { absoluteUrl } from "@/lib/seo";
+import { readDeploymentContract } from "@/lib/app-mode";
 
 /**
  * /robots.txt. Only production is crawlable: preview deployments would otherwise compete
@@ -8,7 +9,9 @@ import { absoluteUrl } from "@/lib/seo";
  * crawlable so Google can read that instruction.
  */
 export default function robots(): MetadataRoute.Robots {
-  if (process.env["VERCEL_ENV"] && process.env["VERCEL_ENV"] !== "production") {
+  // The management app is private; previews would compete with the real shop.
+  if (readDeploymentContract().surface === "management" ||
+      (process.env["VERCEL_ENV"] && process.env["VERCEL_ENV"] !== "production")) {
     return { rules: [{ userAgent: "*", disallow: "/" }] };
   }
   return {
