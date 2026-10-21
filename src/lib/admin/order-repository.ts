@@ -122,3 +122,27 @@ export async function listPartnerOrders(client: SupabaseClient<Database>, organi
   }
   return orders.map((order) => ({ order, items: itemsByOrder.get(order.id) ?? [] }));
 }
+
+/**
+ * The pre-order desk (/admin/ordini/pre-ordini): every paid order holding pre-ordered pieces, all
+ * its lines (so an order that also shipped pieces from the shelf is known), and the internal notes
+ * that record a pre-order parcel sent apart. Managers only, like the rest of the orders section.
+ */
+export async function listPreorderOrders(client: SupabaseClient<Database>, organizationId: number) {
+  const preordered = await client.from("order_items").select("order_id").eq("organization_id", organizationId).gt("preorder_quantity", 0);
+  if (preordered.error) throw new Error("Impossibile caricare le righe in pre-ordine");
+  const orderIds = [...new Set((preordered.data ?? []).map((item) => item.order_id))];
+  if (orderIds.length === 0) return { items: [], orders: [], notes: [] };
+  const [itemsResult, ordersResult, notesResult] = await Promise.all([
+    client.from("order_items").select("order_id,sku_snapshot,product_name_snapshot,quantity,preorder_quantity").eq("organization_id", organizationId).in("order_id", orderIds),
+    client
+      .from("orders")
+      .select("id,order_number,created_at,status,payment_status,email,phone,total_cents,shipped_at,tracking_code,shipping_address_snapshot")
+      .eq("organization_id", organizationId)
+      .in("id", orderIds)
+      .eq("payment_status", "paid"),
+    client.from("order_notes").select("order_id,note,created_at").in("order_id", orderIds).ilike("note", "PRE-ORDINE SPEDITO%"),
+  ]);
+  if (itemsResult.error || ordersResult.error || notesResult.error) throw new Error("Impossibile caricare gli ordini in pre-ordine");
+  return { items: itemsResult.data ?? [], orders: ordersResult.data ?? [], notes: notesResult.data ?? [] };
+}

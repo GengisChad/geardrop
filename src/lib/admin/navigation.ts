@@ -24,6 +24,8 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { label: "Promozioni", href: "/admin/promozioni", disabled: false },
   { label: "Coupon", href: "/admin/coupon", disabled: false },
   { label: "Ordini", href: "/admin/ordini", disabled: false },
+  // Owner, 2026-10-11: who paid for a pre-order and whether it has shipped.
+  { label: "Pre-ordini", href: "/admin/ordini/pre-ordini", disabled: false },
   { label: "Da spedire", href: "/admin/magazzino", disabled: false },
   { label: "Spedizioni", href: "/admin/spedizioni", disabled: false },
   { label: "Impostazioni", href: "/admin/impostazioni", disabled: false },
@@ -31,7 +33,13 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { label: "Attività", href: "/admin/attivita", disabled: false },
 ];
 
-export function isAdminNavItemActive(pathname: string, href: string): boolean {
+function matches(pathname: string, href: string): boolean {
   if (href === "/admin") return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+/** The item for this page; a section nested in another (Pre-ordini in Ordini) wins over its parent. */
+export function isAdminNavItemActive(pathname: string, href: string): boolean {
+  if (!matches(pathname, href)) return false;
+  return !ADMIN_NAV_ITEMS.some((item) => item.href.length > href.length && matches(pathname, item.href));
 }
