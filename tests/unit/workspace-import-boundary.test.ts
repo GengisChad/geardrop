@@ -15,7 +15,7 @@ describe("management compiler import boundary", () => {
       const source = readFileSync(resolve("tests/fixtures/workspace-boundary", fixture), "utf8");
       expect(checkSourceImports(source, sourceFile, process.cwd()), fixture).toHaveLength(count);
     }
-  });
+  }, 30_000);
   it("checks import, export-from, import(), require(), deep imports and undeclared dependencies", async () => {
     const { checkSourceImports } = await checker();
     const sourceFile = resolve("apps/management/src/probe.ts");

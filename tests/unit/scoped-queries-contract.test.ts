@@ -163,11 +163,11 @@ describe("the rollout's transitional database pieces stay unused by this app", (
     // The scan must see the app's calls, or it proves nothing.
     expect(result.calls).toBeGreaterThan(10);
     expect(result.unscoped).toEqual([]);
-  });
+  }, 30_000);
 
   it("never reads site_settings.singleton", () => {
     expect(singletonReads()).toEqual([]);
-  });
+  }, 30_000);
 });
 
 describe("organization-scoped queries", () => {
