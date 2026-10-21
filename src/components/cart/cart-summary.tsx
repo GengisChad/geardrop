@@ -51,9 +51,9 @@ export function CartTotalsPanel({
   /** Delivery time shown under the shipping row. Defaults to the in-stock estimate. */
   deliveryHint?: string;
   /**
-   * The cart prices the cheapest delivery (an InPost point or Locker); the buyer picks it or Poste
-   * to the door at checkout. A bare price there read as what any choice would cost, so the cart
-   * says "da" and where the choice happens.
+   * The cart prices the cheapest delivery (InPost Locker at 4,90 €); the buyer picks it, the
+   * Poste Italiane punto di ritiro or Poste to the door at checkout. A bare price there read as
+   * what any choice would cost, so the cart says "da" and where the choice happens.
    */
   carrierChosenLater?: boolean;
   className?: string;
@@ -87,7 +87,7 @@ export function CartTotalsPanel({
         </div>
         {startingPrice ? (
           <p className="text-[0.6875rem] text-grey-600" data-testid="cart-carrier-note">
-            Al checkout scegli il punto di ritiro o Locker InPost oppure la consegna a casa con Poste Italiane: il totale si aggiorna.
+            Al checkout scegli Locker InPost, punto di ritiro Poste Italiane o la consegna a casa con Poste Italiane: il totale si aggiorna.
           </p>
         ) : null}
         <p className="text-[0.6875rem] text-grey-600">{deliveryHint}</p>

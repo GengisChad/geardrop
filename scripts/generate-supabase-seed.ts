@@ -472,7 +472,10 @@ where organization_id = ${GEARDROP}
   and default_seo_description is null;
 
 insert into public.shipping_methods (organization_id, code, name, price_cents, free_from_cents, active, sort_order)
-values (${GEARDROP}, 'standard', 'Spedizione standard', ${shippingMethodByCode("standard")!.priceCents}, ${FREE_SHIPPING_THRESHOLD}, false, 0)
+values
+  (${GEARDROP}, 'inpost-locker', 'InPost · Locker', ${shippingMethodByCode("inpost-locker")!.priceCents}, ${FREE_SHIPPING_THRESHOLD}, false, 0),
+  (${GEARDROP}, 'poste-point', 'Poste Italiane · punto di ritiro', ${shippingMethodByCode("poste-point")!.priceCents}, ${FREE_SHIPPING_THRESHOLD}, false, 1),
+  (${GEARDROP}, 'standard', 'Spedizione standard', ${shippingMethodByCode("standard")!.priceCents}, ${FREE_SHIPPING_THRESHOLD}, false, 2)
 on conflict (organization_id, code) do update set
   name = excluded.name,
   price_cents = excluded.price_cents,

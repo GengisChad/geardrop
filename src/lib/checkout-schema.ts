@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { visitSourceSchema } from "@/lib/attribution";
 import { shippingMethodByCode } from "@/data/catalog";
 import { MAX_QUANTITY_PER_LINE } from "@/lib/commerce/limits";
 
@@ -48,7 +49,23 @@ export const checkoutSchema = z.object({
   notes: z.string().trim().max(300, "Massimo 300 caratteri.").optional(),
 });
 
-export const PICKUP_POINT_MESSAGE = "Scrivi il punto di ritiro o il Locker dove ritirare il pacco.";
+// One message for every pickup method: the InPost Locker (the default), the Poste Italiane punto di
+// ritiro and the partner's Punto Poste. The Locker is named because it is what most buyers pick.
+export const PICKUP_POINT_MESSAGE = "Indica il Locker o il punto dove ritirare il pacco.";
+
+/**
+ * Label and example for the pickup field, naming the choice the buyer picked: the InPost Locker
+ * (since 2026-10-13) or a Poste Italiane punto di ritiro (since 2026-10-14, and the partner's route).
+ * The InPost branch without a Locker only serves orders placed with the retired inpost-point.
+ */
+export function pickupPointCopy(method: { readonly code: string; readonly carrier: string } | undefined): {
+  readonly label: string;
+  readonly placeholder: string;
+} {
+  if (method?.carrier === "poste") return { label: "Punto di ritiro Poste Italiane", placeholder: "Es. nome o indirizzo del punto" };
+  if (method?.code === "inpost-locker") return { label: "Locker InPost", placeholder: "Es. codice o indirizzo del Locker" };
+  return { label: "Punto di ritiro InPost", placeholder: "Es. nome o indirizzo del punto" };
+}
 
 /** A pickup method needs the point it delivers to: three characters at least (a Locker code). */
 export function pickupPointMissing(shippingMethod: string | undefined, pickupPoint: string | undefined): boolean {
@@ -90,6 +107,8 @@ export const placeOrderSchema = z.object({
   couponCode: z.string().trim().max(80).optional(),
   /** Stable for the life of one checkout attempt, so a retry cannot double-order. */
   idempotencyKey: z.uuid(),
+  /** Channel of the visit (see lib/attribution). Dropped, never rejected, when malformed. */
+  attribution: visitSourceSchema,
 });
 
 export type PlaceOrderInput = z.infer<typeof placeOrderSchema>;
@@ -108,3 +127,19 @@ export const cartQuoteSchema = z.object({
 });
 
 export type CartQuoteInput = z.infer<typeof cartQuoteSchema>;
+
+/**
+ * What the browser sends to start an express Stripe Checkout (no contact form).
+ * The buyer's address and phone are collected by Stripe on its hosted page.
+ *
+ * Reuses the same line and key shapes as placeOrderSchema so the server-side
+ * validation is identical: no unit price, no personal data until Stripe has it.
+ */
+export const expressCheckoutSchema = z.object({
+  lines: placeOrderSchema.shape.lines,
+  /** Fresh UUID per attempt: prevents double-redirects on accidental double-taps. */
+  idempotencyKey: placeOrderSchema.shape.idempotencyKey,
+  attribution: visitSourceSchema,
+});
+
+export type ExpressCheckoutInput = z.infer<typeof expressCheckoutSchema>;

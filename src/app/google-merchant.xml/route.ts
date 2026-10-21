@@ -1,6 +1,6 @@
 import { BUNDLES, FREE_SHIPPING_THRESHOLD, PARTNER_SHIPPING_METHOD, PRODUCTS, SHIPPING_METHODS, SOLD_WITHOUT_BARCODE, brandOf } from "@/data/catalog";
 import { getCommerceProvider } from "@/lib/commerce/provider";
-import type { Product } from "@/lib/commerce/types";
+import type { CategorySlug, Product } from "@/lib/commerce/types";
 import { CATEGORY_LABEL } from "@/lib/labels";
 import { availabilityDate } from "@/lib/merchant-availability";
 import { absoluteUrl, productTitle, SITE_NAME } from "@/lib/seo";
@@ -27,6 +27,20 @@ const AVAILABILITY: Record<Product["stock"], string> = {
   esaurito: "out_of_stock",
 };
 
+/**
+ * Google's own taxonomy (taxonomy-with-ids), declared rather than left to Google to guess. Left
+ * alone, it filed the launchers under fishing reels ("mulinello") and the deck cases under
+ * skateboard decks, so they could match searches no Beyblade buyer makes. The taxonomy has the
+ * exact nodes: 6329 "Battle Tops" for the tops and the kits built on them, 6794 "Battle Top
+ * Accessories" for everything a top is launched from, fought in or carried in.
+ */
+const GOOGLE_PRODUCT_CATEGORY: Record<CategorySlug, number> = {
+  "beyblade-x": 6329,
+  lanciatori: 6794,
+  stadi: 6794,
+  accessori: 6794,
+};
+
 const escape = (value: string) =>
   value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
@@ -44,6 +58,7 @@ function offer(product: Product): string {
       ? [`<g:availability_date>${availabilityDate(product)}</g:availability_date>`]
       : []),
     `<g:brand>${escape(product.unofficial ? SITE_NAME : brandOf(product) === "takara-tomy" ? "Takara Tomy" : "Hasbro")}</g:brand>`,
+    `<g:google_product_category>${GOOGLE_PRODUCT_CATEGORY[product.category]}</g:google_product_category>`,
     `<g:product_type>${escape(CATEGORY_LABEL[product.category])}</g:product_type>`,
   ];
 

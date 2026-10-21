@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { INPOST_POINT_FINDER_URL, SHIPPING_METHODS, shippingMethodByCode } from "@/data/catalog";
+import { INPOST_POINT_FINDER_URL, POSTE_POINT_FINDER_URL, SHIPPING_FLAT_RATE, SHIPPING_METHODS, shippingMethodByCode } from "@/data/catalog";
 import { checkoutFormSchema, placeOrderSchema, type PlaceOrderInput } from "@/lib/checkout-schema";
 import { shipmentChoice } from "@/lib/admin/orders";
 import { createMockProvider } from "@/lib/commerce/mock-provider";
@@ -9,9 +9,12 @@ import { paidCheckoutFromStripe, shippingChoice, type PaidCheckout } from "@/lib
 import { buildCheckoutSessionFields, openQuoteForStripe } from "@/lib/payments/stripe-checkout";
 
 /*
- * The owner's rule (2026-10-07): the buyer picks the carrier, and pays what it costs the shop —
- * InPost to a point or Locker 5,65 €, Poste Italiane to the door 6,65 €. The old €4,90 Poste rate
- * "non esiste". InPost point is the cheapest, the default selection, and the cart's "da" price.
+ * The owner's rules on shipping:
+ * 2026-10-13: InPost Locker 4,90 € (cheapest, default), InPost punto di ritiro 5,65 €,
+ *             Poste Italiane a casa 6,65 €.
+ * 2026-10-14: InPost punto di ritiro (inpost-point) replaced by Poste Italiane punto di
+ *             ritiro (poste-point) at the same 5,65 €. inpost-point is retired but still
+ *             resolvable for historical orders.
  */
 
 const contact = {
@@ -37,23 +40,51 @@ const quoteWith = async (shippingCode: string) =>
   openQuoteForStripe(await createMockProvider().quoteCart({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }], shippingCode } as CartQuoteRequest));
 
 describe("the carriers", () => {
-  it("cost what the owner pays to send the parcel", () => {
+  // Updated 2026-10-14: inpost-point replaced by poste-point (Poste Italiane punto di ritiro
+  // at the same 5,65 €). inpost-locker unchanged, standard unchanged.
+  it("three methods offered in order: InPost Locker 4,90, Poste punto di ritiro 5,65, Poste a casa 6,65", () => {
     expect(SHIPPING_METHODS.map((method) => [method.code, method.carrier, method.priceCents, method.pickupPoint])).toEqual([
-      ["inpost-point", "inpost", 565, true],
+      ["inpost-locker", "inpost", 490, true],
+      ["poste-point", "poste", 565, true],
       ["standard", "poste", 665, false],
     ]);
     expect(INPOST_POINT_FINDER_URL).toBe("https://inpost.it/trova-un-locker");
+    expect(POSTE_POINT_FINDER_URL).toBe("https://www.poste.it/cerca/index.html");
+  });
+
+  it("inpost-point is not offered for new orders but still resolves for historical display", () => {
+    expect(SHIPPING_METHODS.some((m) => m.code === "inpost-point")).toBe(false);
+    // Legacy resolution via shippingMethodByCode — still returns the retired entry.
+    const legacy = shippingMethodByCode("inpost-point");
+    expect(legacy).toBeDefined();
+    expect(legacy?.label).toBe("InPost · punto di ritiro");
+    expect(legacy?.carrier).toBe("inpost");
+  });
+
+  it("the Locker is the cheapest and default method at 4,90 (owner, 2026-10-13)", () => {
+    const locker = SHIPPING_METHODS[0]!;
+    expect(locker.code).toBe("inpost-locker");
+    expect(locker.priceCents).toBe(490);
+    expect(locker.pickupPoint).toBe(true);
+    // SHIPPING_FLAT_RATE is derived from the cheapest method, so banners read "da 4,90 €".
+    expect(SHIPPING_FLAT_RATE).toBe(490);
+  });
+
+  it("the Locker requires a pickup point name, like the punto di ritiro", () => {
+    expect(checkoutFormSchema.safeParse({ ...contact, shippingMethod: "inpost-locker" }).success).toBe(false);
+    expect(checkoutFormSchema.safeParse({ ...contact, shippingMethod: "inpost-locker", pickupPoint: "  " }).success).toBe(false);
+    expect(checkoutFormSchema.safeParse({ ...contact, shippingMethod: "inpost-locker", pickupPoint: "LOC001" }).success).toBe(true);
   });
 });
 
 describe("the checkout form", () => {
-  it("asks for the InPost point only when the parcel goes to one", () => {
-    expect(checkoutFormSchema.safeParse({ ...contact, shippingMethod: "inpost-point" }).success).toBe(false);
-    expect(checkoutFormSchema.safeParse({ ...contact, shippingMethod: "inpost-point", pickupPoint: "  " }).success).toBe(false);
-    expect(checkoutFormSchema.safeParse({ ...contact, shippingMethod: "inpost-point", pickupPoint: "MIL123M" }).success).toBe(true);
+  it("asks for the pickup point for poste-point just like it did for inpost-point", () => {
+    expect(checkoutFormSchema.safeParse({ ...contact, shippingMethod: "poste-point" }).success).toBe(false);
+    expect(checkoutFormSchema.safeParse({ ...contact, shippingMethod: "poste-point", pickupPoint: "  " }).success).toBe(false);
+    expect(checkoutFormSchema.safeParse({ ...contact, shippingMethod: "poste-point", pickupPoint: "RM001" }).success).toBe(true);
     expect(checkoutFormSchema.safeParse({ ...contact, shippingMethod: "standard" }).success).toBe(true);
     // The server applies the same rule to the order it receives.
-    expect(placeOrderSchema.safeParse(order("inpost-point")).success).toBe(false);
+    expect(placeOrderSchema.safeParse(order("poste-point")).success).toBe(false);
   });
 });
 
@@ -66,19 +97,20 @@ describe("the Stripe payment page", () => {
     expect(fields["metadata[pickup_point]"]).toBeUndefined();
   });
 
-  it("carries the InPost point the buyer named, and only for a pickup", async () => {
-    const point = buildCheckoutSessionFields({ quote: await quoteWith("inpost-point"), order: order("inpost-point", "MIL123M"), origin: "https://geardropshop.it" }, prices);
+  it("carries the Poste punto the buyer named, and only for a pickup (2026-10-14: poste-point)", async () => {
+    const point = buildCheckoutSessionFields({ quote: await quoteWith("poste-point"), order: order("poste-point", "RM001"), origin: "https://geardropshop.it" }, prices);
     expect(point["shipping_options[0][shipping_rate_data][fixed_amount][amount]"]).toBe(565);
-    expect(point["metadata[pickup_point]"]).toBe("MIL123M");
-    const poste = buildCheckoutSessionFields({ quote: await quoteWith("standard"), order: order("standard", "MIL123M"), origin: "https://geardropshop.it" }, prices);
+    expect(point["metadata[pickup_point]"]).toBe("RM001");
+    const poste = buildCheckoutSessionFields({ quote: await quoteWith("standard"), order: order("standard", "RM001"), origin: "https://geardropshop.it" }, prices);
     expect(poste["metadata[pickup_point]"]).toBeUndefined();
   });
 });
 
 describe("the paid order", () => {
   it("records the carrier and the point from the session, and nothing for older sessions", () => {
+    // Updated 2026-10-13: inpost-point relabelled to "InPost · punto di ritiro".
     expect(shippingChoice({ shipping_method: "inpost-point", pickup_point: " MIL123M " })).toEqual({
-      method: "inpost-point", methodLabel: "InPost · punto di ritiro o Locker", pickupPoint: "MIL123M",
+      method: "inpost-point", methodLabel: "InPost · punto di ritiro", pickupPoint: "MIL123M",
     });
     // inpost-home no longer exists in the catalogue; an older session that used it falls back to nothing,
     // the same as any other unrecognised code.
@@ -86,6 +118,8 @@ describe("the paid order", () => {
     expect(shippingChoice({ order_ref: "GD-OLD" })).toEqual({});
     expect(shippingChoice({ shipping_method: "brt" })).toEqual({});
     expect(shippingMethodByCode("standard")?.label).toBe("Poste Italiane · consegna a casa");
+    expect(shippingMethodByCode("inpost-locker")?.label).toBe("InPost · Locker");
+    expect(shippingMethodByCode("inpost-point")?.label).toBe("InPost · punto di ritiro");
   });
 
   const session = {
@@ -113,17 +147,20 @@ describe("the paid order", () => {
   const checkout = paidCheckoutFromStripe(session, items) as PaidCheckout;
 
   it("keeps the choice in the shipping snapshot the order stores", () => {
-    expect(checkout.shipping).toMatchObject({ method: "inpost-point", methodLabel: "InPost · punto di ritiro o Locker", pickupPoint: "MIL123M" });
+    // The session was placed with inpost-point; the snapshot records whatever label the catalogue
+    // had at order time. The new label "InPost · punto di ritiro" applies to future orders.
+    expect(checkout.shipping).toMatchObject({ method: "inpost-point", methodLabel: "InPost · punto di ritiro", pickupPoint: "MIL123M" });
     expect(checkout.shippingCents).toBe(565);
     // The panel reads it back from the stored snapshot.
-    expect(shipmentChoice(checkout.shipping)).toEqual({ method: "inpost-point", label: "InPost · punto di ritiro o Locker", pickupPoint: "MIL123M" });
+    expect(shipmentChoice(checkout.shipping)).toEqual({ method: "inpost-point", label: "InPost · punto di ritiro", pickupPoint: "MIL123M" });
     expect(shipmentChoice({ name: "Old order" })).toEqual({ method: null, label: null, pickupPoint: null });
   });
 
   it("tells the owner and the buyer which carrier, and where to collect", () => {
     const recorded = { id: 9, orderNumber: "GD-INPOST", preorderQuantities: [0] };
     for (const email of [ownerOrderEmail(checkout, recorded), customerOrderEmail(checkout, recorded)]) {
-      expect(email.text).toContain("Spedizione: InPost · punto di ritiro o Locker");
+      // Updated 2026-10-13: inpost-point relabelled; the email text reflects the current label.
+      expect(email.text).toContain("Spedizione: InPost · punto di ritiro");
       expect(email.text).toContain("Punto InPost: MIL123M");
     }
   });
@@ -135,20 +172,51 @@ describe("what Google is told about shipping", () => {
     const xml = await (await GET()).text();
     const item = (id: string) => xml.split("<item>").find((chunk) => chunk.includes(`<g:id>${id}</g:id>`)) ?? "";
     const shipping = (chunk: string) => [...chunk.matchAll(/<g:service>([^<]+)<\/g:service><g:price>([^<]+)<\/g:price>/g)].map((m) => [m[1], m[2]]);
+    // Updated 2026-10-14: three Hasbro methods (InPost Locker 4,90, Poste punto di ritiro 5,65, Poste a casa 6,65).
     expect(shipping(item("cobalt-dragoon-2-60c"))).toEqual([
-      ["InPost · punto di ritiro o Locker", "5.65 EUR"],
+      ["InPost · Locker", "4.90 EUR"],
+      ["Poste Italiane · punto di ritiro", "5.65 EUR"],
       ["Poste Italiane · consegna a casa", "6.65 EUR"],
     ]);
-    // Every offer carries both, so Shopping can show the cheapest one on any item.
+    // Every Hasbro offer carries all three, so Shopping can show the cheapest on any item.
     const items = xml.split("<item>").slice(1);
     expect(items.length).toBeGreaterThan(0);
-    // Takara Tomy pieces ship from the partner by one route; the rest offer both carriers.
-    for (const chunk of items) expect(shipping(chunk)).toHaveLength(chunk.includes("<g:brand>Takara Tomy</g:brand>") ? 1 : 2);
+    // Takara Tomy pieces ship from the partner by one route; the rest offer all three Hasbro carriers.
+    for (const chunk of items) expect(shipping(chunk)).toHaveLength(chunk.includes("<g:brand>Takara Tomy</g:brand>") ? 1 : 3);
+  }, 60_000);
+
+  it("files every item under Battle Tops or Battle Top Accessories, never left to Google to guess", async () => {
+    const { GET } = await import("@/app/google-merchant.xml/route");
+    const xml = await (await GET()).text();
+    const items = xml.split("<item>").slice(1);
+    const category = (id: string) =>
+      items.find((chunk) => chunk.includes(`<g:id>${id}</g:id>`))?.match(/<g:google_product_category>(\d+)<\/g:google_product_category>/)?.[1];
+    for (const chunk of items) expect(chunk).toMatch(/<g:google_product_category>(6329|6794)<\/g:google_product_category>/);
+    expect(category("soar-phoenix-9-60gf")).toBe("6329"); // a top
+    expect(category("kit-arena-drop-completo")).toBe("6329"); // a kit built on tops
+    expect(category("drop-attack-battle-set")).toBe("6794"); // the stadium set
+    expect(category("porta-deck-giallo")).toBe("6794"); // a deck case, not a skateboard deck
   }, 60_000);
 });
 
 describe("the shipping email", () => {
-  it("sends an InPost pickup buyer to their point, not to their door", async () => {
+  it("sends a Poste punto buyer to their point, not to their door (2026-10-14: poste-point)", async () => {
+    const { shippingNotificationEmail } = await import("@/lib/orders/shipping-email");
+    const email = shippingNotificationEmail({
+      orderNumber: "GD-POSTE",
+      email: "buyer@example.com",
+      carrier: "Poste Italiane",
+      trackingCode: "123456789012",
+      trackingUrl: null,
+      shippingAddress: { name: "Mario Rossi", address: "Via Roma 1", postalCode: "20121", city: "Milano", province: "MI", country: "IT", method: "poste-point", pickupPoint: "RM001" },
+      items: [{ name: "Cobalt Dragoon 2-60C", quantity: 1 }],
+    });
+    expect(email.text).toContain("Dove ritirarlo:");
+    expect(email.text).toContain("Punto di ritiro Poste: RM001");
+    expect(email.text).not.toContain("Via Roma 1");
+  });
+
+  it("still sends a legacy InPost pickup order to the InPost point (historical inpost-point)", async () => {
     const { shippingNotificationEmail } = await import("@/lib/orders/shipping-email");
     const email = shippingNotificationEmail({
       orderNumber: "GD-INPOST",
@@ -166,10 +234,11 @@ describe("the shipping email", () => {
 });
 
 describe("the withdrawal clause", () => {
-  it("refunds delivery up to the cheapest InPost rate, as the Codice del consumo allows", async () => {
+  // Updated 2026-10-13: cheapest method is now InPost Locker at 4,90 €.
+  it("refunds delivery up to the cheapest InPost Locker rate, as the Codice del consumo allows", async () => {
     const { LEGAL_PAGES } = await import("@/data/pages");
     const text = JSON.stringify(LEGAL_PAGES);
-    expect(text).toContain("fino al costo della consegna meno cara che offriamo (InPost in un punto di ritiro o Locker, 5,65 €)");
+    expect(text).toContain("fino al costo della consegna meno cara proposta per il tuo ordine (di norma InPost Locker, 4,90 €)");
     expect(text).toContain("art. 56 del Codice del consumo");
   });
 });

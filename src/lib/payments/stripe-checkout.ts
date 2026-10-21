@@ -1,4 +1,5 @@
 import "server-only";
+import type { VisitSource } from "@/lib/attribution";
 
 import { createHash } from "node:crypto";
 import { PRODUCTS, SHIPPING_METHODS, shippingMethodByCode } from "@/data/catalog";
@@ -92,14 +93,42 @@ function truncate(value: string, limit: number): string {
   return value.length <= limit ? value : `${value.slice(0, limit - 1)}…`;
 }
 
-export type CheckoutSessionInput = {
-  readonly quote: CartQuote;
-  readonly order: PlaceOrderInput;
-  /** Absolute origin the buyer returns to, without a trailing slash. */
-  readonly origin: string;
-  /** Milliseconds since the epoch; the session's expiry counts from here. */
-  readonly now?: number;
+/**
+ * Minimum order info needed for an express session.
+ *
+ * The buyer's address and phone are collected by Stripe on its hosted page, so no
+ * contact is pre-filled. Only the idempotency key (for the session reference) and the
+ * line slugs (for the allow_promotion_codes rule and metadata) are needed server-side.
+ */
+export type ExpressOrderRef = {
+  readonly idempotencyKey: string;
+  readonly lines: readonly { readonly slug: string; readonly quantity: number }[];
+  readonly attribution?: VisitSource | undefined;
 };
+
+export type CheckoutSessionInput =
+  | {
+      readonly quote: CartQuote;
+      readonly order: PlaceOrderInput;
+      /** Absolute origin the buyer returns to, without a trailing slash. */
+      readonly origin: string;
+      /** Milliseconds since the epoch; the session's expiry counts from here. */
+      readonly now?: number;
+    }
+  | {
+      readonly quote: CartQuote;
+      readonly order: ExpressOrderRef;
+      /** Absolute origin the buyer returns to, without a trailing slash. */
+      readonly origin: string;
+      /** Milliseconds since the epoch; the session's expiry counts from here. */
+      readonly now?: number;
+      /**
+       * Express checkout: Stripe collects the shipping address and phone on its hosted
+       * page. customer_email and payment_intent_data.shipping are omitted; instead
+       * shipping_address_collection and phone_number_collection are enabled.
+       */
+      readonly express: true;
+    };
 
 /**
  * How long a buyer has to pay once on Stripe. Stock is checked when the session opens, so a
@@ -113,11 +142,14 @@ const CONSIGNMENT_SLUGS: ReadonlySet<string> = new Set(PRODUCTS.filter((product)
 export const CHECKOUT_SESSION_MINUTES = 35;
 
 export function buildCheckoutSessionFields(
-  { quote, order, origin, now = Date.now() }: CheckoutSessionInput,
+  input: CheckoutSessionInput,
   priceIds: ReadonlyMap<string, string>,
 ): Record<string, string | number> {
-  const { contact } = order;
-  const reference = orderReference(order.idempotencyKey);
+  // Discriminate: the 'express' field is only present (and true) on the second union arm.
+  const express = "express" in input && input.express === true;
+  const { quote, origin } = input;
+  const now = input.now ?? Date.now();
+  const reference = orderReference(input.order.idempotencyKey);
   const shipping = quote.totals.shipping.amount;
   // The carrier the quote was priced with: the cheapest unless the buyer picked another.
   const method = shippingMethodByCode(quote.shippingCode) ?? SHIPPING_METHODS[0]!;
@@ -125,7 +157,6 @@ export function buildCheckoutSessionFields(
   const fields: Record<string, string | number> = {
     mode: "payment",
     locale: "it",
-    customer_email: contact.email,
     client_reference_id: reference,
     // Stripe substitutes the literal placeholder; it must not be URL-encoded.
     success_url: `${origin}/checkout/successo?session_id={CHECKOUT_SESSION_ID}`,
@@ -142,14 +173,6 @@ export function buildCheckoutSessionFields(
     "metadata[shipping_method]": method.code,
     "payment_intent_data[description]": `Ordine ${reference} · GEAR//DROP`,
     "payment_intent_data[metadata][order_ref]": reference,
-    // The address was already collected and validated on the site; Stripe keeps it with the payment.
-    "payment_intent_data[shipping][name]": `${contact.firstName} ${contact.lastName}`.trim(),
-    "payment_intent_data[shipping][phone]": contact.phone,
-    "payment_intent_data[shipping][address][line1]": contact.address,
-    "payment_intent_data[shipping][address][city]": contact.city,
-    "payment_intent_data[shipping][address][postal_code]": contact.postalCode,
-    "payment_intent_data[shipping][address][state]": contact.province,
-    "payment_intent_data[shipping][address][country]": "IT",
     "shipping_options[0][shipping_rate_data][type]": "fixed_amount",
     "shipping_options[0][shipping_rate_data][display_name]": shipping === 0 ? `Spedizione gratuita · ${method.label}` : method.label,
     "shipping_options[0][shipping_rate_data][fixed_amount][amount]": shipping,
@@ -157,17 +180,50 @@ export function buildCheckoutSessionFields(
     "shipping_options[0][shipping_rate_data][tax_behavior]": "inclusive",
   };
 
+  // The channel of the visit rides with the session, so the webhook can file it with the order.
+  const visit = input.order.attribution;
+  if (visit) {
+    fields["metadata[source]"] = visit.source;
+    fields["metadata[medium]"] = visit.medium;
+    if (visit.campaign) fields["metadata[campaign]"] = visit.campaign;
+    if (visit.landing) fields["metadata[landing]"] = visit.landing;
+  }
+
+  if (!express) {
+    // Standard checkout: the address was already collected and validated on the site;
+    // Stripe keeps it with the payment so the webhook can read it from payment_intent.shipping.
+    const { contact } = input.order as PlaceOrderInput;
+    fields["customer_email"] = contact.email;
+    fields["payment_intent_data[shipping][name]"] = `${contact.firstName} ${contact.lastName}`.trim();
+    fields["payment_intent_data[shipping][phone]"] = contact.phone;
+    fields["payment_intent_data[shipping][address][line1]"] = contact.address;
+    fields["payment_intent_data[shipping][address][city]"] = contact.city;
+    fields["payment_intent_data[shipping][address][postal_code]"] = contact.postalCode;
+    fields["payment_intent_data[shipping][address][state]"] = contact.province;
+    fields["payment_intent_data[shipping][address][country]"] = "IT";
+    const notes = contact.notes?.trim();
+    if (notes) fields["metadata[notes]"] = truncate(notes, METADATA_LIMIT);
+    const pickupPoint = method.pickupPoint ? contact.pickupPoint?.trim() : undefined;
+    if (pickupPoint) fields["metadata[pickup_point]"] = truncate(pickupPoint, METADATA_LIMIT);
+  } else {
+    // Express checkout: Stripe collects the shipping address and phone on its hosted page.
+    // The webhook reads them from collected_information.shipping_details (or shipping_details on
+    // older API versions). customer_email comes back via customer_details.
+    fields["shipping_address_collection[allowed_countries][0]"] = "IT";
+    fields["phone_number_collection[enabled]"] = "true";
+    fields["metadata[express]"] = "true";
+    // Override the shared cancel_url: express sessions originate from the cart, so cancelling
+    // should bring the buyer back to /carrello, not to the checkout form they deliberately
+    // bypassed (2026-10-12, owner finding).
+    fields["cancel_url"] = `${origin}/carrello`;
+  }
+
   quote.lines.forEach((line, index) => {
     const priceId = priceIds.get(line.slug);
     if (!priceId) throw new Error(`Missing Stripe price for ${line.slug}`);
     fields[`line_items[${index}][price]`] = priceId;
     fields[`line_items[${index}][quantity]`] = line.quantity;
   });
-
-  const notes = contact.notes?.trim();
-  if (notes) fields["metadata[notes]"] = truncate(notes, METADATA_LIMIT);
-  const pickupPoint = method.pickupPoint ? contact.pickupPoint?.trim() : undefined;
-  if (pickupPoint) fields["metadata[pickup_point]"] = truncate(pickupPoint, METADATA_LIMIT);
 
   // Pieces beyond the shelf are pre-ordered: the buyer reads it next to the pay button, and the
   // webhook compares what was announced here with what the stock allowed at payment time.
@@ -230,6 +286,8 @@ export type CheckoutSessionSummary = {
   readonly shippingCents: number | null;
   /** What was bought, read back from the session's own metadata ("slug xN, …"). */
   readonly lines: readonly { readonly slug: string; readonly quantity: number }[];
+  /** Slugs the buyer was told are pre-ordered (the session's "preorder" metadata). */
+  readonly preorderSlugs?: readonly string[];
 };
 
 type StripeCheckoutSession = {
@@ -239,7 +297,7 @@ type StripeCheckoutSession = {
   readonly amount_total: number | null;
   readonly customer_details?: { readonly email?: string | null } | null;
   readonly total_details?: { readonly amount_shipping?: number | null } | null;
-  readonly metadata?: { readonly lines?: string } | null;
+  readonly metadata?: { readonly lines?: string; readonly preorder?: string } | null;
 };
 
 /** The "slug xN, slug xN" list the session was created with; anything else is skipped. */
@@ -274,6 +332,7 @@ export async function retrieveCheckoutSession(
       email: session.customer_details?.email ?? null,
       shippingCents: session.total_details?.amount_shipping ?? null,
       lines: checkoutLines(session.metadata?.lines),
+      preorderSlugs: checkoutLines(session.metadata?.preorder).map((line) => line.slug),
     };
   } catch (error) {
     console.error("[stripe-checkout]", error instanceof Error ? error.message : error);

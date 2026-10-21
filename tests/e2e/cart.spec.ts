@@ -70,10 +70,10 @@ test.describe("cart", () => {
     await buyPanel(page).getByTestId("add-to-cart").click();
     await page.goto("/carrello");
 
-    // 1 x 25,50 -> below the threshold. The cart prices InPost point (cheapest) with a "da" prefix:
+    // 1 x 25,50 -> below the threshold. The cart prices InPost Locker (cheapest) with a "da" prefix:
     // the buyer picks the carrier at checkout, so the cart cannot show the final price.
     await expect(page.getByTestId("cart-shipping")).toHaveText(`da ${euro(SHIPPING_FLAT_RATE)}`);
-    await expect(page.getByTestId("cart-carrier-note")).toContainText("Al checkout scegli il punto di ritiro o Locker InPost");
+    await expect(page.getByTestId("cart-carrier-note")).toContainText("Al checkout scegli Locker InPost");
     await expect(page.getByTestId("cart-total")).toHaveText(euro(DRAGOON + SHIPPING_FLAT_RATE));
 
     // Enough packs to clear the free-shipping threshold, whatever the two numbers are today.
@@ -210,7 +210,7 @@ test.describe("checkout", () => {
     await buyPanel(page).getByTestId("add-to-cart").click();
     await page.goto("/checkout");
 
-    // InPost point or Locker (default, cheapest), Poste to the door (owner, 2026-10-07).
+    // InPost Locker (cheapest, default), punto di ritiro, Poste to the door (owner, 2026-10-13).
     const shipping = page.getByTestId("shipping-options");
     await expect(shipping.getByRole("radio")).toHaveCount(SHIPPING_METHODS.length);
     await expect(shipping).toContainText("Poste Italiane");
@@ -219,12 +219,13 @@ test.describe("checkout", () => {
     // At checkout the price is the chosen carrier's, not a starting price.
     await expect(page.getByTestId("cart-shipping")).toHaveText(euro(SHIPPING_FLAT_RATE));
     await expect(page.getByTestId("cart-carrier-note")).toHaveCount(0);
-    // InPost point is the default: the pickup field is already visible on load.
+    // InPost Locker is the default: the pickup field is already visible on load.
     await expect(page.locator("#pickupPoint")).toBeVisible();
+    await expect(page.getByLabel("Locker InPost")).toBeVisible();
     await expect(page.getByRole("link", { name: "Trovalo sulla mappa InPost" })).toHaveAttribute("href", "https://inpost.it/trova-un-locker");
     await page.locator("#pickupPoint").focus();
     await page.locator("#pickupPoint").blur();
-    await expect(page.getByText("Scrivi il punto di ritiro o il Locker dove ritirare il pacco.")).toBeVisible();
+    await expect(page.getByText("Indica il Locker o il punto dove ritirare il pacco.")).toBeVisible();
 
     // Switching to Poste hides the pickup field and updates the price to 6,65.
     await shipping.getByText("Poste Italiane · consegna a casa").click();
@@ -232,15 +233,36 @@ test.describe("checkout", () => {
     await expect(page.getByTestId("cart-shipping")).toHaveText(euro(665));
     await expect(page.locator("#pickupPoint")).toHaveCount(0);
 
-    // Switching back to InPost point restores the pickup field and the cheaper price.
-    await shipping.getByText("InPost · punto di ritiro o Locker").click();
-    await expect(page.getByTestId("cart-total")).toHaveText(euro(DRAGOON + SHIPPING_FLAT_RATE));
+    // Switching back to Poste punto di ritiro restores the pickup field at 5,65 (2026-10-14: poste-point).
+    await shipping.getByText("Poste Italiane · punto di ritiro").click();
+    await expect(page.getByTestId("cart-total")).toHaveText(euro(DRAGOON + 565));
     await expect(page.locator("#pickupPoint")).toBeVisible();
+    await expect(page.getByLabel("Punto di ritiro Poste Italiane")).toBeVisible();
   });
 
   test("checkout with an empty cart offers nothing to pay for", async ({ page }) => {
     await page.goto("/checkout");
     await expect(page.getByTestId("empty-state")).toBeVisible();
     await expect(page.getByTestId("checkout-form")).toHaveCount(0);
+  });
+});
+
+/**
+ * Express checkout ("Paga subito") on the public gate. The gate runs on the mock provider with
+ * no order backend and no Stripe key, so the quote is not orderable: the express button must not
+ * be offered at all (it would only lead to a refusal), while the cart keeps its normal path. The
+ * button's own logic (orderable carts, Poste home only, locked Takara/mixed plans, the Stripe
+ * session it opens) is covered by tests/unit/checkout-stripe-actions.test.ts and
+ * tests/unit/stripe-checkout.test.ts.
+ */
+test.describe("express checkout button", () => {
+  test("is not offered while orders are not active", async ({ page }) => {
+    await page.goto("/prodotto/cobalt-dragoon-2-60c");
+    await buyPanel(page).getByTestId("add-to-cart").click();
+    await page.goto("/carrello");
+
+    await expect(page.getByTestId("cart-line")).toHaveCount(1);
+    await expect(page.getByTestId("express-checkout")).toHaveCount(0);
+    await expect(page.getByTestId("express-checkout-error")).toHaveCount(0);
   });
 });

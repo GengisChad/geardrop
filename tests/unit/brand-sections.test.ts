@@ -78,10 +78,10 @@ describe("shippingPlanFor", () => {
     expect(plan.composition).toBe("takara-only");
   });
 
-  it("mixed → [inpost-point], locked, composition mixed", () => {
+  it("mixed → [poste-point], locked, composition mixed (2026-10-14: replaced inpost-point)", () => {
     const plan = shippingPlanFor(new Set(["hasbro", "takara-tomy"]));
     expect(plan.methods).toHaveLength(1);
-    expect(plan.methods[0]!.code).toBe("inpost-point");
+    expect(plan.methods[0]!.code).toBe("poste-point");
     expect(plan.locked).toBe(true);
     expect(plan.composition).toBe("mixed");
   });
@@ -128,7 +128,7 @@ describe("mock quoteCart — takara-only cart", () => {
 describe("mock quoteCart — mixed cart", () => {
   const provider = createMockProvider([HASBRO_PRODUCT, TAKARA_PRODUCT]);
 
-  it("has one locked inpost-point option at 565", async () => {
+  it("has one locked poste-point option at 565 (2026-10-14: replaced inpost-point)", async () => {
     const quote = await provider.quoteCart({
       lines: [
         { slug: HASBRO_PRODUCT.slug, quantity: 1 },
@@ -137,11 +137,11 @@ describe("mock quoteCart — mixed cart", () => {
     });
     expect(quote.shippingOptions).toHaveLength(1);
     expect(quote.shippingOptions[0]).toMatchObject({
-      code: "inpost-point",
+      code: "poste-point",
       price: { amount: 565 },
       locked: true,
     });
-    expect(quote.shippingCode).toBe("inpost-point");
+    expect(quote.shippingCode).toBe("poste-point");
   });
 
   it("is free at the threshold", async () => {
@@ -153,7 +153,7 @@ describe("mock quoteCart — mixed cart", () => {
     expect(quote.totals.shipping.amount).toBe(0);
   });
 
-  it("a stale poste-point-partner code falls back to inpost-point", async () => {
+  it("a stale poste-point-partner code falls back to poste-point (2026-10-14)", async () => {
     const quote = await provider.quoteCart({
       lines: [
         { slug: HASBRO_PRODUCT.slug, quantity: 1 },
@@ -161,19 +161,34 @@ describe("mock quoteCart — mixed cart", () => {
       ],
       shippingCode: "poste-point-partner",
     });
-    expect(quote.shippingCode).toBe("inpost-point");
+    expect(quote.shippingCode).toBe("poste-point");
   });
 });
 
-describe("mock quoteCart — hasbro-only cart (unchanged behaviour)", () => {
+describe("mock quoteCart — hasbro-only cart (updated 2026-10-13: three methods, Locker default)", () => {
   const provider = createMockProvider();
 
-  it("still offers both SHIPPING_METHODS, not locked, InPost default", async () => {
+  it("offers all three SHIPPING_METHODS, not locked, InPost Locker cheapest and default", async () => {
     const quote = await provider.quoteCart({ lines: [{ slug: HASBRO_PRODUCT.slug, quantity: 1 }] });
-    expect(quote.shippingOptions).toHaveLength(2);
+    // Updated 2026-10-13: three methods (Locker, punto di ritiro, Poste); default is Locker at 490.
+    expect(quote.shippingOptions).toHaveLength(3);
     expect(quote.shippingOptions.every((o) => !o.locked)).toBe(true);
-    expect(quote.shippingCode).toBe("inpost-point");
-    expect(quote.totals.shipping.amount).toBe(565);
+    expect(quote.shippingCode).toBe("inpost-locker");
+    expect(quote.totals.shipping.amount).toBe(490);
+  });
+
+  it("mixed cart stays locked to poste-point at 565 (2026-10-14: replaced inpost-point)", async () => {
+    const mixedProvider = createMockProvider([HASBRO_PRODUCT, TAKARA_PRODUCT]);
+    const quote = await mixedProvider.quoteCart({
+      lines: [
+        { slug: HASBRO_PRODUCT.slug, quantity: 1 },
+        { slug: TAKARA_PRODUCT.slug, quantity: 1 },
+      ],
+    });
+    expect(quote.shippingOptions).toHaveLength(1);
+    expect(quote.shippingOptions[0]!.code).toBe("poste-point");
+    expect(quote.shippingOptions[0]!.price.amount).toBe(565);
+    expect(quote.shippingOptions[0]!.locked).toBe(true);
   });
 
   it("free at the threshold", async () => {
@@ -316,10 +331,19 @@ describe("checkout server refusal — pickup point missing", () => {
     const pickupPointMissing = method?.pickupPoint && "".trim().length < 3;
     expect(pickupPointMissing).toBe(true);
 
-    // The message is carrier-neutral
-    expect(PICKUP_POINT_MESSAGE).toBe(
-      "Scrivi il punto di ritiro o il Locker dove ritirare il pacco.",
-    );
+    // The message is carrier-neutral: it serves the InPost Locker, the InPost punto and the Punto Poste.
+    expect(PICKUP_POINT_MESSAGE).toBe("Indica il Locker o il punto dove ritirare il pacco.");
+  });
+
+  it("names the pickup the buyer picked (Locker and punto di ritiro are separate since 2026-10-13)", async () => {
+    const { pickupPointCopy } = await import("@/lib/checkout-schema");
+    const { shippingMethodByCode } = await import("@/data/catalog");
+    expect(pickupPointCopy(shippingMethodByCode("inpost-locker")).label).toBe("Locker InPost");
+    // inpost-point retired 2026-10-14 but still resolves for legacy display
+    expect(pickupPointCopy(shippingMethodByCode("inpost-point")).label).toBe("Punto di ritiro InPost");
+    // poste-point and poste-point-partner both have carrier "poste" → "Punto di ritiro Poste Italiane"
+    expect(pickupPointCopy(shippingMethodByCode("poste-point")).label).toBe("Punto di ritiro Poste Italiane");
+    expect(pickupPointCopy(shippingMethodByCode("poste-point-partner")).label).toBe("Punto di ritiro Poste Italiane");
   });
 
   it("passes when a pickup point of ≥ 3 chars is present", async () => {

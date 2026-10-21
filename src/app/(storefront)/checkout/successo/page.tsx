@@ -8,6 +8,8 @@ import { BUNDLES, PRODUCTS } from "@/data/catalog";
 import { gaItem, purchaseEvent } from "@/lib/analytics/google";
 import { retrieveCheckoutSession, type CheckoutSessionSummary } from "@/lib/payments/stripe-checkout";
 import { ClearCart } from "./clear-cart";
+import { GoogleReviewOptIn } from "@/components/checkout/google-review-opt-in";
+import { reviewOptIn } from "@/lib/customer-reviews";
 
 export const metadata: Metadata = {
   title: "Esito pagamento",
@@ -27,6 +29,7 @@ export default async function CheckoutResultPage({ searchParams }: { searchParam
 
   const completed = session?.status === "complete";
   const paid = completed && session.paymentStatus !== "unpaid";
+  const survey = paid ? reviewOptIn(session) : null;
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-10 sm:px-6">
@@ -69,6 +72,7 @@ export default async function CheckoutResultPage({ searchParams }: { searchParam
             <Link href="/ordine" className="mt-3 text-small text-grey-600 underline-offset-2 hover:underline hover:text-lime">
               Segui il tuo ordine
             </Link>
+            {survey ? <GoogleReviewOptIn optIn={survey} /> : null}
           </>
         ) : (
           <>

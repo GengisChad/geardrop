@@ -124,7 +124,8 @@ export function Filters({ facets, lockedCategory, showTitle = true }: FiltersPro
       {!lockedCategory ? (
         <FilterGroup title="Categorie">
           <ul className="flex flex-col">
-            {facets.categories.map((facet) => (
+            {/* An empty option is noise ("Lanciatori 0"): it is left out (critique, 2026-10-11). */}
+            {facets.categories.filter((facet) => facet.count > 0).map((facet) => (
               <li key={facet.value}>
                 <a
                   href={`/negozio/${facet.value}`}
@@ -141,7 +142,7 @@ export function Filters({ facets, lockedCategory, showTitle = true }: FiltersPro
 
       <FilterGroup title="Disponibilità">
         <ul className="flex flex-col gap-2.5">
-          {facets.stock.map((facet) => (
+          {facets.stock.filter((facet) => facet.count > 0 || selection.stock.includes(facet.value)).map((facet) => (
             <li key={facet.value}>
               <label
                 className={cn(
@@ -170,7 +171,7 @@ export function Filters({ facets, lockedCategory, showTitle = true }: FiltersPro
 
       <FilterGroup title="Tipo">
         <ul className="flex flex-col gap-2.5">
-          {facets.bladeType.map((facet) => (
+          {facets.bladeType.filter((facet) => facet.count > 0 || selection.type.includes(facet.value)).map((facet) => (
             <li key={facet.value}>
               <label
                 className={cn(

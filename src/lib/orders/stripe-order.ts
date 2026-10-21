@@ -1,4 +1,5 @@
 import { BUNDLES, PRODUCTS, shippingMethodByCode } from "@/data/catalog";
+import { parseVisitSource, type VisitSource } from "@/lib/attribution";
 import { isReleasePreorder } from "@/lib/commerce/release-preorder";
 import { stripeProductId, type StripeClient } from "@/lib/payments/stripe-api";
 
@@ -53,6 +54,8 @@ export type PaidCheckout = {
   readonly couponCode: string | null;
   readonly totalCents: number;
   readonly createdAt: string;
+  /** Channel of the visit that placed the order, from the session metadata; null when absent. */
+  readonly attribution?: VisitSource | null | undefined;
 };
 
 type StripeAddress = {
@@ -62,6 +65,12 @@ type StripeAddress = {
   readonly city?: string | null;
   readonly state?: string | null;
   readonly country?: string | null;
+};
+
+/** Shipping name+address as returned by Stripe's collected_information or shipping_details. */
+type StripeCollectedShipping = {
+  readonly name?: string | null;
+  readonly address?: StripeAddress | null;
 };
 
 export type StripeSessionForOrder = {
@@ -99,6 +108,19 @@ export type StripeSessionForOrder = {
         readonly shipping?: { readonly name?: string | null; readonly phone?: string | null; readonly address?: StripeAddress | null } | null;
       }
     | null;
+  /**
+   * Present on recent API versions when Stripe itself collected the shipping details
+   * (express checkout sessions with shipping_address_collection enabled).
+   * Added with expand[]=collected_information in loadPaidCheckout; harmless if absent.
+   */
+  readonly collected_information?: {
+    readonly shipping_details?: StripeCollectedShipping | null;
+  } | null;
+  /**
+   * Older Stripe API versions (pre-2024) expose the collected address here instead of
+   * inside collected_information. Both are checked so sessions on either API version work.
+   */
+  readonly shipping_details?: StripeCollectedShipping | null;
 };
 
 export type StripeLineItemForOrder = {
@@ -166,7 +188,13 @@ export function paidCheckoutFromStripe(
 
   const intent = typeof session.payment_intent === "object" && session.payment_intent ? session.payment_intent : null;
   const shipping = intent?.shipping ?? null;
-  const address = shipping?.address ?? session.customer_details?.address ?? null;
+  // Express checkout sessions: Stripe collected the address during payment. Fallback chain:
+  //   payment_intent.shipping (form-based sessions, pre-filled before checkout)
+  //   → collected_information.shipping_details (Stripe API ≥ 2024-x, express sessions)
+  //   → shipping_details (older Stripe API versions, express sessions)
+  //   → customer_details (last resort for recovery/unusual sessions)
+  const collectedShipping = session.collected_information?.shipping_details ?? session.shipping_details ?? null;
+  const address = shipping?.address ?? collectedShipping?.address ?? session.customer_details?.address ?? null;
   const email = clean(session.customer_details?.email) || clean(session.customer_email);
 
   const lines = lineItems.flatMap((item): PaidCheckoutLine[] => {
@@ -207,7 +235,7 @@ export function paidCheckoutFromStripe(
     email,
     phone: clean(shipping?.phone) || clean(session.customer_details?.phone) || null,
     shipping: {
-      name: clean(shipping?.name) || clean(session.customer_details?.name),
+      name: clean(shipping?.name) || clean(collectedShipping?.name) || clean(session.customer_details?.name),
       address: [clean(address?.line1), clean(address?.line2)].filter(Boolean).join(", "),
       postalCode: clean(address?.postal_code),
       city: clean(address?.city),
@@ -223,6 +251,7 @@ export function paidCheckoutFromStripe(
     couponCode,
     totalCents: session.amount_total ?? Math.max(0, subtotal - discountCents + shippingCents),
     createdAt: new Date(session.created * 1000).toISOString(),
+    attribution: attributionFrom(session.metadata),
   };
 }
 
@@ -232,6 +261,9 @@ export async function loadPaidCheckout(sessionId: string, stripe: StripeClient):
   // payment_intent carries the shipping address, the breakdown the discounts. Stripe expands at
   // most four levels deep, so the promotion code inside a discount stays an id and is read on its
   // own: asking for it inline fails the whole read, and with it every paid order.
+  // An express session's address (collected_information / shipping_details) comes back with the
+  // session by default. It is not an expandable field: asking to expand it would fail the read,
+  // and with it every paid order, so nothing is added to the expansions here.
   const session = await stripe.get<StripeSessionForOrder>(
     `/checkout/sessions/${sessionId}?expand[]=payment_intent&expand[]=total_details.breakdown`,
   );
@@ -261,4 +293,15 @@ async function withPromotionCode(session: StripeSessionForOrder, stripe: StripeC
     console.error("[orders] promotion code not readable:", error instanceof Error ? error.message : String(error));
     return session;
   }
+}
+
+/** The visit's channel as the checkout wrote it into the session metadata, validated again. */
+export function attributionFrom(metadata: Readonly<Record<string, string>> | null | undefined): VisitSource | null {
+  if (!metadata?.["source"] || !metadata["medium"]) return null;
+  return parseVisitSource({
+    source: metadata["source"],
+    medium: metadata["medium"],
+    ...(metadata["campaign"] ? { campaign: metadata["campaign"] } : {}),
+    ...(metadata["landing"] ? { landing: metadata["landing"] } : {}),
+  });
 }

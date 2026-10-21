@@ -61,7 +61,9 @@ test.describe("deck case colours", () => {
     await expect(page.getByTestId("variant-current")).toHaveText("Fucsia");
     // A compatible accessory never passes for a Hasbro product.
     await expect(page.getByTestId("buy-panel")).toContainText("Compatibile Beyblade");
-    await expect(page.getByTestId("buy-panel")).toContainText("non è prodotto né certificato da Hasbro");
+    // The description (including the unofficial disclaimer) moved out of the buy panel into the
+    // Descrizione tab on 2026-10-12 so the buy column is not duplicating content.
+    await expect(page.getByTestId("product-details")).toContainText("non è prodotto né certificato da Hasbro");
   });
 });
 
@@ -111,7 +113,8 @@ test.describe("catalogue", () => {
     // pre-orders), so that facet is live exactly while the catalogue holds a sold-out piece.
     const soldOut = panel.getByTestId("filter-stock-esaurito");
     if (PRODUCTS.some((product) => product.stock === "esaurito")) await expect(soldOut).toBeEnabled();
-    else await expect(soldOut).toBeDisabled();
+    // An empty option is left out of the panel, not shown disabled.
+    else await expect(soldOut).toHaveCount(0);
     // Attack blades and arena sets provide a real, nonempty filter subset.
     await panel.getByTestId("filter-type-attacco").check();
     if (isMobile) await page.getByTestId("filters-apply").click();

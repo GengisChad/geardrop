@@ -15,7 +15,7 @@ import { useCartQuote } from "@/lib/use-cart-quote";
 import { useCart } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/format";
 import { cartDelivery, preorderNote } from "@/lib/labels";
-import { checkoutSchema, PICKUP_POINT_MESSAGE, pickupPointMissing, type CheckoutValues } from "@/lib/checkout-schema";
+import { checkoutSchema, PICKUP_POINT_MESSAGE, pickupPointCopy, pickupPointMissing, type CheckoutValues } from "@/lib/checkout-schema";
 import { INPOST_POINT_FINDER_URL, POSTE_POINT_FINDER_URL, shippingMethodByCode } from "@/data/catalog";
 import { trackEvent } from "@/lib/funnel";
 import { gaItem, sendGaEvent } from "@/lib/analytics/google";
@@ -23,6 +23,7 @@ import { submitOrder } from "./actions";
 import type { Money } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
 import { PROVINCES } from "@/data/provinces";
+import { visitSourceForCheckout } from "@/lib/attribution";
 
 // Updated step labels to reflect the real flow.
 const STEPS = ["I tuoi dati", "Pagamento su Stripe"] as const;
@@ -147,6 +148,7 @@ export function CheckoutClient() {
             },
             lines: lines.map((line) => ({ slug: line.slug, quantity: line.quantity })),
             idempotencyKey,
+            ...visitSourceForCheckout(),
           });
           if (!result.ok) {
             // The cart is deliberately left untouched: nothing was ordered.
@@ -378,8 +380,8 @@ export function CheckoutClient() {
                         {option.price.amount === 0 ? "Gratis" : formatPrice(option.price)}
                       </span>
                     </div>
-                    {/* Mixed cart: InPost is the locked method when both brands are present. */}
-                    {option.code === "inpost-point" ? (
+                    {/* Mixed cart: Poste punto di ritiro is the locked method when both brands are present (owner, 2026-10-14). */}
+                    {option.code === "poste-point" ? (
                       <p className="text-[0.6875rem] text-grey-600 sm:col-span-2" data-testid="mixed-cart-note">
                         I pezzi Takara Tomy partono dal nostro partner: arrivano in due pacchi, paghi una sola spedizione.
                       </p>
@@ -392,7 +394,8 @@ export function CheckoutClient() {
                 <label
                   key={option.code}
                   className={cn(
-                    "flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 transition-colors",
+                    // Three carriers since 2026-10-13: an odd last card spans the row instead of leaving a hole.
+                    "flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 transition-colors sm:odd:last:col-span-2",
                     activeShipping === option.code ? "border-violet bg-violet-tint" : "border-grey-300 hover:border-grey-400",
                   )}
                 >
@@ -415,10 +418,10 @@ export function CheckoutClient() {
             )}
           </div>
 
-          {/* Pickup point: InPost point/Locker or Poste Punto Poste/Locker. */}
+          {/* Pickup point: InPost Locker, InPost punto di ritiro or the partner's Punto Poste/Locker. */}
           {shippingMethodByCode(activeShipping)?.pickupPoint ? (
             <Field
-              label={shippingMethodByCode(activeShipping)?.carrier === "poste" ? "Punto Poste o Locker" : "Punto InPost o Locker"}
+              label={pickupPointCopy(shippingMethodByCode(activeShipping)).label}
               htmlFor="pickupPoint"
               error={errors.pickupPoint?.message}
               className="mt-4"
@@ -426,7 +429,7 @@ export function CheckoutClient() {
               <TextInput
                 id="pickupPoint"
                 autoComplete="off"
-                placeholder="Es. codice del Locker o indirizzo del punto"
+                placeholder={pickupPointCopy(shippingMethodByCode(activeShipping)).placeholder}
                 hasError={Boolean(errors.pickupPoint)}
                 {...register("pickupPoint", {
                   validate: (v) => !pickupPointMissing(activeShipping, v) || PICKUP_POINT_MESSAGE,
