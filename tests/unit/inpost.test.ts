@@ -2,6 +2,7 @@ import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
   createInpostClient,
+  deduplicationId,
   InpostError,
   inpostConfig,
   inpostPhone,
@@ -198,12 +199,41 @@ describe("shipments", () => {
     await expect(client.label("600")).rejects.toThrow("INPOST_ORGANIZATION_ID");
   });
 
-  it("asks for the A6 PDF label", async () => {
-    const { impl, calls } = fakeFetch([new Response(new Uint8Array([37, 80, 68, 70]), { headers: { "Content-Type": "application/pdf" } })]);
+  it("asks for the A6 label and decodes the base64 PDF InPost answers with (LabelResponse)", async () => {
+    const { impl, calls } = fakeFetch([Response.json({ label: { content: Buffer.from("%PDF-1.4").toString("base64") } })]);
     const client = createInpostClient({ ...config, clientId: "app-label" }, impl);
     const pdf = await client.label("600000658493991742009752");
-    expect(new Uint8Array(pdf)).toEqual(new Uint8Array([37, 80, 68, 70]));
-    expect((calls[1]!.init?.headers as Record<string, string>)["Accept"]).toBe("application/pdf;format=A6");
+    expect(Buffer.from(pdf).toString()).toBe("%PDF-1.4");
+    expect((calls[1]!.init?.headers as Record<string, string>)["Accept"]).toBe("application/pdf+json;format=A6");
+  });
+
+  it("passes a raw PDF through, and refuses a label with no content", async () => {
+    const raw = fakeFetch([new Response(new Uint8Array([37, 80, 68, 70]), { headers: { "Content-Type": "application/pdf" } })]);
+    expect(new Uint8Array(await createInpostClient({ ...config, clientId: "app-raw" }, raw.impl).label("600"))).toEqual(new Uint8Array([37, 80, 68, 70]));
+    const empty = fakeFetch([Response.json({ label: {} })]);
+    await expect(createInpostClient({ ...config, clientId: "app-empty" }, empty.impl).label("600")).rejects.toBeInstanceOf(InpostError);
+  });
+
+  it("sends a deduplication id drawn from the request, so a retry is one shipment and a correction a new one", async () => {
+    const shipment = {
+      orderNumber: "GD-1",
+      recipient: { firstName: "A", lastName: "B", email: "a@b.it", phone: "3331234567" },
+      lockerId: "IT_ITROM44128M",
+      size: "A" as const,
+      weightKg: 1,
+      senderEmail: "infogeardrop@gmail.com",
+      senderPhone: "+390612345678",
+    };
+    const { impl, calls } = fakeFetch([Response.json({ trackingNumber: "1" }), Response.json({ trackingNumber: "1" }), Response.json({ trackingNumber: "2" })]);
+    const client = createInpostClient({ ...config, clientId: "app-dedup" }, impl);
+    await client.createLockerShipment(shipment);
+    await client.createLockerShipment(shipment);
+    await client.createLockerShipment({ ...shipment, size: "B" });
+    const ids = calls.filter((call) => call.url.endsWith("/shipments")).map((call) => (call.init?.headers as Record<string, string>)["X-Deduplication-Id"]);
+    expect(ids[0]).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    expect(ids[1]).toBe(ids[0]);
+    expect(ids[2]).not.toBe(ids[0]);
+    expect(deduplicationId({ a: 1 })).toBe(deduplicationId({ a: 1 }));
   });
 });
 

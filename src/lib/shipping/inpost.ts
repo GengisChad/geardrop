@@ -7,6 +7,11 @@
  * secret, so it must only ever run on the server.
  */
 
+import { createHash } from "node:crypto";
+import { lockerCode, type Locker } from "./locker";
+
+export { lockerCode, lockerLabel, type Locker } from "./locker";
+
 type Env = Readonly<Record<string, string | undefined>>;
 
 const HOSTS = {
@@ -48,34 +53,6 @@ export class InpostError extends Error {
     super(message);
     this.name = "InpostError";
   }
-}
-
-/** A Locker as the buyer and the admin see it. */
-export type Locker = {
-  /** InPost's id, "IT_ITROM44128M". */
-  readonly id: string;
-  /** The code printed on the Locker, "ITROM44128M". */
-  readonly code: string;
-  readonly street: string;
-  readonly postalCode: string;
-  readonly city: string;
-  readonly province: string | null;
-  /** Where it stands: "ATAC - Metro A e B -Termini". */
-  readonly place: string | null;
-  /** Metres from the searched CAP or position, when the search had one. */
-  readonly distance: number | null;
-  readonly openAllDay: boolean;
-};
-
-/**
- * One line for the order, the emails and the admin:
- * "ITROM44128M · piazza dei Cinquecento 48, 00185 Roma (ATAC - Metro A e B -Termini)".
- * It fits the 160 characters the checkout keeps for the pickup point.
- */
-export function lockerLabel(locker: Pick<Locker, "code" | "street" | "postalCode" | "city" | "place">): string {
-  const where = [locker.street, `${locker.postalCode} ${locker.city}`.trim()].filter(Boolean).join(", ");
-  const text = `${locker.code} · ${where}${locker.place ? ` (${locker.place})` : ""}`;
-  return text.length > 160 ? `${text.slice(0, 159)}…` : text;
 }
 
 /** Locker compartments in Italy (cm). A parcel is declared at the size of the one it fills. */
@@ -128,11 +105,6 @@ export function inpostPhone(phone: string): string {
   return compact.startsWith("00") ? `+${compact.slice(2)}` : compact;
 }
 
-/** The bare Locker code the Shipping API takes: "IT_ITROM44128M" → "ITROM44128M". */
-export function lockerCode(id: string): string {
-  return id.trim().replace(/^[A-Z]{2}_/, "");
-}
-
 /**
  * The body of POST /shipping/v2/organizations/{id}/shipments for a parcel the shop drops at any
  * InPost point and the buyer collects from a Locker.
@@ -161,6 +133,17 @@ export function lockerShipmentBody(shipment: LockerShipment) {
     ],
     references: { custom: { orderNumber: shipment.orderNumber } },
   };
+}
+
+/**
+ * The X-Deduplication-Id of a shipment request: a UUID drawn from the body, so the same request
+ * retried after a timeout is one shipment, while a corrected request (another Locker, size or
+ * phone after a refusal) is a new one.
+ */
+export function deduplicationId(body: unknown): string {
+  const hex = createHash("sha256").update(JSON.stringify(body)).digest("hex");
+  const variant = ((parseInt(hex[16]!, 16) & 0x3) | 0x8).toString(16);
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-${variant}${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
 
 /** One event in a parcel's journey, as the Tracking API reports it. */
@@ -276,11 +259,15 @@ export function createInpostClient(config: InpostConfig, fetchImpl: Fetch = fetc
     return payload.access_token;
   }
 
-  async function request(path: string, init: { method?: "GET" | "POST"; accept?: string; body?: unknown } = {}): Promise<Response> {
+  async function request(
+    path: string,
+    init: { method?: "GET" | "POST"; accept?: string; body?: unknown; headers?: Record<string, string> } = {},
+  ): Promise<Response> {
     const headers: Record<string, string> = {
       Authorization: `Bearer ${await accessToken()}`,
       Accept: init.accept ?? "application/json",
       "Accept-Language": "it",
+      ...init.headers,
     };
     if (init.body !== undefined) headers["Content-Type"] = "application/json";
     const response = await fetchImpl(`${config.host}${path}`, {
@@ -311,9 +298,12 @@ export function createInpostClient(config: InpostConfig, fetchImpl: Fetch = fetc
     },
 
     async createLockerShipment(shipment) {
+      const body = lockerShipmentBody(shipment);
       const response = await request(`/shipping/v2/organizations/${organization()}/shipments`, {
         method: "POST",
-        body: lockerShipmentBody(shipment),
+        body,
+        // A retry after a lost answer gets the shipment InPost already made, not a second paid one.
+        headers: { "X-Deduplication-Id": deduplicationId(body) },
       });
       const payload = (await response.json()) as { trackingNumber?: string };
       if (!payload.trackingNumber) throw new InpostError("InPost ha creato la spedizione senza numero di tracking.", response.status);
@@ -321,11 +311,17 @@ export function createInpostClient(config: InpostConfig, fetchImpl: Fetch = fetc
     },
 
     async label(trackingNumber) {
+      // The spec answers JSON with the PDF in base64 (LabelResponse); a raw PDF is read as it is.
       const response = await request(
         `/shipping/v2/organizations/${organization()}/shipments/${encodeURIComponent(trackingNumber)}/label`,
-        { accept: "application/pdf;format=A6" },
+        { accept: "application/pdf+json;format=A6" },
       );
-      return response.arrayBuffer();
+      if (!(response.headers.get("content-type") ?? "").includes("json")) return response.arrayBuffer();
+      const payload = (await response.json()) as { label?: { content?: string } };
+      const content = payload.label?.content;
+      if (!content) throw new InpostError("InPost non ha restituito l'etichetta.", response.status);
+      const pdf = Buffer.from(content, "base64");
+      return pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength) as ArrayBuffer;
     },
 
     async track(trackingNumbers) {

@@ -11,6 +11,24 @@ import { createInpostClient, inpostConfig, type LockerQuery } from "@/lib/shippi
 
 const CACHE = "public, s-maxage=3600, stale-while-revalidate=86400";
 
+/**
+ * Searches one visitor may run per minute on this instance. A buyer needs two or three; the cap
+ * keeps a script from spending the shop's InPost quota through this public route. Per instance
+ * only (no shared store), so it slows abuse rather than stopping it; the CDN cache absorbs repeats.
+ */
+const SEARCHES_PER_MINUTE = 20;
+const recent = new Map<string, number[]>();
+
+function overLimit(visitor: string, now = Date.now()): boolean {
+  const window = (recent.get(visitor) ?? []).filter((at) => now - at < 60_000);
+  window.push(now);
+  recent.set(visitor, window);
+  if (recent.size > 5000) {
+    for (const [key, times] of recent) if (times.every((at) => now - at >= 60_000)) recent.delete(key);
+  }
+  return window.length > SEARCHES_PER_MINUTE;
+}
+
 function queryOf(params: URLSearchParams): LockerQuery | null {
   const cap = params.get("cap")?.trim();
   if (cap) return /^\d{5}$/.test(cap) ? { postalCode: cap } : null;
@@ -29,6 +47,11 @@ export async function GET(request: NextRequest) {
 
   const config = inpostConfig();
   if (!config) return NextResponse.json({ lockers: [], error: "La ricerca dei Locker non è disponibile." }, { status: 503 });
+
+  const visitor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (overLimit(visitor)) {
+    return NextResponse.json({ lockers: [], error: "Troppe ricerche in poco tempo: riprova tra un minuto." }, { status: 429 });
+  }
 
   try {
     const lockers = await createInpostClient(config).searchLockers(query);

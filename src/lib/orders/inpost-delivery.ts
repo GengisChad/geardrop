@@ -28,6 +28,8 @@ export type DeliverySyncResult = {
   readonly checked: number;
   readonly delivered: readonly string[];
   readonly failed: readonly string[];
+  /** Orders InPost closed on an earlier run whose "è arrivato" email had not gone out; sent now. */
+  readonly emailRetried: number;
 };
 
 /** A shipped order and what InPost says about its parcel. */
@@ -71,7 +73,31 @@ export async function recordInpostDelivery(client: Client, orderId: number, at: 
   return true;
 }
 
-async function sendDeliveryEmail(client: Client, orderId: number): Promise<void> {
+/**
+ * Orders InPost closed whose buyer was never told (Resend refused or timed out on that run). Only
+ * closures written by this module: an order the owner completed with "Conferma consegna" and the
+ * email box unticked stays silent.
+ */
+async function retryDeliveryEmails(client: Client, since: string): Promise<number> {
+  const closed = await client
+    .from("order_status_events")
+    .select("order_id")
+    .eq("to_status", "completed")
+    .like("note", "InPost:%")
+    .gte("created_at", since)
+    .limit(200);
+  const ids = [...new Set((closed.data ?? []).map((row) => row.order_id))];
+  if (closed.error || ids.length === 0) return 0;
+  const pending = await client.from("orders").select("id").in("id", ids).eq("status", "completed").is("delivery_notified_at", null);
+  let sent = 0;
+  for (const row of pending.data ?? []) {
+    if (await sendDeliveryEmail(client, row.id)) sent += 1;
+  }
+  return sent;
+}
+
+/** True once the buyer has the email (now or before). */
+async function sendDeliveryEmail(client: Client, orderId: number): Promise<boolean> {
   const [order, items] = await Promise.all([
     client
       .from("orders")
@@ -80,7 +106,8 @@ async function sendDeliveryEmail(client: Client, orderId: number): Promise<void>
       .single(),
     client.from("order_items").select("product_name_snapshot,quantity").eq("order_id", orderId).order("id"),
   ]);
-  if (order.error || items.error || order.data.delivery_notified_at) return;
+  if (order.error || items.error) return false;
+  if (order.data.delivery_notified_at) return true;
 
   const content = deliveryConfirmationEmail({
     orderNumber: order.data.order_number,
@@ -94,10 +121,12 @@ async function sendDeliveryEmail(client: Client, orderId: number): Promise<void>
   // Same key as the admin's "Conferma consegna": the buyer never gets this email twice.
   const sent = await sendEmail({ ...content, replyTo: SHOP_EMAIL, idempotencyKey: `gd-order-delivered-${orderId}` });
   if (!sent.ok) {
+    // The next run retries it (retryDeliveryEmails); Resend's idempotency key keeps it to one email.
     console.error("[inpost-delivery] delivery email", orderId, sent.reason, sent.detail ?? "");
-    return;
+    return false;
   }
   await client.from("orders").update({ delivery_notified_at: new Date().toISOString() }).eq("id", orderId);
+  return true;
 }
 
 /**
@@ -133,7 +162,7 @@ export async function syncInpostDeliveries(
 ): Promise<DeliverySyncResult> {
   const config = inpostConfig();
   const api = inpost ?? (config ? createInpostClient(config) : null);
-  if (!api) return { checked: 0, delivered: [], failed: [] };
+  if (!api) return { checked: 0, delivered: [], failed: [], emailRetried: 0 };
 
   // InPost keeps tracking for 121 days; a parcel still open after 60 is for the owner to look at.
   const since = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
@@ -166,7 +195,8 @@ export async function syncInpostDeliveries(
       failed.push(order.orderNumber);
     }
   }
-  return { checked: orders.length, delivered, failed };
+  const emailRetried = await retryDeliveryEmails(client, since);
+  return { checked: orders.length, delivered, failed, emailRetried };
 }
 
 /** One webhook event: closes the order when it is a delivery, flags it when the parcel turns back. */

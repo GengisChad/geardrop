@@ -39,11 +39,14 @@ function clip(text: string): string {
 }
 
 export function productDescription(
-  product: Pick<Product, "name" | "tagline" | "price" | "stock" | "unofficial" | "releasePreorder">,
+  product: Pick<Product, "slug" | "bundleOf" | "brand" | "name" | "tagline" | "price" | "stock" | "unofficial" | "releasePreorder">,
 ): string {
+  // The item's own cheapest delivery: a stadium box only goes to the door with Poste (2026-10-23),
+  // a Takara piece only through the partner's route.
+  const cheapest = Math.min(...shippingMethodsFor(product).map((method) => method.priceCents));
   const shipping = product.price.amount >= FREE_SHIPPING_THRESHOLD
       ? "spedizione gratuita"
-      : `spedizione da ${SHIPPING_FLAT_LABEL}, gratis da ${FREE_SHIPPING_FROM_LABEL}`;
+      : `spedizione da ${formatPrice({ amount: cheapest, currency: "EUR" }).replace(/,00$/, "")}, gratis da ${FREE_SHIPPING_FROM_LABEL}`;
   return clip(`${productTitle(product)} a ${formatPrice(product.price)}, ${stockLabel(product).toLowerCase()}. ${product.tagline} Pagamento sicuro, ${shipping}.`);
 }
 

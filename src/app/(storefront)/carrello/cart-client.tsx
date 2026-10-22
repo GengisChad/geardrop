@@ -48,6 +48,13 @@ export function CartClient({ shelfProducts }: CartClientProps) {
       !quote.shippingOptions.some((opt) => opt.lockReasons?.some((reason) => reason === "partner" || reason === "mixed")),
   );
   const expressNeedsLocker = Boolean(quote && shippingMethodByCode(quote.shippingCode)?.pickupPoint);
+  // A Locker picked before a stadium joined the cart is forgotten once it went to the door: when
+  // the stadium leaves again, the buyer picks afresh rather than paying to a choice they no longer see.
+  const [lockerShown, setLockerShown] = useState(expressNeedsLocker);
+  if (lockerShown !== expressNeedsLocker) {
+    setLockerShown(expressNeedsLocker);
+    if (!expressNeedsLocker) setExpressLocker(null);
+  }
 
   const handleExpressCheckout = useCallback(async () => {
     if (!quote || expressState.pending) return;

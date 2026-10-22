@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Crosshair, Loader2, MapPin, Search } from "lucide-react";
 import { TextInput } from "@/components/ui/field";
 import { INPOST_POINT_FINDER_URL } from "@/data/catalog";
-import { lockerLabel, type Locker } from "@/lib/shipping/inpost";
+import { lockerLabel, type Locker } from "@/lib/shipping/locker";
 import { cn } from "@/lib/cn";
 
 /** What the form keeps: the line printed on the order and InPost's id, when it came from the search. */

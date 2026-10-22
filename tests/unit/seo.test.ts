@@ -85,6 +85,13 @@ describe("search metadata", () => {
     expect(preorder, "the catalogue has no pre-order to check the wording against").toBeDefined();
     expect(productDescription(preorder!)).toContain(", pre-ordine");
   });
+
+  it("quotes each item's own cheapest delivery: the Locker, or Poste to the door for a stadium (2026-10-23)", () => {
+    expect(productDescription(glory)).toContain("spedizione da €4,90, gratis da €100");
+    const stadium = PRODUCTS.find((product) => product.slug === "drop-attack-battle-set")!;
+    expect(productDescription(stadium)).toContain("spedizione da €6,65");
+    expect(productDescription(stadium)).not.toContain("€4,90");
+  });
 });
 
 describe("structured data", () => {
