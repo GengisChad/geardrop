@@ -271,7 +271,7 @@ test.describe("checkout", () => {
     await page.goto("/checkout");
 
     await page.getByLabel("CAP o città del Locker").fill("00185");
-    await page.getByRole("button", { name: "Cerca" }).click();
+    await page.getByTestId("checkout-locker-picker").getByRole("button", { name: "Cerca", exact: true }).click();
     await expect(page.getByRole("link", { name: "Trova il Locker sulla mappa InPost" })).toHaveAttribute("href", "https://inpost.it/trova-un-locker");
     await page.locator("#checkout-locker-manual").fill("ITROM44128M Termini");
     await page.locator("#checkout-locker-manual").blur();
