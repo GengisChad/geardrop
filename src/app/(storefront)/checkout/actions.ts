@@ -20,7 +20,7 @@ import { placeOrder } from "@/lib/commerce/order-intake";
 import { getCommerceProvider, resolveCommerceProviderName } from "@/lib/commerce/provider";
 import type { CartQuote, Money } from "@/lib/commerce/types";
 import { createStripeCheckout, openQuoteForStripe, stripeCheckoutEnabled, STRIPE_UNAVAILABLE_MESSAGE } from "@/lib/payments/stripe-checkout";
-import { EXPRESS_CHECKOUT_LOCKED_MESSAGE } from "@/lib/payments/express-checkout";
+import { EXPRESS_CHECKOUT_LOCKED_MESSAGE, EXPRESS_LOCKER_MISSING_MESSAGE } from "@/lib/payments/express-checkout";
 import { authRedirectUrl, PRODUCTION_ORIGIN } from "@/lib/site-url";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -168,8 +168,9 @@ export type ExpressCheckoutResult =
  * the webhook via collected_information.shipping_details (or shipping_details on older
  * API versions) rather than payment_intent.shipping.
  *
- * Express is available only for Hasbro-only carts: Takara-only and mixed carts have
- * locked shipping plans that do not include the Poste home ("standard") method.
+ * Express is available only for Hasbro-only carts: Takara-only and mixed carts ship partly from
+ * the partner's warehouse. Since 2026-10-23 it ships to the InPost Locker the buyer picked in the
+ * cart (Stripe cannot ask for one), or, for a cart with a stadium box, to the door with Poste.
  */
 export async function startExpressCheckout(input: ExpressCheckoutInput): Promise<ExpressCheckoutResult> {
   const parsed = expressCheckoutSchema.safeParse(input);
@@ -183,29 +184,34 @@ export async function startExpressCheckout(input: ExpressCheckoutInput): Promise
 
   try {
     const provider = await getCommerceProvider();
-    // Force shippingCode="standard" (Poste home): that is the only method express supports.
-    // If the plan does not offer it (Takara-only or mixed carts), the provider falls back to
-    // its first method and shippingCode will differ — caught below.
-    const rawQuote = await provider.quoteCart({
-      lines: toQuoteLines(parsed.data.lines),
-      shippingCode: "standard",
-    });
+    // The plan's own method: the InPost Locker, or Poste to the door for a stadium box.
+    const rawQuote = await provider.quoteCart({ lines: toQuoteLines(parsed.data.lines) });
     const quote = openQuoteForStripe(rawQuote);
 
     if (!quote.orderable) {
       return { ok: false, message: quote.notice ?? CHECKOUT_FALLBACK_MESSAGE };
     }
 
-    // The plan must have accepted "standard"; locked plans (Takara-only, mixed) keep their own
-    // first method instead and shippingCode will not equal "standard".
-    if (quote.shippingCode !== "standard") {
+    // Takara pieces leave from the partner's warehouse: those carts go through the normal checkout.
+    const method = shippingMethodByCode(quote.shippingCode);
+    const partner = quote.shippingOptions.some((option) => option.lockReasons?.some((reason) => reason === "partner" || reason === "mixed"));
+    if (!method || partner) {
       return { ok: false, message: EXPRESS_CHECKOUT_LOCKED_MESSAGE };
+    }
+    if (method.pickupPoint && (parsed.data.pickupPoint ?? "").trim().length < 3) {
+      return { ok: false, message: EXPRESS_LOCKER_MISSING_MESSAGE };
     }
 
     const checkout = await createStripeCheckout(
       {
         quote,
-        order: { idempotencyKey: parsed.data.idempotencyKey, lines: parsed.data.lines, attribution: parsed.data.attribution },
+        order: {
+          idempotencyKey: parsed.data.idempotencyKey,
+          lines: parsed.data.lines,
+          attribution: parsed.data.attribution,
+          pickupPoint: method.pickupPoint ? parsed.data.pickupPoint : undefined,
+          pickupPointId: method.pickupPoint ? parsed.data.pickupPointId : undefined,
+        },
         origin: await checkoutOrigin(),
         express: true,
       },

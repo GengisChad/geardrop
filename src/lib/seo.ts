@@ -1,4 +1,4 @@
-import { FREE_SHIPPING_THRESHOLD, PARTNER_SHIPPING_METHOD, SHIPPING_METHODS, brandOf } from "@/data/catalog";
+import { BULKY_SHIPPING_METHOD, FREE_SHIPPING_THRESHOLD, PARTNER_SHIPPING_METHOD, SHIPPING_METHODS, brandOf, shippingMethodsFor } from "@/data/catalog";
 import { brand } from "@/data/assets";
 import { SELLER } from "@/data/pages";
 import { SHOP_EMAIL } from "@/lib/email/resend";
@@ -86,7 +86,8 @@ const euros = (cents: number) => Number((cents / 100).toFixed(2));
  * free-shipping threshold and nothing from it. Product pages repeat the rate for a single item,
  * which Google reads as the more specific of the two.
  *
- * When `includePartner` is true the partner's Poste Punto-Poste service is added too — this
+ * Poste to the door is listed for the stadium boxes, which no InPost Locker takes. When
+ * `includePartner` is true the partner's Poste Punto-Poste service is added too — this
  * happens only when the catalogue contains at least one Takara Tomy product.
  */
 function shippingServices(includePartner = false) {
@@ -97,7 +98,7 @@ function shippingServices(includePartner = false) {
     shippingRate: { "@type": "MonetaryAmount", value: euros(cents), currency: "EUR" },
     transitTime: { "@type": "ServicePeriod", duration: days(TRANSIT_DAYS) },
   });
-  const methods = includePartner ? [...SHIPPING_METHODS, PARTNER_SHIPPING_METHOD] : SHIPPING_METHODS;
+  const methods = [...SHIPPING_METHODS, BULKY_SHIPPING_METHOD, ...(includePartner ? [PARTNER_SHIPPING_METHOD] : [])];
   return methods.map((method) => ({
     "@type": "ShippingService",
     "@id": absoluteUrl(`/#shipping-${method.code}`),
@@ -256,11 +257,9 @@ const AVAILABILITY = {
   esaurito: "https://schema.org/OutOfStock",
 } as const;
 
-/** The shipping methods that apply to a single product based on its brand. */
-function productShippingMethods(product: Pick<Product, "brand" | "unofficial">) {
-  // Unofficial accessories and Hasbro products use the regular carrier options.
-  if (brandOf(product) === "takara-tomy" && !product.unofficial) return [PARTNER_SHIPPING_METHOD];
-  return SHIPPING_METHODS;
+/** The shipping methods that apply to a single product: its brand's route, or Poste for a stadium box. */
+function productShippingMethods(product: Pick<Product, "slug" | "bundleOf" | "brand" | "unofficial">) {
+  return shippingMethodsFor(product);
 }
 
 /** The brand name for schema.org, or null when we don't claim one. */

@@ -7,10 +7,13 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  BULKY_SHIPPING_METHOD,
+  BUNDLES,
   FREE_SHIPPING_THRESHOLD,
   PARTNER_SHIPPING_METHOD,
   SHIPPING_METHODS,
   brandOf,
+  shippingMethodsFor,
   shippingPlanFor,
 } from "@/data/catalog";
 import { createMockProvider } from "@/lib/commerce/mock-provider";
@@ -23,6 +26,10 @@ import type { Product } from "@/lib/commerce/types";
 
 const HASBRO_PRODUCT = PRODUCTS.find((p) => p.slug === "cobalt-dragoon-2-60c")!;
 const HASBRO_PRICE = HASBRO_PRODUCT.price.amount;
+
+// The stadium box (45×45×15 cm) is the piece no InPost Locker takes (owner, 2026-10-23).
+const STADIUM_PRODUCT = PRODUCTS.find((p) => p.slug === "drop-attack-battle-set")!;
+const STADIUM_KIT = BUNDLES.find((p) => p.slug === "kit-arena-drop-completo")!;
 
 const TAKARA_PRODUCT: Product = {
   ...HASBRO_PRODUCT,
@@ -69,6 +76,7 @@ describe("shippingPlanFor", () => {
     expect(plan.methods).toEqual(SHIPPING_METHODS);
     expect(plan.locked).toBe(false);
     expect(plan.composition).toBe("hasbro-only");
+    expect(plan.lockReasons).toBeUndefined();
   });
 
   it("takara-only → [PARTNER_SHIPPING_METHOD], locked, composition takara-only", () => {
@@ -76,14 +84,65 @@ describe("shippingPlanFor", () => {
     expect(plan.methods).toEqual([PARTNER_SHIPPING_METHOD]);
     expect(plan.locked).toBe(true);
     expect(plan.composition).toBe("takara-only");
+    expect(plan.lockReasons).toEqual(["partner"]);
   });
 
-  it("mixed → [poste-point], locked, composition mixed (2026-10-14: replaced inpost-point)", () => {
+  it("mixed → [inpost-locker], locked, composition mixed (2026-10-23: InPost only, was poste-point)", () => {
     const plan = shippingPlanFor(new Set(["hasbro", "takara-tomy"]));
     expect(plan.methods).toHaveLength(1);
-    expect(plan.methods[0]!.code).toBe("poste-point");
+    expect(plan.methods[0]!.code).toBe("inpost-locker");
     expect(plan.locked).toBe(true);
     expect(plan.composition).toBe("mixed");
+    expect(plan.lockReasons).toEqual(["mixed"]);
+  });
+
+  it("bulky → [BULKY_SHIPPING_METHOD] (standard, Poste a casa 665), locked, reason bulky (2026-10-23)", () => {
+    const plan = shippingPlanFor(new Set(["hasbro"]), true);
+    expect(plan.methods).toEqual([BULKY_SHIPPING_METHOD]);
+    expect(plan.methods[0]).toMatchObject({ code: "standard", carrier: "poste", priceCents: 665, pickupPoint: false });
+    expect(plan.locked).toBe(true);
+    expect(plan.composition).toBe("hasbro-only");
+    expect(plan.lockReasons).toEqual(["bulky"]);
+  });
+
+  it("bulky and mixed → still Poste to the door, with both reasons (2026-10-23)", () => {
+    const plan = shippingPlanFor(new Set(["hasbro", "takara-tomy"]), true);
+    expect(plan.methods).toEqual([BULKY_SHIPPING_METHOD]);
+    expect(plan.locked).toBe(true);
+    expect(plan.composition).toBe("mixed");
+    expect(plan.lockReasons).toEqual(["bulky", "mixed"]);
+  });
+
+  it("takara-only keeps the partner route whatever the bulky flag says (2026-10-23)", () => {
+    const plan = shippingPlanFor(new Set(["takara-tomy"]), true);
+    expect(plan.methods).toEqual([PARTNER_SHIPPING_METHOD]);
+    expect(plan.lockReasons).toEqual(["partner"]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// shippingMethodsFor: what a single item ships with on its own (2026-10-23)
+// ---------------------------------------------------------------------------
+
+describe("shippingMethodsFor", () => {
+  it("a Hasbro item ships with the InPost Locker", () => {
+    expect(shippingMethodsFor(HASBRO_PRODUCT)).toEqual(SHIPPING_METHODS);
+  });
+
+  it("a Takara Tomy item ships with the partner's Poste route", () => {
+    expect(shippingMethodsFor(TAKARA_PRODUCT)).toEqual([PARTNER_SHIPPING_METHOD]);
+  });
+
+  it("an unofficial item tagged Takara Tomy still ships like a shop item", () => {
+    expect(shippingMethodsFor({ ...TAKARA_PRODUCT, unofficial: true })).toEqual(SHIPPING_METHODS);
+  });
+
+  it("a stadium box goes to the door with Poste: no Locker takes it", () => {
+    expect(shippingMethodsFor(STADIUM_PRODUCT)).toEqual([BULKY_SHIPPING_METHOD]);
+  });
+
+  it("a kit that holds a stadium goes to the door as well", () => {
+    expect(shippingMethodsFor(STADIUM_KIT)).toEqual([BULKY_SHIPPING_METHOD]);
   });
 });
 
@@ -128,7 +187,7 @@ describe("mock quoteCart — takara-only cart", () => {
 describe("mock quoteCart — mixed cart", () => {
   const provider = createMockProvider([HASBRO_PRODUCT, TAKARA_PRODUCT]);
 
-  it("has one locked poste-point option at 565 (2026-10-14: replaced inpost-point)", async () => {
+  it("has one locked inpost-locker option at 490, reason mixed (2026-10-23: InPost only, was poste-point 565)", async () => {
     const quote = await provider.quoteCart({
       lines: [
         { slug: HASBRO_PRODUCT.slug, quantity: 1 },
@@ -137,11 +196,12 @@ describe("mock quoteCart — mixed cart", () => {
     });
     expect(quote.shippingOptions).toHaveLength(1);
     expect(quote.shippingOptions[0]).toMatchObject({
-      code: "poste-point",
-      price: { amount: 565 },
+      code: "inpost-locker",
+      price: { amount: 490 },
       locked: true,
+      lockReasons: ["mixed"],
     });
-    expect(quote.shippingCode).toBe("poste-point");
+    expect(quote.shippingCode).toBe("inpost-locker");
   });
 
   it("is free at the threshold", async () => {
@@ -153,7 +213,7 @@ describe("mock quoteCart — mixed cart", () => {
     expect(quote.totals.shipping.amount).toBe(0);
   });
 
-  it("a stale poste-point-partner code falls back to poste-point (2026-10-14)", async () => {
+  it("a stale poste-point-partner code falls back to inpost-locker (2026-10-23)", async () => {
     const quote = await provider.quoteCart({
       lines: [
         { slug: HASBRO_PRODUCT.slug, quantity: 1 },
@@ -161,23 +221,37 @@ describe("mock quoteCart — mixed cart", () => {
       ],
       shippingCode: "poste-point-partner",
     });
-    expect(quote.shippingCode).toBe("poste-point");
+    expect(quote.shippingCode).toBe("inpost-locker");
+  });
+
+  it("a retired poste-point code falls back to inpost-locker (2026-10-23)", async () => {
+    const quote = await provider.quoteCart({
+      lines: [
+        { slug: HASBRO_PRODUCT.slug, quantity: 1 },
+        { slug: TAKARA_PRODUCT.slug, quantity: 1 },
+      ],
+      shippingCode: "poste-point",
+    });
+    expect(quote.shippingCode).toBe("inpost-locker");
+    expect(quote.totals.shipping.amount).toBe(490);
   });
 });
 
-describe("mock quoteCart — hasbro-only cart (updated 2026-10-13: three methods, Locker default)", () => {
+describe("mock quoteCart — hasbro-only cart (updated 2026-10-23: InPost only, one method)", () => {
   const provider = createMockProvider();
 
-  it("offers all three SHIPPING_METHODS, not locked, InPost Locker cheapest and default", async () => {
+  it("offers SHIPPING_METHODS (the InPost Locker alone), not locked, at 490", async () => {
     const quote = await provider.quoteCart({ lines: [{ slug: HASBRO_PRODUCT.slug, quantity: 1 }] });
-    // Updated 2026-10-13: three methods (Locker, punto di ritiro, Poste); default is Locker at 490.
-    expect(quote.shippingOptions).toHaveLength(3);
+    // Updated 2026-10-23: the shop ships through InPost only, so the one method is the Locker at 490.
+    expect(quote.shippingOptions).toHaveLength(SHIPPING_METHODS.length);
+    expect(quote.shippingOptions.map((o) => o.code)).toEqual(["inpost-locker"]);
     expect(quote.shippingOptions.every((o) => !o.locked)).toBe(true);
+    expect(quote.shippingOptions.every((o) => o.lockReasons === undefined)).toBe(true);
     expect(quote.shippingCode).toBe("inpost-locker");
     expect(quote.totals.shipping.amount).toBe(490);
   });
 
-  it("mixed cart stays locked to poste-point at 565 (2026-10-14: replaced inpost-point)", async () => {
+  it("mixed cart stays locked to inpost-locker at 490 (2026-10-23: InPost only, was poste-point 565)", async () => {
     const mixedProvider = createMockProvider([HASBRO_PRODUCT, TAKARA_PRODUCT]);
     const quote = await mixedProvider.quoteCart({
       lines: [
@@ -186,14 +260,71 @@ describe("mock quoteCart — hasbro-only cart (updated 2026-10-13: three methods
       ],
     });
     expect(quote.shippingOptions).toHaveLength(1);
-    expect(quote.shippingOptions[0]!.code).toBe("poste-point");
-    expect(quote.shippingOptions[0]!.price.amount).toBe(565);
+    expect(quote.shippingOptions[0]!.code).toBe("inpost-locker");
+    expect(quote.shippingOptions[0]!.price.amount).toBe(490);
     expect(quote.shippingOptions[0]!.locked).toBe(true);
+    expect(quote.shippingOptions[0]!.lockReasons).toEqual(["mixed"]);
   });
 
   it("free at the threshold", async () => {
     const quantity = Math.ceil(FREE_SHIPPING_THRESHOLD / HASBRO_PRICE);
     const quote = await provider.quoteCart({ lines: [{ slug: HASBRO_PRODUCT.slug, quantity }] });
+    expect(quote.totals.shipping.amount).toBe(0);
+  });
+});
+
+describe("mock quoteCart — stadium box (2026-10-23: no Locker takes it)", () => {
+  const provider = createMockProvider([HASBRO_PRODUCT, STADIUM_PRODUCT, TAKARA_PRODUCT]);
+
+  it("a cart holding a stadium is locked to standard (Poste a casa) at 665, reason bulky", async () => {
+    const quote = await provider.quoteCart({ lines: [{ slug: STADIUM_PRODUCT.slug, quantity: 1 }] });
+    expect(quote.shippingOptions).toHaveLength(1);
+    expect(quote.shippingOptions[0]).toMatchObject({
+      code: "standard",
+      price: { amount: 665 },
+      locked: true,
+      lockReasons: ["bulky"],
+    });
+    expect(quote.shippingCode).toBe("standard");
+    expect(quote.totals.shipping.amount).toBe(665);
+  });
+
+  it("one stadium among small pieces takes the whole cart to the door", async () => {
+    const quote = await provider.quoteCart({
+      lines: [
+        { slug: HASBRO_PRODUCT.slug, quantity: 1 },
+        { slug: STADIUM_PRODUCT.slug, quantity: 1 },
+      ],
+    });
+    expect(quote.shippingCode).toBe("standard");
+    expect(quote.shippingOptions.map((o) => o.code)).toEqual(["standard"]);
+  });
+
+  it("a Locker code sent for a stadium cart falls back to standard", async () => {
+    const quote = await provider.quoteCart({
+      lines: [{ slug: STADIUM_PRODUCT.slug, quantity: 1 }],
+      shippingCode: "inpost-locker",
+    });
+    expect(quote.shippingCode).toBe("standard");
+    expect(quote.totals.shipping.amount).toBe(665);
+  });
+
+  it("a stadium with a Takara piece carries both reasons: bulky and mixed", async () => {
+    const quote = await provider.quoteCart({
+      lines: [
+        { slug: STADIUM_PRODUCT.slug, quantity: 1 },
+        { slug: TAKARA_PRODUCT.slug, quantity: 1 },
+      ],
+    });
+    expect(quote.shippingCode).toBe("standard");
+    expect(quote.shippingOptions[0]!.lockReasons).toEqual(["bulky", "mixed"]);
+  });
+
+  it("is free at the threshold, like every method", async () => {
+    const quantity = Math.ceil(FREE_SHIPPING_THRESHOLD / STADIUM_PRODUCT.price.amount);
+    const quote = await provider.quoteCart({ lines: [{ slug: STADIUM_PRODUCT.slug, quantity }] });
+    expect(quote.totals.subtotal.amount).toBeGreaterThanOrEqual(FREE_SHIPPING_THRESHOLD);
+    expect(quote.shippingCode).toBe("standard");
     expect(quote.totals.shipping.amount).toBe(0);
   });
 });
@@ -246,6 +377,15 @@ describe("SEO productJsonLd — Takara Tomy product", () => {
     const { productJsonLd } = await import("@/lib/seo");
     const data = productJsonLd(HASBRO_PRODUCT);
     expect(data.offers.shippingDetails).toHaveLength(SHIPPING_METHODS.length);
+    expect(data.offers.shippingDetails.map((d) => d.shippingLabel)).toEqual(SHIPPING_METHODS.map((m) => m.label));
+  });
+
+  it("shippingDetails for a stadium box lists Poste to the door only (2026-10-23)", async () => {
+    const { productJsonLd } = await import("@/lib/seo");
+    const data = productJsonLd(STADIUM_PRODUCT);
+    expect(data.offers.shippingDetails).toHaveLength(1);
+    expect(data.offers.shippingDetails[0]!.shippingLabel).toBe(BULKY_SHIPPING_METHOD.label);
+    expect(data.offers.shippingDetails[0]!.shippingRate.value).toBe((BULKY_SHIPPING_METHOD.priceCents / 100).toFixed(2));
   });
 });
 
@@ -255,6 +395,9 @@ describe("SEO siteJsonLd — OnlineStore partner service", () => {
     const store = siteJsonLd({ includePartner: false })["@graph"][0] as Record<string, unknown>;
     const services = store["hasShippingService"] as { "@id": string }[];
     expect(services.some((s) => s["@id"].includes("poste-point-partner"))).toBe(false);
+    // Poste to the door stays listed: the stadium boxes ship with it (2026-10-23).
+    expect(services).toHaveLength(SHIPPING_METHODS.length + 1);
+    expect(services.some((s) => s["@id"].includes(`shipping-${BULKY_SHIPPING_METHOD.code}`))).toBe(true);
   });
 
   it("adds the partner service when includePartner is true", async () => {
@@ -262,7 +405,8 @@ describe("SEO siteJsonLd — OnlineStore partner service", () => {
     const store = siteJsonLd({ includePartner: true })["@graph"][0] as Record<string, unknown>;
     const services = store["hasShippingService"] as { "@id": string }[];
     expect(services.some((s) => s["@id"].includes("poste-point-partner"))).toBe(true);
-    expect(services).toHaveLength(SHIPPING_METHODS.length + 1);
+    // SHIPPING_METHODS + Poste to the door for the stadiums + the partner route.
+    expect(services).toHaveLength(SHIPPING_METHODS.length + 2);
   });
 });
 
@@ -283,9 +427,7 @@ describe("Merchant feed — Takara Tomy product", () => {
         ? "Takara Tomy"
         : "Hasbro";
     const free = product.price.amount >= FREE_SHIPPING_THRESHOLD;
-    const shippingMethods =
-      brandOf(product) === "takara-tomy" ? [PARTNER_SHIPPING_METHOD] : SHIPPING_METHODS;
-    const shippingRows = shippingMethods
+    const shippingRows = shippingMethodsFor(product)
       .map(
         (m) =>
           `<g:shipping><g:country>IT</g:country><g:service>${escape(m.label)}</g:service><g:price>${euro(free ? 0 : m.priceCents)}</g:price></g:shipping>`,
@@ -311,6 +453,14 @@ describe("Merchant feed — Takara Tomy product", () => {
     const xml = buildOffer(HASBRO_PRODUCT);
     expect(xml).toContain("<g:brand>Hasbro</g:brand>");
     expect(xml.match(/<g:shipping>/g)?.length).toBe(SHIPPING_METHODS.length);
+    expect(xml).not.toContain(BULKY_SHIPPING_METHOD.label);
+  });
+
+  it("lists only the Poste to the door row for a stadium box (2026-10-23)", () => {
+    const xml = buildOffer(STADIUM_PRODUCT);
+    expect(xml.match(/<g:shipping>/g)?.length).toBe(1);
+    expect(xml).toContain(`<g:service>${BULKY_SHIPPING_METHOD.label}</g:service>`);
+    expect(xml).not.toContain("InPost");
   });
 });
 

@@ -104,6 +104,9 @@ export type ExpressOrderRef = {
   readonly idempotencyKey: string;
   readonly lines: readonly { readonly slug: string; readonly quantity: number }[];
   readonly attribution?: VisitSource | undefined;
+  /** The Locker picked in the cart, for an InPost Locker express order (2026-10-23). */
+  readonly pickupPoint?: string | undefined;
+  readonly pickupPointId?: string | undefined;
 };
 
 export type CheckoutSessionInput =
@@ -205,7 +208,14 @@ export function buildCheckoutSessionFields(
     if (notes) fields["metadata[notes]"] = truncate(notes, METADATA_LIMIT);
     const pickupPoint = method.pickupPoint ? contact.pickupPoint?.trim() : undefined;
     if (pickupPoint) fields["metadata[pickup_point]"] = truncate(pickupPoint, METADATA_LIMIT);
+    if (pickupPoint && method.carrier === "inpost" && contact.pickupPointId) fields["metadata[pickup_point_id]"] = contact.pickupPointId;
   } else {
+    // The Locker for an express InPost order was picked in the cart: Stripe cannot ask for one.
+    const { pickupPoint, pickupPointId } = input.order as ExpressOrderRef;
+    if (method.pickupPoint && pickupPoint?.trim()) {
+      fields["metadata[pickup_point]"] = truncate(pickupPoint.trim(), METADATA_LIMIT);
+      if (method.carrier === "inpost" && pickupPointId) fields["metadata[pickup_point_id]"] = pickupPointId;
+    }
     // Express checkout: Stripe collects the shipping address and phone on its hosted page.
     // The webhook reads them from collected_information.shipping_details (or shipping_details on
     // older API versions). customer_email comes back via customer_details.

@@ -6,7 +6,7 @@
  * contract for the whole UI to keep working.
  */
 
-import { BUNDLE, BUNDLES, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS, brandOf, shippingMethodByCode, shippingPlanFor, toShippingOption } from "@/data/catalog";
+import { BUNDLE, BUNDLES, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS, brandOf, fitsLocker, shippingMethodByCode, shippingPlanFor, toShippingOption } from "@/data/catalog";
 import { STANDARD_DELIVERY } from "@/lib/labels";
 import { piecesOf, withBundles } from "./bundles";
 import { oneCardPerFamily } from "./variants";
@@ -278,7 +278,12 @@ export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CA
           return product ? brandOf(product) : "hasbro";
         }),
       );
-      const plan = shippingPlanFor(cartBrands);
+      // A stadium box goes to the door with Poste: no InPost Locker takes it.
+      const bulky = sellable.some((line) => {
+        const product = bySlug.get(line.slug);
+        return product ? !fitsLocker(product) : false;
+      });
+      const plan = shippingPlanFor(cartBrands, bulky);
 
       // The buyer's choice when it is in the plan, otherwise the plan's first (cheapest) method.
       const requested = shippingMethodByCode(request.shippingCode);
@@ -289,7 +294,7 @@ export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CA
 
       const shipping = isEmpty || qualifies ? 0 : method.priceCents;
       const shippingOptions: readonly ShippingOption[] = plan.methods.map((m) =>
-        toShippingOption(m, STANDARD_DELIVERY, plan.locked || undefined),
+        toShippingOption(m, STANDARD_DELIVERY, plan.locked || undefined, plan.lockReasons),
       );
 
       return {

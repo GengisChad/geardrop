@@ -15,14 +15,19 @@ import { PREORDER_SHIPPED_NOTE } from "@/lib/admin/preorders";
 import type { Database } from "@/lib/supabase/database.types";
 import {
   deliverOrderSchema,
+  inpostShipmentSchema,
   messageCustomerSchema,
   orderCancellationSchema,
   orderNoteSchema,
   orderTransitionSchema,
   refundPreparationSchema,
+  recipientName,
   refundStripeSchema,
+  shipmentChoice,
   shipOrderSchema,
 } from "@/lib/admin/orders";
+import { INPOST_CARRIER_LABEL } from "@/lib/orders/inpost-delivery";
+import { createInpostClient, InpostError, inpostConfig } from "@/lib/shipping/inpost";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createStripeClient } from "@/lib/payments/stripe-api";
 
@@ -224,40 +229,147 @@ export async function shipOrderAction(_previous: OrderActionState, formData: For
   const code = normalizeTrackingCode(carrier.id, parsed.data.code);
   try {
     const client = await clientFor(MANAGERS);
-    const saved = await client
+    return await shipAndNotify(client, parsed.data.orderId, carrier.label, code || null, parsed.data.url);
+  } catch (error) {
+    return failure(error);
+  }
+}
+
+/** Saves the tracking (the order turns shipped) and emails it to the buyer unless they already hold it. */
+async function shipAndNotify(
+  client: SupabaseClient<Database>,
+  orderId: number,
+  carrierLabel: string,
+  code: string | null,
+  url: string | null,
+): Promise<OrderActionState> {
+  const saved = await client
+    .from("orders")
+    .select("status,tracking_carrier,tracking_code,tracking_url,shipping_notified_at")
+    .eq("id", orderId)
+    .single();
+  if (saved.error) return { ok: false, message: "Ordine non trovato." };
+
+  const { error } = await client.rpc("ship_order", {
+    p_order_id: orderId,
+    p_carrier: carrierLabel,
+    ...(code ? { p_code: code } : {}),
+    ...(url ? { p_url: url } : {}),
+  });
+  if (error) return failure(error);
+  refresh(orderId);
+
+  const wasShipped = saved.data.status === "shipped";
+  const due = shippingEmailDue(
+    {
+      carrier: saved.data.tracking_carrier,
+      code: saved.data.tracking_code,
+      url: saved.data.tracking_url,
+      notifiedAt: saved.data.shipping_notified_at,
+    },
+    { carrier: carrierLabel, code, url },
+  );
+  if (!due) return { ok: true, message: "Tracking invariato: il cliente ha già ricevuto l'email con questo codice." };
+
+  const email = await sendShipmentEmail(client, orderId);
+  refresh(orderId);
+  if (email.ok) {
+    return { ok: true, message: wasShipped ? "Tracking aggiornato ed email inviata al cliente." : "Ordine spedito ed email inviata al cliente." };
+  }
+  return { ok: false, message: `${wasShipped ? "Tracking salvato" : "Ordine segnato come spedito"}, ma l'email non è partita: ${email.message}` };
+}
+
+/** InPost's field errors, in words the owner can act on. */
+function inpostRefusal(error: InpostError): string {
+  const fields = Object.keys(error.fieldErrors);
+  const named: Record<string, string> = {
+    "recipient.phone": "il telefono del cliente",
+    "recipient.email": "l'email del cliente",
+    "recipient.firstName": "il nome del cliente",
+    "recipient.lastName": "il cognome del cliente",
+    "destination.pointId": "il Locker",
+    "sender.phone": "il telefono del mittente (INPOST_SENDER_PHONE)",
+    "sender.email": "l'email del mittente",
+  };
+  if (fields.length > 0) return `InPost non accetta ${fields.map((field) => named[field] ?? field).join(", ")}. Correggi e riprova.`;
+  if (error.status === 401 || error.status === 403) return "InPost ha rifiutato le credenziali o l'organizzazione: controlla INPOST_CLIENT_ID, INPOST_CLIENT_SECRET e INPOST_ORGANIZATION_ID.";
+  return `InPost non ha creato la spedizione (${error.message}).`;
+}
+
+/**
+ * "Crea spedizione InPost" (owner, 2026-10-23): makes the shipment on the shop's InPost account,
+ * from "Gear Drop Shop" to the Locker the buyer picked, then ships the order with its tracking
+ * number and emails the buyer exactly as "Spedisci e avvisa" does. The label is printed from
+ * /admin/ordini/[id]/etichetta.
+ */
+export async function createInpostShipmentAction(_previous: OrderActionState, formData: FormData): Promise<OrderActionState> {
+  const parsed = inpostShipmentSchema.safeParse({
+    orderId: text(formData, "orderId"),
+    lockerId: text(formData, "lockerId"),
+    lockerLabel: text(formData, "lockerLabel"),
+    size: text(formData, "size"),
+    weightKg: Number(text(formData, "weightKg").replace(",", ".")),
+  });
+  if (!parsed.success) return { ok: false, message: "Controlla Locker, misura (A, B o C) e peso (fino a 25 kg)." };
+
+  const config = inpostConfig();
+  if (!config?.organizationId) {
+    return { ok: false, message: "InPost non è configurato: servono INPOST_CLIENT_ID, INPOST_CLIENT_SECRET e INPOST_ORGANIZATION_ID." };
+  }
+  const senderPhone = process.env["INPOST_SENDER_PHONE"]?.trim();
+  if (!senderPhone) return { ok: false, message: "Manca INPOST_SENDER_PHONE: il telefono del mittente che InPost chiede su ogni spedizione." };
+
+  try {
+    const client = await clientFor(MANAGERS);
+    const order = await client
       .from("orders")
-      .select("status,tracking_carrier,tracking_code,tracking_url,shipping_notified_at")
+      .select("id,order_number,email,phone,status,payment_status,tracking_carrier,tracking_code,shipping_address_snapshot")
       .eq("id", parsed.data.orderId)
       .single();
-    if (saved.error) return { ok: false, message: "Ordine non trovato." };
-
-    const { error } = await client.rpc("ship_order", {
-      p_order_id: parsed.data.orderId,
-      p_carrier: carrier.label,
-      ...(code ? { p_code: code } : {}),
-      ...(parsed.data.url ? { p_url: parsed.data.url } : {}),
-    });
-    if (error) return failure(error);
-    refresh(parsed.data.orderId);
-
-    const wasShipped = saved.data.status === "shipped";
-    const due = shippingEmailDue(
-      {
-        carrier: saved.data.tracking_carrier,
-        code: saved.data.tracking_code,
-        url: saved.data.tracking_url,
-        notifiedAt: saved.data.shipping_notified_at,
-      },
-      { carrier: carrier.label, code: code || null, url: parsed.data.url },
-    );
-    if (!due) return { ok: true, message: "Tracking invariato: il cliente ha già ricevuto l'email con questo codice." };
-
-    const email = await sendShipmentEmail(client, parsed.data.orderId);
-    refresh(parsed.data.orderId);
-    if (email.ok) {
-      return { ok: true, message: wasShipped ? "Tracking aggiornato ed email inviata al cliente." : "Ordine spedito ed email inviata al cliente." };
+    if (order.error) return { ok: false, message: "Ordine non trovato." };
+    if (order.data.payment_status !== "paid") return { ok: false, message: "L'ordine non risulta pagato." };
+    if (!["confirmed", "processing"].includes(order.data.status)) return { ok: false, message: "La spedizione si crea solo per ordini confermati e non ancora spediti." };
+    if (order.data.tracking_carrier === INPOST_CARRIER_LABEL && order.data.tracking_code) {
+      return { ok: false, message: `Spedizione InPost già creata: ${order.data.tracking_code}.` };
     }
-    return { ok: false, message: `${wasShipped ? "Tracking salvato" : "Ordine segnato come spedito"}, ma l'email non è partita: ${email.message}` };
+
+    const snapshot = order.data.shipping_address_snapshot as Record<string, unknown> | null;
+    const choice = shipmentChoice(snapshot);
+    const lockerId = parsed.data.lockerId ?? choice.pickupPointId;
+    if (!lockerId) return { ok: false, message: "Scegli il Locker: il cliente l'ha scritto a mano, cercalo per CAP qui sotto." };
+    const name = recipientName(typeof snapshot?.["name"] === "string" ? snapshot["name"] : null);
+    const phone = order.data.phone ?? (typeof snapshot?.["phone"] === "string" ? snapshot["phone"] : "");
+    if (!name) return { ok: false, message: "Manca il nome del cliente sull'ordine." };
+    if (!phone.trim()) return { ok: false, message: "Manca il telefono del cliente: InPost gli manda lì il codice per aprire il Locker." };
+
+    let trackingNumber: string;
+    try {
+      trackingNumber = await createInpostClient(config).createLockerShipment({
+        orderNumber: order.data.order_number,
+        recipient: { ...name, email: order.data.email, phone },
+        lockerId,
+        size: parsed.data.size,
+        weightKg: parsed.data.weightKg,
+        senderEmail: SHOP_EMAIL,
+        senderPhone,
+      });
+    } catch (error) {
+      if (error instanceof InpostError) return { ok: false, message: inpostRefusal(error) };
+      throw error;
+    }
+
+    // A Locker the owner picked here, in place of the buyer's typed one, stays written on the order.
+    if (parsed.data.lockerId && parsed.data.lockerId !== choice.pickupPointId) {
+      await client.rpc("add_order_note", {
+        p_order_id: parsed.data.orderId,
+        p_note: `Spedizione InPost verso il Locker ${parsed.data.lockerLabel ?? parsed.data.lockerId}.`,
+      });
+    }
+
+    const shipped = await shipAndNotify(client, parsed.data.orderId, INPOST_CARRIER_LABEL, trackingNumber, null);
+    return shipped.ok
+      ? { ok: true, message: `Spedizione InPost ${trackingNumber} creata. ${shipped.message} Stampa l'etichetta e porta il pacco in un punto InPost.` }
+      : { ok: false, message: `Spedizione InPost ${trackingNumber} creata, ma: ${shipped.message} Non crearla di nuovo: salva questo codice con "Spedisci e avvisa".` };
   } catch (error) {
     return failure(error);
   }
