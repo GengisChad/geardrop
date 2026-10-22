@@ -70,10 +70,10 @@ test.describe("cart", () => {
     await buyPanel(page).getByTestId("add-to-cart").click();
     await page.goto("/carrello");
 
-    // 1 x 25,50 -> below the threshold. The cart prices InPost Locker (cheapest) with a "da" prefix:
-    // the buyer picks the carrier at checkout, so the cart cannot show the final price.
-    await expect(page.getByTestId("cart-shipping")).toHaveText(`da ${euro(SHIPPING_FLAT_RATE)}`);
-    await expect(page.getByTestId("cart-carrier-note")).toContainText("Al checkout scegli Locker InPost");
+    // 1 x 25,50 -> below the threshold. Since 2026-10-23 the InPost Locker is the only method for a
+    // small parcel, so the cart's price is final: no "da", no note about choosing at checkout.
+    await expect(page.getByTestId("cart-shipping")).toHaveText(euro(SHIPPING_FLAT_RATE));
+    await expect(page.getByTestId("cart-carrier-note")).toHaveCount(0);
     await expect(page.getByTestId("cart-total")).toHaveText(euro(DRAGOON + SHIPPING_FLAT_RATE));
 
     // Enough packs to clear the free-shipping threshold, whatever the two numbers are today.
@@ -205,39 +205,77 @@ test.describe("checkout", () => {
     }
   });
 
-  test("lets the buyer pick the carrier, at what each one costs", async ({ page }) => {
+  test("ships a small parcel to the InPost Locker the buyer picks from InPost's list", async ({ page }) => {
+    // The Location API needs the shop's InPost keys, which CI does not have: its answer is stubbed.
+    await page.route("**/api/inpost/lockers**", (route) =>
+      route.fulfill({
+        json: {
+          lockers: [
+            {
+              id: "IT_ITROM44128M",
+              code: "ITROM44128M",
+              street: "piazza dei Cinquecento 48",
+              postalCode: "00185",
+              city: "Roma",
+              province: "RM",
+              place: "ATAC - Metro A e B -Termini",
+              distance: 893,
+              openAllDay: false,
+            },
+          ],
+        },
+      }),
+    );
     await page.goto("/prodotto/cobalt-dragoon-2-60c");
     await buyPanel(page).getByTestId("add-to-cart").click();
     await page.goto("/checkout");
 
-    // InPost Locker (cheapest, default), punto di ritiro, Poste to the door (owner, 2026-10-13).
+    // InPost only since 2026-10-23: one method, the Locker, at its price.
     const shipping = page.getByTestId("shipping-options");
     await expect(shipping.getByRole("radio")).toHaveCount(SHIPPING_METHODS.length);
-    await expect(shipping).toContainText("Poste Italiane");
-    await expect(shipping).not.toContainText("Express");
+    await expect(shipping).toContainText("InPost · Locker");
+    await expect(shipping).not.toContainText("Poste Italiane");
     await expect(page.getByTestId("cart-total")).toHaveText(euro(DRAGOON + SHIPPING_FLAT_RATE));
-    // At checkout the price is the chosen carrier's, not a starting price.
     await expect(page.getByTestId("cart-shipping")).toHaveText(euro(SHIPPING_FLAT_RATE));
     await expect(page.getByTestId("cart-carrier-note")).toHaveCount(0);
-    // InPost Locker is the default: the pickup field is already visible on load.
-    await expect(page.locator("#pickupPoint")).toBeVisible();
-    await expect(page.getByLabel("Locker InPost")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Trovalo sulla mappa InPost" })).toHaveAttribute("href", "https://inpost.it/trova-un-locker");
-    await page.locator("#pickupPoint").focus();
-    await page.locator("#pickupPoint").blur();
+
+    // No Locker yet: the order cannot go. (Without payments the button is disabled, so the form is
+    // submitted directly: the field rule is what is under test.)
+    await page.getByTestId("checkout-form").evaluate((form: HTMLFormElement) => form.requestSubmit());
     await expect(page.getByText("Indica il Locker o il punto dove ritirare il pacco.")).toBeVisible();
 
-    // Switching to Poste hides the pickup field and updates the price to 6,65.
-    await shipping.getByText("Poste Italiane · consegna a casa").click();
-    await expect(page.getByTestId("cart-total")).toHaveText(euro(DRAGOON + 665));
-    await expect(page.getByTestId("cart-shipping")).toHaveText(euro(665));
-    await expect(page.locator("#pickupPoint")).toHaveCount(0);
+    // The buyer searches by CAP and picks one; the order carries InPost's id for the label.
+    await page.getByLabel("CAP o città del Locker").fill("00185");
+    await page.getByLabel("CAP o città del Locker").press("Enter");
+    await page.getByRole("button", { name: /piazza dei Cinquecento 48, Roma/ }).click();
+    await expect(page.getByTestId("checkout-locker-picked")).toContainText("ITROM44128M · piazza dei Cinquecento 48, 00185 Roma");
+    await expect(page.locator("input[name=pickupPointId]")).toHaveValue("IT_ITROM44128M");
+    await expect(page.getByText("Indica il Locker o il punto dove ritirare il pacco.")).toHaveCount(0);
+  });
 
-    // Switching back to Poste punto di ritiro restores the pickup field at 5,65 (2026-10-14: poste-point).
-    await shipping.getByText("Poste Italiane · punto di ritiro").click();
-    await expect(page.getByTestId("cart-total")).toHaveText(euro(DRAGOON + 565));
-    await expect(page.locator("#pickupPoint")).toBeVisible();
-    await expect(page.getByLabel("Punto di ritiro Poste Italiane")).toBeVisible();
+  test("sends a stadium box to the door with Poste, since no Locker takes it", async ({ page }) => {
+    await page.goto("/prodotto/drop-attack-battle-set");
+    await buyPanel(page).getByTestId("add-to-cart").click();
+    await page.goto("/checkout");
+
+    await expect(page.getByTestId("shipping-locked")).toContainText("Poste Italiane · consegna a casa");
+    await expect(page.getByTestId("bulky-cart-note")).toBeVisible();
+    await expect(page.getByTestId("checkout-locker-picker")).toHaveCount(0);
+    await expect(page.getByTestId("cart-shipping")).toHaveText(euro(665));
+  });
+
+  test("falls back to typing the Locker when InPost's search does not answer", async ({ page }) => {
+    await page.route("**/api/inpost/lockers**", (route) => route.fulfill({ status: 503, json: { lockers: [], error: "non disponibile" } }));
+    await page.goto("/prodotto/cobalt-dragoon-2-60c");
+    await buyPanel(page).getByTestId("add-to-cart").click();
+    await page.goto("/checkout");
+
+    await page.getByLabel("CAP o città del Locker").fill("00185");
+    await page.getByRole("button", { name: "Cerca" }).click();
+    await expect(page.getByRole("link", { name: "Trova il Locker sulla mappa InPost" })).toHaveAttribute("href", "https://inpost.it/trova-un-locker");
+    await page.locator("#checkout-locker-manual").fill("ITROM44128M Termini");
+    await page.locator("#checkout-locker-manual").blur();
+    await expect(page.getByTestId("checkout-locker-picked")).toContainText("ITROM44128M Termini");
   });
 
   test("checkout with an empty cart offers nothing to pay for", async ({ page }) => {
