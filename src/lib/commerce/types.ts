@@ -182,6 +182,8 @@ export type CartQuoteLine = {
   readonly releasePreorder?: true;
   /** Units of this line that are not on the shelf and ship as a pre-order. */
   readonly preorderQuantity?: number;
+  /** Set when a club code applies and this product has a club tier: what one unit costs the club. */
+  readonly clubUnitPrice?: Money;
   /** Italian sentence when this line cannot be ordered as requested, else null. */
   readonly issue: string | null;
 };

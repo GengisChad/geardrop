@@ -154,6 +154,9 @@ export function buildCheckoutSessionFields(
   // The carrier the quote was priced with: the cheapest unless the buyer picked another.
   const method = shippingMethodByCode(quote.shippingCode) ?? SHIPPING_METHODS[0]!;
 
+  // A club's quote: its tiered lines are charged at the club price, and no promotion code stacks on it.
+  const clubCode = quote.couponCode;
+
   const fields: Record<string, string | number> = {
     mode: "payment",
     locale: "it",
@@ -167,7 +170,7 @@ export function buildCheckoutSessionFields(
     // recovery emails need that consent. Manual promotion codes are fine, except on a cart with
     // a partner's consignment piece: the partner is owed his price whatever the buyer paid, so a
     // code there would come entirely out of the shop's few euros of commission.
-    "allow_promotion_codes": quote.lines.some((line) => CONSIGNMENT_SLUGS.has(line.slug)) ? "false" : "true",
+    "allow_promotion_codes": clubCode || quote.lines.some((line) => CONSIGNMENT_SLUGS.has(line.slug)) ? "false" : "true",
     "metadata[order_ref]": reference,
     "metadata[lines]": truncate(quote.lines.map((line) => `${line.slug} x${line.quantity}`).join(", "), METADATA_LIMIT),
     "metadata[shipping_method]": method.code,
@@ -218,10 +221,22 @@ export function buildCheckoutSessionFields(
     fields["cancel_url"] = `${origin}/carrello`;
   }
 
+  if (clubCode) fields["metadata[club]"] = clubCode;
+
   quote.lines.forEach((line, index) => {
     const priceId = priceIds.get(line.slug);
     if (!priceId) throw new Error(`Missing Stripe price for ${line.slug}`);
-    fields[`line_items[${index}][price]`] = priceId;
+    const clubPrice = clubCode ? line.clubUnitPrice : undefined;
+    if (clubPrice) {
+      // The catalogue's Stripe product at the club's amount: the webhook still reads the slug from
+      // the product id, and the price list in Stripe stays the one the shop shows everyone.
+      fields[`line_items[${index}][price_data][currency]`] = clubPrice.currency.toLowerCase();
+      fields[`line_items[${index}][price_data][product]`] = stripeProductId(line.slug);
+      fields[`line_items[${index}][price_data][unit_amount]`] = clubPrice.amount;
+      fields[`line_items[${index}][price_data][tax_behavior]`] = "inclusive";
+    } else {
+      fields[`line_items[${index}][price]`] = priceId;
+    }
     fields[`line_items[${index}][quantity]`] = line.quantity;
   });
 
@@ -233,11 +248,14 @@ export function buildCheckoutSessionFields(
   });
   if (preorders.length > 0) {
     fields["metadata[preorder]"] = truncate(preorders.map(({ line, units }) => `${line.slug} x${units}`).join(", "), METADATA_LIMIT);
-    fields["custom_text[submit][message]"] = truncate(
-      `In pre-ordine: ${preorders.map(({ line, units }) => `${units} × ${line.name}`).join(", ")}. ${preorderDelivery(preorders.some(({ line }) => line.releasePreorder))}.`,
-      CUSTOM_TEXT_LIMIT,
-    );
   }
+  const submitNotes = [
+    ...(clubCode ? [`Prezzi club applicati (${clubCode}).`] : []),
+    ...(preorders.length > 0
+      ? [`In pre-ordine: ${preorders.map(({ line, units }) => `${units} × ${line.name}`).join(", ")}. ${preorderDelivery(preorders.some(({ line }) => line.releasePreorder))}.`]
+      : []),
+  ];
+  if (submitNotes.length > 0) fields["custom_text[submit][message]"] = truncate(submitNotes.join(" "), CUSTOM_TEXT_LIMIT);
 
   return fields;
 }

@@ -139,6 +139,7 @@ export const expressCheckoutSchema = z.object({
   lines: placeOrderSchema.shape.lines,
   /** Fresh UUID per attempt: prevents double-redirects on accidental double-taps. */
   idempotencyKey: placeOrderSchema.shape.idempotencyKey,
+  couponCode: placeOrderSchema.shape.couponCode,
   attribution: visitSourceSchema,
 });
 
