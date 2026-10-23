@@ -13,6 +13,7 @@ export function CartIndicator({ className }: { className?: string }) {
   // would be a mismatch.
   const visible = hydrated && count > 0;
 
+  // Empty, it is a quiet outline; with something inside it turns into the lime slash with the count.
   return (
     <Link
       href="/carrello"
@@ -20,21 +21,26 @@ export function CartIndicator({ className }: { className?: string }) {
       className={cn("group relative inline-flex", className)}
       aria-label={visible ? `Carrello, ${count} ${count === 1 ? "articolo" : "articoli"}` : "Carrello, vuoto"}
     >
-      <span className="gd-chamfer inline-flex size-11 items-center justify-center bg-white/[0.07] text-graphite transition-colors duration-200 group-hover:bg-lime group-hover:text-void">
-        <ShoppingBag className="size-5" strokeWidth={1.8} aria-hidden="true" />
+      <span
+        className={cn(
+          "gd-chamfer inline-flex h-11 min-w-12 items-center justify-center gap-1.5 px-3.5 transition-colors duration-200",
+          visible ? "bg-lime text-void group-hover:bg-[#e2ff7a]" : "bg-surface-2 text-graphite group-hover:bg-lime group-hover:text-void",
+        )}
+      >
+        <ShoppingBag className="size-5" strokeWidth={2} aria-hidden="true" />
+        {visible ? (
+          <motion.span
+            key={count}
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 600, damping: 22 }}
+            data-testid="cart-count"
+            className="tabular gd-display-wide text-[0.9375rem] font-extrabold leading-none"
+          >
+            {count}
+          </motion.span>
+        ) : null}
       </span>
-      {visible ? (
-        <motion.span
-          key={count}
-          initial={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 600, damping: 22 }}
-          data-testid="cart-count"
-          className="tabular gd-mono absolute -right-2 -top-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-lime px-1.5 text-[0.6875rem] font-bold leading-none text-void shadow-[0_0_14px_rgba(198,255,0,0.6)]"
-        >
-          {count}
-        </motion.span>
-      ) : null}
     </Link>
   );
 }

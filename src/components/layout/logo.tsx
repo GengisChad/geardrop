@@ -30,7 +30,7 @@ export function Wordmark({
         sizes="40px"
         className={cn("h-7 w-auto min-[360px]:h-8 sm:h-9", spin && "animate-[gd-spin_14s_linear_infinite]")}
       />
-      <span className="gd-display-wide text-[1.05rem] font-bold leading-none text-graphite min-[360px]:text-[1.2rem] sm:text-[1.45rem] lg:text-[1.2rem] xl:text-[1.45rem]">
+      <span className="gd-wordmark whitespace-nowrap text-[1.05rem] font-bold leading-none text-graphite min-[360px]:text-[1.2rem] sm:text-[1.45rem] lg:text-[1.2rem] xl:text-[1.45rem]">
         Gear<span className="text-lime">{"//"}</span>
         <span className="text-violet-soft">Drop</span>
       </span>

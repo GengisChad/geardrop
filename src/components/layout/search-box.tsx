@@ -531,7 +531,7 @@ export function SearchBox() {
         aria-expanded={open}
         aria-label={open ? "Chiudi ricerca" : "Apri ricerca"}
         data-testid="search-toggle"
-        className="gd-chamfer inline-flex size-11 shrink-0 items-center justify-center bg-white/[0.07] text-graphite transition-colors duration-200 hover:bg-lime hover:text-void"
+        className="inline-flex size-11 shrink-0 items-center justify-center border border-white/10 text-graphite transition-colors duration-200 hover:border-lime hover:text-lime"
       >
         {open ? (
           <X className="size-5" aria-hidden="true" />

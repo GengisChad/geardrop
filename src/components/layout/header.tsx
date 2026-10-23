@@ -11,7 +11,7 @@ import { SearchBox } from "@/components/layout/search-box";
 import { cn } from "@/lib/cn";
 import type { StorefrontNavItem } from "@/lib/content/types";
 
-/** Sticky HUD bar: emblem and wordmark, uppercase navigation with a glowing lime underline. */
+/** Sticky bar: emblem and wordmark, uppercase navigation with a slanted lime underline, the stadium rail below. */
 export function Header({ navigation, mobileNavigation }: {
   readonly navigation: readonly StorefrontNavItem[];
   readonly mobileNavigation: readonly StorefrontNavItem[];
@@ -19,7 +19,7 @@ export function Header({ navigation, mobileNavigation }: {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/[0.07] bg-void/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 bg-void/90 backdrop-blur-md after:absolute after:inset-x-0 after:top-full after:h-[5px] after:bg-[repeating-linear-gradient(90deg,rgba(255,255,255,0.16)_0_5px,transparent_5px_11px)] after:content-['']">
       <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-2 px-3 sm:h-[4.5rem] sm:gap-3 sm:px-6 lg:gap-4 xl:gap-6 xl:px-10">
         <MobileMenu navigation={mobileNavigation} />
         <Logo priority className="shrink-0" />
@@ -34,12 +34,14 @@ export function Header({ navigation, mobileNavigation }: {
                     href={item.href as Route}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "gd-display relative block whitespace-nowrap px-2 py-3 text-[0.75rem] font-semibold tracking-[0.04em] transition-colors xl:px-3.5 xl:text-[0.875rem] xl:tracking-[0.06em]",
-                      "after:absolute after:inset-x-2 after:bottom-1.5 xl:after:inset-x-3.5 after:h-0.5 after:origin-left after:scale-x-0 after:bg-lime",
-                      "after:shadow-[0_0_12px_#c6ff00] after:transition-transform after:duration-300 hover:after:scale-x-100",
+                      // Narrower cut between lg and xl, where eight links and the icons share 1024px; at 1280px
+                      // the row is tight again, so the links only spread out from 2xl.
+                      "gd-display relative block whitespace-nowrap px-1.5 py-3 text-[0.75rem] font-bold tracking-[0.02em] [font-stretch:96%] transition-colors xl:px-2 xl:text-[0.8125rem] xl:tracking-[0.04em] xl:[font-stretch:112%] 2xl:px-3 2xl:tracking-[0.06em]",
+                      "after:absolute after:inset-x-1.5 after:bottom-1.5 after:h-[3px] after:origin-left after:-skew-x-[18deg] after:scale-x-0 after:bg-lime xl:after:inset-x-2 2xl:after:inset-x-3",
+                      "after:transition-transform after:duration-300 hover:after:scale-x-100",
                       item.tone === "lime" && "text-lime",
                       item.tone === "violet" && "text-violet-soft",
-                      !item.tone && "text-grey-600 hover:text-white",
+                      !item.tone && "text-grey-700 hover:text-white",
                       active && "text-white after:scale-x-100",
                     )}
                   >
@@ -62,7 +64,7 @@ export function Header({ navigation, mobileNavigation }: {
             href="/account"
             aria-label="Account"
             data-testid="account-link"
-            className="gd-chamfer hidden size-11 items-center justify-center bg-white/[0.07] text-graphite transition-colors duration-200 hover:bg-lime hover:text-void sm:inline-flex"
+            className="hidden size-11 items-center justify-center border border-white/10 text-graphite transition-colors duration-200 hover:border-lime hover:text-lime sm:inline-flex"
           >
             <User className="size-5" strokeWidth={1.8} aria-hidden="true" />
           </Link>

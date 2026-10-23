@@ -101,7 +101,7 @@ function CarouselArrow({
       disabled={disabled}
       aria-label={direction === "prev" ? "Precedente" : "Successivo"}
       className={cn(
-        "absolute top-1/2 z-10 hidden size-9 -translate-y-1/2 items-center justify-center rounded-full",
+        "absolute top-1/2 z-10 hidden size-9 -translate-y-1/2 items-center justify-center",
         "border border-white/15 bg-void/85 text-graphite",
         "transition-all duration-200 hover:border-lime hover:bg-lime hover:text-void",
         "disabled:pointer-events-none disabled:opacity-0",

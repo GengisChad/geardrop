@@ -105,9 +105,9 @@ export const PROMO_LABEL: Record<PromoTag, string> = {
   esclusiva: "Esclusiva",
 };
 
-/** Promo chip treatment on the dark theme: "Novità" wears the holographic foil. */
+/** Promo sticker colours: "Novità" wears the holographic foil, the only foil left on the site. */
 export const PROMO_CHIP: Record<PromoTag, string> = {
-  novita: "bg-[image:var(--gradient-holo)] bg-[length:300%_100%] text-void animate-[gd-holo-text_4s_linear_infinite]",
+  novita: "gd-foil",
   offerta: "bg-lime text-void",
   limited: "bg-graphite text-void",
   esclusiva: "bg-violet text-white",

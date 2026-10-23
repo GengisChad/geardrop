@@ -18,6 +18,7 @@ import { startExpressCheckout } from "@/app/(storefront)/checkout/actions";
 import { useCartQuote } from "@/lib/use-cart-quote";
 import { MAX_QUANTITY_PER_LINE, useCart } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/format";
+import { holoStyle } from "@/lib/holo";
 import { cartDelivery, preorderNote, stockLabel } from "@/lib/labels";
 import { gaItem, sendGaEvent } from "@/lib/analytics/google";
 import type { Product } from "@/lib/commerce/types";
@@ -156,7 +157,8 @@ export function CartClient({ shelfProducts }: CartClientProps) {
                   data-slug={line.slug}
                   className="gd-glass-panel flex gap-4 overflow-hidden rounded-[--radius-glass] p-4"
                 >
-                  <Link href={`/prodotto/${line.slug}`} className="shrink-0">
+                  {/* The line's packshot stands on the same tinted plate as its catalogue card. */}
+                  <Link href={`/prodotto/${line.slug}`} className="gd-product-plate shrink-0 border border-white/10" style={holoStyle({ slug: line.slug })}>
                     {line.image ? (
                       <Image
                         src={cutoutSrc(line.image.src) ?? line.image.src}
@@ -164,7 +166,7 @@ export function CartClient({ shelfProducts }: CartClientProps) {
                         width={line.image.width}
                         height={line.image.height}
                         sizes="96px"
-                        className="size-20 object-contain sm:size-24"
+                        className="size-20 object-contain p-1 sm:size-24"
                       />
                     ) : null}
                   </Link>
@@ -172,8 +174,8 @@ export function CartClient({ shelfProducts }: CartClientProps) {
                   <div className="flex min-w-0 flex-1 flex-col gap-2">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <h2 className="line-clamp-2 text-small font-bold text-graphite">
-                          <Link href={`/prodotto/${line.slug}`} className="hover:text-violet-soft">
+                        <h2 className="gd-name line-clamp-2 text-[1.0625rem] font-bold leading-tight text-graphite">
+                          <Link href={`/prodotto/${line.slug}`} className="hover:text-lime">
                             {line.name}
                           </Link>
                         </h2>
@@ -210,7 +212,7 @@ export function CartClient({ shelfProducts }: CartClientProps) {
                         onClick={() => remove(line.slug)}
                         aria-label={`Rimuovi ${line.name} dal carrello`}
                         data-testid="cart-remove"
-                        className="shrink-0 rounded-full p-2 text-grey-600 transition-colors hover:bg-soldout-bg hover:text-soldout"
+                        className="shrink-0 p-2 text-grey-600 transition-colors hover:bg-soldout-bg hover:text-soldout"
                       >
                         <Trash2 className="size-4" aria-hidden="true" />
                       </button>
@@ -228,7 +230,7 @@ export function CartClient({ shelfProducts }: CartClientProps) {
                         onChange={(next) => setQuantity(line.slug, next)}
                         label={`Quantità di ${line.name}`}
                       />
-                      <p className="tabular gd-display text-body font-bold text-graphite" data-testid="line-total">
+                      <p className="tabular gd-display-wide text-[1.25rem] font-extrabold text-graphite [font-stretch:118%]" data-testid="line-total">
                         {formatPrice(line.lineTotal)}
                       </p>
                     </div>
@@ -307,7 +309,7 @@ export function CartClient({ shelfProducts }: CartClientProps) {
       <div
         data-testid="cart-sticky-bar"
         // Sits above the mobile tab bar using the same bottom offset as sticky-buy-bar.tsx.
-        className="gd-glass-compact fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom,0px))] z-40 border-x-0 border-b-0 lg:hidden"
+        className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom,0px))] z-40 border-t border-white/10 bg-[#0f0e14] lg:hidden"
         aria-hidden={blocked ? "true" : undefined}
       >
         {showExpressButton ? (

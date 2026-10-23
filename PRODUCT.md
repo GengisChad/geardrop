@@ -22,7 +22,13 @@ GEAR//DROP (geardropshop.it) sells original Hasbro Beyblade X online, plus Takar
 
 ## Brand Personality
 
-Tech, energetic, honest. "Holo Drop": a dark arena, holographic product cards, lime and violet on near-black, Chakra Petch display italic and JetBrains Mono, the feel of a collector's drop. Energy comes from the products and the type, never from motion that slows the page. The copy is short, direct Italian and never promises what the shop cannot keep.
+Tech, energetic, honest. "X-Rail" (owner, 2026-10-23), built on the 2026-09-15 "Holo Drop" dark arena: lime and violet on near-black, Anybody in three widths (expanded italic display and prices, condensed product names, normal body) with JetBrains Mono for part codes, and a vocabulary taken from the logo and the toy:
+- slanted "//" buttons and a lime highlight slab;
+- die-cut stickers with the logo's white keyline, holographic foil on new releases only;
+- the part code split from the name, its ratchet number printed behind the packshot;
+- the stadium's toothed X-line rail for dividers and the free-shipping meter.
+
+Lime means "ships now / buy", violet means "on its way" (pre-orders). Energy comes from the products and the type, never from motion that slows the page. The copy is short, direct Italian and never promises what the shop cannot keep.
 
 ## Anti-references
 
@@ -36,7 +42,7 @@ Tech, energetic, honest. "Holo Drop": a dark arena, holographic product cards, l
 1. **Sell on the phone first.** Price, availability and the add-to-cart action must sit in reach of the thumb and be readable at a glance.
 2. **Honest by default.** Every number shown is real: stock, savings against the packs, delivery times. A promise the shop cannot keep is a bug.
 3. **The product is the hero.** The owner's own packshots carry the page; type and colour frame them, they do not compete with them.
-4. **Refine Holo Drop, don't replace it.** Keep the dark arena, holo cards and lime/violet identity; improve hierarchy, legibility and rhythm.
+4. **Keep the X-Rail vocabulary.** Dark arena, lime/violet with their meanings, the slash, the sticker, the part code and the rail; no ambient glows, gradient text, frosted glass or a kicker above every section.
 5. **Fast and calm.** No heavy animation; motion only for state and feedback.
 
 ## Accessibility & Inclusion

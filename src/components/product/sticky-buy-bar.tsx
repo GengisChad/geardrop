@@ -50,7 +50,7 @@ export function StickyBuyBar({ product }: { product: Product }) {
           transition={{ type: "spring", stiffness: 380, damping: 38 }}
           data-testid="sticky-buy-bar"
           // Sits above the mobile tab bar, which grows by the home-indicator inset.
-          className="gd-glass-compact fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom,0px))] z-40 border-x-0 border-b-0 lg:bottom-0"
+          className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom,0px))] z-40 border-t border-white/10 bg-[#0f0e14] lg:bottom-0"
         >
           <div className="mx-auto flex max-w-[1400px] items-center gap-3 px-4 py-3 sm:px-6">
             {image ? (
@@ -73,7 +73,7 @@ export function StickyBuyBar({ product }: { product: Product }) {
               </p>
             </div>
 
-            <p className="tabular gd-display shrink-0 text-body font-extrabold text-graphite">
+            <p className="tabular gd-display-wide shrink-0 text-[1.25rem] font-extrabold leading-none text-graphite [font-stretch:118%]">
               {formatPrice(product.price)}
             </p>
 

@@ -87,7 +87,7 @@ function PageButton({
       aria-label={label}
       aria-current={current ? "page" : undefined}
       className={cn(
-        "gd-display inline-flex size-9 items-center justify-center rounded-full text-small font-bold transition-colors",
+        "gd-display inline-flex size-9 items-center justify-center text-small font-bold transition-colors",
         active
           ? "bg-violet text-white"
           : "gd-glass-compact text-graphite hover:border-violet hover:text-violet-soft",

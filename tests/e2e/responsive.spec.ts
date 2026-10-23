@@ -25,14 +25,8 @@ const MATERIAL_SELECTORS = [
 
 const MATERIAL_TOKENS = [
   "--gd-material-fallback",
-  "--gd-material-background",
   "--gd-material-border",
-  "--gd-material-highlight",
-  "--gd-material-shadow",
-  "--gd-material-blur",
-  "--gd-material-saturation",
-  "--gd-material-hover-background",
-  "--gd-material-active-background",
+  "--gd-material-hover-border",
   "--gd-material-focus-ring",
 ] as const;
 
@@ -137,15 +131,16 @@ test.describe("mobile", () => {
 test.describe("desktop", () => {
   test.skip(({ isMobile }) => isMobile, "desktop-only behaviour");
 
-  test("material tiers preserve hierarchy", async ({ page }) => {
+  test("material tiers are solid surfaces with a rim", async ({ page }) => {
     await page.goto("/negozio");
 
     const styles = await page.evaluate(() => {
       const read = (selector: string) => {
         const element = document.querySelector<HTMLElement>(selector);
-        if (!element) throw new Error(`Missing glass surface: ${selector}`);
+        if (!element) throw new Error(`Missing material surface: ${selector}`);
         const style = getComputedStyle(element);
-        const alphaMatch = style.backgroundColor.match(/\/\s*([\d.]+)\s*\)|,\s*([\d.]+)\s*\)$/);
+        // Only rgba() and slash notations carry an alpha; a plain rgb() is opaque.
+        const alphaMatch = style.backgroundColor.match(/^rgba\(.*,\s*([\d.]+)\s*\)$|\/\s*([\d.]+)\s*\)$/);
         const alpha = Number(alphaMatch?.[1] ?? alphaMatch?.[2] ?? 1);
         const backdrop = [
           style.getPropertyValue("backdrop-filter"),
@@ -166,11 +161,12 @@ test.describe("desktop", () => {
       };
     });
 
-    expect(styles.display.backdrop).not.toBe("none");
-    expect(styles.panel.backdrop).not.toBe("none");
-    expect(styles.display.border).not.toBe("0px");
-    // Text-bearing panels stay nearly opaque; the display tier lets the glows through.
-    expect(styles.display.alpha).toBeLessThan(styles.panel.alpha);
+    // X-Rail (owner, 2026-10-23): no frosted glass. Every tier is an opaque carbon surface.
+    for (const tier of [styles.display, styles.panel]) {
+      expect(tier.backdrop).toBe("none");
+      expect(tier.alpha).toBe(1);
+      expect(tier.border).not.toBe("0px");
+    }
   });
 
   test("the catalogue's material tiers expose the shared material tokens", async ({ page }) => {
@@ -182,14 +178,9 @@ test.describe("desktop", () => {
           const element = document.querySelector<HTMLElement>(selector);
           if (!element) throw new Error(`Missing material surface: ${selector}`);
           const style = getComputedStyle(element);
-          const backdrop = [
-            style.getPropertyValue("backdrop-filter"),
-            style.getPropertyValue("-webkit-backdrop-filter"),
-          ].find((value) => value && value !== "none") ?? "none";
           return {
             selector,
             tokenValues: tokens.map((token) => style.getPropertyValue(token).trim()),
-            backdrop,
             border: style.borderTopWidth,
             background: style.backgroundColor,
           };
@@ -199,9 +190,8 @@ test.describe("desktop", () => {
 
     for (const material of materials) {
       expect(material.tokenValues, `${material.selector} exposes every token`).not.toContain("");
-      expect(material.backdrop, `${material.selector} enables backdrop filtering`).not.toBe("none");
       expect(material.border, `${material.selector} has a rim`).not.toBe("0px");
-      expect(material.background, `${material.selector} has a fallback`).not.toBe("rgba(0, 0, 0, 0)");
+      expect(material.background, `${material.selector} has a surface`).not.toBe("rgba(0, 0, 0, 0)");
     }
   });
 
@@ -231,20 +221,14 @@ test.describe("desktop", () => {
       const surface = page.locator(selector);
       await expect(surface, `${route} exposes ${selector}`).toHaveCount(1);
       await expect(surface).toHaveClass(new RegExp(`(?:^|\\s)${tier}(?:\\s|$)`));
-      const backdrop = await surface.evaluate((element) => {
-        const style = getComputedStyle(element);
-        return [
-          style.getPropertyValue("backdrop-filter"),
-          style.getPropertyValue("-webkit-backdrop-filter"),
-        ].find((value) => value && value !== "none") ?? "none";
-      });
-      expect(backdrop, `${route} has active backdrop filtering`).not.toBe("none");
+      const background = await surface.evaluate((element) => getComputedStyle(element).backgroundColor);
+      expect(background, `${route} paints its surface`).not.toBe("rgba(0, 0, 0, 0)");
     }
   });
 
-  test("reduced motion disables material lift and ambient animation", async ({ page }) => {
+  test("reduced motion disables material transitions and ambient animation", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.goto("/");
+    await page.goto("/chi-siamo");
     const motion = await page.locator(".gd-glass-interactive").first().evaluate((element) => {
       const style = getComputedStyle(element);
       return { transition: style.transitionDuration, animation: style.animationDuration };
@@ -258,7 +242,7 @@ test.describe("desktop", () => {
     await page.goto("/");
 
     const heroBox = await page.getByTestId("hero").boundingBox();
-    const fanBox = await page.getByTestId("hero").locator("ul").first().boundingBox();
+    const fanBox = await page.getByTestId("hero-products").boundingBox();
     expect(heroBox).not.toBeNull();
     expect(fanBox).not.toBeNull();
     expect(fanBox!.width / heroBox!.width).toBeGreaterThanOrEqual(0.42);
@@ -272,31 +256,21 @@ test.describe("desktop", () => {
   });
 
   test("storefront routes share the material vocabulary", async ({ page }) => {
-    const routes = ["/", "/negozio", "/prodotto/cobalt-dragoon-2-60c", "/carrello", "/checkout", "/account"];
+    const routes = ["/negozio", "/prodotto/cobalt-dragoon-2-60c", "/carrello", "/checkout", "/account"];
 
     for (const route of routes) {
       await page.goto(route);
       const surfaces = page.locator(".gd-glass-card, .gd-glass-panel, .gd-glass-compact");
       const count = await surfaces.count();
-      expect(count, `${route} has a shared glass surface`).toBeGreaterThan(0);
+      expect(count, `${route} has a shared material surface`).toBeGreaterThan(0);
       // Polled rather than read once: the cart and the account rebuild their panels on
-      // hydration, and `getComputedStyle` on a node detached mid-swap returns empty
-      // strings for every property — which reads exactly like a page with no backdrop
-      // filtering at all. Re-resolving until it settles asserts the same thing without
-      // depending on when the measurement happens to land.
+      // hydration, and `getComputedStyle` on a node detached mid-swap returns empty strings.
       await expect
         .poll(
-          async () =>
-            surfaces.first().evaluate((element) => {
-              const style = getComputedStyle(element);
-              return [
-                style.getPropertyValue("backdrop-filter"),
-                style.getPropertyValue("-webkit-backdrop-filter"),
-              ].find((value) => value && value !== "none") ?? "none";
-            }),
-          { message: `${route} has active backdrop filtering` },
+          async () => surfaces.first().evaluate((element) => getComputedStyle(element).backgroundColor),
+          { message: `${route} paints a solid surface` },
         )
-        .not.toBe("none");
+        .toMatch(/^rgb\(/);
     }
   });
 
