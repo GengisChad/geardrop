@@ -12,7 +12,8 @@ import { cn } from "@/lib/cn";
 export function FreeShippingMeter({ totals, threshold }: { totals: CartTotals; threshold: number | null }) {
   if (!threshold) return null;
 
-  const progress = Math.min(100, (totals.subtotal.amount / threshold) * 100);
+  // Measured on what the buyer pays, as freeShippingRemaining is: a club discount counts.
+  const progress = Math.min(100, ((totals.subtotal.amount - totals.discount.amount) / threshold) * 100);
   const reached = totals.freeShippingRemaining === 0 && totals.subtotal.amount > 0;
 
   // The meter is the stadium's toothed rail: each tooth that lights up is a step closer.
