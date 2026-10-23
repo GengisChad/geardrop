@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type * as InpostModule from "@/lib/shipping/inpost";
 
 const createLockerShipment = vi.fn();
 const sendEmail = vi.fn(async () => ({ ok: true as const, id: "email-1" }));
@@ -9,7 +10,7 @@ vi.mock("@/lib/auth/guards", () => ({ requireUser: vi.fn(async () => ({ id: "own
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: async () => client }));
 vi.mock("@/lib/email/resend", () => ({ sendEmail, SHOP_EMAIL: "infogeardrop@gmail.com" }));
 vi.mock("@/lib/shipping/inpost", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/shipping/inpost")>();
+  const actual = await importOriginal<typeof InpostModule>();
   return { ...actual, createInpostClient: () => ({ createLockerShipment }) };
 });
 
