@@ -9,6 +9,7 @@
 import { BUNDLE, BUNDLES, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS, brandOf, fitsLocker, shippingMethodByCode, shippingPlanFor, toShippingOption } from "@/data/catalog";
 import { STANDARD_DELIVERY } from "@/lib/labels";
 import { piecesOf, withBundles } from "./bundles";
+import { CLUB_CODE_UNKNOWN, CLUB_MIN_ORDER_CENTS, clubMinimumMessage, clubUnitPrice, findClub } from "./club-pricing";
 import { oneCardPerFamily } from "./variants";
 import type {
   BladeType,
@@ -265,11 +266,34 @@ export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CA
         });
       }
 
-      const lines = separatePreorders(quoteLines);
+      const separated = separatePreorders(quoteLines);
+      const subtotal = separated.filter((line) => line.issue === null).reduce((sum, line) => sum + line.lineTotal.amount, 0);
+
+      // A club code prices the tiered lines at the club's price, from a minimum cart at full price.
+      const club = findClub(request.couponCode);
+      const clubShortfall = club ? Math.max(0, CLUB_MIN_ORDER_CENTS - subtotal) : 0;
+      const clubApplies = club !== null && clubShortfall === 0;
+      const couponError = !request.couponCode
+        ? null
+        : !club
+          ? CLUB_CODE_UNKNOWN
+          : clubApplies
+            ? null
+            : clubMinimumMessage(clubShortfall);
+      const lines = clubApplies
+        ? separated.map((line) => {
+            const clubPrice = clubUnitPrice(line.slug, line.unitPrice);
+            return clubPrice.amount < line.unitPrice.amount ? { ...line, clubUnitPrice: clubPrice } : line;
+          })
+        : separated;
+
       const sellable = lines.filter((line) => line.issue === null);
-      const subtotal = sellable.reduce((sum, line) => sum + line.lineTotal.amount, 0);
+      const discount = sellable.reduce(
+        (sum, line) => sum + (line.clubUnitPrice ? (line.unitPrice.amount - line.clubUnitPrice.amount) * line.quantity : 0),
+        0,
+      );
       const isEmpty = subtotal === 0;
-      const qualifies = subtotal >= FREE_SHIPPING_THRESHOLD;
+      const qualifies = subtotal - discount >= FREE_SHIPPING_THRESHOLD;
 
       // Derive the shipping plan from the brands actually in the sellable lines.
       const cartBrands = new Set<BrandSlug>(
@@ -304,18 +328,16 @@ export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CA
         shippingCode: method.code,
         totals: {
           subtotal: { amount: subtotal, currency: "EUR" },
-          discount: { amount: 0, currency: "EUR" },
+          discount: { amount: discount, currency: "EUR" },
           shipping: { amount: shipping, currency: "EUR" },
-          total: { amount: subtotal + shipping, currency: "EUR" },
-          freeShippingRemaining: isEmpty || qualifies ? 0 : FREE_SHIPPING_THRESHOLD - subtotal,
+          total: { amount: subtotal - discount + shipping, currency: "EUR" },
+          freeShippingRemaining: isEmpty || qualifies ? 0 : FREE_SHIPPING_THRESHOLD - (subtotal - discount),
         },
         freeShippingThreshold: FREE_SHIPPING_THRESHOLD,
-        // The local catalogue has no coupon engine; a code is neither honoured nor
-        // silently swallowed.
-        couponCode: null,
-        couponError: request.couponCode
-          ? "I codici sconto non sono disponibili in questa modalità."
-          : null,
+        // The only code the local catalogue knows is a club's; anything else is refused aloud,
+        // never silently swallowed.
+        couponCode: clubApplies ? club.code : null,
+        couponError,
         // There is no order backend behind the local catalogue, and pretending
         // otherwise is exactly the bug this replaces.
         orderIntake: "unconfigured",

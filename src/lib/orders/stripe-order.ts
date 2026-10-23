@@ -231,10 +231,11 @@ export function paidCheckoutFromStripe(
   // Promotion code text: loadPaidCheckout swaps the code's id for the object that carries it.
   const firstDiscount = session.total_details?.breakdown?.discounts?.[0];
   const promoCodeValue = firstDiscount?.discount?.promotion_code;
+  // A club pays its own prices instead of a promotion code: the checkout names the club's code.
   const couponCode =
-    typeof promoCodeValue === "object" && promoCodeValue !== null
-      ? (promoCodeValue.code?.trim() || null)
-      : null;
+    (typeof promoCodeValue === "object" && promoCodeValue !== null ? promoCodeValue.code?.trim() : "") ||
+    clean(session.metadata?.["club"]) ||
+    null;
 
   return {
     sessionId: session.id,

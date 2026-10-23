@@ -80,9 +80,12 @@ export async function submitOrder(input: PlaceOrderInput): Promise<PlaceOrderRes
         await provider.quoteCart({
           lines: toQuoteLines(parsed.data.lines),
           shippingCode: parsed.data.contact.shippingMethod,
+          ...(parsed.data.couponCode ? { couponCode: parsed.data.couponCode } : {}),
         }),
       );
       if (!quote.orderable) return { ok: false, message: quote.notice ?? CHECKOUT_FALLBACK_MESSAGE };
+      const refusedCode = codeRefused(parsed.data.couponCode, quote);
+      if (refusedCode) return { ok: false, message: refusedCode };
 
       // The quote may have overridden a stale submitted code: re-validate the pickup point
       // against what the quote actually selected (not what the browser sent).
@@ -111,6 +114,15 @@ export async function submitOrder(input: PlaceOrderInput): Promise<PlaceOrderRes
   } catch (error) {
     return { ok: false, message: checkoutErrorMessage(error) };
   }
+}
+
+/**
+ * A buyer who typed a code must not be charged full price without being told: when the quote
+ * did not take the code, the payment waits and the buyer reads why.
+ */
+function codeRefused(couponCode: string | undefined, quote: CartQuote): string | null {
+  if (!couponCode || quote.couponCode) return null;
+  return quote.couponError ?? "Il codice non è più valido: rimuovilo dal carrello per procedere.";
 }
 
 function toQuoteLines(lines: readonly { readonly slug: string; readonly quantity: number }[]) {
@@ -185,12 +197,17 @@ export async function startExpressCheckout(input: ExpressCheckoutInput): Promise
   try {
     const provider = await getCommerceProvider();
     // The plan's own method: the InPost Locker, or Poste to the door for a stadium box.
-    const rawQuote = await provider.quoteCart({ lines: toQuoteLines(parsed.data.lines) });
+    const rawQuote = await provider.quoteCart({
+      lines: toQuoteLines(parsed.data.lines),
+      ...(parsed.data.couponCode ? { couponCode: parsed.data.couponCode } : {}),
+    });
     const quote = openQuoteForStripe(rawQuote);
 
     if (!quote.orderable) {
       return { ok: false, message: quote.notice ?? CHECKOUT_FALLBACK_MESSAGE };
     }
+    const refusedCode = codeRefused(parsed.data.couponCode, quote);
+    if (refusedCode) return { ok: false, message: refusedCode };
 
     // Takara pieces leave from the partner's warehouse: those carts go through the normal checkout.
     const method = shippingMethodByCode(quote.shippingCode);

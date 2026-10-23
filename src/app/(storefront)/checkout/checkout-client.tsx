@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Field, TextInput, inputClass } from "@/components/ui/field";
 import { CartTotalsPanel } from "@/components/cart/cart-summary";
+import { ClubCodeField } from "@/components/cart/club-code";
 import { useCartQuote } from "@/lib/use-cart-quote";
 import { useCart } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/format";
@@ -34,6 +35,7 @@ type Placed = { readonly orderNumber: string; readonly total: Money | null };
 export function CheckoutClient() {
   const lines = useCart((s) => s.lines);
   const clear = useCart((s) => s.clear);
+  const clubCode = useCart((s) => s.clubCode);
 
   const [placed, setPlaced] = useState<Placed | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
@@ -156,6 +158,8 @@ export function CheckoutClient() {
             },
             lines: lines.map((line) => ({ slug: line.slug, quantity: line.quantity })),
             idempotencyKey,
+            // The typed code, not the quote's: one that stopped holding must stop the payment, not vanish.
+            ...(clubCode ? { couponCode: clubCode } : {}),
             ...visitSourceForCheckout(),
           });
           if (!result.ok) {
@@ -547,8 +551,9 @@ export function CheckoutClient() {
           ))}
         </ul>
 
-        <div className="border-t border-grey-200 pt-4">
+        <div className="flex flex-col gap-4 border-t border-grey-200 pt-4">
           <CartTotalsPanel totals={quote.totals} deliveryHint={cartDelivery(quote.lines.filter((line) => !line.issue))} />
+          <ClubCodeField quote={quote} />
         </div>
 
         {failure ? (

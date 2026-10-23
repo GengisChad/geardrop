@@ -33,7 +33,9 @@ export type CartQuoteOptions = {
 export function useCartQuote(options: CartQuoteOptions = {}): CartQuoteState {
   const lines = useCart((state) => state.lines);
   const hydrated = useCart((state) => state.hydrated);
-  const { shippingCode, couponCode } = options;
+  const storedClubCode = useCart((state) => state.clubCode);
+  const { shippingCode } = options;
+  const couponCode = options.couponCode ?? storedClubCode ?? undefined;
 
   const requestKey = JSON.stringify({ lines, shippingCode: shippingCode ?? null, couponCode: couponCode ?? null });
   const [snapshot, setSnapshot] = useState<{ readonly key: string; readonly quote: CartQuote | null }>({
