@@ -34,9 +34,10 @@ export function Header({ navigation, mobileNavigation }: {
                     href={item.href as Route}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      // Narrower cut between lg and xl, where eight links and the icons share 1024px.
-                      "gd-display relative block whitespace-nowrap px-1.5 py-3 text-[0.75rem] font-bold tracking-[0.02em] [font-stretch:96%] transition-colors xl:px-3 xl:text-[0.8125rem] xl:tracking-[0.06em] xl:[font-stretch:112%]",
-                      "after:absolute after:inset-x-1.5 after:bottom-1.5 after:h-[3px] after:origin-left after:-skew-x-[18deg] after:scale-x-0 after:bg-lime xl:after:inset-x-3",
+                      // Narrower cut between lg and xl, where eight links and the icons share 1024px; at 1280px
+                      // the row is tight again, so the links only spread out from 2xl.
+                      "gd-display relative block whitespace-nowrap px-1.5 py-3 text-[0.75rem] font-bold tracking-[0.02em] [font-stretch:96%] transition-colors xl:px-2 xl:text-[0.8125rem] xl:tracking-[0.04em] xl:[font-stretch:112%] 2xl:px-3 2xl:tracking-[0.06em]",
+                      "after:absolute after:inset-x-1.5 after:bottom-1.5 after:h-[3px] after:origin-left after:-skew-x-[18deg] after:scale-x-0 after:bg-lime xl:after:inset-x-2 2xl:after:inset-x-3",
                       "after:transition-transform after:duration-300 hover:after:scale-x-100",
                       item.tone === "lime" && "text-lime",
                       item.tone === "violet" && "text-violet-soft",
