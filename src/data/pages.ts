@@ -36,8 +36,8 @@ export const SUPPORT_PAGES = {
       {
         heading: "Quanto costa la spedizione?",
         body: [
-          "Al checkout scegli come ricevere il pacco: Locker InPost 4,90 €, punto di ritiro Poste Italiane 5,65 € o a casa con Poste Italiane 6,65 €.",
-          "La spedizione è gratuita, con qualsiasi corriere, per ordini da 100 €.",
+          "Spediamo con InPost: il pacco arriva nel Locker che scegli al checkout, a 4,90 €. Gli stadi non entrano nei Locker e arrivano a casa con Poste Italiane, a 6,65 €.",
+          "La spedizione è gratuita per ordini da 100 €.",
           "Spediamo solo in Italia.",
         ],
       },
@@ -87,7 +87,7 @@ export const SUPPORT_PAGES = {
         heading: "Costi",
         body: [
           "Spedizione gratuita per ordini superiori a 100€.",
-          "Sotto la soglia scegli come ricevere il pacco: Locker InPost 4,90 €, punto di ritiro Poste Italiane 5,65 € o a casa con Poste Italiane 6,65 €. Il costo è mostrato prima del pagamento.",
+          "Sotto la soglia il pacco arriva nel Locker InPost che scegli al checkout, a 4,90 €. Gli ordini con uno stadio, che non entra nei Locker, arrivano a casa con Poste Italiane, a 6,65 €. Il costo è mostrato prima del pagamento.",
         ],
       },
       {
@@ -166,7 +166,7 @@ export const SELLER = {
 export const LEGAL_PAGES = {
   termini: {
     title: "Termini e condizioni",
-    lead: "Condizioni di vendita su geardropshop.it. Ultimo aggiornamento: 15 settembre 2026.",
+    lead: "Condizioni di vendita su geardropshop.it. Ultimo aggiornamento: 23 ottobre 2026.",
     sections: [
       {
         heading: "Chi vende",
@@ -194,7 +194,7 @@ export const LEGAL_PAGES = {
         heading: "Prezzi e spedizione",
         body: [
           "I prezzi sono espressi in euro e comprendono l'IVA.",
-          "La spedizione in Italia costa 4,90 € con InPost Locker, 5,65 € con Poste Italiane punto di ritiro e 6,65 € con Poste Italiane a casa; è gratuita per ordini da 100 €. Il totale, spedizione inclusa, è mostrato prima del pagamento.",
+          "La spedizione in Italia costa 4,90 € con consegna in un Locker InPost e 6,65 € con consegna a casa con Poste Italiane per gli ordini con uno stadio, che non entra nei Locker; è gratuita per ordini da 100 €. Il totale, spedizione inclusa, è mostrato prima del pagamento.",
         ],
       },
       {

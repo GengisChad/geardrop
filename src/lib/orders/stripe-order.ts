@@ -34,6 +34,8 @@ export type ShippingSnapshot = {
   readonly methodLabel?: string;
   /** The InPost point or Locker the buyer named, for a pickup method. */
   readonly pickupPoint?: string;
+  /** InPost's id of that Locker ("IT_ITROM44128M") when it was picked from the search: the label goes there. */
+  readonly pickupPointId?: string;
 };
 
 export type PaidCheckout = {
@@ -162,11 +164,17 @@ const clean = (value: string | null | undefined) => value?.trim() ?? "";
  */
 export function shippingChoice(
   metadata: Readonly<Record<string, string>> | null | undefined,
-): Pick<ShippingSnapshot, "method" | "methodLabel" | "pickupPoint"> {
+): Pick<ShippingSnapshot, "method" | "methodLabel" | "pickupPoint" | "pickupPointId"> {
   const method = shippingMethodByCode(clean(metadata?.["shipping_method"]));
   if (!method) return {};
   const pickupPoint = method.pickupPoint ? clean(metadata?.["pickup_point"]) : "";
-  return { method: method.code, methodLabel: method.label, ...(pickupPoint ? { pickupPoint } : {}) };
+  const pickupPointId = pickupPoint && method.carrier === "inpost" ? clean(metadata?.["pickup_point_id"]) : "";
+  return {
+    method: method.code,
+    methodLabel: method.label,
+    ...(pickupPoint ? { pickupPoint } : {}),
+    ...(/^[A-Z]{2}_[A-Z0-9]{3,40}$/.test(pickupPointId) ? { pickupPointId } : {}),
+  };
 }
 
 /** "glory-valkerion-lf x1, duo-horus-enlil x2" → { "glory-valkerion-lf": 1, "duo-horus-enlil": 2 }. */

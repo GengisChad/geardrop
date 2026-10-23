@@ -153,6 +153,9 @@ export type CartTotals = {
   readonly freeShippingRemaining: number;
 };
 
+/** Why a cart cannot switch method: the partner's own route, two warehouses, or a box no Locker takes. */
+export type ShippingLockReason = "partner" | "mixed" | "bulky";
+
 /** A delivery option the backend currently sells. Never a hardcoded UI constant. */
 export type ShippingOption = {
   readonly code: string;
@@ -161,9 +164,12 @@ export type ShippingOption = {
   readonly price: Money;
   /**
    * True when the cart's composition forces exactly this method and the buyer cannot switch.
-   * A Takara-only cart locks to the partner's Poste route; a mixed cart locks to InPost point.
+   * A Takara-only cart locks to the partner's Poste route, a mixed cart to the InPost Locker and a
+   * cart with a stadium box to Poste to the door.
    */
   readonly locked?: boolean;
+  /** Set with `locked`: what forced the method, so the checkout can tell the buyer. */
+  readonly lockReasons?: readonly ShippingLockReason[];
 };
 
 export type CartQuoteLine = {

@@ -30,6 +30,12 @@ const shippingCode = z
   .max(64)
   .regex(/^[a-z0-9-]+$/, "Metodo di spedizione non valido.");
 
+/** An InPost point id as the Location API returns it: country, underscore, point name. */
+export const inpostPointId = z
+  .string()
+  .trim()
+  .regex(/^[A-Z]{2}_[A-Z0-9]{3,40}$/, "Locker non valido.");
+
 export const checkoutSchema = z.object({
   email: z.email({ message: "Inserisci un indirizzo email valido." }),
   firstName: z.string().trim().min(2, "Inserisci il nome."),
@@ -46,17 +52,19 @@ export const checkoutSchema = z.object({
   shippingMethod: shippingCode,
   /** The InPost point or Locker the parcel goes to, when the buyer picked one. */
   pickupPoint: z.string().trim().max(160, "Massimo 160 caratteri.").optional(),
+  /** InPost's own id of the Locker picked from the search ("IT_ITROM44128M"): what the label is made out to. */
+  pickupPointId: inpostPointId.optional(),
   notes: z.string().trim().max(300, "Massimo 300 caratteri.").optional(),
 });
 
-// One message for every pickup method: the InPost Locker (the default), the Poste Italiane punto di
-// ritiro and the partner's Punto Poste. The Locker is named because it is what most buyers pick.
+// One message for every pickup method: the InPost Locker (the shop's only pickup since 2026-10-23)
+// and the partner's Punto Poste. The Locker is named because it is what most buyers pick.
 export const PICKUP_POINT_MESSAGE = "Indica il Locker o il punto dove ritirare il pacco.";
 
 /**
  * Label and example for the pickup field, naming the choice the buyer picked: the InPost Locker
- * (since 2026-10-13) or a Poste Italiane punto di ritiro (since 2026-10-14, and the partner's route).
- * The InPost branch without a Locker only serves orders placed with the retired inpost-point.
+ * (since 2026-10-13) or the partner's Punto Poste. The other branches only serve orders placed with
+ * the retired inpost-point and poste-point.
  */
 export function pickupPointCopy(method: { readonly code: string; readonly carrier: string } | undefined): {
   readonly label: string;
@@ -140,6 +148,9 @@ export const expressCheckoutSchema = z.object({
   /** Fresh UUID per attempt: prevents double-redirects on accidental double-taps. */
   idempotencyKey: placeOrderSchema.shape.idempotencyKey,
   attribution: visitSourceSchema,
+  /** The Locker picked in the cart: Stripe cannot ask for one (owner, 2026-10-23). */
+  pickupPoint: checkoutSchema.shape.pickupPoint,
+  pickupPointId: checkoutSchema.shape.pickupPointId,
 });
 
 export type ExpressCheckoutInput = z.infer<typeof expressCheckoutSchema>;

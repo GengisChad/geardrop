@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
-import { BUNDLES, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_FLAT_RATE, SHIPPING_METHODS } from "@/data/catalog";
+import { BULKY_SHIPPING_METHOD, BUNDLES, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_FLAT_RATE, SHIPPING_METHODS } from "@/data/catalog";
 import { oneCardPerFamily } from "@/lib/commerce/variants";
 import { breadcrumbJsonLd, jsonLd, productDescription, productJsonLd, productTitle, siteJsonLd } from "@/lib/seo";
 
@@ -85,6 +85,13 @@ describe("search metadata", () => {
     expect(preorder, "the catalogue has no pre-order to check the wording against").toBeDefined();
     expect(productDescription(preorder!)).toContain(", pre-ordine");
   });
+
+  it("quotes each item's own cheapest delivery: the Locker, or Poste to the door for a stadium (2026-10-23)", () => {
+    expect(productDescription(glory)).toContain("spedizione da €4,90, gratis da €100");
+    const stadium = PRODUCTS.find((product) => product.slug === "drop-attack-battle-set")!;
+    expect(productDescription(stadium)).toContain("spedizione da €6,65");
+    expect(productDescription(stadium)).not.toContain("€4,90");
+  });
 });
 
 describe("structured data", () => {
@@ -103,11 +110,9 @@ describe("structured data", () => {
         priceCurrency: "EUR",
         availability: "https://schema.org/PreOrder",
         itemCondition: "https://schema.org/NewCondition",
-        // Updated 2026-10-13: three methods (Locker 4,90, punto di ritiro 5,65, Poste 6,65).
+        // Updated 2026-10-23: InPost only, so a small item ships with the Locker alone (4,90).
         shippingDetails: [
           { shippingRate: { value: (SHIPPING_FLAT_RATE / 100).toFixed(2), currency: "EUR" }, shippingDestination: { addressCountry: "IT" } },
-          { shippingRate: { value: (SHIPPING_METHODS[1]!.priceCents / 100).toFixed(2), currency: "EUR" }, shippingDestination: { addressCountry: "IT" } },
-          {},
         ],
         hasMerchantReturnPolicy: { merchantReturnDays: 30, returnFees: "https://schema.org/FreeReturn" },
       },
@@ -118,17 +123,29 @@ describe("structured data", () => {
   it("marks sold-out stock and free shipping from the threshold", () => {
     expect(productJsonLd({ ...glory, stock: "esaurito" }).offers.availability).toBe("https://schema.org/OutOfStock");
     // Every carrier the checkout offers is free from the threshold, and costs what it costs below it.
-    // Updated 2026-10-13: three methods (Locker, punto di ritiro, Poste).
+    // Updated 2026-10-23: InPost only, one method (the Locker).
     expect(
       productJsonLd({ ...glory, price: { amount: FREE_SHIPPING_THRESHOLD, currency: "EUR" } }).offers.shippingDetails.map(
         (details) => details.shippingRate.value,
       ),
-    ).toEqual(["0.00", "0.00", "0.00"]);
+    ).toEqual(["0.00"]);
     expect(productJsonLd({ ...glory, price: { amount: 2300, currency: "EUR" } }).offers.shippingDetails.map((details) => [details.shippingLabel, details.shippingRate.value])).toEqual([
       [SHIPPING_METHODS[0]!.label, (SHIPPING_METHODS[0]!.priceCents / 100).toFixed(2)],
-      [SHIPPING_METHODS[1]!.label, (SHIPPING_METHODS[1]!.priceCents / 100).toFixed(2)],
-      [SHIPPING_METHODS[2]!.label, (SHIPPING_METHODS[2]!.priceCents / 100).toFixed(2)],
     ]);
+  });
+
+  // Added 2026-10-23: no InPost Locker takes the stadium box, so its page quotes Poste to the door.
+  it("quotes Poste to the door for a stadium box and for a kit that holds one", () => {
+    const stadium = PRODUCTS.find((product) => product.slug === "drop-attack-battle-set")!;
+    const kit = BUNDLES.find((product) => product.slug === "kit-arena-sneak-completo")!;
+    for (const product of [stadium, kit]) {
+      const below = productJsonLd({ ...product, price: { amount: 2300, currency: "EUR" } }).offers.shippingDetails;
+      expect(below.map((details) => [details.shippingLabel, details.shippingRate.value])).toEqual([
+        [BULKY_SHIPPING_METHOD.label, (BULKY_SHIPPING_METHOD.priceCents / 100).toFixed(2)],
+      ]);
+      const free = productJsonLd({ ...product, price: { amount: FREE_SHIPPING_THRESHOLD, currency: "EUR" } }).offers.shippingDetails;
+      expect(free.map((details) => [details.shippingLabel, details.shippingRate.value])).toEqual([[BULKY_SHIPPING_METHOD.label, "0.00"]]);
+    }
   });
 
   it("publishes the shop, its search and breadcrumbs", () => {
@@ -169,12 +186,11 @@ describe("the shop as Google's OnlineStore", () => {
         service.fulfillmentType.replace("https://schema.org/", ""),
         service.shippingConditions.map((condition) => condition.shippingRate.value),
       ]),
-    // Updated 2026-10-13: three methods — Locker and punto di ritiro are both CollectionPoint,
-    // Poste is FulfillmentTypeDelivery. SHIPPING_METHODS[0] = Locker, [1] = punto di ritiro, [2] = Poste.
+    // Updated 2026-10-23: InPost only. The Locker (SHIPPING_METHODS[0]) is a CollectionPoint; Poste to the
+    // door is still listed, as FulfillmentTypeDelivery, because the stadium boxes ship with it.
     ).toEqual([
       [SHIPPING_METHODS[0]!.label, "FulfillmentTypeCollectionPoint", [SHIPPING_METHODS[0]!.priceCents / 100, 0]],
-      [SHIPPING_METHODS[1]!.label, "FulfillmentTypeCollectionPoint", [SHIPPING_METHODS[1]!.priceCents / 100, 0]],
-      [SHIPPING_METHODS[2]!.label, "FulfillmentTypeDelivery", [SHIPPING_METHODS[2]!.priceCents / 100, 0]],
+      [BULKY_SHIPPING_METHOD.label, "FulfillmentTypeDelivery", [BULKY_SHIPPING_METHOD.priceCents / 100, 0]],
     ]);
     // The two bands meet at the threshold without a gap or an overlap.
     for (const service of services) {

@@ -199,30 +199,69 @@ describe("quoteCart", () => {
     expect(quote.lines).toHaveLength(1);
   });
 
-  // Updated 2026-10-13: default is now InPost Locker (cheapest, first SHIPPING_METHODS entry).
-  it("offers the three carriers the shop sells, InPost Locker cheapest and default", async () => {
+  // Updated 2026-10-23: InPost only, so the one method offered for a small cart is the Locker.
+  it("offers the InPost Locker alone for a small cart, unlocked and without lock reasons", async () => {
     const quote = await provider.quoteCart({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }] });
     expect(quote.shippingOptions.map((option) => [option.code, option.price.amount])).toEqual([
-      ["inpost-locker", SHIPPING_FLAT_RATE], ["poste-point", 565], ["standard", 665],
+      ["inpost-locker", SHIPPING_FLAT_RATE],
     ]);
     expect(quote.shippingCode).toBe("inpost-locker");
     expect(quote.totals.shipping.amount).toBe(SHIPPING_FLAT_RATE);
     expect(quote.shippingOptions[0]?.hint).toBe("Consegna in 1-5 giorni lavorativi, a seconda del corriere");
+    expect(quote.shippingOptions[0]?.locked).toBeUndefined();
+    expect(quote.shippingOptions[0]?.lockReasons).toBeUndefined();
   });
 
-  it("charges the carrier the buyer picks, and none above the free-shipping threshold", async () => {
+  // Updated 2026-10-23: poste-point is retired and standard is only for a stadium box.
+  it("charges the Locker, falls back to it for any other code, and charges none above the free-shipping threshold", async () => {
     const line = [{ slug: "cobalt-dragoon-2-60c" as const, quantity: 1 }];
     const locker = await provider.quoteCart({ lines: line, shippingCode: "inpost-locker" });
     expect([locker.shippingCode, locker.totals.shipping.amount]).toEqual(["inpost-locker", SHIPPING_FLAT_RATE]);
-    const point = await provider.quoteCart({ lines: line, shippingCode: "poste-point" });
-    expect([point.shippingCode, point.totals.shipping.amount]).toEqual(["poste-point", 565]);
-    const home = await provider.quoteCart({ lines: line, shippingCode: "standard" });
-    expect([home.shippingCode, home.totals.shipping.amount, home.totals.total.amount]).toEqual(["standard", 665, DRAGOON + 665]);
-    // A code the shop does not sell falls back to InPost Locker (first/cheapest) rather than to a price nobody chose.
-    const unknown = await provider.quoteCart({ lines: line, shippingCode: "brt" });
-    expect([unknown.shippingCode, unknown.totals.shipping.amount]).toEqual(["inpost-locker", SHIPPING_FLAT_RATE]);
-    const big = await provider.quoteCart({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 6 }], shippingCode: "standard" });
+    // The retired Poste punto di ritiro, Poste to the door (stadium boxes only) and a carrier the
+    // shop never sold all fall back to the Locker rather than to a price nobody chose.
+    for (const code of ["poste-point", "standard", "brt"]) {
+      const quote = await provider.quoteCart({ lines: line, shippingCode: code });
+      expect([quote.shippingCode, quote.totals.shipping.amount, quote.totals.total.amount]).toEqual(["inpost-locker", SHIPPING_FLAT_RATE, DRAGOON + SHIPPING_FLAT_RATE]);
+      expect(quote.shippingOptions.map((option) => option.code)).toEqual(["inpost-locker"]);
+    }
+    const big = await provider.quoteCart({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 6 }], shippingCode: "inpost-locker" });
     expect(big.totals.shipping.amount).toBe(0);
+  });
+
+  // Added 2026-10-23: the stadium box does not fit a Locker, so it goes to the door with Poste.
+  it("sends a stadium box to the door with Poste, locked and flagged bulky", async () => {
+    const stadium = PRODUCTS.find((product) => product.slug === "sneak-attack-battle-set")!.price.amount;
+    const quote = await provider.quoteCart({ lines: [{ slug: "sneak-attack-battle-set", quantity: 1 }] });
+    expect(quote.shippingOptions).toEqual([
+      expect.objectContaining({ code: "standard", locked: true, lockReasons: ["bulky"], price: { amount: 665, currency: "EUR" } }),
+    ]);
+    expect([quote.shippingCode, quote.totals.shipping.amount, quote.totals.total.amount]).toEqual(["standard", 665, stadium + 665]);
+    // The buyer cannot switch to a Locker that would not take the box.
+    const forced = await provider.quoteCart({ lines: [{ slug: "sneak-attack-battle-set", quantity: 1 }], shippingCode: "inpost-locker" });
+    expect([forced.shippingCode, forced.totals.shipping.amount]).toEqual(["standard", 665]);
+  });
+
+  it("sends a whole cart to the door when only one piece in it is a stadium box", async () => {
+    const quote = await provider.quoteCart({
+      lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }, { slug: "drop-attack-battle-set", quantity: 1 }],
+    });
+    expect(quote.shippingOptions.map((option) => option.code)).toEqual(["standard"]);
+    expect(quote.shippingOptions[0]?.lockReasons).toEqual(["bulky"]);
+    expect(quote.shippingCode).toBe("standard");
+  });
+
+  it("sends a kit that holds a stadium box to the door as well", async () => {
+    const quote = await provider.quoteCart({ lines: [{ slug: "kit-arena-drop-completo", quantity: 1 }] });
+    expect(quote.shippingCode).toBe("standard");
+    expect(quote.shippingOptions[0]?.lockReasons).toEqual(["bulky"]);
+  });
+
+  it("ships a stadium box free from the threshold, still by Poste to the door", async () => {
+    const stadium = PRODUCTS.find((product) => product.slug === "sneak-attack-battle-set")!.price.amount;
+    const quantity = Math.ceil(FREE_SHIPPING_THRESHOLD / stadium);
+    const quote = await provider.quoteCart({ lines: [{ slug: "sneak-attack-battle-set", quantity }] });
+    expect(quote.shippingCode).toBe("standard");
+    expect(quote.totals.shipping.amount).toBe(0);
   });
 
   it("never claims an order can be placed against the local catalogue", async () => {

@@ -19,6 +19,7 @@ import { checkoutSchema, PICKUP_POINT_MESSAGE, pickupPointCopy, pickupPointMissi
 import { INPOST_POINT_FINDER_URL, POSTE_POINT_FINDER_URL, shippingMethodByCode } from "@/data/catalog";
 import { trackEvent } from "@/lib/funnel";
 import { gaItem, sendGaEvent } from "@/lib/analytics/google";
+import { LockerPicker } from "@/components/checkout/locker-picker";
 import { submitOrder } from "./actions";
 import type { Money } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
@@ -47,12 +48,15 @@ export function CheckoutClient() {
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors },
   } = useForm<CheckoutValues>({ mode: "onBlur" });
 
   // useWatch rather than watch(): it subscribes at this component only, and unlike
   // watch() it can be memoized, so the React Compiler doesn't bail out on this file.
   const selectedShipping = useWatch({ control, name: "shippingMethod" });
+  const pickedLocker = useWatch({ control, name: "pickupPoint" });
+  const pickedLockerId = useWatch({ control, name: "pickupPointId" });
   const { quote, hydrated } = useCartQuote({ shippingCode: selectedShipping });
 
   // Before the customer touches a radio the backend's own default is what the totals
@@ -145,6 +149,10 @@ export function CheckoutClient() {
               shippingMethod: values.shippingMethod || activeShipping,
               // A point typed for a Locker and then left for home delivery must not travel with the order.
               pickupPoint: shippingMethodByCode(values.shippingMethod || activeShipping)?.pickupPoint ? values.pickupPoint : undefined,
+              pickupPointId:
+                shippingMethodByCode(values.shippingMethod || activeShipping)?.carrier === "inpost" && values.pickupPointId
+                  ? values.pickupPointId
+                  : undefined,
             },
             lines: lines.map((line) => ({ slug: line.slug, quantity: line.quantity })),
             idempotencyKey,
@@ -380,10 +388,17 @@ export function CheckoutClient() {
                         {option.price.amount === 0 ? "Gratis" : formatPrice(option.price)}
                       </span>
                     </div>
-                    {/* Mixed cart: Poste punto di ritiro is the locked method when both brands are present (owner, 2026-10-14). */}
-                    {option.code === "poste-point" ? (
+                    {/* Why the buyer cannot switch (owner, 2026-10-23): a stadium box no Locker takes,
+                        or Takara pieces that leave from the partner's warehouse. */}
+                    {option.lockReasons?.includes("bulky") ? (
+                      <p className="text-[0.6875rem] text-grey-600 sm:col-span-2" data-testid="bulky-cart-note">
+                        Lo stadio non entra in nessun Locker InPost: l&apos;ordine arriva a casa con Poste Italiane.
+                      </p>
+                    ) : null}
+                    {option.lockReasons?.includes("mixed") ? (
                       <p className="text-[0.6875rem] text-grey-600 sm:col-span-2" data-testid="mixed-cart-note">
-                        I pezzi Takara Tomy partono dal nostro partner: arrivano in due pacchi, paghi una sola spedizione.
+                        I pezzi Takara Tomy partono dal nostro partner e arrivano a casa tua con Poste Italiane: due
+                        pacchi, paghi una sola spedizione.
                       </p>
                     ) : null}
                   </>
@@ -418,8 +433,28 @@ export function CheckoutClient() {
             )}
           </div>
 
-          {/* Pickup point: InPost Locker, InPost punto di ritiro or the partner's Punto Poste/Locker. */}
-          {shippingMethodByCode(activeShipping)?.pickupPoint ? (
+          {/* Pickup point: the InPost Locker is picked from InPost's own list, so the order carries the
+              id the label is made out to (2026-10-23); the partner's Punto Poste is still typed. */}
+          {shippingMethodByCode(activeShipping)?.carrier === "inpost" && shippingMethodByCode(activeShipping)?.pickupPoint ? (
+            <Field label="Locker InPost" htmlFor="checkout-locker-search" error={errors.pickupPoint?.message} className="mt-4">
+              <input
+                type="hidden"
+                {...register("pickupPoint", {
+                  validate: (v) => !pickupPointMissing(activeShipping, v) || PICKUP_POINT_MESSAGE,
+                })}
+              />
+              <input type="hidden" {...register("pickupPointId")} />
+              <LockerPicker
+                idPrefix="checkout"
+                hasError={Boolean(errors.pickupPoint)}
+                value={pickedLocker ? { label: pickedLocker, id: pickedLockerId || null } : null}
+                onChange={(picked) => {
+                  setValue("pickupPointId", picked?.id ?? "");
+                  setValue("pickupPoint", picked?.label ?? "", { shouldValidate: Boolean(picked) });
+                }}
+              />
+            </Field>
+          ) : shippingMethodByCode(activeShipping)?.pickupPoint ? (
             <Field
               label={pickupPointCopy(shippingMethodByCode(activeShipping)).label}
               htmlFor="pickupPoint"

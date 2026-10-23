@@ -821,9 +821,9 @@ Gli accessori compatibili, come i porta deck, non sono prodotti da Hasbro: la lo
 
 ## Quanto costa la spedizione?
 
-Al checkout scegli come ricevere il pacco: Locker InPost 4,90 €, punto di ritiro Poste Italiane 5,65 € o a casa con Poste Italiane 6,65 €.
+Spediamo con InPost: il pacco arriva nel Locker che scegli al checkout, a 4,90 €. Gli stadi non entrano nei Locker e arrivano a casa con Poste Italiane, a 6,65 €.
 
-La spedizione è gratuita, con qualsiasi corriere, per ordini da 100 €.
+La spedizione è gratuita per ordini da 100 €.
 
 Spediamo solo in Italia.
 
@@ -862,7 +862,7 @@ Spediamo solo in Italia.
 
 Spedizione gratuita per ordini superiori a 100€.
 
-Sotto la soglia scegli come ricevere il pacco: Locker InPost 4,90 €, punto di ritiro Poste Italiane 5,65 € o a casa con Poste Italiane 6,65 €. Il costo è mostrato prima del pagamento.
+Sotto la soglia il pacco arriva nel Locker InPost che scegli al checkout, a 4,90 €. Gli ordini con uno stadio, che non entra nei Locker, arrivano a casa con Poste Italiane, a 6,65 €. Il costo è mostrato prima del pagamento.
 
 ## Tracciamento
 
