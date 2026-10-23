@@ -71,6 +71,14 @@ export const shipOrderSchema = z.object({
   code: z.string().trim().max(240),
   url: z.union([z.url({ protocol: /^https$/ }), z.literal("")]).transform((value) => value || null),
 });
+/** "Crea spedizione InPost": the Locker (when the order has none, or the owner changes it), compartment and weight. */
+export const inpostShipmentSchema = z.object({
+  orderId,
+  lockerId: z.union([z.string().trim().regex(/^[A-Z]{2}_[A-Z0-9]{3,40}$/), z.literal("")]).transform((value) => value || null),
+  lockerLabel: z.string().trim().max(160).transform((value) => value || null),
+  size: z.enum(["A", "B", "C"]),
+  weightKg: z.number().min(0.1).max(25),
+});
 export const deliverOrderSchema = z.object({
   orderId,
   note: z.string().trim().max(1000).transform((value) => value || null),
@@ -112,10 +120,23 @@ export function allowedOrderTransitions(status: OrderStatus): readonly OrderStat
 }
 
 /** The carrier the buyer picked at checkout, read from the shipping snapshot; empty for older orders. */
-export function shipmentChoice(value: unknown): { readonly method: string | null; readonly label: string | null; readonly pickupPoint: string | null } {
+export function shipmentChoice(value: unknown): {
+  readonly method: string | null;
+  readonly label: string | null;
+  readonly pickupPoint: string | null;
+  /** InPost's id of the Locker, when the buyer picked it from the search (since 2026-10-23). */
+  readonly pickupPointId: string | null;
+} {
   const record = value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
   const text = (key: string) => (typeof record[key] === "string" && record[key].trim() ? record[key].trim() : null);
-  return { method: text("method"), label: text("methodLabel"), pickupPoint: text("pickupPoint") };
+  return { method: text("method"), label: text("methodLabel"), pickupPoint: text("pickupPoint"), pickupPointId: text("pickupPointId") };
+}
+
+/** The buyer's name split the way InPost asks for it; a single word fills both halves. */
+export function recipientName(snapshotName: string | null | undefined): { readonly firstName: string; readonly lastName: string } | null {
+  const words = (snapshotName ?? "").trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return null;
+  return { firstName: words[0]!, lastName: words.length > 1 ? words.slice(1).join(" ") : words[0]! };
 }
 
 export function addressLines(value: unknown): readonly string[] {

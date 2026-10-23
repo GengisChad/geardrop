@@ -24,7 +24,7 @@ vi.mock("next/headers", () => ({ headers: async () => new Headers({ origin: orig
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: vi.fn() }));
 
 const { requestCartQuote, submitOrder, startExpressCheckout } = await import("@/app/(storefront)/checkout/actions");
-const { EXPRESS_CHECKOUT_LOCKED_MESSAGE } = await import("@/lib/payments/express-checkout");
+const { EXPRESS_CHECKOUT_LOCKED_MESSAGE, EXPRESS_LOCKER_MISSING_MESSAGE } = await import("@/lib/payments/express-checkout");
 
 const order = {
   contact: {
@@ -144,14 +144,17 @@ describe("checkout with Stripe and no order database", () => {
 
 const IDEMPOTENCY_KEY = "9f8e7d6c-5b4a-4321-8765-a1b2c3d4e5f6";
 const EXPRESS_SESSION_URL = "https://checkout.stripe.com/c/pay/cs_live_express_123";
+// The Locker the cart picked: Stripe cannot ask for one, so express carries it (owner, 2026-10-23).
+const LOCKER = { pickupPoint: "Locker Roma Termini", pickupPointId: "IT_ITROM44128M" };
 
 describe("startExpressCheckout", () => {
-  it("creates a Stripe session and returns the redirect URL for a Hasbro-only cart", async () => {
+  it("creates a Stripe session and returns the redirect URL for a Hasbro-only cart with a Locker", async () => {
     createStripeCheckoutMock.mockResolvedValue({ ok: true, url: EXPRESS_SESSION_URL });
 
     const result = await startExpressCheckout({
       lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }],
       idempotencyKey: IDEMPOTENCY_KEY,
+      ...LOCKER,
     });
 
     expect(result).toEqual({ ok: true, redirectUrl: EXPRESS_SESSION_URL });
@@ -160,8 +163,10 @@ describe("startExpressCheckout", () => {
     expect(input.express).toBe(true);
     // Stripe, not the site, collects the address: no contact in the order
     expect(input.order).not.toHaveProperty("contact");
-    // Quoted with Poste home, which is the only express-compatible method
-    expect(input.quote.shippingCode).toBe("standard");
+    // Updated 2026-10-23: quoted with the cart's own method, the InPost Locker; express no longer forces Poste home.
+    expect(input.quote.shippingCode).toBe("inpost-locker");
+    // The Locker picked in the cart, with InPost's id, goes to the session builder.
+    expect(input.order).toMatchObject(LOCKER);
   });
 
   it("passes the idempotency key through to the session builder", async () => {
@@ -170,10 +175,70 @@ describe("startExpressCheckout", () => {
     await startExpressCheckout({
       lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }],
       idempotencyKey: IDEMPOTENCY_KEY,
+      ...LOCKER,
     });
 
     const [input] = createStripeCheckoutMock.mock.calls[0]!;
     expect(input.order.idempotencyKey).toBe(IDEMPOTENCY_KEY);
+  });
+
+  it("accepts a Locker typed by hand: its name goes through, without an InPost id", async () => {
+    createStripeCheckoutMock.mockResolvedValue({ ok: true, url: EXPRESS_SESSION_URL });
+
+    const result = await startExpressCheckout({
+      lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }],
+      idempotencyKey: IDEMPOTENCY_KEY,
+      pickupPoint: "Locker Roma Termini",
+    });
+
+    expect(result).toEqual({ ok: true, redirectUrl: EXPRESS_SESSION_URL });
+    const [input] = createStripeCheckoutMock.mock.calls[0]!;
+    expect(input.order.pickupPoint).toBe("Locker Roma Termini");
+    expect(input.order.pickupPointId).toBeUndefined();
+  });
+
+  it("asks for the Locker when the cart has none, instead of paying with nowhere to send the parcel", async () => {
+    const lines = [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }];
+
+    expect(await startExpressCheckout({ lines, idempotencyKey: IDEMPOTENCY_KEY })).toEqual({ ok: false, message: EXPRESS_LOCKER_MISSING_MESSAGE });
+    // Fewer than three characters is no Locker either, blanks included.
+    expect(await startExpressCheckout({ lines, idempotencyKey: IDEMPOTENCY_KEY, pickupPoint: "  ab  " })).toEqual({ ok: false, message: EXPRESS_LOCKER_MISSING_MESSAGE });
+    expect(await startExpressCheckout({ lines, idempotencyKey: IDEMPOTENCY_KEY, pickupPoint: "   " })).toEqual({ ok: false, message: EXPRESS_LOCKER_MISSING_MESSAGE });
+    // An id with no name is not a pick either.
+    expect(await startExpressCheckout({ lines, idempotencyKey: IDEMPOTENCY_KEY, pickupPointId: LOCKER.pickupPointId })).toEqual({ ok: false, message: EXPRESS_LOCKER_MISSING_MESSAGE });
+    expect(EXPRESS_LOCKER_MISSING_MESSAGE).toBe("Scegli il Locker InPost dove ritirare il pacco, poi paga.");
+    expect(createStripeCheckoutMock).not.toHaveBeenCalled();
+  });
+
+  // Added 2026-10-23: the stadium box fits no Locker, so express sends it to the door with Poste.
+  it("sends a stadium box to the door with Poste: no Locker needed, none passed on", async () => {
+    createStripeCheckoutMock.mockResolvedValue({ ok: true, url: EXPRESS_SESSION_URL });
+
+    const result = await startExpressCheckout({
+      lines: [{ slug: "drop-attack-battle-set", quantity: 1 }],
+      idempotencyKey: IDEMPOTENCY_KEY,
+    });
+
+    expect(result).toEqual({ ok: true, redirectUrl: EXPRESS_SESSION_URL });
+    const [input] = createStripeCheckoutMock.mock.calls[0]!;
+    expect(input.quote.shippingCode).toBe("standard");
+    expect(input.order.pickupPoint).toBeUndefined();
+    expect(input.order.pickupPointId).toBeUndefined();
+  });
+
+  it("drops a Locker the cart still holds when a stadium box sends the parcel to the door", async () => {
+    createStripeCheckoutMock.mockResolvedValue({ ok: true, url: EXPRESS_SESSION_URL });
+
+    await startExpressCheckout({
+      lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }, { slug: "sneak-attack-battle-set", quantity: 1 }],
+      idempotencyKey: IDEMPOTENCY_KEY,
+      ...LOCKER,
+    });
+
+    const [input] = createStripeCheckoutMock.mock.calls[0]!;
+    expect(input.quote.shippingCode).toBe("standard");
+    expect(input.order.pickupPoint).toBeUndefined();
+    expect(input.order.pickupPointId).toBeUndefined();
   });
 
   it("refuses an unoorderable cart (mixed pre-orders, line issues, etc.)", async () => {
@@ -189,10 +254,43 @@ describe("startExpressCheckout", () => {
     expect(createStripeCheckoutMock).not.toHaveBeenCalled();
   });
 
-  it("refuses a Takara-only cart (locked to partner Poste-point, not standard)", async () => {
-    // The Takara piece triggers the partner shipping plan which has no "standard" method.
+  it("refuses a Takara-only cart (locked to the partner's Poste route)", async () => {
+    // The Takara piece triggers the partner shipping plan: his parcel leaves his warehouse, so express cannot serve it.
     const result = await startExpressCheckout({
       lines: [{ slug: "ux-00-glory-valkyrie-lf", quantity: 1 }],
+      idempotencyKey: IDEMPOTENCY_KEY,
+    });
+
+    expect(result).toEqual({ ok: false, message: EXPRESS_CHECKOUT_LOCKED_MESSAGE });
+    expect(createStripeCheckoutMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses a Takara-only cart even when it carries a Locker, with the locked message and not the Locker one", async () => {
+    const result = await startExpressCheckout({
+      lines: [{ slug: "ux-00-glory-valkyrie-lf", quantity: 1 }],
+      idempotencyKey: IDEMPOTENCY_KEY,
+      ...LOCKER,
+    });
+
+    expect(result).toEqual({ ok: false, message: EXPRESS_CHECKOUT_LOCKED_MESSAGE });
+    expect(createStripeCheckoutMock).not.toHaveBeenCalled();
+  });
+
+  // Added 2026-10-23: a mixed cart is now locked to the InPost Locker (not poste-point), but still two warehouses.
+  it("refuses a mixed Hasbro + Takara cart, which the plan locks to the Locker for the shop's parcel", async () => {
+    const result = await startExpressCheckout({
+      lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }, { slug: "ux-00-glory-valkyrie-lf", quantity: 1 }],
+      idempotencyKey: IDEMPOTENCY_KEY,
+      ...LOCKER,
+    });
+
+    expect(result).toEqual({ ok: false, message: EXPRESS_CHECKOUT_LOCKED_MESSAGE });
+    expect(createStripeCheckoutMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses a mixed cart that also holds a stadium box (bulky and mixed)", async () => {
+    const result = await startExpressCheckout({
+      lines: [{ slug: "drop-attack-battle-set", quantity: 1 }, { slug: "ux-00-glory-valkyrie-lf", quantity: 1 }],
       idempotencyKey: IDEMPOTENCY_KEY,
     });
 
@@ -207,6 +305,10 @@ describe("startExpressCheckout", () => {
     expect(
       await startExpressCheckout({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }], idempotencyKey: "not-a-uuid" }),
     ).toMatchObject({ ok: false });
+    // A Locker id that is no InPost point id never reaches the quote.
+    expect(
+      await startExpressCheckout({ lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }], idempotencyKey: IDEMPOTENCY_KEY, pickupPoint: "Locker Roma Termini", pickupPointId: "roma" }),
+    ).toEqual({ ok: false, message: "Il carrello contiene dati non validi. Ricarica la pagina." });
     expect(createStripeCheckoutMock).not.toHaveBeenCalled();
   });
 
@@ -216,6 +318,7 @@ describe("startExpressCheckout", () => {
     const result = await startExpressCheckout({
       lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }],
       idempotencyKey: IDEMPOTENCY_KEY,
+      ...LOCKER,
     });
 
     expect(result.ok).toBe(false);
@@ -228,6 +331,7 @@ describe("startExpressCheckout", () => {
     const result = await startExpressCheckout({
       lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }],
       idempotencyKey: IDEMPOTENCY_KEY,
+      ...LOCKER,
     });
 
     expect(result).toEqual({ ok: false, message: "Il pagamento non è disponibile." });

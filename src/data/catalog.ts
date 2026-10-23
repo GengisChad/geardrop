@@ -9,7 +9,7 @@
 
 import { productImages } from "@/data/assets";
 import { VARIANT_FAMILIES, type VariantColour } from "@/data/variant-families";
-import type { Brand, BrandSlug, Bundle, Category, Product, ShippingOption } from "@/lib/commerce/types";
+import type { Brand, BrandSlug, Bundle, Category, Product, ShippingLockReason, ShippingOption } from "@/lib/commerce/types";
 
 /**
  * The one consignment partner we work with: NerdPoint holds Takara Tomy stock and ships it
@@ -477,18 +477,38 @@ export type ShippingMethodDefinition = {
  *   2026-10-13 — InPost Locker 4,90 added as the cheapest and default method.
  *   2026-10-14 — InPost punto di ritiro replaced by Poste Italiane punto di ritiro at the same
  *                5,65; mixed Hasbro+Takara carts locked to poste-point instead of inpost-point.
+ *   2026-10-23 — InPost only: the shop ships every parcel through its InPost merchant account
+ *                (labels and tracking from the API). Poste punto di ritiro is retired; Poste to the
+ *                door stays only for the stadium boxes, which no Locker takes (BULKY_SHIPPING_METHOD).
  *
- * Note: the old €4,90 Poste rate "non esiste" (owner, 2026-10-07); this €4,90 is a real
- * InPost Locker rate added 2026-10-13.
  * The first entry is the cheapest and the one a cart is priced with until the buyer chooses.
- * Free shipping from FREE_SHIPPING_THRESHOLD applies to every method. BRT, DHL and others
- * will join this list.
+ * Free shipping from FREE_SHIPPING_THRESHOLD applies to every method.
  */
 export const SHIPPING_METHODS: readonly ShippingMethodDefinition[] = [
   { code: "inpost-locker", carrier: "inpost", label: "InPost · Locker", priceCents: 490, pickupPoint: true },
-  { code: "poste-point", carrier: "poste", label: "Poste Italiane · punto di ritiro", priceCents: 565, pickupPoint: true },
-  { code: "standard", carrier: "poste", label: "Poste Italiane · consegna a casa", priceCents: 665, pickupPoint: false },
 ];
+
+/**
+ * The stadium box (45×45×15 cm) does not fit the largest InPost Locker compartment (41×38×64 cm),
+ * and the shop's InPost contract has no delivery to the door. A cart holding one ships to the
+ * buyer's door with Poste Italiane instead, whatever else is in it (owner, 2026-10-23).
+ */
+export const BULKY_SHIPPING_METHOD: ShippingMethodDefinition = {
+  code: "standard",
+  carrier: "poste",
+  label: "Poste Italiane · consegna a casa",
+  priceCents: 665,
+  pickupPoint: false,
+};
+
+/** Items whose box no InPost Locker takes. A bundle holding one is too big as well (fitsLocker). */
+export const LOCKER_TOO_BIG: ReadonlySet<string> = new Set(["drop-attack-battle-set", "sneak-attack-battle-set"]);
+
+/** False for a stadium box, or a bundle that holds one. */
+export function fitsLocker(product: Pick<Product, "slug" | "bundleOf">): boolean {
+  if (LOCKER_TOO_BIG.has(product.slug)) return false;
+  return !(product.bundleOf ?? []).some((component) => LOCKER_TOO_BIG.has(component.slug));
+}
 
 /**
  * Retired shipping methods: no longer offered for new orders but still resolvable for display
@@ -499,6 +519,8 @@ export const SHIPPING_METHODS: readonly ShippingMethodDefinition[] = [
 const RETIRED_SHIPPING_METHODS: readonly ShippingMethodDefinition[] = [
   // 2026-10-07–2026-10-13: InPost punto di ritiro replaced by poste-point on 2026-10-14.
   { code: "inpost-point", carrier: "inpost", label: "InPost · punto di ritiro", priceCents: 565, pickupPoint: true },
+  // 2026-10-14–2026-10-22: Poste Italiane punto di ritiro, retired when the shop moved to InPost only.
+  { code: "poste-point", carrier: "poste", label: "Poste Italiane · punto di ritiro", priceCents: 565, pickupPoint: true },
 ];
 
 /**
@@ -523,7 +545,8 @@ export const POSTE_POINT_FINDER_URL = "https://www.poste.it/cerca/index.html";
 /**
  * The delivery method used for Takara Tomy consignment orders: our partner ships via Poste
  * Italiane to a Punto Poste or Locker. The price is €5,00 — lower than our Poste door-delivery
- * because it goes to a collection point, not straight to the buyer's address.
+ * because it goes to a collection point, not straight to the buyer's address. The partner keeps
+ * his own Poste account: the move to InPost (2026-10-23) is the shop's, not his.
  */
 export const PARTNER_SHIPPING_METHOD: ShippingMethodDefinition = {
   code: "poste-point-partner",
@@ -537,10 +560,26 @@ export const PARTNER_SHIPPING_METHOD: ShippingMethodDefinition = {
  * All methods the shop can use, including the partner route for Takara Tomy consignment and
  * retired codes kept for historical order display. Retired codes are never offered at checkout.
  */
-const ALL_METHODS: readonly ShippingMethodDefinition[] = [...SHIPPING_METHODS, PARTNER_SHIPPING_METHOD, ...RETIRED_SHIPPING_METHODS];
+const ALL_METHODS: readonly ShippingMethodDefinition[] = [
+  ...SHIPPING_METHODS,
+  BULKY_SHIPPING_METHOD,
+  PARTNER_SHIPPING_METHOD,
+  ...RETIRED_SHIPPING_METHODS,
+];
 
 export function shippingMethodByCode(code: string | null | undefined): ShippingMethodDefinition | undefined {
   return ALL_METHODS.find((method) => method.code === code);
+}
+
+/**
+ * The methods a single item ships with on its own: what its product page, the Merchant Center feed
+ * and its structured data quote.
+ */
+export function shippingMethodsFor(
+  product: Pick<Product, "slug" | "bundleOf" | "brand" | "unofficial">,
+): readonly ShippingMethodDefinition[] {
+  if (brandOf(product) === "takara-tomy" && !product.unofficial) return [PARTNER_SHIPPING_METHOD];
+  return fitsLocker(product) ? SHIPPING_METHODS : [BULKY_SHIPPING_METHOD];
 }
 
 export type ShippingPlan = {
@@ -550,41 +589,54 @@ export type ShippingPlan = {
   readonly locked: boolean;
   /** Human-readable description of the composition that triggered this plan. */
   readonly composition: "hasbro-only" | "takara-only" | "mixed" | "empty";
+  /** Set on a locked plan: what forced it, so the checkout can say so. */
+  readonly lockReasons?: readonly ShippingLockReason[];
 };
 
 /**
- * Derives the shipping plan for a cart based on the brands it contains.
+ * Derives the shipping plan for a cart based on the brands it contains and whether one of its
+ * boxes is too big for a Locker.
  *
- * - Hasbro-only (or empty): all SHIPPING_METHODS, buyer chooses.
+ * - Hasbro-only (or empty): SHIPPING_METHODS (the InPost Locker).
+ * - A stadium box in the cart: Poste to the door only, locked (owner, 2026-10-23).
  * - Takara-only: only the partner's Poste Punto-Poste route, locked.
- * - Mixed: Poste punto di ritiro only, locked (owner, 2026-10-14 — one shipment, two warehouses,
- *   two packs; was inpost-point from 2026-10-07 until 2026-10-14).
+ * - Mixed: InPost Locker for the shop's parcel, locked; the partner sends his to the buyer's
+ *   address with Poste (owner, 2026-10-23 — one charge, two warehouses, two parcels; was
+ *   poste-point from 2026-10-14 and inpost-point before).
  *
  * FREE_SHIPPING_THRESHOLD applies to every plan at the quoting layer.
  */
-export function shippingPlanFor(brands: ReadonlySet<BrandSlug>): ShippingPlan {
+export function shippingPlanFor(brands: ReadonlySet<BrandSlug>, bulky = false): ShippingPlan {
   const hasHasbro = brands.has("hasbro");
   const hasTakara = brands.has("takara-tomy");
+  const composition = hasTakara && hasHasbro ? "mixed" : hasTakara ? "takara-only" : brands.size === 0 ? "empty" : "hasbro-only";
 
-  if (hasTakara && hasHasbro) {
-    const postePoint = SHIPPING_METHODS.find((m) => m.code === "poste-point");
-    if (!postePoint) throw new Error("poste-point method missing from SHIPPING_METHODS");
-    return { methods: [postePoint], locked: true, composition: "mixed" };
+  if (composition === "takara-only") {
+    return { methods: [PARTNER_SHIPPING_METHOD], locked: true, composition, lockReasons: ["partner"] };
   }
-  if (hasTakara) {
-    return { methods: [PARTNER_SHIPPING_METHOD], locked: true, composition: "takara-only" };
+  if (bulky) {
+    return {
+      methods: [BULKY_SHIPPING_METHOD],
+      locked: true,
+      composition,
+      lockReasons: composition === "mixed" ? ["bulky", "mixed"] : ["bulky"],
+    };
   }
-  return { methods: SHIPPING_METHODS, locked: false, composition: brands.size === 0 ? "empty" : "hasbro-only" };
+  if (composition === "mixed") {
+    return { methods: SHIPPING_METHODS.slice(0, 1), locked: true, composition, lockReasons: ["mixed"] };
+  }
+  return { methods: SHIPPING_METHODS, locked: false, composition };
 }
 
 /**
  * Converts a ShippingMethodDefinition to a ShippingOption for the quote.
- * Pass `locked` to mark the option as non-switchable.
+ * Pass `locked` to mark the option as non-switchable, and `lockReasons` to say why.
  */
 export function toShippingOption(
   method: ShippingMethodDefinition,
   hint: string | null,
   locked?: boolean,
+  lockReasons?: readonly ShippingLockReason[],
 ): ShippingOption {
   return {
     code: method.code,
@@ -592,5 +644,6 @@ export function toShippingOption(
     hint,
     price: { amount: method.priceCents, currency: "EUR" },
     ...(locked ? { locked: true } : {}),
+    ...(locked && lockReasons?.length ? { lockReasons } : {}),
   };
 }
