@@ -38,7 +38,7 @@ export function BottomTabBar() {
     <nav
       aria-label="Navigazione rapida"
       data-testid="bottom-tab-bar"
-      className="gd-glass-compact fixed inset-x-0 bottom-0 z-40 border-x-0 border-b-0 pb-[env(safe-area-inset-bottom)] lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#0f0e14] pb-[env(safe-area-inset-bottom)] lg:hidden"
     >
       <ul className="grid grid-cols-5">
         {TABS.map(({ label, href, Icon }) => {
@@ -51,13 +51,15 @@ export function BottomTabBar() {
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "relative flex flex-col items-center gap-1 py-2.5 transition-colors",
-                  active ? "text-lime" : "text-grey-600",
+                  active
+                    ? "text-lime before:absolute before:inset-x-[24%] before:-top-px before:h-[3px] before:-skew-x-[18deg] before:bg-lime before:content-['']"
+                    : "text-grey-700",
                 )}
               >
                 <span className="relative">
                   <Icon className="size-5" strokeWidth={active ? 2.5 : 2} aria-hidden="true" />
                   {badge !== null ? (
-                    <span className="tabular absolute -right-2.5 -top-1.5 inline-flex min-w-4 items-center justify-center rounded-full bg-lime px-1 text-[0.5625rem] font-bold leading-4 text-void">
+                    <span className="tabular gd-chamfer absolute -right-3 -top-1.5 inline-flex min-w-5 items-center justify-center bg-lime px-1.5 text-[0.5625rem] font-extrabold leading-4 text-void">
                       {badge}
                     </span>
                   ) : null}

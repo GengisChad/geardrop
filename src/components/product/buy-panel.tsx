@@ -55,7 +55,7 @@ export function BuyPanel({ product }: { product: Product }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className={cn("flex items-center gap-3 rounded-xl border px-4 py-3", STATUS_PANEL[tone])}>
+      <div className={cn("flex items-center gap-3 rounded-[--radius-glass] border px-4 py-3", STATUS_PANEL[tone])}>
         <Icon className={cn("size-5 shrink-0", STATUS_TEXT[tone])} strokeWidth={2.25} aria-hidden="true" />
         <div>
           <p className={cn("gd-display text-small font-bold tracking-wider", STATUS_TEXT[tone])}>

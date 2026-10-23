@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Chakra_Petch, JetBrains_Mono } from "next/font/google";
+import { Anybody, Chakra_Petch, JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { brand } from "@/data/assets";
 import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_NAME } from "@/lib/seo";
@@ -7,13 +7,22 @@ import { PRODUCTION_ORIGIN } from "@/lib/site-url";
 import "@/styles/globals.css";
 
 /**
- * Holo Drop type pairing: Chakra Petch's squared, techy forms carry headlines (italic),
- * UI labels and body copy; JetBrains Mono sets HUD data such as counters and codes.
+ * X-Rail type (owner, 2026-10-23): Anybody, one variable family whose width axis gives the
+ * expanded italic display, the condensed product names and the body copy. JetBrains Mono
+ * sets part codes. Chakra Petch only draws the wordmark beside the emblem, as approved.
  */
+const anybody = Anybody({
+  subsets: ["latin"],
+  axes: ["wdth"],
+  style: ["normal", "italic"],
+  variable: "--font-anybody",
+  display: "swap",
+});
+
 const chakra = Chakra_Petch({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
+  weight: "700",
+  style: "italic",
   variable: "--font-chakra",
   display: "swap",
 });
@@ -52,7 +61,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#07060b",
+  themeColor: "#0b0a0f",
   colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
@@ -60,7 +69,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="it" className={`${chakra.variable} ${jetbrains.variable}`}>
+    <html lang="it" className={`${anybody.variable} ${chakra.variable} ${jetbrains.variable}`}>
       <body className="min-h-dvh">
         <Providers>
           <a

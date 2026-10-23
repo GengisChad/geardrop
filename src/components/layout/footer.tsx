@@ -22,7 +22,7 @@ const PROMISES = [
 
 export function Footer({ content, cookieSettings = false }: { readonly content: StorefrontChrome; readonly cookieSettings?: boolean }) {
   return (
-    <footer className="gd-page-end on-dark relative border-t border-white/[0.08] bg-void/70">
+    <footer className="gd-page-end on-dark relative bg-void before:absolute before:inset-x-0 before:top-0 before:h-[5px] before:bg-[repeating-linear-gradient(90deg,rgba(255,255,255,0.16)_0_5px,transparent_5px_11px)] before:content-['']">
       <div className="mx-auto grid max-w-[1400px] grid-cols-2 gap-x-6 gap-y-10 px-4 py-12 sm:px-6 md:grid-cols-4 lg:grid-cols-[1.4fr_repeat(4,1fr)] lg:px-10">
         <div className="col-span-2 md:col-span-4 lg:col-span-1">
           <Wordmark spin={false} />
@@ -39,7 +39,7 @@ export function Footer({ content, cookieSettings = false }: { readonly content: 
 
         {content.footerColumns.map((column) => (
           <div key={column.title}>
-            <h2 className="gd-mono text-[0.6875rem] font-normal not-italic tracking-[0.16em] text-grey-400">{column.title}</h2>
+            <h2 className="gd-display text-[0.75rem] font-bold not-italic tracking-[0.08em] text-lime">{column.title}</h2>
             <ul className="mt-4 flex flex-col gap-2.5">
               {column.links.map((link) => (
                 <li key={link.label}>

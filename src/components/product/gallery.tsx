@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -16,9 +16,13 @@ type GalleryProps = {
   slug: string;
   name: string;
   promo?: PromoTag;
+  /** The part number printed large behind the packshot ("9-60"). */
+  mark?: string;
+  /** The pack's colours (lib/holo.ts), which tint the plate. */
+  style?: CSSProperties;
 };
 
-export function Gallery({ images, slug, name, promo }: GalleryProps) {
+export function Gallery({ images, slug, name, promo, mark, style }: GalleryProps) {
   const [index, setIndex] = useState(0);
   const [zoomOpen, setZoomOpen] = useState(false);
   const active = images[index];
@@ -35,7 +39,7 @@ export function Gallery({ images, slug, name, promo }: GalleryProps) {
      * On lg with 2+ images the thumbnails switch to a vertical strip on the left of the
      * main image; on mobile they keep the horizontal row below it.
      */
-    <div className="flex flex-col gap-3 lg:sticky lg:top-[calc(4.5rem+1.5rem)] lg:self-start">
+    <div style={style} className="flex flex-col gap-3 lg:sticky lg:top-[calc(4.5rem+1.5rem)] lg:self-start">
       <div className={cn("flex flex-col gap-3", many && "lg:flex-row lg:items-start")}>
         {/* Vertical thumbnail strip — hidden on mobile, shown on lg when there are 2+ images */}
         {many ? (
@@ -48,8 +52,8 @@ export function Gallery({ images, slug, name, promo }: GalleryProps) {
                   aria-label={`Immagine ${i + 1} di ${images.length}`}
                   aria-current={i === index}
                   className={cn(
-                    "gd-glass-compact relative size-16 overflow-hidden rounded-lg border-2 transition-colors",
-                    i === index ? "border-violet" : "border-grey-200 hover:border-grey-400",
+                    "relative size-16 overflow-hidden border-2 bg-surface transition-colors",
+                    i === index ? "border-lime" : "border-white/10 hover:border-white/30",
                   )}
                 >
                   <Image src={cutoutSrc(image.src) ?? image.src} alt="" aria-hidden="true" fill sizes="64px" className="object-contain p-1.5" />
@@ -61,7 +65,15 @@ export function Gallery({ images, slug, name, promo }: GalleryProps) {
 
         <div data-testid="product-gallery" className="gd-glass-panel relative overflow-hidden rounded-[--radius-glass] lg:flex-1">
         {/* The cut-out floats in a dark art window tinted like the holographic cards. */}
-        <div className="gd-product-plate relative m-2 aspect-square overflow-hidden rounded-[calc(var(--radius-glass)-0.45rem)] sm:m-3">
+        <div className="gd-product-plate aspect-square overflow-hidden">
+          {mark ? (
+            <span
+              aria-hidden="true"
+              className="gd-watermark left-4 top-2 text-[5.5rem] [-webkit-text-stroke-width:1.6px] sm:left-6 sm:text-[9rem] sm:[-webkit-text-stroke-width:2px] xl:text-[10.5rem]"
+            >
+              {mark}
+            </span>
+          ) : null}
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={active.src}
@@ -90,14 +102,14 @@ export function Gallery({ images, slug, name, promo }: GalleryProps) {
             data-testid="product-zoom-open"
             className="group absolute inset-0 cursor-zoom-in"
           >
-            <span className="gd-glass-compact absolute bottom-3 right-3 inline-flex size-10 items-center justify-center rounded-full text-graphite transition-colors group-hover:text-violet-soft">
+            <span className="absolute bottom-3 right-3 inline-flex size-11 items-center justify-center border border-white/15 bg-void/65 text-graphite transition-colors group-hover:border-lime group-hover:text-lime">
               <ZoomIn className="size-4" aria-hidden="true" />
             </span>
           </button>
         </div>
 
         {promo ? (
-          <span className="absolute left-4 top-4">
+          <span className="pointer-events-none absolute bottom-5 left-5">
             <PromoBadge tag={promo} />
           </span>
         ) : null}
@@ -135,8 +147,8 @@ export function Gallery({ images, slug, name, promo }: GalleryProps) {
                 aria-label={`Immagine ${i + 1} di ${images.length}`}
                 aria-current={i === index}
                 className={cn(
-                  "gd-glass-compact relative size-16 overflow-hidden rounded-lg border-2 transition-colors sm:size-20",
-                  i === index ? "border-violet" : "border-grey-200 hover:border-grey-400",
+                  "relative size-16 overflow-hidden border-2 bg-surface transition-colors sm:size-20",
+                  i === index ? "border-lime" : "border-white/10 hover:border-white/30",
                 )}
               >
                 <Image src={cutoutSrc(image.src) ?? image.src} alt="" aria-hidden="true" fill sizes="80px" className="object-contain p-1.5" />
@@ -157,8 +169,8 @@ function GalleryArrow({ direction, onClick }: { direction: "prev" | "next"; onCl
       onClick={onClick}
       aria-label={direction === "prev" ? "Immagine precedente" : "Immagine successiva"}
       className={cn(
-        "absolute top-1/2 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full",
-        "gd-glass-compact text-graphite transition-colors hover:border-violet hover:text-violet-soft",
+        "absolute top-1/2 inline-flex size-11 -translate-y-1/2 items-center justify-center",
+        "border border-white/15 bg-void/65 text-graphite transition-colors hover:border-lime hover:text-lime",
         direction === "prev" ? "left-3" : "right-3",
       )}
     >

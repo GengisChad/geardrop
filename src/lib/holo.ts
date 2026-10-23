@@ -94,6 +94,33 @@ export function displayName(name: string): string {
   return name.replaceAll("-", "-⁠");
 }
 
+/**
+ * The part code from the specs ("9-60GF", "IS 7-55T"), stamped on cards beside the name.
+ * Bundles list several codes and get none.
+ */
+export function partCode(product: Pick<Product, "specs" | "bundleOf">): string | null {
+  if (product.bundleOf) return null;
+  const value = product.specs.find((spec) => spec.label === "Codice")?.value.trim();
+  return value && !value.includes("·") ? value : null;
+}
+
+/** The name without the code words it ends with: "Tread Croc TQ 5-50GN" → "Tread Croc". */
+export function bladeName(name: string, code: string | null): string {
+  if (!code) return name;
+  const codeWords = new Set(code.split(/\s+/));
+  const words = name.split(" ");
+  while (words.length > 1 && codeWords.has(words.at(-1) ?? "")) words.pop();
+  return words.join(" ");
+}
+
+/** The number printed behind a product like a jersey number: the ratchet ("9-60"), or a short bit ("LF"). */
+export function partMark(code: string | null): string | null {
+  if (!code) return null;
+  const ratchet = /\d+-\d+/.exec(code)?.[0];
+  if (ratchet) return ratchet;
+  return code.length <= 3 ? code : null;
+}
+
 /** A name without its trailing part code, for tight labels: "Glory Valkerion LF" → "Glory Valkerion". */
 export function shortName(name: string): string {
   const words = name.split(" ");

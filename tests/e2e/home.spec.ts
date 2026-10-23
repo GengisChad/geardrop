@@ -32,13 +32,13 @@ test.describe("public homepage", () => {
     // The owner removed the scrolling lime ticker (2026-09-16): it must not come back.
     await expect(page.getByTestId("ticker")).toHaveCount(0);
 
-    // One h1 in three typed lines; the closing line wears the holographic accent.
+    // One h1 in three typed lines; the closing line puts its first word on the lime slab.
     const h1 = page.getByRole("heading", { level: 1 });
     await expect(h1).toHaveCount(1);
     const lines = h1.locator("span.block");
     await expect(lines).toHaveCount(3);
     await expect(lines.last()).toHaveText("disponibili in Italia.");
-    await expect(lines.last()).toHaveClass(/gd-holo-text/);
+    await expect(lines.last().locator(".gd-slab")).toHaveText("disponibili");
 
     // The hero deals the best sellers as product cards right under the pitch, then the drop.
     const cardSlugs = (testId: string) =>

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
 import type { AppHref } from "@/lib/routes";
 import { cn } from "@/lib/cn";
 
@@ -8,21 +7,25 @@ export type Crumb = { label: string; href?: AppHref };
 export function Breadcrumbs({ items, className }: { items: readonly Crumb[]; className?: string }) {
   return (
     <nav aria-label="Percorso" className={cn("flex", className)}>
-      <ol className="flex flex-wrap items-center gap-1.5 text-small">
+      <ol className="gd-mono flex flex-wrap items-center gap-2 text-[0.75rem] uppercase tracking-[0.04em]">
         {items.map((item, index) => {
           const last = index === items.length - 1;
           return (
-            <li key={item.label} className="flex items-center gap-1.5">
+            <li key={item.label} className="flex items-center gap-2">
               {item.href && !last ? (
-                <Link href={item.href} className="text-grey-600 transition-colors hover:text-violet-soft">
+                <Link href={item.href} className="text-grey-600 transition-colors hover:text-lime">
                   {item.label}
                 </Link>
               ) : (
-                <span className={last ? "font-semibold text-violet-soft" : "text-grey-600"} aria-current={last ? "page" : undefined}>
+                <span className={last ? "text-graphite" : "text-grey-600"} aria-current={last ? "page" : undefined}>
                   {item.label}
                 </span>
               )}
-              {!last ? <ChevronRight className="size-3.5 text-grey-400" aria-hidden="true" /> : null}
+              {!last ? (
+                <span aria-hidden="true" className="text-grey-400">
+                  /
+                </span>
+              ) : null}
             </li>
           );
         })}

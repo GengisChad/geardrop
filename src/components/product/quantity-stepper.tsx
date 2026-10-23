@@ -25,7 +25,7 @@ export function QuantityStepper({
   const button = size === "sm" ? "size-9" : "size-12";
 
   return (
-    <div className={cn("gd-glass-compact inline-flex items-center rounded-full", height)}>
+    <div className={cn("inline-flex items-center border border-white/20 bg-surface", height)}>
       <button
         type="button"
         onClick={() => onChange(Math.max(min, value - 1))}
@@ -34,7 +34,7 @@ export function QuantityStepper({
         data-testid="qty-decrease"
         className={cn(
           button,
-          "inline-flex items-center justify-center rounded-full text-graphite transition-colors hover:text-violet-soft disabled:opacity-30",
+          "inline-flex items-center justify-center text-graphite transition-colors hover:text-lime disabled:opacity-30",
         )}
       >
         <Minus className="size-4" aria-hidden="true" />
@@ -63,7 +63,7 @@ export function QuantityStepper({
         data-testid="qty-increase"
         className={cn(
           button,
-          "inline-flex items-center justify-center rounded-full text-graphite transition-colors hover:text-violet-soft disabled:opacity-30",
+          "inline-flex items-center justify-center text-graphite transition-colors hover:text-lime disabled:opacity-30",
         )}
       >
         <Plus className="size-4" aria-hidden="true" />

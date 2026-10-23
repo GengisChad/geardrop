@@ -20,6 +20,7 @@ import { bundlesContaining } from "@/lib/commerce/bundles";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { familyColours, familyLead } from "@/lib/commerce/variants";
 import { formatPrice } from "@/lib/format";
+import { bladeName, displayName, holoStyle, partCode, partMark } from "@/lib/holo";
 import { BLADE_TYPE_LABEL, CATEGORY_LABEL, bundleNoun, bundlePacks } from "@/lib/labels";
 import { absoluteUrl, breadcrumbJsonLd, jsonLd, productDescription, productJsonLd, productTitle } from "@/lib/seo";
 
@@ -56,6 +57,9 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
   if (!product) notFound();
 
   const related = await commerce.getProductsBySlugs(product.relatedSlugs);
+  // The part code is stamped as a chip under the name, its ratchet printed behind the packshot.
+  const code = partCode(product);
+  const mark = partMark(code);
   const colours = await commerce.getProductsBySlugs(familyColours(product).map((colour) => colour.slug));
 
   // A bundle lists its packs; a pack offers the bundle it belongs to, priced on live stock.
@@ -111,25 +115,34 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
           images={product.images}
           slug={product.slug}
           name={product.name}
+          style={holoStyle(product)}
           {...(product.tags[0] ? { promo: product.tags[0] } : {})}
+          {...(mark ? { mark } : {})}
         />
 
         <div data-testid="buy-panel" className="gd-glass-panel self-start rounded-[--radius-glass] p-5 sm:p-7">
-          <p className="gd-display-wide flex items-center gap-1.5 text-small font-bold tracking-[0.2em] text-grey-600">
+          <p className="gd-display flex flex-wrap items-center gap-x-2 text-[0.75rem] font-bold tracking-[0.08em] text-grey-600">
+            {/* Brand first, so the buyer knows which manufacturer's line it is. */}
+            {!product.unofficial ? (
+              <span data-testid="product-brand">{BRANDS.find((b) => b.slug === brandOf(product))?.name ?? "Hasbro"}</span>
+            ) : null}
+            {!product.unofficial ? <span aria-hidden="true">·</span> : null}
             {/* A compatible accessory is not a Beyblade X product, and says so before its name. */}
-            {product.unofficial ? "Compatibile Beyblade" : "Beyblade"} <span className="text-lime-ink">X</span>
+            <span>
+              {product.unofficial ? "Compatibile Beyblade" : "Beyblade"} <span className="text-lime">X</span>
+            </span>
           </p>
 
-          {/* Brand kicker: shown near the title so the buyer knows which manufacturer's line it is. */}
-          {!product.unofficial ? (
-            <p className="mt-1 text-[0.6875rem] font-semibold uppercase tracking-widest text-grey-500" data-testid="product-brand">
-              {BRANDS.find((b) => b.slug === brandOf(product))?.name ?? "Hasbro"}
+          {/* The name, its part code read with it by screen readers and stamped as a chip below. */}
+          <h1 className="gd-display-wide mt-3 text-[2.4rem] font-extrabold leading-[0.92] text-graphite sm:text-[3.4rem]">
+            {displayName(bladeName(product.name, code))}
+            {code && bladeName(product.name, code) !== product.name ? <span className="sr-only"> {code}</span> : null}
+          </h1>
+          {code ? (
+            <p className="mt-4 flex items-center gap-3">
+              <span className="gd-code px-2.5 pb-1.5 pt-2 text-[0.9375rem]">{code}</span>
             </p>
           ) : null}
-
-          <h1 className="gd-display-wide mt-3 text-[2rem] font-extrabold leading-[1.02] text-graphite sm:text-[2.5rem]">
-            {product.name}
-          </h1>
 
           {/* Consignment items are shipped by our partner, not from our shelf.
               Styled like a status line — icon + text in a subtle tinted strip — so it
@@ -144,8 +157,8 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
           ) : null}
 
           {product.bundleOf ? (
-            <p className="mt-3 flex items-center gap-2">
-              <span className="gd-chamfer gd-display inline-flex items-center gap-1.5 bg-lime px-2.5 py-1 text-[0.6875rem] font-bold tracking-wider text-void">
+            <p className="mt-4 flex items-center gap-2">
+              <span className="gd-sticker gap-1.5 bg-lime px-2.5 py-1 text-[0.6875rem] text-void">
                 <Boxes className="size-3" aria-hidden="true" />
                 Offerta {bundleNoun(product)} · {bundlePacks(product)} pezzi
               </span>
@@ -153,11 +166,9 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
           ) : null}
 
           {product.bladeType ? (
-            <p className="mt-3 flex items-center gap-2">
-              <span className="gd-display inline-flex items-center gap-1.5 rounded-full bg-violet-tint px-2.5 py-1 text-[0.6875rem] font-bold tracking-wider text-violet-soft">
-                <Zap className="size-3" aria-hidden="true" />
-                {BLADE_TYPE_LABEL[product.bladeType]}
-              </span>
+            <p className="gd-display mt-3 flex items-center gap-2 text-[0.8125rem] font-bold tracking-[0.07em] text-graphite">
+              <span aria-hidden="true" className="gd-dot text-lime" />
+              {BLADE_TYPE_LABEL[product.bladeType]}
             </p>
           ) : null}
 
@@ -167,8 +178,12 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
             </div>
           ) : null}
 
-          <p className="mt-5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <span className="tabular gd-display text-[2rem] font-extrabold text-graphite" data-testid="pdp-price">
+          <div aria-hidden="true" className="gd-rail mt-5" />
+          <p className="mt-5 flex flex-wrap items-baseline gap-x-3 gap-y-2">
+            <span
+              className="tabular gd-display-wide text-[2.6rem] font-extrabold leading-none text-graphite [font-stretch:120%] sm:text-[3.2rem]"
+              data-testid="pdp-price"
+            >
               {formatPrice(product.price)}
             </span>
             {product.compareAtPrice ? (
@@ -176,7 +191,7 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
                 <span className="tabular text-body text-grey-400 line-through" data-testid="pdp-compare-price">
                   {formatPrice(product.compareAtPrice)}
                 </span>
-                <span className="gd-display rounded-full bg-lime/15 px-2.5 py-0.5 text-[0.6875rem] font-bold tracking-wider text-lime">
+                <span className="gd-sticker bg-lime px-2 py-1 text-[0.6875rem] text-void">
                   Risparmi {formatPrice({ amount: product.compareAtPrice.amount - product.price.amount, currency: "EUR" })}
                 </span>
               </>
@@ -207,7 +222,7 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
               <ul className="flex flex-col gap-1.5">
                 {product.boxContents.map((item) => (
                   <li key={item} className="flex items-center gap-2 text-small text-grey-600">
-                    <span className="size-1.5 shrink-0 rounded-full bg-lime" aria-hidden="true" />
+                    <span className="gd-dot size-1.5 text-lime" aria-hidden="true" />
                     {item}
                   </li>
                 ))}
@@ -223,8 +238,8 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
               const Icon = FEATURE_ICONS[index % FEATURE_ICONS.length] ?? Target;
               return (
                 <li key={feature.title} className="flex items-start gap-2.5">
-                  <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-violet-tint">
-                    <Icon className="size-3.5 text-violet-soft" strokeWidth={2} aria-hidden="true" />
+                  <span className="inline-flex size-7 shrink-0 items-center justify-center bg-surface-2">
+                    <Icon className="size-3.5 text-lime" strokeWidth={2} aria-hidden="true" />
                   </span>
                   <span>
                     <span className="gd-display block text-[0.6875rem] font-bold tracking-wider text-graphite">

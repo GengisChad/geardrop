@@ -91,17 +91,17 @@ export default async function HomePage() {
       />
       <ProductShelf
         testId="new-arrivals"
-        kicker="Nuovi arrivi"
         title="Appena arrivati"
         note={STANDARD_DELIVERY}
         products={plan.arrivals}
         tile={{ href: "/negozio?sort=novita", kicker: "Nuovi arrivi", title: "Tutte le novità" }}
       />
-      <ProductShelf testId="preorder-drop" kicker="Nuove uscite" title="Pre-ordini aperti" note={RELEASE_DELIVERY} products={plan.drop} />
-      <ProductShelf testId="ready-to-ship" kicker="Disponibili subito" title="Pronti da spedire" note={STANDARD_DELIVERY} products={plan.ready} />
-      <Arsenal products={plan.rest} title="Tutto il resto" kicker="Catalogo" />
+      {/* Violet means "on its way" across the shop: the pre-order drop sits on its own band. */}
+      <ProductShelf testId="preorder-drop" tone="violet" title="Pre-ordini aperti" note={RELEASE_DELIVERY} products={plan.drop} />
+      <ProductShelf testId="ready-to-ship" title="Pronti da spedire" note={STANDARD_DELIVERY} products={plan.ready} />
+      <Arsenal products={plan.rest} title="Tutto il resto" />
       <Reveal>
-        <TrustBandDark className="pb-20" />
+        <TrustBandDark />
       </Reveal>
     </>
   );

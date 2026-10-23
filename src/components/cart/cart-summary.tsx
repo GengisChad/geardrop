@@ -15,25 +15,31 @@ export function FreeShippingMeter({ totals, threshold }: { totals: CartTotals; t
   const progress = Math.min(100, (totals.subtotal.amount / threshold) * 100);
   const reached = totals.freeShippingRemaining === 0 && totals.subtotal.amount > 0;
 
+  // The meter is the stadium's toothed rail: each tooth that lights up is a step closer.
   return (
-    <div className="rounded-xl border border-grey-200 bg-grey-100 p-4">
+    <div className="rounded-[--radius-glass] border border-white/10 bg-grey-100 p-4">
       <p className="flex items-center gap-2 text-small">
-        <Truck className={cn("size-4 shrink-0", reached ? "text-available" : "text-violet-soft")} aria-hidden="true" />
+        <Truck className={cn("size-4 shrink-0", reached ? "text-available" : "text-lime")} aria-hidden="true" />
         {reached ? (
           <span className="font-semibold text-available">Spedizione gratuita sbloccata.</span>
         ) : (
-          <span className="text-grey-600">
-            Ti mancano{" "}
+          <span className="text-grey-700">
+            Ancora{" "}
             <span className="tabular font-bold text-graphite">
               {formatPrice({ amount: totals.freeShippingRemaining, currency: "EUR" })}
             </span>{" "}
-            alla spedizione gratuita.
+            e la spedizione è gratis.
           </span>
         )}
       </p>
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-grey-300">
+      <div className="relative mt-3 h-3.5 bg-[repeating-linear-gradient(90deg,rgba(255,255,255,0.14)_0_8px,transparent_8px_12px)]">
         <div
-          className={cn("h-full rounded-full transition-[width] duration-500 ease-[--ease-out-gear]", reached ? "bg-available-solid" : "bg-lime")}
+          className={cn(
+            "absolute inset-y-0 left-0 transition-[width] duration-500 ease-[--ease-out-gear]",
+            reached
+              ? "bg-[repeating-linear-gradient(90deg,var(--color-available-solid)_0_8px,transparent_8px_12px)]"
+              : "bg-[repeating-linear-gradient(90deg,var(--color-lime)_0_8px,transparent_8px_12px)]",
+          )}
           style={{ width: `${progress}%` }}
         />
       </div>

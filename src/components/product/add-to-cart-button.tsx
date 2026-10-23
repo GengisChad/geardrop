@@ -32,7 +32,8 @@ type AddToCartButtonProps = {
   compact?: boolean;
 };
 
-const COMPACT = "gd-chamfer inline-flex size-11 shrink-0 items-center justify-center transition-colors duration-200";
+/** The card's slanted cart button: lime icon on carbon, filled lime on hover. */
+const COMPACT = "gd-chamfer inline-flex h-11 w-12 shrink-0 items-center justify-center transition-colors duration-200";
 
 export function AddToCartButton({
   slug,
@@ -64,7 +65,7 @@ export function AddToCartButton({
           href={notice}
           data-testid="notify-me"
           aria-label={`${text}: ${name}`}
-          className={cn(COMPACT, "border border-white/15 text-grey-600 hover:border-violet-soft hover:text-violet-soft")}
+          className={cn(COMPACT, "bg-surface-2 text-grey-600 hover:bg-violet hover:text-white")}
         >
           <Bell className="size-4" aria-hidden="true" />
         </Link>
@@ -104,9 +105,20 @@ export function AddToCartButton({
         onClick={onAdd}
         data-testid="add-to-cart"
         aria-label={justAdded ? `${name} aggiunto al carrello` : `${text}: ${name}`}
-        className={cn(COMPACT, justAdded ? "bg-lime text-void" : "bg-white/[0.09] text-graphite hover:bg-lime hover:text-void")}
+        className={cn(
+          COMPACT,
+          justAdded
+            ? "bg-lime text-void"
+            : stock === "pre-ordine"
+              ? "bg-violet text-white hover:bg-[#9566ff]"
+              : "bg-surface-2 text-lime hover:bg-lime hover:text-void",
+        )}
       >
-        {justAdded ? <Check className="size-4" aria-hidden="true" /> : <ShoppingCart className="size-4" aria-hidden="true" />}
+        {justAdded ? (
+          <Check className="size-[1.125rem] animate-[gd-kick_0.4s_ease-out]" strokeWidth={2.5} aria-hidden="true" />
+        ) : (
+          <ShoppingCart className="size-[1.125rem]" strokeWidth={2.25} aria-hidden="true" />
+        )}
       </button>
     );
   }
