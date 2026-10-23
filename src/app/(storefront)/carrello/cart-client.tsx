@@ -8,6 +8,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useState } from "react";
 import { BundleNudge } from "@/components/cart/bundle-nudge";
 import { CartTotalsPanel, FreeShippingMeter } from "@/components/cart/cart-summary";
+import { ClubCodeField } from "@/components/cart/club-code";
 import { QuantityStepper } from "@/components/product/quantity-stepper";
 import { StockBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -78,6 +79,7 @@ export function CartClient({ shelfProducts }: CartClientProps) {
       // Fresh key per tap: a double-tap or a back-and-retry reuses the same attempt rather
       // than creating two sessions. The key is ephemeral: it is never stored.
       idempotencyKey: crypto.randomUUID(),
+      ...(quote.couponCode ? { couponCode: quote.couponCode } : {}),
       ...visitSourceForCheckout(),
       ...(expressNeedsLocker && expressLocker
         ? { pickupPoint: expressLocker.label, ...(expressLocker.id ? { pickupPointId: expressLocker.id } : {}) }
@@ -192,6 +194,11 @@ export function CartClient({ shelfProducts }: CartClientProps) {
                             {line.availableQuantity} pre-ordini rimasti
                           </p>
                         ) : null}
+                        {!line.issue && line.clubUnitPrice ? (
+                          <p className="mt-1 tabular text-[0.6875rem] font-bold text-available" data-testid="club-unit-price">
+                            Prezzo club {formatPrice(line.clubUnitPrice)} cad.
+                          </p>
+                        ) : null}
                         {!line.issue && preorderNote(line) ? (
                           <p className="mt-1 text-[0.6875rem] font-bold text-preorder" data-testid="preorder-split">
                             {preorderNote(line)}
@@ -237,6 +244,7 @@ export function CartClient({ shelfProducts }: CartClientProps) {
           <h2 className="gd-display text-small font-bold tracking-wider text-graphite">Riepilogo</h2>
           <FreeShippingMeter totals={quote.totals} threshold={quote.freeShippingThreshold} />
           <CartTotalsPanel totals={quote.totals} deliveryHint={cartDelivery(quote.lines.filter((line) => !line.issue))} carrierChosenLater={quote.shippingOptions.length > 1} />
+          <ClubCodeField quote={quote} />
           <Button as={Link} href="/checkout" variant="primary" size="lg" fullWidth data-testid="go-to-checkout" aria-disabled={blocked}>
             Vai al checkout
             <ArrowRight className="size-4" aria-hidden="true" />

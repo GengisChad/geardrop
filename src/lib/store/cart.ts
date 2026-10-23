@@ -25,6 +25,9 @@ type CartState = {
    */
   swapIntoBundle: (bundleSlug: string, components: readonly { readonly slug: string; readonly quantity: number }[]) => void;
   clear: () => void;
+  /** A partner club's code as typed; the server decides whether it holds (see club-pricing). */
+  clubCode: string | null;
+  setClubCode: (code: string | null) => void;
 };
 
 const clamp = (value: number) => Math.max(1, Math.min(MAX_QUANTITY_PER_LINE, Math.trunc(value)));
@@ -77,12 +80,16 @@ export const useCart = create<CartState>()(
         }),
 
       clear: () => set({ lines: [] }),
+
+      clubCode: null,
+      setClubCode: (code) => set({ clubCode: code?.trim() ? code.trim().toUpperCase() : null }),
     }),
     {
       name: "geardrop.cart",
       version: 1,
-      // `hydrated` is runtime-only: persisting it would defeat its purpose.
-      partialize: (state) => ({ lines: state.lines }),
+      // `hydrated` is runtime-only: persisting it would defeat its purpose. The club code stays
+      // after an order (clear empties the lines only): a club comes back with the same code.
+      partialize: (state) => ({ lines: state.lines, clubCode: state.clubCode }),
       onRehydrateStorage: () => (state) => state?.setHydrated(),
     },
   ),

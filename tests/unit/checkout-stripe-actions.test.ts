@@ -100,6 +100,31 @@ describe("checkout with Stripe and no order database", () => {
     expect(createStripeCheckoutMock).not.toHaveBeenCalled();
   });
 
+  it("hands a club's cart to Stripe at the club price", async () => {
+    vi.stubEnv("CLUB_CODES", "ROYALBLADE=Royal Blade");
+    const lines = [{ slug: "soar-phoenix-9-60gf", quantity: 7 }];
+
+    expect(await submitOrder({ ...order, lines, couponCode: "royalblade" })).toMatchObject({ ok: true });
+    const [input] = createStripeCheckoutMock.mock.calls[0]!;
+    expect(input.quote.couponCode).toBe("ROYALBLADE");
+    expect(input.quote.totals.discount.amount).toBeGreaterThan(0);
+  });
+
+  it("never charges full price for a code the quote refused", async () => {
+    vi.stubEnv("CLUB_CODES", "ROYALBLADE=Royal Blade");
+
+    // One Cobalt Dragoon is far below the club minimum.
+    const short = await submitOrder({ ...order, couponCode: "ROYALBLADE" });
+    expect(short).toMatchObject({ ok: false });
+    expect(short.ok ? "" : short.message).toContain("ne mancano");
+
+    expect(await submitOrder({ ...order, couponCode: "NESSUNO" })).toEqual({ ok: false, message: "Codice club non valido." });
+    expect(
+      await startExpressCheckout({ lines: order.lines, idempotencyKey: "9f8e7d6c-5b4a-4321-8765-a1b2c3d4e5f6", couponCode: "NESSUNO" }),
+    ).toEqual({ ok: false, message: "Codice club non valido." });
+    expect(createStripeCheckoutMock).not.toHaveBeenCalled();
+  });
+
   it("shows the Stripe failure message and keeps the cart", async () => {
     createStripeCheckoutMock.mockResolvedValue({ ok: false, message: "Il pagamento non è disponibile." });
 
