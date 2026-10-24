@@ -92,6 +92,12 @@ describe("listProducts", () => {
 });
 
 describe("an item sold in several colours", () => {
+  it("fits the whole shop on its first page, so no card is left alone on a second one", async () => {
+    const page = await provider.listProducts();
+    expect(page.pageCount).toBe(1);
+    expect(page.items).toHaveLength(page.total);
+  });
+
   it("is listed once, led by its first colour, and counted once", async () => {
     const page = await provider.listProducts({ category: "accessori" });
     // Two families since 2026-10-24: the single-colour and the two-colour cases, one card each.

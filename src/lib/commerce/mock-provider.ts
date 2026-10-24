@@ -32,7 +32,8 @@ import type {
 import { separatePreorders } from "./separate-preorders";
 
 // The catalogue is small: one page holds it all, so nobody lands on a page with two cards.
-const DEFAULT_PER_PAGE = 24;
+// 48 since 2026-10-24: the two-colour deck cases made 25 cards, one past the old 24.
+const DEFAULT_PER_PAGE = 48;
 
 // No module-level shipping constants: shipping options are derived per-cart from the
 // brands present (shippingPlanFor), so the plan is computed inside quoteCart.
