@@ -34,7 +34,7 @@ select results_eq(
         -- Takara Tomy on consignment from the partner, two of each (2026-10-07).
         'cx-00-evangelion-deck-set', 'ux-00-glory-valkyrie-lf', 'cx-00-tigarage-ft3-60t',
         -- The two-colour deck cases, no stock limit (2026-10-24).
-        'porta-deck-nero-blu', 'porta-deck-nero-rosso', 'porta-deck-nero-oro', 'porta-deck-giallo-nero', 'porta-deck-rosso-oro', 'porta-deck-viola-verde', 'porta-deck-viola-argento')$,
+        'porta-deck-nero-blu', 'porta-deck-nero-rosso', 'porta-deck-nero-oro', 'porta-deck-giallo-nero', 'porta-deck-rosso-oro', 'porta-deck-viola-verde', 'porta-deck-viola-argento')$$,
   array[0::bigint],
   'only the owner-reviewed catalogue carries stock'
 );
