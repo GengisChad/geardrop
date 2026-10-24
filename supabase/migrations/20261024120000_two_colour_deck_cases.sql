@@ -38,8 +38,10 @@ inserted as (
     null, 0, false, null, 0, 0, numbered.sort_order
   from numbered
   join public.categories as category on category.slug = 'accessori'
-  -- Only new rows: a replay must never reset a counter the shop has already sold from.
-  on conflict (slug) do nothing
+  -- Only new rows: a replay must never reset a counter the shop has already sold from. Not an
+  -- ON CONFLICT: the live database keys the slug per organisation (the back-office tables), so
+  -- no single-column conflict target exists in both schemas.
+  where not exists (select 1 from public.products as existing where existing.slug = numbered.slug)
   returning id, slug, stock_quantity
 ),
 images as (
