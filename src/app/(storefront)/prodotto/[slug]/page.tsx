@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BadgeCheck, Boxes, Crosshair, Target, Truck, Zap } from "lucide-react";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
@@ -15,7 +16,7 @@ import { Rating } from "@/components/ui/rating";
 import { GaEvent } from "@/components/analytics/ga-event";
 import { TrackPageView } from "@/components/funnel/track-page-view";
 import { gaItem } from "@/lib/analytics/google";
-import { BRANDS, BUNDLES, PRODUCTS, brandOf } from "@/data/catalog";
+import { BRANDS, BUNDLES, DECK_CASE_PRICE, DECK_CASE_WITH_KIT, KEPT_OFF_GOOGLE, PRODUCTS, brandOf } from "@/data/catalog";
 import { bundlesContaining } from "@/lib/commerce/bundles";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { familyColours, familyLead } from "@/lib/commerce/variants";
@@ -74,7 +75,8 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
 
   // Product structured data: price, live availability, shipping and returns make the page
   // eligible for Google's product results, and it tracks the catalogue rather than hand-written copy.
-  const productData = productJsonLd(product);
+  // The two-colour deck cases stay off Google (KEPT_OFF_GOOGLE): no product markup for them.
+  const productData = KEPT_OFF_GOOGLE.has(product.slug) ? null : productJsonLd(product);
   const breadcrumbData = breadcrumbJsonLd([
     { name: "Home", path: "/" },
     { name: "Negozio", path: "/negozio" },
@@ -93,7 +95,7 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
           items: [gaItem({ slug: product.slug, name: product.name, priceCents: product.price.amount, quantity: 1, category: CATEGORY_LABEL[product.category] })],
         }}
       />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(productData) }} />
+      {productData ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(productData) }} /> : null}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbData) }} />
 
       <div className="mx-auto max-w-[1400px] px-4 pt-6 sm:px-6">
@@ -162,6 +164,17 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
                 <Boxes className="size-3" aria-hidden="true" />
                 Offerta {bundleNoun(product)} · {bundlePacks(product)} pezzi
               </span>
+            </p>
+          ) : null}
+          {product.bundleOf ? (
+            // One deck case per kit costs €15 instead of €18 (owner, 2026-10-24); the cart prices it.
+            <p className="mt-2 text-[0.6875rem] text-grey-600" data-testid="kit-deck-offer">
+              Con questo kit un porta deck costa {formatPrice({ amount: DECK_CASE_WITH_KIT, currency: "EUR" })} invece di{" "}
+              {formatPrice({ amount: DECK_CASE_PRICE, currency: "EUR" })}:{" "}
+              <Link href="/negozio/accessori" className="font-semibold text-violet underline-offset-2 hover:underline">
+                scegli il colore
+              </Link>
+              .
             </p>
           ) : null}
 

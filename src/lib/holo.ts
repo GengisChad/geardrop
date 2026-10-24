@@ -32,6 +32,14 @@ const BY_SLUG: Readonly<Record<string, HoloPalette>> = {
   "porta-deck-rosa": palette("#ffe3ee", "#eab3c6", "#b07cff", "#ffd3db", "rgba(234, 179, 198, 0.35)"),
   "porta-deck-fucsia": palette("#ffd3db", "#eb4f78", "#7a3cff", "#ffd36b", "rgba(235, 79, 120, 0.35)"),
   "porta-deck-bianco": palette("#ffffff", "#e8ecf5", "#9d6bff", "#c6ff00", "rgba(232, 236, 245, 0.3)"),
+  // The two-colour cases shimmer in their print colour, the one that tells the black ones apart.
+  "porta-deck-nero-blu": palette("#d6e2ff", "#3a6fe0", "#1a33a3", "#3cf0ff", "rgba(58, 111, 224, 0.35)"),
+  "porta-deck-nero-rosso": palette("#ffd3db", "#e03535", "#7a3cff", "#ffd36b", "rgba(224, 53, 53, 0.35)"),
+  "porta-deck-nero-oro": palette("#fff3c4", "#e6b422", "#ff7a3d", "#c6ff00", "rgba(230, 180, 34, 0.35)"),
+  "porta-deck-giallo-nero": palette("#fff6c4", "#f2e21c", "#7a3cff", "#c6ff00", "rgba(242, 226, 28, 0.35)"),
+  "porta-deck-rosso-oro": palette("#ffe2c4", "#e5384a", "#e6b422", "#ffd36b", "rgba(229, 56, 74, 0.35)"),
+  "porta-deck-viola-verde": palette("#eadcff", "#6f5ad8", "#2fcf63", "#c6ff00", "rgba(111, 90, 216, 0.35)"),
+  "porta-deck-viola-argento": palette("#eadcff", "#6450d2", "#b9bcc4", "#e8ecf5", "rgba(100, 80, 210, 0.35)"),
 };
 
 const BY_TYPE: Readonly<Record<BladeType, HoloPalette>> = {

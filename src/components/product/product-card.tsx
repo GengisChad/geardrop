@@ -129,7 +129,7 @@ export function ProductCard({
                 key={colour.slug}
                 aria-hidden="true"
                 className="size-2.5 ring-1 ring-inset ring-black/25"
-                style={{ backgroundColor: colour.swatch }}
+                style={{ background: colour.swatch }}
               />
             ))}
             <span className="ml-1 text-[0.6875rem] text-grey-600">{colours.length} colori</span>

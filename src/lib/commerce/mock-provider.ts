@@ -6,7 +6,7 @@
  * contract for the whole UI to keep working.
  */
 
-import { BUNDLE, BUNDLES, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS, brandOf, fitsLocker, shippingMethodByCode, shippingPlanFor, toShippingOption } from "@/data/catalog";
+import { BUNDLE, BUNDLES, CATEGORIES, DECK_CASE_SLUGS, DECK_CASE_WITH_KIT, FREE_SHIPPING_THRESHOLD, PRODUCTS, brandOf, fitsLocker, shippingMethodByCode, shippingPlanFor, toShippingOption } from "@/data/catalog";
 import { STANDARD_DELIVERY } from "@/lib/labels";
 import { piecesOf, withBundles } from "./bundles";
 import { CLUB_CODE_UNKNOWN, CLUB_MIN_ORDER_CENTS, clubMinimumMessage, clubUnitPrice, findClub } from "./club-pricing";
@@ -280,18 +280,31 @@ export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CA
           : clubApplies
             ? null
             : clubMinimumMessage(clubShortfall);
-      const lines = clubApplies
+      const clubLines = clubApplies
         ? separated.map((line) => {
             const clubPrice = clubUnitPrice(line.slug, line.unitPrice);
             return clubPrice.amount < line.unitPrice.amount ? { ...line, clubUnitPrice: clubPrice } : line;
           })
         : separated;
 
+      // One deck case per kit in the cart costs DECK_CASE_WITH_KIT (owner, 2026-10-24). A case line
+      // takes that price whole or not at all: Stripe charges one price per line, and the order
+      // files one row per product, so a line is never split between two prices.
+      let kitDeckSlots = separated
+        .filter((line) => line.issue === null && bySlug.get(line.slug)?.bundleOf)
+        .reduce((sum, line) => sum + line.quantity, 0);
+      const lines = clubLines.map((line) => {
+        if (line.issue !== null || !DECK_CASE_SLUGS.has(line.slug) || line.quantity > kitDeckSlots) return line;
+        if (line.unitPrice.amount <= DECK_CASE_WITH_KIT) return line;
+        kitDeckSlots -= line.quantity;
+        return { ...line, kitUnitPrice: { amount: DECK_CASE_WITH_KIT, currency: line.unitPrice.currency } };
+      });
+
       const sellable = lines.filter((line) => line.issue === null);
-      const discount = sellable.reduce(
-        (sum, line) => sum + (line.clubUnitPrice ? (line.unitPrice.amount - line.clubUnitPrice.amount) * line.quantity : 0),
-        0,
-      );
+      const discount = sellable.reduce((sum, line) => {
+        const lower = line.clubUnitPrice ?? line.kitUnitPrice;
+        return sum + (lower ? (line.unitPrice.amount - lower.amount) * line.quantity : 0);
+      }, 0);
       const isEmpty = subtotal === 0;
       const qualifies = subtotal - discount >= FREE_SHIPPING_THRESHOLD;
 
@@ -343,6 +356,7 @@ export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CA
         orderIntake: "unconfigured",
         orderable: false,
         notice: "Gli ordini non sono ancora attivi su questo sito.",
+        ...(kitDeckSlots > 0 ? { kitDeckSlots } : {}),
       };
     },
   };

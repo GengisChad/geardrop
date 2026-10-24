@@ -236,13 +236,14 @@ export function buildCheckoutSessionFields(
   quote.lines.forEach((line, index) => {
     const priceId = priceIds.get(line.slug);
     if (!priceId) throw new Error(`Missing Stripe price for ${line.slug}`);
-    const clubPrice = clubCode ? line.clubUnitPrice : undefined;
-    if (clubPrice) {
-      // The catalogue's Stripe product at the club's amount: the webhook still reads the slug from
-      // the product id, and the price list in Stripe stays the one the shop shows everyone.
-      fields[`line_items[${index}][price_data][currency]`] = clubPrice.currency.toLowerCase();
+    // A club's price, or a deck case at the kit price: the catalogue's Stripe product at that amount.
+    const specialPrice = (clubCode ? line.clubUnitPrice : undefined) ?? line.kitUnitPrice;
+    if (specialPrice) {
+      // The webhook still reads the slug from the product id, and the price list in Stripe stays
+      // the one the shop shows everyone.
+      fields[`line_items[${index}][price_data][currency]`] = specialPrice.currency.toLowerCase();
       fields[`line_items[${index}][price_data][product]`] = stripeProductId(line.slug);
-      fields[`line_items[${index}][price_data][unit_amount]`] = clubPrice.amount;
+      fields[`line_items[${index}][price_data][unit_amount]`] = specialPrice.amount;
       fields[`line_items[${index}][price_data][tax_behavior]`] = "inclusive";
     } else {
       fields[`line_items[${index}][price]`] = priceId;
@@ -261,6 +262,7 @@ export function buildCheckoutSessionFields(
   }
   const submitNotes = [
     ...(clubCode ? [`Prezzi club applicati (${clubCode}).`] : []),
+    ...(quote.lines.some((line) => line.kitUnitPrice) ? ["Porta deck a 15 € con il kit."] : []),
     ...(preorders.length > 0
       ? [`In pre-ordine: ${preorders.map(({ line, units }) => `${units} × ${line.name}`).join(", ")}. ${preorderDelivery(preorders.some(({ line }) => line.releasePreorder))}.`]
       : []),
