@@ -190,6 +190,8 @@ export type CartQuoteLine = {
   readonly preorderQuantity?: number;
   /** Set when a club code applies and this product has a club tier: what one unit costs the club. */
   readonly clubUnitPrice?: Money;
+  /** Set on a deck case line that a kit in the cart makes cheaper: what one unit costs (€15). */
+  readonly kitUnitPrice?: Money;
   /** Italian sentence when this line cannot be ordered as requested, else null. */
   readonly issue: string | null;
 };
@@ -227,6 +229,8 @@ export type CartQuote = {
   readonly notice: string | null;
   /** Set when Stripe takes the payment for this cart; checkout then hands the buyer to Stripe. */
   readonly payment?: "stripe";
+  /** Kits in the cart still without a deck case at the kit price: how many more cases cost €15. */
+  readonly kitDeckSlots?: number;
 };
 
 export type CartQuoteRequest = {

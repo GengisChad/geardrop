@@ -56,9 +56,14 @@ const DECK_IMAGE = {
   alt: "Porta deck Beyblade X giallo a tre scomparti, disponibile in giallo, verde lime, azzurro, blu, rosa, fucsia e bianco",
 } as const;
 
+/** A two-colour deck case's own photo: white tile and cut-out share the slug. */
+function deckBicoloreImage(slug: string, colours: string) {
+  return { src: `/products/${slug}.webp`, width: 1000, height: 1000, alt: `Porta deck a tre scomparti stampato in 3D, ${colours}` };
+}
+
 /**
- * Owner-supplied packshots, normalised to square WebP tiles. Every deck case colour shows the
- * same picture, which offers them all.
+ * Owner-supplied packshots, normalised to square WebP tiles. Every single-colour deck case shows
+ * the same picture, which offers them all; each two-colour case has its own.
  */
 export const productImages = {
   "cobalt-drake-4-60f": [
@@ -321,6 +326,14 @@ export const productImages = {
   "porta-deck-rosa": [DECK_IMAGE],
   "porta-deck-fucsia": [DECK_IMAGE],
   "porta-deck-bianco": [DECK_IMAGE],
+  // The two-colour cases: one photo each (scripts/cutout_deck_bicolore.py, owner's photos 2026-10-24).
+  "porta-deck-nero-blu": [deckBicoloreImage("porta-deck-nero-blu", "nero con scritta e clip blu")],
+  "porta-deck-nero-rosso": [deckBicoloreImage("porta-deck-nero-rosso", "nero con scritta e clip rosse")],
+  "porta-deck-nero-oro": [deckBicoloreImage("porta-deck-nero-oro", "nero con scritta e clip oro")],
+  "porta-deck-giallo-nero": [deckBicoloreImage("porta-deck-giallo-nero", "giallo con scritta nera e clip grigie")],
+  "porta-deck-rosso-oro": [deckBicoloreImage("porta-deck-rosso-oro", "rosso con scritta e clip oro")],
+  "porta-deck-viola-verde": [deckBicoloreImage("porta-deck-viola-verde", "viola con scritta e clip verdi")],
+  "porta-deck-viola-argento": [deckBicoloreImage("porta-deck-viola-argento", "viola con scritta e clip argento")],
   "cx-00-evangelion-deck-set": [
     {
       src: "/products/cx-00-evangelion-deck-set.webp",

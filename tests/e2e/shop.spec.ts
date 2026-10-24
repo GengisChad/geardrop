@@ -43,11 +43,12 @@ test.describe("home", () => {
 });
 
 test.describe("deck case colours", () => {
-  test("one card in Accessori opens a page that offers every colour", async ({ page }) => {
+  test("one card per family in Accessori opens a page that offers every colour", async ({ page }) => {
     await page.goto("/negozio/accessori");
-    const card = page.getByTestId("product-card");
+    // Two families since 2026-10-24: the single-colour cases and the two-colour ones.
+    await expect(page.getByTestId("product-card")).toHaveCount(2);
+    const card = page.getByTestId("product-card").filter({ hasText: "Porta Deck" }).filter({ hasNotText: "Bicolore" });
     await expect(card).toHaveCount(1);
-    await expect(card).toContainText("Porta Deck");
     await expect(card.getByTestId("card-colours")).toContainText("7 colori");
 
     await card.getByTestId("choose-colour").click();

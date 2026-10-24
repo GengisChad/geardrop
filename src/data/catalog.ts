@@ -53,9 +53,17 @@ export function partnerLines(
 const eur = (amount: number) => ({ amount, currency: "EUR" }) as const;
 
 /**
- * One colour of the deck case: printed in 3D, not a Hasbro product, €24,50 in every colour (the
- * owner raised it from €20 the day it launched), with no stock limit (no count on a product in stock). Owner's words: it also takes the Expanded
- * and Infinity tops. The colours live in variant-families.ts.
+ * What a deck case costs on its own, in every colour and both families (owner, 2026-10-24: €18,
+ * down from €24,50; the shop pays €6 a case), and what it costs next to a kit: one case per
+ * bundle in the cart is charged DECK_CASE_WITH_KIT (see deckDealUnits in mock-provider.ts).
+ */
+export const DECK_CASE_PRICE = 1800;
+export const DECK_CASE_WITH_KIT = 1500;
+
+/**
+ * One colour of the deck case: printed in 3D, not a Hasbro product, the same price in every
+ * colour, with no stock limit (no count on a product in stock). Owner's words: it also takes the
+ * Expanded and Infinity tops. The colours live in variant-families.ts.
  */
 const DECK_CASE = VARIANT_FAMILIES["porta-deck"]!;
 
@@ -63,7 +71,7 @@ function deckCase({ slug, label, swatch }: VariantColour): Product {
   return {
     slug, name: `${DECK_CASE.name} ${label}`, tagline: "Tre trottole al sicuro. Anche Expanded e Infinity.",
     description: "Il porta deck tiene un deck completo di Beyblade X: tre scomparti, uno per trottola, ognuno con la sua chiusura a clip. Entrano anche i bey Expanded e Infinity. Stampato in 3D. Accessorio non ufficiale: non è prodotto né certificato da Hasbro.",
-    price: eur(2450), category: "accessori", stock: "disponibile", tags: [], rating: 0, reviewCount: 0,
+    price: eur(DECK_CASE_PRICE), category: "accessori", stock: "disponibile", tags: [], rating: 0, reviewCount: 0,
     images: productImages[slug],
     specs: [{ label: "Tipo", value: "Porta deck" }, { label: "Produttore", value: "Non ufficiale, non prodotto da Hasbro" }, { label: "Compatibilità", value: "Beyblade X, compresi Expanded e Infinity" }, { label: "Scomparti", value: "3, uno per trottola" }, { label: "Colore", value: label }, { label: "Materiale", value: "Plastica stampata in 3D" }, { label: "Nota", value: "Trottole non incluse" }],
     features: [{ title: "Un deck completo", description: "Tre scomparti, uno per ogni trottola" }, { title: "Anche Expanded e Infinity", description: "Compatibile con i bey Expanded e Infinity" }, { title: "Chiusura a clip", description: "Ogni scomparto si chiude con la sua clip" }, { title: "Sette colori", description: "Giallo, verde lime, azzurro, blu, rosa, fucsia e bianco" }],
@@ -73,6 +81,39 @@ function deckCase({ slug, label, swatch }: VariantColour): Product {
     unofficial: true,
   };
 }
+
+/**
+ * The two-colour deck cases (owner, 2026-10-24): the same three-slot case, printed in two colours,
+ * one photo per colour. Their lids carry a printed logo the shop holds no licence for, so they
+ * stay off Google (KEPT_OFF_GOOGLE): no Merchant Center row, no product markup.
+ */
+const DECK_CASE_BICOLORE = VARIANT_FAMILIES["porta-deck-bicolore"]!;
+
+function deckCaseBicolore({ slug, label, swatch }: VariantColour): Product {
+  return {
+    slug, name: `${DECK_CASE_BICOLORE.name} ${label}`, tagline: "Tre trottole al sicuro, in due colori.",
+    description: `Il porta deck bicolore tiene un deck completo di Beyblade X: tre scomparti, uno per trottola, ognuno con la sua chiusura a clip. Entrano anche i bey Expanded e Infinity. Questo è ${label.toLowerCase()}: corpo, scritta e clip in due colori. Stampato in 3D. Accessorio non ufficiale: non è prodotto né certificato da Hasbro o Takara Tomy.`,
+    price: eur(DECK_CASE_PRICE), category: "accessori", stock: "disponibile", tags: [], rating: 0, reviewCount: 0,
+    images: productImages[slug],
+    specs: [{ label: "Tipo", value: "Porta deck" }, { label: "Produttore", value: "Non ufficiale, non prodotto da Hasbro o Takara Tomy" }, { label: "Compatibilità", value: "Beyblade X, compresi Expanded e Infinity" }, { label: "Scomparti", value: "3, uno per trottola" }, { label: "Colore", value: label }, { label: "Materiale", value: "Plastica stampata in 3D" }, { label: "Nota", value: "Trottole non incluse" }],
+    features: [{ title: "Un deck completo", description: "Tre scomparti, uno per ogni trottola" }, { title: "Anche Expanded e Infinity", description: "Compatibile con i bey Expanded e Infinity" }, { title: "Chiusura a clip", description: "Ogni scomparto si chiude con la sua clip" }, { title: "Sette combinazioni", description: "Nero e blu, nero e rosso, nero e oro, giallo e nero, rosso e oro, viola e verde, viola e argento" }],
+    boxContents: [`1 × ${DECK_CASE_BICOLORE.name} ${label} (trottole non incluse)`],
+    relatedSlugs: ["porta-deck-giallo", "hurricane-enlil-is-7-55t", "cobalt-drake-4-60f"],
+    variant: { family: "porta-deck-bicolore", familyName: DECK_CASE_BICOLORE.name, label, swatch },
+    unofficial: true,
+  };
+}
+
+/** Every deck case colour, of both families: what a kit in the cart makes €15. */
+export const DECK_CASE_SLUGS: ReadonlySet<string> = new Set(
+  [...DECK_CASE.colours, ...DECK_CASE_BICOLORE.colours].map((colour) => colour.slug),
+);
+
+/**
+ * Sold on the site only: kept out of the Merchant Center feed and of the product page's structured
+ * data, because their print is a logo the shop holds no licence for (owner, 2026-10-24).
+ */
+export const KEPT_OFF_GOOGLE: ReadonlySet<string> = new Set(DECK_CASE_BICOLORE.colours.map((colour) => colour.slug));
 
 /**
  * Brand descriptors for the two lines we sell. Hasbro is the Western Beyblade X line
@@ -249,6 +290,7 @@ export const PRODUCTS: readonly Product[] = [
   },
   // One card in the shop, seven colours on the product page; the first colour leads the family.
   ...DECK_CASE.colours.map(deckCase),
+  ...DECK_CASE_BICOLORE.colours.map(deckCaseBicolore),
   {
     slug: "cobalt-drake-4-60f", name: "Cobalt Drake 4-60F", tagline: "Attacco BX. Lame di cristallo.",
     description: "Cobalt Drake 4-60F è una trottola d'attacco della linea BX: la blade trasparente dal profilo affilato concentra il peso sulle punte, il Ratchet 4-60 tiene l'assetto basso e il Bit F (Flat) la lancia in traiettorie rapide e aggressive lungo il bordo dello stadio. Richiede lanciatore e Beystadium Beyblade X (venduti separatamente).",
@@ -353,10 +395,10 @@ export const BUNDLES: readonly Product[] = [
   {
     slug: "kit-doppio-starter-deck", name: "Kit Doppio Starter", tagline: "Due starter e il porta deck. Pronti a sfidarsi.",
     description: "Due starter Beyblade X completi di lanciatore, Shadow Shinobi 1-80MN e Hammer Incendio 3-70H, con il porta deck giallo per portarli in giro. Shadow Shinobi devia il colpo con tre lame lisce e il Bit MN la tiene in piedi; Hammer Incendio porta il peso sul bordo e colpisce dall'alto con tre lame rialzate: due modi opposti di stare in arena. Il porta deck tiene tre trottole, una per scomparto. Richiede un Beystadium Beyblade X (venduto separatamente).",
-    price: eur(3990), compareAtPrice: eur(4648), category: "beyblade-x", stock: "disponibile", tags: ["offerta"], rating: 0, reviewCount: 0,
+    price: eur(3690), compareAtPrice: eur(3998), category: "beyblade-x", stock: "disponibile", tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["kit-doppio-starter-deck"],
     specs: [{ label: "Contenuto", value: "2 starter, 2 lanciatori, 1 porta deck" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Trottole incluse", value: "Shadow Shinobi 1-80MN, Hammer Incendio 3-70H" }, { label: "Porta deck", value: "Giallo, 3 scomparti, non ufficiale" }, { label: "Nota", value: "Richiede un Beystadium (venduto a parte)" }],
-    features: [{ title: "Due starter completi", description: "Ogni trottola ha il suo lanciatore con ripcord" }, { title: "Due assetti opposti", description: "Una corre sul bordo, l'altra tiene il centro" }, { title: "Porta deck incluso", description: "Tre scomparti, uno per trottola" }, { title: "Risparmi €6,58", description: "€39,90 invece di €46,48 comprandoli separati" }],
+    features: [{ title: "Due starter completi", description: "Ogni trottola ha il suo lanciatore con ripcord" }, { title: "Due assetti opposti", description: "Una corre sul bordo, l'altra tiene il centro" }, { title: "Porta deck incluso", description: "Tre scomparti, uno per trottola" }, { title: "Risparmi €3,08", description: "€36,90 invece di €39,98 comprandoli separati" }],
     boxContents: ["1 × Starter Shadow Shinobi 1-80MN (trottola e lanciatore)", "1 × Starter Hammer Incendio 3-70H (trottola e lanciatore)", "1 × Porta Deck giallo", "Manuali"],
     relatedSlugs: ["kit-arena-drop-completo", "shadow-shinobi-1-80mn", "hammer-incendio-3-70h"],
     bundleOf: [{ slug: "shadow-shinobi-1-80mn", quantity: 1 }, { slug: "hammer-incendio-3-70h", quantity: 1 }, { slug: "porta-deck-giallo", quantity: 1 }],
@@ -364,10 +406,10 @@ export const BUNDLES: readonly Product[] = [
   {
     slug: "kit-arena-drop-completo", name: "Kit Arena Drop Attack", tagline: "Arena, quattro trottole e porta deck. Tutto in una volta.",
     description: "Tutto per cominciare e non comprare altro: il Drop Attack Battle Set — il Beystadium con l'X-Celerator Rail rialzato che porta le trottole in alto per farle piombare sull'avversario, due trottole e due lanciatori — più due starter completi, Shadow Shinobi 1-80MN e Hammer Incendio 3-70H, e il porta deck giallo. In tutto quattro trottole e quattro lanciatori, con lo stadio per farle scontrare e la custodia per portarle in giro.",
-    price: eur(7490), compareAtPrice: eur(8638), category: "beyblade-x", stock: "disponibile", tags: ["offerta"], rating: 0, reviewCount: 0,
+    price: eur(7190), compareAtPrice: eur(7988), category: "beyblade-x", stock: "disponibile", tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["kit-arena-drop-completo"],
     specs: [{ label: "Contenuto", value: "1 stadio, 4 trottole, 4 lanciatori, 1 porta deck" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Stadio", value: "Drop Attack Battle Set" }, { label: "Starter inclusi", value: "Shadow Shinobi 1-80MN, Hammer Incendio 3-70H" }, { label: "Porta deck", value: "Giallo, 3 scomparti, non ufficiale" }],
-    features: [{ title: "Si gioca subito", description: "Stadio, trottole e lanciatori in una sola scatola" }, { title: "Quattro trottole", description: "Le due del set più i due starter" }, { title: "Porta deck incluso", description: "Tre scomparti, uno per trottola" }, { title: "Risparmi €11,48", description: "€74,90 invece di €86,38 comprandoli separati" }],
+    features: [{ title: "Si gioca subito", description: "Stadio, trottole e lanciatori in una sola scatola" }, { title: "Quattro trottole", description: "Le due del set più i due starter" }, { title: "Porta deck incluso", description: "Tre scomparti, uno per trottola" }, { title: "Risparmi €7,98", description: "€71,90 invece di €79,88 comprandoli separati" }],
     boxContents: ["1 × Drop Attack Battle Set (stadio, 2 trottole, 2 lanciatori)", "1 × Starter Shadow Shinobi 1-80MN", "1 × Starter Hammer Incendio 3-70H", "1 × Porta Deck giallo", "Manuali"],
     relatedSlugs: ["kit-doppio-starter-deck", "drop-attack-battle-set", "shadow-shinobi-1-80mn"],
     bundleOf: [{ slug: "drop-attack-battle-set", quantity: 1 }, { slug: "shadow-shinobi-1-80mn", quantity: 1 }, { slug: "hammer-incendio-3-70h", quantity: 1 }, { slug: "porta-deck-giallo", quantity: 1 }],
@@ -375,10 +417,10 @@ export const BUNDLES: readonly Product[] = [
   {
     slug: "kit-arena-sneak-completo", name: "Kit Arena Sneak Attack", tagline: "Arena, quattro trottole e porta deck. Tutto in una volta.",
     description: "Tutto per cominciare e non comprare altro: il Sneak Attack Battle Set — il Beystadium verde con il rail a scomparsa che devia le trottole in una nuova direzione, due trottole e due lanciatori — più due starter completi, Shadow Shinobi 1-80MN e Hammer Incendio 3-70H, e il porta deck giallo. In tutto quattro trottole e quattro lanciatori, con lo stadio per farle scontrare e la custodia per portarle in giro.",
-    price: eur(7990), compareAtPrice: eur(9138), category: "beyblade-x", stock: "disponibile", tags: ["offerta"], rating: 0, reviewCount: 0,
+    price: eur(7690), compareAtPrice: eur(8488), category: "beyblade-x", stock: "disponibile", tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["kit-arena-sneak-completo"],
     specs: [{ label: "Contenuto", value: "1 stadio, 4 trottole, 4 lanciatori, 1 porta deck" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Stadio", value: "Sneak Attack Battle Set" }, { label: "Starter inclusi", value: "Shadow Shinobi 1-80MN, Hammer Incendio 3-70H" }, { label: "Porta deck", value: "Giallo, 3 scomparti, non ufficiale" }],
-    features: [{ title: "Si gioca subito", description: "Stadio, trottole e lanciatori in una sola scatola" }, { title: "Quattro trottole", description: "Le due del set più i due starter" }, { title: "Porta deck incluso", description: "Tre scomparti, uno per trottola" }, { title: "Risparmi €11,48", description: "€79,90 invece di €91,38 comprandoli separati" }],
+    features: [{ title: "Si gioca subito", description: "Stadio, trottole e lanciatori in una sola scatola" }, { title: "Quattro trottole", description: "Le due del set più i due starter" }, { title: "Porta deck incluso", description: "Tre scomparti, uno per trottola" }, { title: "Risparmi €7,98", description: "€76,90 invece di €84,88 comprandoli separati" }],
     boxContents: ["1 × Sneak Attack Battle Set (stadio, 2 trottole, 2 lanciatori)", "1 × Starter Shadow Shinobi 1-80MN", "1 × Starter Hammer Incendio 3-70H", "1 × Porta Deck giallo", "Manuali"],
     relatedSlugs: ["kit-doppio-starter-deck", "sneak-attack-battle-set", "shadow-shinobi-1-80mn"],
     bundleOf: [{ slug: "sneak-attack-battle-set", quantity: 1 }, { slug: "shadow-shinobi-1-80mn", quantity: 1 }, { slug: "hammer-incendio-3-70h", quantity: 1 }, { slug: "porta-deck-giallo", quantity: 1 }],

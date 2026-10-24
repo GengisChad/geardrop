@@ -32,7 +32,9 @@ select results_eq(
         -- The deck cases sell without a limit: the database keeps a counter the shop never shows.
         'porta-deck-giallo', 'porta-deck-verde-lime', 'porta-deck-azzurro', 'porta-deck-blu', 'porta-deck-rosa', 'porta-deck-fucsia', 'porta-deck-bianco',
         -- Takara Tomy on consignment from the partner, two of each (2026-10-07).
-        'cx-00-evangelion-deck-set', 'ux-00-glory-valkyrie-lf', 'cx-00-tigarage-ft3-60t')$$,
+        'cx-00-evangelion-deck-set', 'ux-00-glory-valkyrie-lf', 'cx-00-tigarage-ft3-60t',
+        -- The two-colour deck cases, no stock limit (2026-10-24).
+        'porta-deck-nero-blu', 'porta-deck-nero-rosso', 'porta-deck-nero-oro', 'porta-deck-giallo-nero', 'porta-deck-rosso-oro', 'porta-deck-viola-verde', 'porta-deck-viola-argento')$$,
   array[0::bigint],
   'only the owner-reviewed catalogue carries stock'
 );
@@ -114,12 +116,12 @@ select results_eq(
 );
 select results_eq(
   $$select count(*)::bigint from public.products$$,
-  array[30::bigint],
+  array[37::bigint],
   'double seed keeps the catalogue products'
 );
 select results_eq(
   $$select count(*)::bigint from public.product_images$$,
-  array[30::bigint],
+  array[37::bigint],
   'double seed keeps one image per catalogue product'
 );
 select results_eq(

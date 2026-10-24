@@ -92,12 +92,19 @@ describe("listProducts", () => {
 });
 
 describe("an item sold in several colours", () => {
+  it("fits the whole shop on its first page, so no card is left alone on a second one", async () => {
+    const page = await provider.listProducts();
+    expect(page.pageCount).toBe(1);
+    expect(page.items).toHaveLength(page.total);
+  });
+
   it("is listed once, led by its first colour, and counted once", async () => {
     const page = await provider.listProducts({ category: "accessori" });
-    expect(page.items.map((product) => product.slug)).toEqual(["porta-deck-giallo"]);
-    expect(page.total).toBe(1);
+    // Two families since 2026-10-24: the single-colour and the two-colour cases, one card each.
+    expect(page.items.map((product) => product.slug)).toEqual(["porta-deck-giallo", "porta-deck-nero-blu"]);
+    expect(page.total).toBe(2);
     const facets = await provider.getFacets();
-    expect(facets.categories.find((facet) => facet.value === "accessori")?.count).toBe(1);
+    expect(facets.categories.find((facet) => facet.value === "accessori")?.count).toBe(2);
   });
 
   it("is found by any of its colours, still as one card", async () => {
@@ -108,6 +115,7 @@ describe("an item sold in several colours", () => {
     const all = await provider.listProducts({ search: "porta deck" });
     expect(all.items.map((product) => product.slug).filter((slug) => slug.startsWith("porta-deck"))).toEqual([
       "porta-deck-giallo",
+      "porta-deck-nero-blu",
     ]);
   });
 

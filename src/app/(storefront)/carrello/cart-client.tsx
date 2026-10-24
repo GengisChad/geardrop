@@ -7,6 +7,7 @@ import { AlertTriangle, ArrowRight, Loader2, Trash2, Zap } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useState } from "react";
 import { BundleNudge } from "@/components/cart/bundle-nudge";
+import { KitDeckNudge } from "@/components/cart/kit-deck-nudge";
 import { CartTotalsPanel, FreeShippingMeter } from "@/components/cart/cart-summary";
 import { ClubCodeField } from "@/components/cart/club-code";
 import { QuantityStepper } from "@/components/product/quantity-stepper";
@@ -201,6 +202,11 @@ export function CartClient({ shelfProducts }: CartClientProps) {
                             Prezzo club {formatPrice(line.clubUnitPrice)} cad.
                           </p>
                         ) : null}
+                        {!line.issue && line.kitUnitPrice ? (
+                          <p className="mt-1 tabular text-[0.6875rem] font-bold text-available" data-testid="kit-unit-price">
+                            Con il kit {formatPrice(line.kitUnitPrice)} cad.
+                          </p>
+                        ) : null}
                         {!line.issue && preorderNote(line) ? (
                           <p className="mt-1 text-[0.6875rem] font-bold text-preorder" data-testid="preorder-split">
                             {preorderNote(line)}
@@ -240,6 +246,7 @@ export function CartClient({ shelfProducts }: CartClientProps) {
             </AnimatePresence>
           </ul>
           <BundleNudge lines={quote.lines} />
+          <KitDeckNudge slots={quote.kitDeckSlots ?? 0} />
         </div>
 
         <aside data-testid="cart-summary" className="gd-glass-panel sticky top-28 flex flex-col gap-4 rounded-[--radius-glass] p-5">

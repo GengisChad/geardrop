@@ -1,4 +1,4 @@
-import { BUNDLES, FREE_SHIPPING_THRESHOLD, PRODUCTS, SOLD_WITHOUT_BARCODE, brandOf, shippingMethodsFor } from "@/data/catalog";
+import { BUNDLES, FREE_SHIPPING_THRESHOLD, KEPT_OFF_GOOGLE, PRODUCTS, SOLD_WITHOUT_BARCODE, brandOf, shippingMethodsFor } from "@/data/catalog";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import type { CategorySlug, Product } from "@/lib/commerce/types";
 import { CATEGORY_LABEL } from "@/lib/labels";
@@ -104,7 +104,8 @@ function offer(product: Product): string {
 
 export async function GET(): Promise<Response> {
   const commerce = await getCommerceProvider();
-  const slugs = [...BUNDLES, ...PRODUCTS].map((product) => product.slug);
+  // The two-colour deck cases are sold on the site only (KEPT_OFF_GOOGLE, owner 2026-10-24).
+  const slugs = [...BUNDLES, ...PRODUCTS].map((product) => product.slug).filter((slug) => !KEPT_OFF_GOOGLE.has(slug));
   const products = await commerce.getProductsBySlugs(slugs);
 
   const body = `<?xml version="1.0" encoding="UTF-8"?>
