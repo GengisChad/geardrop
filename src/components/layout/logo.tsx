@@ -8,6 +8,9 @@ import { cn } from "@/lib/cn";
  * graphite "GEAR" disappears on the Holo Drop ground, so the owner-approved design
  * (2026-09-15) sets the wordmark in the display face beside the supplied emblem. The emblem
  * itself is never redrawn or recoloured. (audit §7.1)
+ *
+ * The emblem is an oval whose arrows turn counter-clockwise, so a constant clockwise spin read
+ * as a wobble running backwards. It launches once on load instead and settles in its drawn pose.
  */
 export function Wordmark({
   className,
@@ -28,7 +31,7 @@ export function Wordmark({
         height={brandSize.emblem.height}
         priority={priority}
         sizes="40px"
-        className={cn("h-7 w-auto min-[360px]:h-8 sm:h-9", spin && "animate-[gd-spin_14s_linear_infinite]")}
+        className={cn("h-7 w-auto min-[360px]:h-8 sm:h-9", spin && "animate-[gd-launch_1.6s_cubic-bezier(0.22,1,0.36,1)_0.2s_both]")}
       />
       <span className="gd-wordmark whitespace-nowrap text-[1.05rem] font-bold leading-none text-graphite min-[360px]:text-[1.2rem] sm:text-[1.45rem] lg:text-[1.2rem] xl:text-[1.45rem]">
         Gear<span className="text-lime">{"//"}</span>

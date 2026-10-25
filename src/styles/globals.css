@@ -1516,6 +1516,13 @@
   }
 }
 
+/* The header emblem's launch: two turns the way its arrows point (counter-clockwise), back to its drawn pose. */
+@keyframes gd-launch {
+  to {
+    transform: rotate(-720deg);
+  }
+}
+
 @keyframes gd-marquee {
   from {
     transform: translateX(0);
