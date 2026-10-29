@@ -55,7 +55,7 @@ export function holoPalette(product: Pick<Product, "slug" | "bladeType">): HoloP
   return BY_SLUG[product.slug] ?? (product.bladeType ? BY_TYPE[product.bladeType] : DEFAULT_PALETTE);
 }
 
-/** The palette as the CSS custom properties `.gd-holo` reads. */
+/** The palette as CSS custom properties. The product plate and the bundle panels read `--f2`. */
 export function holoStyle(product: Pick<Product, "slug" | "bladeType">): CSSProperties {
   const { f1, f2, f3, f4, glow } = holoPalette(product);
   return { "--f1": f1, "--f2": f2, "--f3": f3, "--f4": f4, "--glow": glow } as CSSProperties;
