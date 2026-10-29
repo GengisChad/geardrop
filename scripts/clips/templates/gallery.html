@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8">
+<script src="clip.js"></script>
+<script>ClipKit.injectFonts();</script>
+<link rel="stylesheet" href="xrail.css">
+<style>html, body, .stage { width: 1080px; height: 1080px; }</style>
+</head>
+<body><div class="stage" id="stage">
+  <div class="plate" id="plate"></div>
+  <div class="rail" style="left:0; right:0; top:34px"></div>
+  <div class="rail lit" style="left:0; right:0; top:34px; animation-duration:.6s; animation-timing-function:steps(36,end); animation-delay:0s"></div>
+  <div class="streak" id="first-streak" style="width:64px; background:rgba(198,255,0,.5); animation-delay:.42s"></div>
+  <div class="streak" style="width:16px; background:rgba(255,255,255,.45); animation-delay:.5s"></div>
+  <div class="streak" style="width:120px; background:rgba(122,60,255,.5); animation-delay:.55s"></div>
+  <div class="streak" style="width:10px; background:rgba(198,255,0,.8); animation-delay:.63s"></div>
+  <div class="zoom" id="zoom"></div>
+  <div class="block" id="block" style="left:58px; bottom:44px"></div>
+</div>
+<script>
+/* Gallery slide, 1080x1080, 6 s. Drop, two callouts, identity, then a settled card that holds:
+   watermark, cutout, code chip, type when present, name. No price, availability or NOVITÀ. */
+ClipKit.run(({ clip, img, trim, stage }) => {
+  const K = ClipKit, W = 1080, H = 1080;
+  const T = { wm: 0.15, launch: 0.4, push: 1.5, pushDur: 2.2, coA: 1.7, coB: 2.0, outA: 3.15, outB: 3.2, name: 3.5, chip: 3.65, type: 3.85 };
+  K.watermark(stage, document.getElementById("first-streak"), clip.mark, { left: 40, top: 66, px: 300, maxW: 1000, t: T.wm });
+  const fit = K.fit(img, trim, { x: 110, y: 150, w: 860, h: 620 });
+  const zoom = document.getElementById("zoom");
+  zoom.appendChild(K.product(img, fit, T.launch));
+  const cx = fit.box.x + fit.box.w / 2, cy = fit.box.y + fit.box.h / 2;
+  const plate = document.getElementById("plate");
+  plate.style.setProperty("--px", ((cx / W) * 100).toFixed(1) + "%");
+  plate.style.setProperty("--py", ((cy / H) * 100).toFixed(1) + "%");
+  zoom.style.transformOrigin = `${cx}px ${cy}px`;
+  zoom.style.animation = `push ${T.pushDur}s ${T.push}s both`;
+  const o = { frameW: W, marginL: 64, marginR: 64, gap: 22, topLimit: 64, bottomLimit: H - 40 };
+  const anchors = K.anchors(trim, fit);
+  window.__CLIP_LAYOUT__ = { loosePiece: anchors.piece };
+  K.callout(zoom, clip.callouts[0], anchors.first, "below", fit.box, { ...o, t: T.coA, out: T.outA });
+  K.callout(zoom, clip.callouts[1], anchors.second, "above", fit.box, { ...o, t: T.coB, out: T.outB });
+  const block = document.getElementById("block");
+  block.appendChild(K.identityRow(clip, { chipPx: 42, typePx: 40, tChip: T.chip, tType: T.type }));
+  const name = K.name(clip.name, 124, T.name);
+  block.appendChild(name);
+  K.fit1(name, W - 58 - 56, 72);
+});
+</script>
+</body></html>

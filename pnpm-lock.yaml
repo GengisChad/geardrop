@@ -54,6 +54,15 @@ importers:
         specifier: 5.0.14
         version: 5.0.14(@types/react@19.2.17)(react@19.2.7)
     devDependencies:
+      '@fontsource-variable/anybody':
+        specifier: 5.3.0
+        version: 5.3.0
+      '@fontsource/chakra-petch':
+        specifier: 5.3.0
+        version: 5.3.0
+      '@fontsource/jetbrains-mono':
+        specifier: 5.3.0
+        version: 5.3.0
       '@playwright/test':
         specifier: 1.61.1
         version: 1.61.1
@@ -390,6 +399,15 @@ packages:
   '@eslint/plugin-kit@0.4.1':
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@fontsource-variable/anybody@5.3.0':
+    resolution: {integrity: sha512-3u/FSV3mGv9xW3x+CdK9lAZYT1Y3NaRA1bexeoIuk9s5QE8sD8OOTcofvpPx0Z6M0Fq1WAJ06ZAw8hivdRQWHQ==}
+
+  '@fontsource/chakra-petch@5.3.0':
+    resolution: {integrity: sha512-QZvbM/q2R6n1pg2x+TJPftZmBNS+ADU37L4Z4L/6UJIz+JZ/SRaEf8usPFRiP7Ht28sIideMu/Bm1SnGlSrwNw==}
+
+  '@fontsource/jetbrains-mono@5.3.0':
+    resolution: {integrity: sha512-fqDfB5I9f1p1TV486aUgB9t8zP84P0O1FtQR5Ol9vjwPy+S+EIGlVYm1cvj2W5shcZMTg2nZFdVMoH5wFu8a1A==}
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -1673,6 +1691,7 @@ packages:
   eslint@9.39.0:
     resolution: {integrity: sha512-iy2GE3MHrYTL5lrCtMZ0X1KLEKKUjmK0kzwcnefhR66txcEmXZD2YWgR5GNdcEwkNx3a0siYkSvl0vIC+Svjmg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -3080,6 +3099,12 @@ snapshots:
     dependencies:
       '@eslint/core': 0.17.0
       levn: 0.4.1
+
+  '@fontsource-variable/anybody@5.3.0': {}
+
+  '@fontsource/chakra-petch@5.3.0': {}
+
+  '@fontsource/jetbrains-mono@5.3.0': {}
 
   '@humanfs/core@0.19.2':
     dependencies:

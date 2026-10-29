@@ -376,6 +376,34 @@ export function cutoutSrc(src: string): string | null {
   return PRODUCT_CUTOUTS[src] ?? null;
 }
 
+/** A motion-designed clip of a product (scripts/clips), shown as the last item of its gallery. */
+export type ProductClip = {
+  readonly src: string;
+  readonly poster: string;
+  readonly width: number;
+  readonly height: number;
+};
+
+const clip = (slug: string): ProductClip => ({
+  src: `/video/products/${slug}.mp4`,
+  poster: `/video/products/${slug}.jpg`,
+  width: 1080,
+  height: 1080,
+});
+
+/**
+ * The products that have a clip: the owner's best sellers and the release that just landed. A clip
+ * shows no price, no availability and no "Novità", because a video cannot change when the
+ * catalogue does; the page around it carries that live state. `pnpm clips` renders them.
+ */
+export const productClips: Readonly<Partial<Record<string, ProductClip>>> = {
+  "glory-valkerion-lf": clip("glory-valkerion-lf"),
+  "wand-wizard-1-60r": clip("wand-wizard-1-60r"),
+  "impact-drake-9-60lr": clip("impact-drake-9-60lr"),
+  "hover-wyvern-3-85n": clip("hover-wyvern-3-85n"),
+  "soar-phoenix-9-60gf": clip("soar-phoenix-9-60gf"),
+};
+
 /** The loose spinning top cropped from each Infinity Starter tile, launched in the homepage Arena. */
 export const productTops: Readonly<Partial<Record<string, string>>> = {
   "cobalt-drake-4-60f": "/products/tops/cobalt-drake-4-60f.webp",

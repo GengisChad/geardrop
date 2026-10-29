@@ -16,6 +16,7 @@ import { Rating } from "@/components/ui/rating";
 import { GaEvent } from "@/components/analytics/ga-event";
 import { TrackPageView } from "@/components/funnel/track-page-view";
 import { gaItem } from "@/lib/analytics/google";
+import { productClips } from "@/data/assets";
 import { BRANDS, BUNDLES, DECK_CASE_PRICE, DECK_CASE_WITH_KIT, KEPT_OFF_GOOGLE, PRODUCTS, brandOf } from "@/data/catalog";
 import { bundlesContaining } from "@/lib/commerce/bundles";
 import { getCommerceProvider } from "@/lib/commerce/provider";
@@ -121,6 +122,7 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
           style={holoStyle(product)}
           {...(product.tags[0] ? { promo: product.tags[0] } : {})}
           {...(mark ? { mark } : {})}
+          {...(productClips[product.slug] ? { clip: productClips[product.slug] } : {})}
           transitionName={packshotTransitionName(product.slug)}
         />
 

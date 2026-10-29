@@ -128,3 +128,40 @@ test.describe("card to product", () => {
     expect(count).toBeGreaterThanOrEqual(1);
   });
 });
+
+test.describe("product clip", () => {
+  test("loads nothing until chosen, then plays once without sound", async ({ page }) => {
+    const videoRequests: string[] = [];
+    page.on("request", (request) => {
+      if (request.url().includes("/video/products/") && request.url().endsWith(".mp4")) videoRequests.push(request.url());
+    });
+    await page.goto("/prodotto/soar-phoenix-9-60gf");
+    await expect(page.getByTestId("product-gallery")).toBeVisible();
+    expect(videoRequests).toEqual([]);
+
+    await page.getByRole("button", { name: "Clip del prodotto" }).filter({ visible: true }).first().click();
+    const clip = page.getByTestId("product-clip");
+    await expect(clip).toHaveAttribute("preload", "none");
+    await expect(clip).toHaveAttribute("playsinline", "");
+    await expect(clip).not.toHaveAttribute("loop", /.*/);
+    expect(await clip.evaluate((video: HTMLVideoElement) => video.muted)).toBe(true);
+    // Zoom and the plate's own decorations step aside while the clip shows.
+    await expect(page.getByTestId("product-zoom-open")).toHaveCount(0);
+
+    // Playwright's Chromium ships without H.264; real browsers play the clip to its last frame.
+    const playable = await clip.evaluate((video: HTMLVideoElement) => video.canPlayType('video/mp4; codecs="avc1.640028"') !== "");
+    if (playable) {
+      await expect(page.getByRole("button", { name: "Rivedi" })).toBeVisible({ timeout: 15_000 });
+      expect(await clip.evaluate((video: HTMLVideoElement) => video.ended)).toBe(true);
+    }
+  });
+
+  test("with reduced motion the clip waits for the visitor, controls showing", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/prodotto/soar-phoenix-9-60gf");
+    await page.getByRole("button", { name: "Clip del prodotto" }).filter({ visible: true }).first().click();
+    const clip = page.getByTestId("product-clip");
+    await expect(clip).toHaveAttribute("controls", "");
+    expect(await clip.evaluate((video: HTMLVideoElement) => video.paused)).toBe(true);
+  });
+});
