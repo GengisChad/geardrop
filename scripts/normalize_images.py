@@ -35,8 +35,8 @@ MAPPING = {
     "pegasusblastpack.webp": "blast-pegasus-a-tr",
     "dropattack.jpg": "drop-attack-battle-set",
     "sneakattack.jpg": "sneak-attack-battle-set",
-    # glory-valkerion-lf is photographed on a real background: scripts/cutout_products.py cuts it
-    # along its outline and writes its tile too.
+    # Hasbro's own packshot since 2026-10-29; before, a photo on a real background cut along its outline.
+    "gloryValkerion.jpg": "glory-valkerion-lf",
     "hurricaneenlil.jpg": "hurricane-enlil-is-7-55t",
     "shatterhorus.jpg": "shatter-horus-9-65gb",
     # The 2026-09-21 pre-order drop.

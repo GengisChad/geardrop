@@ -24,7 +24,7 @@ CUTOUT = TILES / "cutout"
 TAKARA = {
     "cx-00-evangelion-deck-set": "evangelion.webp",
     "ux-00-glory-valkyrie-lf": "gloryvalkyrieUX00.webp",
-    "cx-00-tigarage-ft3-60t": "tigarage.png",
+    "cx-00-tigarage-ft3-60t": "tigarage.jpg",
 }
 
 
