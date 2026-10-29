@@ -41,7 +41,7 @@ Lime means "ships now / buy", violet means "on its way" (pre-orders). Energy com
 
 1. **Sell on the phone first.** Price, availability and the add-to-cart action must sit in reach of the thumb and be readable at a glance.
 2. **Honest by default.** Every number shown is real: stock, savings against the packs, delivery times. A promise the shop cannot keep is a bug.
-3. **The product is the hero.** The owner's own packshots carry the page; type and colour frame them, they do not compete with them.
+3. **The product is the hero.** The owner's own packshots carry the page; type and colour frame them, they do not compete with them. When a photo is too small, the manufacturer's official packshot may replace it if it is faithful to the edition sold and carries no watermark (owner, 2026-10-29); each one's source is in `docs/product-photo-sources.md`.
 4. **Keep the X-Rail vocabulary.** Dark arena, lime/violet with their meanings, the slash, the sticker, the part code and the rail; no ambient glows, gradient text, frosted glass or a kicker above every section.
 5. **Fast and calm.** No heavy animation; motion only for state and feedback. The X-Rail motion set (owner, 2026-10-29: the toothed free-shipping rail, product clips in the gallery, the cut of light on add, landing stickers, the sliding ratchet number, the card-to-product photo) follows it: each animation runs once and settles, nothing delays the first paint, and reduced motion stops it all.
 

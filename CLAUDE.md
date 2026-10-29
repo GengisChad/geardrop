@@ -19,6 +19,15 @@ Le clip della galleria finiscono in `public/video/products/`, i reel verticali i
 (non versionati: si pubblicano sui social). La clip della galleria non ripete il logo, che la
 pagina mostra già nell'intestazione; il reel lo anima in apertura.
 
+## Foto prodotto
+
+Regola del proprietario, dal 2026-10-29: se una foto prodotto non è di buona qualità, si può
+prendere da internet, purché sia fedele al prodotto venduto (stessa edizione e confezione) e senza
+watermark. Solo immagini ufficiali Hasbro o Takara Tomy; mai foto di annunci, e un watermark non
+si cancella. La fonte di ogni foto va scritta in
+[`docs/product-photo-sources.md`](docs/product-photo-sources.md), che spiega anche come rigenerare
+card, scontorni, kit e clip.
+
 ## Sito: motion design dentro "Fast and calm"
 
 Dal 2026-10-29 il proprietario vuole motion design anche nello shop, alle regole di `PRODUCT.md`:
