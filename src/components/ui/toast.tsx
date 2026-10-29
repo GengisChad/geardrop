@@ -14,7 +14,17 @@ type Tone = "success" | "info" | "error";
 /** A next step the toast offers, such as "Vai al carrello" after an add. */
 type ToastAction = { readonly label: string; readonly href: Route };
 
-type ToastInput = { tone: Tone; message: string; detail?: string; action?: ToastAction };
+type ToastInput = {
+  tone: Tone;
+  message: string;
+  detail?: string;
+  action?: ToastAction;
+  /**
+   * Live content under the detail, such as the free-shipping line after an add. Only the newest
+   * toast renders it, so a stack of toasts never multiplies the requests behind it.
+   */
+  footer?: ReactNode;
+};
 
 type Toast = ToastInput & { id: number };
 
@@ -49,6 +59,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(() => ({ push }), [push]);
+  const newest = toasts.at(-1)?.id;
 
   return (
     <Context.Provider value={value}>
@@ -79,6 +90,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 <div className="min-w-0 flex-1">
                   <p className="text-small text-graphite">{toast.message}</p>
                   {toast.detail ? <p className="mt-0.5 text-[0.6875rem] text-grey-600">{toast.detail}</p> : null}
+                  {toast.footer && toast.id === newest ? toast.footer : null}
                 </div>
                 {toast.action ? (
                   <Link

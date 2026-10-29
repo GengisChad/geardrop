@@ -608,6 +608,34 @@
 
 
 
+/* A tooth of the free-shipping rail lighting up: it kicks off the rail, then sits still. */
+@keyframes gd-tooth {
+  0% {
+    transform: scaleY(0.35);
+    filter: brightness(1.8);
+  }
+  60% {
+    transform: scaleY(1.4);
+  }
+  100% {
+    transform: none;
+    filter: none;
+  }
+}
+
+/* A sticker landing: slapped on a little large and turned, then flat on the surface. */
+@keyframes gd-slap {
+  0% {
+    transform: scale(1.9) rotate(-14deg);
+  }
+  65% {
+    transform: scale(0.94) rotate(1deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+
 @keyframes gd-card-in {
   from {
     opacity: 0;

@@ -1,6 +1,10 @@
+"use client";
+
+import { useState } from "react";
 import { Truck } from "lucide-react";
 import { formatPrice, formatShipping } from "@/lib/format";
 import type { CartTotals } from "@/lib/commerce/types";
+import { METER_TEETH, meterTeeth, toothDelay } from "@/lib/commerce/free-shipping-meter";
 import { STANDARD_DELIVERY } from "@/lib/labels";
 import { cn } from "@/lib/cn";
 
@@ -8,17 +12,38 @@ import { cn } from "@/lib/cn";
  * Progress toward free shipping. The threshold arrives with the quote rather than from a
  * local constant: it belongs to the shipping method the backend is currently selling,
  * and a shop with no free-shipping tier must not be shown a meter at all.
+ *
+ * The meter is the stadium's toothed rail in twenty teeth (lib/commerce/free-shipping-meter). The
+ * first paint is at rest; when a new quote lights more teeth, only those light, one after the
+ * other. Crossing the threshold during the visit turns the rail green, sends one cut of light
+ * along it and slaps the sticker on; a cart that opens above the threshold shows both at rest.
  */
 export function FreeShippingMeter({ totals, threshold }: { totals: CartTotals; threshold: number | null }) {
+  // Measured on what the buyer pays, as freeShippingRemaining is: a club discount counts.
+  const reached = totals.freeShippingRemaining === 0 && totals.subtotal.amount > 0;
+  const lit = reached ? METER_TEETH : meterTeeth(totals.subtotal.amount - totals.discount.amount, threshold);
+
+  // What the meter showed before this quote, so only the change animates (React's "adjust state
+  // when a prop changes" pattern: no effect, no extra paint).
+  const [shown, setShown] = useState({ lit, reached, from: lit, unlockedNow: false });
+  if (shown.lit !== lit || shown.reached !== reached) {
+    setShown({ lit, reached, from: shown.lit, unlockedNow: reached && !shown.reached });
+  }
+
   if (!threshold) return null;
 
-  // Measured on what the buyer pays, as freeShippingRemaining is: a club discount counts.
-  const progress = Math.min(100, ((totals.subtotal.amount - totals.discount.amount) / threshold) * 100);
-  const reached = totals.freeShippingRemaining === 0 && totals.subtotal.amount > 0;
-
-  // The meter is the stadium's toothed rail: each tooth that lights up is a step closer.
   return (
-    <div className="rounded-[--radius-glass] border border-white/10 bg-grey-100 p-4">
+    <div data-testid="free-shipping-meter" className="relative rounded-[--radius-glass] border border-white/10 bg-grey-100 p-4">
+      {reached ? (
+        <span
+          className={cn(
+            "gd-sticker absolute -top-3 right-3 bg-available-solid px-2 py-1 text-[0.6875rem] text-void",
+            shown.unlockedNow && "animate-[gd-slap_0.42s_var(--ease-out-gear)_0.6s_backwards] motion-reduce:animate-none",
+          )}
+        >
+          Spedizione gratis
+        </span>
+      ) : null}
       <p className="flex items-center gap-2 text-small">
         <Truck className={cn("size-4 shrink-0", reached ? "text-available" : "text-lime")} aria-hidden="true" />
         {reached ? (
@@ -33,17 +58,51 @@ export function FreeShippingMeter({ totals, threshold }: { totals: CartTotals; t
           </span>
         )}
       </p>
-      <div className="relative mt-3 h-3.5 bg-[repeating-linear-gradient(90deg,rgba(255,255,255,0.14)_0_8px,transparent_8px_12px)]">
-        <div
-          className={cn(
-            "absolute inset-y-0 left-0 transition-[width] duration-500 ease-[--ease-out-gear]",
-            reached
-              ? "bg-[repeating-linear-gradient(90deg,var(--color-available-solid)_0_8px,transparent_8px_12px)]"
-              : "bg-[repeating-linear-gradient(90deg,var(--color-lime)_0_8px,transparent_8px_12px)]",
-          )}
-          style={{ width: `${progress}%` }}
-        />
-      </div>
+      <MeterRail lit={lit} from={shown.from} reached={reached} sweep={shown.unlockedNow} className="mt-3 h-3.5 gap-1" />
+    </div>
+  );
+}
+
+/** The rail itself, shared by the cart meter and the add toast. Decorative: the words carry the state. */
+export function MeterRail({
+  lit,
+  from,
+  reached,
+  sweep = false,
+  className,
+}: {
+  lit: number;
+  /** Teeth already lit before this render; the ones between `from` and `lit` light in turn. */
+  from: number;
+  reached: boolean;
+  /** One cut of light along the rail, when the threshold has just been crossed. */
+  sweep?: boolean;
+  className?: string;
+}) {
+  return (
+    <div aria-hidden="true" data-reached={reached ? "true" : undefined} className={cn("relative flex", className)}>
+      {Array.from({ length: METER_TEETH }, (_, index) => {
+        const delay = toothDelay(index, from, lit);
+        const on = index < lit;
+        return (
+          <span
+            key={index}
+            data-tooth=""
+            data-lit={on ? "true" : "false"}
+            style={delay === null ? undefined : { animationDelay: `${delay}ms` }}
+            className={cn(
+              "flex-1 origin-bottom transition-colors duration-300",
+              on ? (reached ? "bg-available-solid" : "bg-lime") : "bg-white/[0.14]",
+              delay !== null && "animate-[gd-tooth_0.34s_var(--ease-out-gear)_backwards] motion-reduce:animate-none",
+            )}
+          />
+        );
+      })}
+      {sweep ? (
+        <span className="pointer-events-none absolute inset-0 overflow-hidden motion-reduce:hidden">
+          <span className="absolute inset-0 animate-[gd-slab_0.8s_var(--ease-out-gear)_0.45s_both] bg-[linear-gradient(100deg,transparent_30%,rgba(255,255,255,0.75)_50%,transparent_70%)]" />
+        </span>
+      ) : null}
     </div>
   );
 }
