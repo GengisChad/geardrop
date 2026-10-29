@@ -129,6 +129,22 @@ test.describe("card to product", () => {
   });
 });
 
+test.describe("navigation scroll", () => {
+  test("a card low in the catalogue opens its product page at the top, at once", async ({ page }) => {
+    await page.goto("/negozio");
+    const cards = page.getByTestId("product-card");
+    const card = cards.nth((await cards.count()) - 1);
+    await card.scrollIntoViewIfNeeded();
+    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(1000);
+    const slug = await card.getAttribute("data-slug");
+    await card.locator("h3 a").click();
+    await page.waitForURL(new RegExp(`/prodotto/${slug}$`));
+    // Smooth scrolling stays for in-page links; a page change must not glide up from the footer.
+    await page.waitForTimeout(150);
+    expect(await page.evaluate(() => window.scrollY)).toBeLessThan(200);
+  });
+});
+
 test.describe("product clip", () => {
   test("loads nothing until chosen, then plays once without sound", async ({ page }) => {
     const videoRequests: string[] = [];

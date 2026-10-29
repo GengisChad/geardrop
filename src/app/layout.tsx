@@ -69,7 +69,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="it" className={`${anybody.variable} ${chakra.variable} ${jetbrains.variable}`}>
+    // data-scroll-behavior: Next 16 keeps the CSS smooth scrolling for in-page links and turns it
+    // off while it changes page, so a product opened from low in the catalogue starts at its top
+    // instead of gliding up from the footer (and the card-to-product photo lands where it should).
+    <html lang="it" data-scroll-behavior="smooth" className={`${anybody.variable} ${chakra.variable} ${jetbrains.variable}`}>
       <body className="min-h-dvh">
         <Providers>
           <a

@@ -65,7 +65,7 @@
 ## Results (2026-10-29)
 
 - **Unit:** 127 files, 1228 tests green (from 121 and 1191). Lint keeps its two earlier warnings; typecheck clean.
-- **E2E (public, desktop and mobile, production build):** 200 passed, 64 skipped, 0 failed, with the view-transition flag on. The local runs use Playwright 1.61.1 with the container's Chromium 1243 through an uncommitted config, because the pinned browser build is not installed there.
+- **E2E (public, desktop and mobile, production build):** 202 passed, 64 skipped, 0 failed, with the view-transition flag on (the baseline was 180 passed). The local runs use Playwright 1.61.1 with the container's Chromium 1243 through an uncommitted config, because the pinned browser build is not installed there.
 - **Speed:** median LCP over ten throttled runs per page (mobile, 4x CPU, slow 4G, no cache, images unoptimised as in the e2e server), baseline and final measured alternately on the same machine:
 
   | Page | Baseline | Final |
@@ -77,3 +77,4 @@
   The view-transition flag makes no measurable difference (flag off: same medians within noise), so it stays on.
 - **Layout shift:** unchanged on `/` (0) and lower on the product page (0.018 to 0.013). On `/negozio` it rose from 0 to 0.042, still inside the "good" band: the lighter CSS lets the page paint about 250 ms earlier, before the brand fonts arrive, and the catalogue header wraps one more line when they do. The shift was latent before (the heavier CSS used to delay the first paint until the fonts were in) and does not occur once the fonts are cached. Reserving the header's height would add empty space to short category headers, so it was left as is.
 - **Review:** the branch review found ten points; seven were fixed (staggered tooth colour, no pulse on a full line, one in-flight quote per cart, part code required by clip data, clip script cleanup, orphan `@property`, CLAUDE.md wording). The toast keeps the shop's standing "spedizione gratis da €100" while the quote is pending, like the rest of the site; the gallery clip leaves the logo to the page header; the clip slug list stays in two places guarded by a unit test.
+- **Found on the way:** the root element lacked `data-scroll-behavior="smooth"`, so with Next 16 every page change from a scrolled page glided up from the footer (already the case before this work). With the attribute, in-page links keep their smooth scroll and a product opened from low in the catalogue starts at its top, which also lets the card-to-product photo land in place. Covered by an e2e test.
