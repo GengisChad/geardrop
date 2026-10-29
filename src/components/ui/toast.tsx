@@ -81,35 +81,35 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.15 } }}
                 transition={{ type: "spring", stiffness: 420, damping: 32 }}
-                className={cn(
-                  "gd-glass-compact pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-xl px-4 py-3",
-                  ring,
-                )}
+                className={cn("gd-glass-compact pointer-events-auto flex w-full max-w-sm flex-col gap-1 rounded-xl px-4 py-3", ring)}
               >
-                <Icon className={cn("size-5 shrink-0", iconColor)} aria-hidden="true" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-small text-graphite">{toast.message}</p>
-                  {toast.detail ? <p className="mt-0.5 text-[0.6875rem] text-grey-600">{toast.detail}</p> : null}
-                  {toast.footer && toast.id === newest ? toast.footer : null}
-                </div>
-                {toast.action ? (
-                  <Link
-                    href={toast.action.href}
+                <div className="flex items-center gap-3">
+                  <Icon className={cn("size-5 shrink-0", iconColor)} aria-hidden="true" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-small text-graphite">{toast.message}</p>
+                    {toast.detail ? <p className="mt-0.5 text-[0.6875rem] text-grey-600">{toast.detail}</p> : null}
+                  </div>
+                  {toast.action ? (
+                    <Link
+                      href={toast.action.href}
+                      onClick={() => dismiss(toast.id)}
+                      data-testid="toast-action"
+                      className="gd-display inline-flex h-11 shrink-0 items-center whitespace-nowrap bg-lime px-3.5 text-[0.75rem] font-bold tracking-wider text-void transition-colors hover:bg-lime-ink"
+                    >
+                      {toast.action.label}
+                    </Link>
+                  ) : null}
+                  <button
+                    type="button"
                     onClick={() => dismiss(toast.id)}
-                    data-testid="toast-action"
-                    className="gd-display inline-flex h-11 shrink-0 items-center whitespace-nowrap bg-lime px-3.5 text-[0.75rem] font-bold tracking-wider text-void transition-colors hover:bg-lime-ink"
+                    aria-label="Chiudi notifica"
+                    className="-m-2 inline-flex size-12 shrink-0 items-center justify-center text-grey-600 transition-colors hover:bg-grey-100 hover:text-graphite"
                   >
-                    {toast.action.label}
-                  </Link>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={() => dismiss(toast.id)}
-                  aria-label="Chiudi notifica"
-                  className="-m-2 inline-flex size-12 shrink-0 items-center justify-center text-grey-600 transition-colors hover:bg-grey-100 hover:text-graphite"
-                >
-                  <X className="size-4" aria-hidden="true" />
-                </button>
+                    <X className="size-4" aria-hidden="true" />
+                  </button>
+                </div>
+                {/* Full width under the row, aligned with the text: beside the button it wrapped word by word. */}
+                {toast.footer && toast.id === newest ? <div className="pl-8">{toast.footer}</div> : null}
               </motion.div>
             );
           })}
