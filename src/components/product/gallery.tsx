@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { PromoBadge } from "@/components/ui/badge";
+import { SharedPackshot } from "@/components/product/shared-packshot";
 import { ProductZoom } from "@/components/product/product-zoom";
 import { WishlistButton } from "@/components/product/wishlist-button";
 import { cutoutSrc, type ProductImage } from "@/data/assets";
@@ -20,9 +21,11 @@ type GalleryProps = {
   mark?: string;
   /** The pack's colours (lib/holo.ts), which tint the plate. */
   style?: CSSProperties;
+  /** The name the first photo shares with its catalogue card (lib/view-transitions.ts). */
+  transitionName?: string | undefined;
 };
 
-export function Gallery({ images, slug, name, promo, mark, style }: GalleryProps) {
+export function Gallery({ images, slug, name, promo, mark, style, transitionName }: GalleryProps) {
   const [index, setIndex] = useState(0);
   const [zoomOpen, setZoomOpen] = useState(false);
   const active = images[index];
@@ -83,15 +86,17 @@ export function Gallery({ images, slug, name, promo, mark, style }: GalleryProps
               transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
               className="absolute inset-0"
             >
-              <Image
-                src={cutoutSrc(active.src) ?? active.src}
-                alt={active.alt}
-                fill
-                priority
-                quality={90}
-                sizes="(min-width: 1400px) 720px, (min-width: 1024px) calc(100vw - 660px), 92vw"
-                className="object-contain p-6 drop-shadow-[0_24px_28px_rgba(0,0,0,0.55)] sm:p-10"
-              />
+              <SharedPackshot name={index === 0 ? transitionName : undefined}>
+                <Image
+                  src={cutoutSrc(active.src) ?? active.src}
+                  alt={active.alt}
+                  fill
+                  priority
+                  quality={90}
+                  sizes="(min-width: 1400px) 720px, (min-width: 1024px) calc(100vw - 660px), 92vw"
+                  className="object-contain p-6 drop-shadow-[0_24px_28px_rgba(0,0,0,0.55)] sm:p-10"
+                />
+              </SharedPackshot>
             </motion.div>
           </AnimatePresence>
           <button

@@ -25,6 +25,9 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     optimizePackageImports: ["lucide-react", "framer-motion"],
+    // The card-to-product photo transition (lib/view-transitions.ts). Experimental in Next 16;
+    // NEXT_PUBLIC_GEARDROP_VIEW_TRANSITIONS=0 turns it off, here and in the components alike.
+    viewTransition: process.env["NEXT_PUBLIC_GEARDROP_VIEW_TRANSITIONS"] !== "0",
   },
 };
 

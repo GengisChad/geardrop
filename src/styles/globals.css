@@ -753,6 +753,28 @@
   content: none !important;
 }
 
+/*
+ * Card to product (lib/view-transitions.ts): only the named packshot travels, so the rest of the
+ * page changes at once, as it always has. Reduced motion skips the travel too.
+ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-group(*) {
+  animation-duration: 0.45s;
+  animation-timing-function: var(--ease-out-gear);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
 
 @keyframes gd-spin {
   to {

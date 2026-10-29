@@ -21,6 +21,7 @@ import { bundlesContaining } from "@/lib/commerce/bundles";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { familyColours, familyLead } from "@/lib/commerce/variants";
 import { formatPrice } from "@/lib/format";
+import { packshotTransitionName } from "@/lib/view-transitions";
 import { bladeName, displayName, holoStyle, partCode, partMark } from "@/lib/holo";
 import { BLADE_TYPE_LABEL, CATEGORY_LABEL, bundleNoun, bundlePacks } from "@/lib/labels";
 import { absoluteUrl, breadcrumbJsonLd, jsonLd, productDescription, productJsonLd, productTitle } from "@/lib/seo";
@@ -120,6 +121,7 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
           style={holoStyle(product)}
           {...(product.tags[0] ? { promo: product.tags[0] } : {})}
           {...(mark ? { mark } : {})}
+          transitionName={packshotTransitionName(product.slug)}
         />
 
         <div data-testid="buy-panel" className="gd-glass-panel self-start rounded-[--radius-glass] p-5 sm:p-7">

@@ -103,3 +103,28 @@ test.describe("reduced motion", () => {
     expect(new Set(names)).toEqual(new Set(["none"]));
   });
 });
+
+test.describe("card to product", () => {
+  test("a catalogue card's photo travels into the product page", async ({ page }) => {
+    await page.addInitScript(() => {
+      const calls = { count: 0 };
+      (window as unknown as { __viewTransitions: typeof calls }).__viewTransitions = calls;
+      const start = document.startViewTransition?.bind(document);
+      if (start) {
+        document.startViewTransition = ((update: () => void) => {
+          calls.count += 1;
+          return start(update);
+        }) as typeof document.startViewTransition;
+      }
+    });
+    await page.goto("/negozio");
+    const card = page.getByTestId("product-card").first();
+    const slug = await card.getAttribute("data-slug");
+    await card.locator("h3 a").click();
+
+    await expect(page).toHaveURL(new RegExp(`/prodotto/${slug}$`));
+    await expect(page.getByTestId("product-gallery")).toBeVisible();
+    const count = await page.evaluate(() => (window as unknown as { __viewTransitions: { count: number } }).__viewTransitions.count);
+    expect(count).toBeGreaterThanOrEqual(1);
+  });
+});

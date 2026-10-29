@@ -3,6 +3,7 @@ import { FiltersSheet } from "@/components/catalog/filters-sheet";
 import { Pagination } from "@/components/catalog/pagination";
 import { SortSelect } from "@/components/catalog/sort-select";
 import { ProductCard } from "@/components/product/product-card";
+import { packshotTransitionName } from "@/lib/view-transitions";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { CategorySlug, Facets, ProductPage } from "@/lib/commerce/types";
 
@@ -53,7 +54,7 @@ export function CatalogView({ page, facets, lockedCategory, emptyMessage }: Cata
               >
                 {page.items.map((product, index) => (
                   <li key={product.slug}>
-                    <ProductCard product={product} showTagline priority={index < 4} className="h-full" />
+                    <ProductCard product={product} showTagline priority={index < 4} transitionName={packshotTransitionName(product.slug)} className="h-full" />
                   </li>
                 ))}
               </ul>
