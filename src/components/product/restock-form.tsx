@@ -27,19 +27,7 @@ export function RestockForm({ slug, name, releasePreorder }: RestockFormProps) {
   const [state, formAction, pending] = useActionState(requestRestockNoticeAction, initial);
 
   if (state.ok) {
-    return (
-      <div
-        id="restock-form"
-        className="flex items-center gap-3 rounded-xl border border-available/30 bg-available-bg px-4 py-4"
-        role="status"
-        aria-live="polite"
-      >
-        <Check className="size-5 shrink-0 text-available" strokeWidth={2.5} aria-hidden="true" />
-        <p className="gd-display text-small font-bold text-available">
-          {releasePreorder ? "Ti avvisiamo appena riaprono i pre-ordini." : state.message}
-        </p>
-      </div>
-    );
+    return <RestockConfirmation message={releasePreorder ? "Ti avvisiamo appena riaprono i pre-ordini." : state.message} />;
   }
 
   return (
@@ -116,5 +104,23 @@ export function RestockForm({ slug, name, releasePreorder }: RestockFormProps) {
         .
       </p>
     </form>
+  );
+}
+
+/** The notice is on: a white sticker stamps it, once, and the sentence says when the email comes. */
+export function RestockConfirmation({ message }: { message: string }) {
+  return (
+    <div
+      id="restock-form"
+      className="flex items-center gap-3 rounded-xl border border-available/30 bg-available-bg px-4 py-4"
+      role="status"
+      aria-live="polite"
+    >
+      <span className="gd-sticker shrink-0 animate-[gd-slap_0.42s_var(--ease-out-gear)_0.1s_backwards] bg-graphite px-2 py-1 text-[0.6875rem] text-void motion-reduce:animate-none">
+        <Check className="mr-1 size-3.5" strokeWidth={3} aria-hidden="true" />
+        Avviso attivo
+      </span>
+      <p className="gd-display text-small font-bold text-available">{message}</p>
+    </div>
   );
 }

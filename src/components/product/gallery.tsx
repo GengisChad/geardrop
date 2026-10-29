@@ -2,12 +2,14 @@
 
 import { useState, type CSSProperties } from "react";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, ZoomIn } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { PromoBadge } from "@/components/ui/badge";
+import { SharedPackshot } from "@/components/product/shared-packshot";
+import { ProductClipPlayer } from "@/components/product/product-clip";
 import { ProductZoom } from "@/components/product/product-zoom";
 import { WishlistButton } from "@/components/product/wishlist-button";
-import { cutoutSrc, type ProductImage } from "@/data/assets";
+import { cutoutSrc, type ProductClip, type ProductImage } from "@/data/assets";
 import type { PromoTag } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
 
@@ -20,15 +22,22 @@ type GalleryProps = {
   mark?: string;
   /** The pack's colours (lib/holo.ts), which tint the plate. */
   style?: CSSProperties;
+  /** A motion-designed clip, offered after the photos (data/assets productClips). */
+  clip?: ProductClip;
+  /** The name the first photo shares with its catalogue card (lib/view-transitions.ts). */
+  transitionName?: string | undefined;
 };
 
-export function Gallery({ images, slug, name, promo, mark, style }: GalleryProps) {
+export function Gallery({ images, slug, name, promo, mark, style, clip, transitionName }: GalleryProps) {
   const [index, setIndex] = useState(0);
   const [zoomOpen, setZoomOpen] = useState(false);
-  const active = images[index];
-  const many = images.length > 1;
+  // The clip, when there is one, is the last item: after every photo.
+  const count = images.length + (clip ? 1 : 0);
+  const showingClip = clip !== undefined && index === images.length;
+  const active = images[showingClip ? 0 : index];
+  const many = count > 1;
 
-  const step = (delta: number) => setIndex((current) => (current + delta + images.length) % images.length);
+  const step = (delta: number) => setIndex((current) => (current + delta + count) % count);
 
   if (!active) return null;
 
@@ -60,20 +69,25 @@ export function Gallery({ images, slug, name, promo, mark, style }: GalleryProps
                 </button>
               </li>
             ))}
+            {clip ? <ClipThumb clip={clip} selected={showingClip} onSelect={() => setIndex(images.length)} /> : null}
           </ul>
         ) : null}
 
         <div data-testid="product-gallery" className="gd-glass-panel relative overflow-hidden rounded-[--radius-glass] lg:flex-1">
         {/* The cut-out floats in a dark art window tinted like the holographic cards. */}
         <div className="gd-product-plate aspect-square overflow-hidden">
-          {mark ? (
+          {mark && !showingClip ? (
             <span
               aria-hidden="true"
-              className="gd-watermark left-4 top-2 text-[5.5rem] [-webkit-text-stroke-width:1.6px] sm:left-6 sm:text-[9rem] sm:[-webkit-text-stroke-width:2px] xl:text-[10.5rem]"
+              className="gd-watermark left-4 top-2 animate-[gd-mark-in_0.9s_var(--ease-out-gear)_0.15s_both] text-[5.5rem] [-webkit-text-stroke-width:1.6px] motion-reduce:animate-none sm:left-6 sm:text-[9rem] sm:[-webkit-text-stroke-width:2px] xl:text-[10.5rem]"
             >
               {mark}
             </span>
           ) : null}
+          {showingClip ? (
+            <ProductClipPlayer clip={clip} name={name} />
+          ) : (
+          <>
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={active.src}
@@ -83,15 +97,17 @@ export function Gallery({ images, slug, name, promo, mark, style }: GalleryProps
               transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
               className="absolute inset-0"
             >
-              <Image
-                src={cutoutSrc(active.src) ?? active.src}
-                alt={active.alt}
-                fill
-                priority
-                quality={90}
-                sizes="(min-width: 1400px) 720px, (min-width: 1024px) calc(100vw - 660px), 92vw"
-                className="object-contain p-6 drop-shadow-[0_24px_28px_rgba(0,0,0,0.55)] sm:p-10"
-              />
+              <SharedPackshot name={index === 0 ? transitionName : undefined}>
+                <Image
+                  src={cutoutSrc(active.src) ?? active.src}
+                  alt={active.alt}
+                  fill
+                  priority
+                  quality={90}
+                  sizes="(min-width: 1400px) 720px, (min-width: 1024px) calc(100vw - 660px), 92vw"
+                  className="object-contain p-6 drop-shadow-[0_24px_28px_rgba(0,0,0,0.55)] sm:p-10"
+                />
+              </SharedPackshot>
             </motion.div>
           </AnimatePresence>
           <button
@@ -106,9 +122,11 @@ export function Gallery({ images, slug, name, promo, mark, style }: GalleryProps
               <ZoomIn className="size-4" aria-hidden="true" />
             </span>
           </button>
+          </>
+          )}
         </div>
 
-        {promo ? (
+        {promo && !showingClip ? (
           <span className="pointer-events-none absolute bottom-5 left-5">
             <PromoBadge tag={promo} />
           </span>
@@ -129,7 +147,7 @@ export function Gallery({ images, slug, name, promo, mark, style }: GalleryProps
 
       <ProductZoom
         images={images}
-        index={index}
+        index={showingClip ? 0 : index}
         name={name}
         open={zoomOpen}
         onClose={() => setZoomOpen(false)}
@@ -155,9 +173,35 @@ export function Gallery({ images, slug, name, promo, mark, style }: GalleryProps
               </button>
             </li>
           ))}
+          {clip ? <ClipThumb clip={clip} selected={showingClip} onSelect={() => setIndex(images.length)} large /> : null}
         </ul>
       ) : null}
     </div>
+  );
+}
+
+/** The clip's thumbnail: its poster, marked "Clip" on a lime band. Lazy, unlike the first photo. */
+function ClipThumb({ clip, selected, onSelect, large = false }: { clip: ProductClip; selected: boolean; onSelect: () => void; large?: boolean }) {
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-label="Clip del prodotto"
+        aria-current={selected}
+        className={cn(
+          "relative size-16 overflow-hidden border-2 bg-surface transition-colors",
+          large && "sm:size-20",
+          selected ? "border-lime" : "border-white/10 hover:border-white/30",
+        )}
+      >
+        <Image src={clip.poster} alt="" aria-hidden="true" fill sizes="80px" className="object-cover" />
+        <span className="gd-mono absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-lime py-0.5 text-[0.5625rem] font-bold uppercase text-void">
+          <Play className="size-2.5 fill-current" aria-hidden="true" />
+          Clip
+        </span>
+      </button>
+    </li>
   );
 }
 

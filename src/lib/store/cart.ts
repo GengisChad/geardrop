@@ -32,15 +32,25 @@ type CartState = {
 
 const clamp = (value: number) => Math.max(1, Math.min(MAX_QUANTITY_PER_LINE, Math.trunc(value)));
 
+/**
+ * How many times a piece went into the cart during this visit, for the motion that answers an
+ * add (the header emblem's launch). Kept out of the persisted store: rehydrating a stored cart
+ * writes `lines` directly and never moves it.
+ */
+export const useCartPulse = create<{ readonly adds: number }>(() => ({ adds: 0 }));
+const pulse = () => useCartPulse.setState((state) => ({ adds: state.adds + 1 }));
+const quantityOf = (lines: readonly CartLine[], slug: string) => lines.find((line) => line.slug === slug)?.quantity ?? 0;
+
 export const useCart = create<CartState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       lines: [],
       hydrated: false,
 
       setHydrated: () => set({ hydrated: true }),
 
-      add: (slug, quantity = 1) =>
+      add: (slug, quantity = 1) => {
+        const before = quantityOf(get().lines, slug);
         set((state) => {
           const existing = state.lines.find((line) => line.slug === slug);
           if (!existing) {
@@ -51,7 +61,10 @@ export const useCart = create<CartState>()(
               line.slug === slug ? { ...line, quantity: clamp(line.quantity + quantity) } : line,
             ),
           };
-        }),
+        });
+        // A line already at its limit takes nothing more, and nothing should answer that.
+        if (quantityOf(get().lines, slug) > before) pulse();
+      },
 
       remove: (slug) => set((state) => ({ lines: state.lines.filter((line) => line.slug !== slug) })),
 
@@ -63,7 +76,8 @@ export const useCart = create<CartState>()(
               : state.lines.map((line) => (line.slug === slug ? { ...line, quantity: clamp(quantity) } : line)),
         })),
 
-      swapIntoBundle: (bundleSlug, components) =>
+      swapIntoBundle: (bundleSlug, components) => {
+        const before = quantityOf(get().lines, bundleSlug);
         set((state) => {
           const reduced = state.lines.flatMap((line) => {
             const part = components.find((component) => component.slug === line.slug);
@@ -77,7 +91,9 @@ export const useCart = create<CartState>()(
               ? reduced.map((line) => (line.slug === bundleSlug ? { ...line, quantity: clamp(line.quantity + 1) } : line))
               : [...reduced, { slug: bundleSlug as CartLine["slug"], quantity: 1 }],
           };
-        }),
+        });
+        if (quantityOf(get().lines, bundleSlug) > before) pulse();
+      },
 
       clear: () => set({ lines: [] }),
 

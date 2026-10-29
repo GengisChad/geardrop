@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { requestCartQuote } from "@/app/(storefront)/checkout/actions";
+import { sharedRequest } from "@/lib/shared-request";
 import { useCart } from "@/lib/store/cart";
 import type { CartQuote } from "@/lib/commerce/types";
 
@@ -54,13 +55,13 @@ export function useCartQuote(options: CartQuoteOptions = {}): CartQuoteState {
       setSnapshot({ key: requestKey, quote });
     };
 
-    requestCartQuote({
-      lines: lines.map((line) => ({ slug: line.slug, quantity: line.quantity })),
-      ...(shippingCode ? { shippingCode } : {}),
-      ...(couponCode ? { couponCode } : {}),
-    })
-      .then(settle)
-      .catch(() => settle(null));
+    sharedRequest(requestKey, () =>
+      requestCartQuote({
+        lines: lines.map((line) => ({ slug: line.slug, quantity: line.quantity })),
+        ...(shippingCode ? { shippingCode } : {}),
+        ...(couponCode ? { couponCode } : {}),
+      }),
+    ).then(settle);
 
     return () => {
       cancelled = true;

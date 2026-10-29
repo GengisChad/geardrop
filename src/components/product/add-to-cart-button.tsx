@@ -6,7 +6,8 @@ import { Bell, Check, ShoppingCart } from "lucide-react";
 import { Button, type ButtonSize } from "@/components/ui/button";
 import { useCart } from "@/lib/store/cart";
 import { useToast } from "@/components/ui/toast";
-import { FREE_SHIPPING_FROM_LABEL, STOCK_CTA, isPurchasable } from "@/lib/labels";
+import { ToastFreeShipping } from "@/components/cart/toast-free-shipping";
+import { STOCK_CTA, isPurchasable } from "@/lib/labels";
 import type { StockStatus } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
 import { trackEvent } from "@/lib/funnel";
@@ -89,11 +90,13 @@ export function AddToCartButton({
     setJustAdded(true);
     clearTimeout(timer.current);
     timer.current = setTimeout(() => setJustAdded(false), 1400);
-    // The next step is one tap away, and the free-shipping line nudges a second piece.
+    // The next step is one tap away, and the free-shipping line (from the server's quote of
+    // the new cart) nudges a second piece with what is really missing.
     toast.push({
       tone: "success",
       message: "Aggiunto al carrello",
-      detail: `${name} · spedizione gratis da ${FREE_SHIPPING_FROM_LABEL}`,
+      detail: name,
+      footer: <ToastFreeShipping />,
       action: { label: "Vai al carrello", href: "/carrello" },
     });
   };
@@ -107,6 +110,7 @@ export function AddToCartButton({
         aria-label={justAdded ? `${name} aggiunto al carrello` : `${text}: ${name}`}
         className={cn(
           COMPACT,
+          justAdded && "gd-cut",
           justAdded
             ? "bg-lime text-void"
             : stock === "pre-ordine"
@@ -126,7 +130,7 @@ export function AddToCartButton({
   const variant = emphasis === "primary" ? "primary" : stock === "pre-ordine" ? "card-preorder" : "card";
 
   return (
-    <Button variant={variant} size={size} fullWidth={fullWidth} data-testid="add-to-cart" onClick={onAdd}>
+    <Button variant={variant} size={size} fullWidth={fullWidth} data-testid="add-to-cart" onClick={onAdd} className={justAdded ? "gd-cut" : undefined}>
       {justAdded ? <Check className="size-4" aria-hidden="true" /> : <ShoppingCart className="size-4" aria-hidden="true" />}
       {justAdded ? "Aggiunto" : text}
     </Button>

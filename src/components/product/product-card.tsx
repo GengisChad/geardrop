@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Palette } from "lucide-react";
 import { AddToCartButton } from "@/components/product/add-to-cart-button";
+import { SharedPackshot } from "@/components/product/shared-packshot";
 import { WishlistButton } from "@/components/product/wishlist-button";
 import { PromoBadge, RankBadge } from "@/components/ui/badge";
 import { Rating } from "@/components/ui/rating";
@@ -31,6 +32,11 @@ type ProductCardProps = {
   showRating?: boolean;
   showTagline?: boolean;
   priority?: boolean;
+  /**
+   * The name the packshot shares with its product page (lib/view-transitions.ts), so the photo
+   * travels from the card into place. Only a grid where each product appears once may pass it.
+   */
+  transitionName?: string | undefined;
   className?: string;
 };
 
@@ -46,6 +52,7 @@ export function ProductCard({
   showRating = false,
   showTagline = false,
   priority = false,
+  transitionName,
   className,
 }: ProductCardProps) {
   const image = product.images[0];
@@ -65,7 +72,7 @@ export function ProductCard({
       data-slug={product.slug}
       style={holoStyle(product)}
       className={cn(
-        "group relative flex h-full flex-col border border-white/10 bg-surface transition-colors duration-200 hover:border-lime",
+        "gd-card-scope group relative flex h-full flex-col border border-white/10 bg-surface transition-colors duration-200 hover:border-lime",
         className,
       )}
     >
@@ -76,18 +83,20 @@ export function ProductCard({
           </span>
         ) : null}
         {image ? (
-          <Image
-            src={cutout ?? image.src}
-            alt={image.alt}
-            fill
-            priority={priority}
-            sizes="(min-width: 1280px) 260px, (min-width: 768px) 30vw, 46vw"
-            className={cn(
-              "object-contain drop-shadow-[0_14px_14px_rgba(0,0,0,0.55)] transition-[rotate,scale] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
-              "group-hover:-rotate-[5deg] group-hover:scale-[1.04] motion-reduce:group-hover:rotate-0 motion-reduce:group-hover:scale-100",
-              cutout ? "p-2 pt-4" : "p-6",
-            )}
-          />
+          <SharedPackshot name={transitionName}>
+            <Image
+              src={cutout ?? image.src}
+              alt={image.alt}
+              fill
+              priority={priority}
+              sizes="(min-width: 1280px) 260px, (min-width: 768px) 30vw, 46vw"
+              className={cn(
+                "object-contain drop-shadow-[0_14px_14px_rgba(0,0,0,0.55)] transition-[rotate,scale] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
+                "group-hover:-rotate-[5deg] group-hover:scale-[1.04] motion-reduce:group-hover:rotate-0 motion-reduce:group-hover:scale-100",
+                cutout ? "p-2 pt-4" : "p-6",
+              )}
+            />
+          </SharedPackshot>
         ) : null}
         {rank !== undefined ? (
           <span className="pointer-events-none absolute left-2 top-2 z-20">

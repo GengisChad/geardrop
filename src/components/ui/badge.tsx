@@ -31,7 +31,8 @@ export function StockBadge({
 
 /** Promo badge as a die-cut sticker with the logo's white keyline; "Novità" is holographic. */
 export function PromoBadge({ tag, className }: { tag: PromoTag; className?: string }) {
-  return <span className={cn("gd-sticker px-2 py-1 text-[0.6875rem]", PROMO_CHIP[tag], className)}>{PROMO_LABEL[tag]}</span>;
+  // gd-sticker-land: it lands as its card scrolls into view (globals.css), at rest everywhere else.
+  return <span className={cn("gd-sticker gd-sticker-land px-2 py-1 text-[0.6875rem]", PROMO_CHIP[tag], className)}>{PROMO_LABEL[tag]}</span>;
 }
 
 /** Numbered rank badge; first place is lime. */

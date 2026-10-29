@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8">
+<script src="clip.js"></script>
+<script>ClipKit.injectFonts();</script>
+<link rel="stylesheet" href="xrail.css">
+<style>
+  html, body, .stage { width: 1080px; height: 1920px; }
+  .stage::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(-72deg, rgba(255,255,255,0.03) 0 3px, transparent 3px 20px); }
+  /* Logo sting: the real emblem launches two turns the way its arrows point, as in the site header. */
+  .sting { position: absolute; inset: 0; transform-origin: 540px 890px; animation: sting-out 0.3s cubic-bezier(0.65, 0, 0.35, 1) 1.1s both; }
+  @keyframes sting-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: scale(0.92); } }
+  .sting .emblem { position: absolute; left: 330px; top: 580px; width: 420px; animation: em-launch 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.05s both, fade-in 0.25s linear 0.05s both; }
+  @keyframes em-launch { from { transform: rotate(0deg) scale(0.6); } to { transform: rotate(-720deg) scale(1); } }
+  .brandbar { position: absolute; left: 50%; translate: -50% 0; display: flex; align-items: center; }
+  .tag { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 6px; font-size: 48px; }
+  .tagline { font-style: italic; font-weight: 900; font-stretch: 132%; line-height: 1.04; text-transform: uppercase; letter-spacing: -0.01em; }
+  .slab { display: inline-block; white-space: nowrap; background: var(--lime); color: var(--void); padding: 0.08em 0.24em 0.02em 0.18em; clip-path: polygon(0.2em 0, 100% 0, calc(100% - 0.2em) 100%, 0 100%); }
+  .mask { overflow: hidden; padding: 0.22em 10px 6px 4px; margin: -0.22em 0 0 -4px; }
+  .mask > .tagline { display: block; animation: rise 0.5s var(--ease) both; }
+  .cta { display: flex; align-items: center; justify-content: center; gap: 22px; width: 760px; height: 96px; background: var(--lime); color: var(--void); clip-path: polygon(24px 0, 100% 0, calc(100% - 24px) 100%, 0 100%); font-weight: 900; font-stretch: 112%; font-size: 50px; line-height: 1; text-transform: uppercase; letter-spacing: 0.03em; }
+</style>
+</head>
+<body><div class="stage" id="stage">
+  <div class="sting">
+    <img class="emblem brand-emblem" alt="">
+    <div class="wm slash-in" style="position:absolute; left:50%; translate:-50% 0; top:1022px; font-size:136px; padding:0 14px; animation-delay:.45s">Gear<span class="sl">//</span><span class="dr">Drop</span></div>
+    <div class="rail" style="left:105px; width:870px; top:1196px; animation: fade-in .2s linear .2s both"></div>
+    <div class="rail lit" style="left:105px; width:870px; top:1196px; animation-duration:.45s; animation-timing-function:steps(29,end); animation-delay:.25s"></div>
+  </div>
+  <div class="plate" id="plate" style="animation: fade-in .4s linear 1.15s both"></div>
+  <div class="brandbar slash-in" style="top:292px; gap:19px; padding:0 12px; animation-delay:1.3s">
+    <img class="brand-emblem" style="height:70px; width:auto" alt=""><span class="wm" style="font-size:45px">Gear<span class="sl">//</span><span class="dr">Drop</span></span>
+  </div>
+  <div class="rail" style="left:0; right:0; top:386px; animation: fade-in .2s linear 1.25s both"></div>
+  <div class="rail lit" style="left:0; right:0; top:386px; animation-duration:.6s; animation-timing-function:steps(36,end); animation-delay:1.3s"></div>
+  <div class="streak" id="first-streak" style="width:64px; background:rgba(198,255,0,.5); animation-delay:1.5s"></div>
+  <div class="streak" style="width:16px; background:rgba(255,255,255,.45); animation-delay:1.58s"></div>
+  <div class="streak" style="width:120px; background:rgba(122,60,255,.5); animation-delay:1.63s"></div>
+  <div class="streak" style="width:10px; background:rgba(198,255,0,.8); animation-delay:1.71s"></div>
+  <div class="zoom" id="zoom"></div>
+  <div class="block" id="block" style="left:58px; top:1104px"></div>
+  <div style="position:absolute; left:64px; top:1480px; animation: wipe .45s var(--ease) 5.5s both">
+    <div class="cta sheen-host" style="--sheen:6s">geardropshop.it
+      <svg width="46" height="34" viewBox="0 0 46 34" aria-hidden="true"><path d="M2 17h38M26 3l14 14-14 14" fill="none" stroke="#0b0a0f" stroke-width="6" stroke-linecap="square"/></svg>
+    </div>
+  </div>
+  <div class="rail" style="left:0; right:0; top:1606px; animation: fade-in .2s linear 5.5s both"></div>
+  <div class="rail lit" style="left:0; right:0; top:1606px; animation-duration:.5s; animation-timing-function:steps(36,end); animation-delay:5.55s"></div>
+</div>
+<script>
+/* Reel, 1080x1920, 8 s. Logo sting, drop, two callouts, identity, tagline when present, then the
+   GEARDROPSHOP.IT end card. Key content stays inside the Reels/Shorts safe area (x 56-960, y 292-1600).
+   No price, availability or NOVITÀ: a video cannot follow the catalogue. */
+ClipKit.run(({ clip, img, trim, stage }) => {
+  const K = ClipKit, W = 1080, H = 1920;
+  const T = { wm: 1.35, launch: 1.45, push: 2.5, pushDur: 1.9, coA: 2.6, coB: 2.9, outA: 3.95, outB: 4.0, name: 4.1, chip: 4.25, type: 4.45, slab: 4.65, slabSheen: 5.15, rest: 4.85 };
+  const emblem = (window.__BRAND__ && window.__BRAND__.emblem) || "emblem.webp";
+  document.querySelectorAll("img.brand-emblem").forEach((e) => { e.src = emblem; });
+  K.watermark(stage, document.getElementById("first-streak"), clip.mark, { left: 40, top: 404, px: 320, maxW: 1000, t: T.wm });
+  const fit = K.fit(img, trim, { x: 90, y: 506, w: 900, h: 548 });
+  const zoom = document.getElementById("zoom");
+  zoom.appendChild(K.product(img, fit, T.launch));
+  const cx = fit.box.x + fit.box.w / 2, cy = fit.box.y + fit.box.h / 2;
+  const plate = document.getElementById("plate");
+  plate.style.setProperty("--px", ((cx / W) * 100).toFixed(1) + "%");
+  plate.style.setProperty("--py", ((cy / H) * 100).toFixed(1) + "%");
+  zoom.style.transformOrigin = `${cx}px ${cy}px`;
+  zoom.style.animation = `push ${T.pushDur}s ${T.push}s both`;
+  const o = { frameW: W, marginL: 64, marginR: 120, gap: 22, topLimit: 416, bottomLimit: 1200 };
+  const anchors = K.anchors(trim, fit);
+  window.__CLIP_LAYOUT__ = { loosePiece: anchors.piece };
+  K.callout(zoom, clip.callouts[0], anchors.first, "below", fit.box, { ...o, t: T.coA, out: T.outA });
+  K.callout(zoom, clip.callouts[1], anchors.second, "above", fit.box, { ...o, t: T.coB, out: T.outB });
+  const block = document.getElementById("block");
+  block.appendChild(K.identityRow(clip, { chipPx: 42, typePx: 40, tChip: T.chip, tType: T.type }));
+  const name = K.name(clip.name, 110, T.name);
+  block.appendChild(name);
+  K.fit1(name, 960 - 58, 72);
+  if (clip.tagline) taglineBlock(K, block, clip.tagline, T, { maxW: 900, maxBottom: 1460, px: 48, minPx: 34 });
+});
+
+/* First sentence on the lime slab, the rest rising below it (two lines at most); the type shrinks
+   until it fits above the end card. A single sentence, or a slab that cannot fit, goes plain. */
+function taglineBlock(K, block, text, T, f) {
+  const parts = text.trim().split(/(?<=[.!?])\s+/);
+  const build = (slabText, restText) => {
+    const tag = K.el("div", "tag");
+    let slab = null;
+    if (slabText) {
+      const wrap = K.el("div", null, null, { animation: `wipe .45s var(--ease) ${T.slab}s both` });
+      slab = K.el("span", "tagline slab sheen-host", slabText);
+      slab.style.setProperty("--sheen", T.slabSheen + "s");
+      wrap.appendChild(slab);
+      tag.appendChild(wrap);
+    }
+    const mask = K.el("div", "mask");
+    const rest = K.el("span", "tagline", restText, { animationDelay: (slabText ? T.rest : T.slab) + "s", maxWidth: f.maxW + "px" });
+    mask.appendChild(rest);
+    tag.appendChild(mask);
+    block.appendChild(tag);
+    for (let px = f.px; px >= f.minPx; px -= 2) {
+      tag.style.fontSize = px + "px";
+      const slabOk = !slab || slab.getBoundingClientRect().width <= f.maxW;
+      const lines = Math.round(rest.getBoundingClientRect().height / (px * 1.04));
+      if (slabOk && lines <= 2 && tag.getBoundingClientRect().bottom <= f.maxBottom) return true;
+    }
+    tag.remove();
+    return false;
+  };
+  if (parts.length > 1 && build(parts[0], parts.slice(1).join(" "))) return;
+  if (!build(null, text.trim())) console.warn("tagline does not fit even at the minimum size: left out");
+}
+</script>
+</body></html>

@@ -16,11 +16,13 @@ import { Rating } from "@/components/ui/rating";
 import { GaEvent } from "@/components/analytics/ga-event";
 import { TrackPageView } from "@/components/funnel/track-page-view";
 import { gaItem } from "@/lib/analytics/google";
+import { productClips } from "@/data/assets";
 import { BRANDS, BUNDLES, DECK_CASE_PRICE, DECK_CASE_WITH_KIT, KEPT_OFF_GOOGLE, PRODUCTS, brandOf } from "@/data/catalog";
 import { bundlesContaining } from "@/lib/commerce/bundles";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { familyColours, familyLead } from "@/lib/commerce/variants";
 import { formatPrice } from "@/lib/format";
+import { packshotTransitionName } from "@/lib/view-transitions";
 import { bladeName, displayName, holoStyle, partCode, partMark } from "@/lib/holo";
 import { BLADE_TYPE_LABEL, CATEGORY_LABEL, bundleNoun, bundlePacks } from "@/lib/labels";
 import { absoluteUrl, breadcrumbJsonLd, jsonLd, productDescription, productJsonLd, productTitle } from "@/lib/seo";
@@ -120,6 +122,8 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
           style={holoStyle(product)}
           {...(product.tags[0] ? { promo: product.tags[0] } : {})}
           {...(mark ? { mark } : {})}
+          {...(productClips[product.slug] ? { clip: productClips[product.slug] } : {})}
+          transitionName={packshotTransitionName(product.slug)}
         />
 
         <div data-testid="buy-panel" className="gd-glass-panel self-start rounded-[--radius-glass] p-5 sm:p-7">
