@@ -110,6 +110,7 @@ export function AddToCartButton({
         aria-label={justAdded ? `${name} aggiunto al carrello` : `${text}: ${name}`}
         className={cn(
           COMPACT,
+          justAdded && "gd-cut",
           justAdded
             ? "bg-lime text-void"
             : stock === "pre-ordine"
@@ -129,7 +130,7 @@ export function AddToCartButton({
   const variant = emphasis === "primary" ? "primary" : stock === "pre-ordine" ? "card-preorder" : "card";
 
   return (
-    <Button variant={variant} size={size} fullWidth={fullWidth} data-testid="add-to-cart" onClick={onAdd}>
+    <Button variant={variant} size={size} fullWidth={fullWidth} data-testid="add-to-cart" onClick={onAdd} className={justAdded ? "gd-cut" : undefined}>
       {justAdded ? <Check className="size-4" aria-hidden="true" /> : <ShoppingCart className="size-4" aria-hidden="true" />}
       {justAdded ? "Aggiunto" : text}
     </Button>

@@ -65,7 +65,7 @@ export function ProductCard({
       data-slug={product.slug}
       style={holoStyle(product)}
       className={cn(
-        "group relative flex h-full flex-col border border-white/10 bg-surface transition-colors duration-200 hover:border-lime",
+        "gd-card-scope group relative flex h-full flex-col border border-white/10 bg-surface transition-colors duration-200 hover:border-lime",
         className,
       )}
     >

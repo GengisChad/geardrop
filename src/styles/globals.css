@@ -260,6 +260,24 @@
   }
 }
 
+/*
+ * A cut of light across a button, once, when a piece goes into the cart (AddToCartButton puts
+ * the class on while it says "Aggiunto"). The same light as the headline slab's.
+ */
+@utility gd-cut {
+  position: relative;
+  overflow: hidden;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.7) 50%, transparent 70%);
+    transform: translateX(-120%);
+    animation: gd-slab 0.7s var(--ease-out-gear) both;
+  }
+}
+
 /* Die-cut sticker: the badge style, with the logo's white keyline. */
 @utility gd-sticker {
   display: inline-flex;
@@ -636,6 +654,18 @@
   }
 }
 
+/* The part number behind a packshot sliding in along the slash, once, as the product page opens. */
+@keyframes gd-mark-in {
+  from {
+    clip-path: inset(0 100% 0 0);
+    transform: translateX(-10%) skewX(-12deg);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    transform: none;
+  }
+}
+
 @keyframes gd-card-in {
   from {
     opacity: 0;
@@ -677,6 +707,50 @@
   opacity: 1 !important;
   transform: none !important;
   animation: none !important;
+}
+
+/*
+ * Promo stickers land on a card as it scrolls into view, and the foil passes one sheen: the
+ * card's own view timeline drives both, so there is no script and nothing to hydrate. A sticker
+ * outside a card, or a card already in view, is at rest; so is everything under the Reveal gates.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .gd-card-scope {
+      view-timeline-name: --gd-card;
+    }
+
+    .gd-sticker-land {
+      animation: gd-slap linear both;
+      animation-timeline: --gd-card;
+      animation-range: entry 25% entry 95%;
+    }
+
+    .gd-sticker-land.gd-foil {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .gd-sticker-land.gd-foil::after {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      pointer-events: none;
+      background: linear-gradient(100deg, transparent 35%, rgba(255, 255, 255, 0.85) 50%, transparent 65%);
+      animation: gd-slab linear both;
+      animation-timeline: --gd-card;
+      animation-range: entry 70% cover 45%;
+    }
+  }
+}
+
+:root[data-screenshot="true"] .gd-sticker-land {
+  transform: none !important;
+  animation: none !important;
+}
+
+:root[data-screenshot="true"] .gd-sticker-land::after {
+  content: none !important;
 }
 
 

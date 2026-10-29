@@ -69,7 +69,7 @@ export function Gallery({ images, slug, name, promo, mark, style }: GalleryProps
           {mark ? (
             <span
               aria-hidden="true"
-              className="gd-watermark left-4 top-2 text-[5.5rem] [-webkit-text-stroke-width:1.6px] sm:left-6 sm:text-[9rem] sm:[-webkit-text-stroke-width:2px] xl:text-[10.5rem]"
+              className="gd-watermark left-4 top-2 animate-[gd-mark-in_0.9s_var(--ease-out-gear)_0.15s_both] text-[5.5rem] [-webkit-text-stroke-width:1.6px] motion-reduce:animate-none sm:left-6 sm:text-[9rem] sm:[-webkit-text-stroke-width:2px] xl:text-[10.5rem]"
             >
               {mark}
             </span>
