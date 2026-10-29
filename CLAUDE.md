@@ -16,12 +16,15 @@ significati, lo slash "//", gli sticker, il codice del pezzo e il rail.
 Le clip prodotto si generano con `pnpm clips` (cartella `scripts/clips/`): i dati arrivano dal
 catalogo e non contengono mai prezzo, disponibilità o "Novità", perché un video non si aggiorna.
 Le clip della galleria finiscono in `public/video/products/`, i reel verticali in `out/clips/`
-(non versionati: si pubblicano sui social).
+(non versionati: si pubblicano sui social). La clip della galleria non ripete il logo, che la
+pagina mostra già nell'intestazione; il reel lo anima in apertura.
 
 ## Sito: motion design dentro "Fast and calm"
 
 Dal 2026-10-29 il proprietario vuole motion design anche nello shop, alle regole di `PRODUCT.md`:
 - ogni animazione parte una volta e si ferma, solo per stato e feedback, mai in loop;
-- niente che ritardi la prima schermata: l'immagine principale non si anima mai in entrata;
+- niente che ritardi la prima schermata: all'apertura della pagina l'immagine principale non si
+  anima mai; l'unico movimento approvato per lei è il passaggio della foto dalla card alla scheda;
 - tutto si ferma con "riduci movimento";
-- i numeri mostrati vengono dal server, mai calcolati nel browser.
+- totali e quanto manca alla spedizione gratuita vengono dal preventivo del server, mai calcolati
+  nel browser.

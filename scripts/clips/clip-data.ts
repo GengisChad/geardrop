@@ -27,7 +27,7 @@ export const CLIP_SPECS: readonly ClipSpec[] = [
 export type ClipData = {
   readonly slug: string;
   readonly name: string;
-  readonly code: string | null;
+  readonly code: string;
   readonly mark: string | null;
   readonly type: string | null;
   readonly callouts: readonly [string, string];
@@ -41,6 +41,9 @@ export function clipData(spec: ClipSpec): ClipData {
   const product = PRODUCTS.find((candidate) => candidate.slug === spec.slug);
   if (!product) throw new Error(`No product "${spec.slug}" in the catalogue.`);
   if (product.bundleOf) throw new Error(`"${spec.slug}" is a bundle: clips show one product.`);
+  // Every clip stamps the part code; render.mjs refuses a clip without one.
+  const code = partCode(product);
+  if (!code) throw new Error(`"${spec.slug}" has no part code to stamp.`);
   const titles = new Set(product.features.map((feature) => feature.title));
   for (const callout of spec.callouts) {
     if (!titles.has(callout)) throw new Error(`"${spec.slug}" lists no feature "${callout}" in the catalogue.`);
@@ -48,7 +51,6 @@ export function clipData(spec: ClipSpec): ClipData {
   const image = product.images[0];
   const cutout = image ? cutoutSrc(image.src) : null;
   if (!cutout) throw new Error(`"${spec.slug}" has no cut-out to animate.`);
-  const code = partCode(product);
   const [first, second] = spec.callouts;
   return {
     slug: product.slug,

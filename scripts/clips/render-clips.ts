@@ -10,7 +10,7 @@
  * Reels go to out/clips/, which is not committed: post them, do not ship them.
  */
 import { spawnSync } from "node:child_process";
-import { copyFileSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -21,9 +21,13 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "../..");
 const require = createRequire(import.meta.url);
 
+/** One scratch folder for the run (fonts and data), removed when the run ends. */
+const scratch = mkdtempSync(join(tmpdir(), "geardrop-clips-"));
+
 /** The brand faces, copied from their pinned packages under the names render.mjs reads. */
 function fontsDir(): string {
-  const dir = mkdtempSync(join(tmpdir(), "geardrop-clip-fonts-"));
+  const dir = join(scratch, "fonts");
+  mkdirSync(dir);
   const faces = [
     "@fontsource-variable/anybody/files/anybody-latin-standard-normal.woff2",
     "@fontsource-variable/anybody/files/anybody-latin-standard-italic.woff2",
@@ -35,7 +39,7 @@ function fontsDir(): string {
 }
 
 function render(template: "gallery" | "reel", data: object, out: string, poster: string, fonts: string): void {
-  const file = join(mkdtempSync(join(tmpdir(), "geardrop-clip-")), "clip.json");
+  const file = join(scratch, `${template}.json`);
   writeFileSync(file, JSON.stringify(data));
   mkdirSync(dirname(out), { recursive: true });
   const run = spawnSync(
@@ -50,12 +54,16 @@ const wanted = new Set(process.argv.slice(2));
 const specs = CLIP_SPECS.filter((spec) => wanted.size === 0 || wanted.has(spec.slug));
 if (specs.length === 0) throw new Error(`No clip matches ${[...wanted].join(", ")}.`);
 
-const fonts = fontsDir();
-for (const spec of specs) {
-  const facts = clipData(spec);
-  const data = { ...facts, cutout: pathToFileURL(join(root, "public", facts.cutout)).href };
-  const products = join(root, "public/video/products");
-  render("gallery", data, join(products, `${spec.slug}.mp4`), join(products, `${spec.slug}.jpg`), fonts);
-  render("reel", data, join(root, "out/clips", `${spec.slug}-reel.mp4`), join(root, "out/clips", `${spec.slug}-reel.jpg`), fonts);
-  console.log(`clips: ${spec.slug} done`);
+try {
+  const fonts = fontsDir();
+  for (const spec of specs) {
+    const facts = clipData(spec);
+    const data = { ...facts, cutout: pathToFileURL(join(root, "public", facts.cutout)).href };
+    const products = join(root, "public/video/products");
+    render("gallery", data, join(products, `${spec.slug}.mp4`), join(products, `${spec.slug}.jpg`), fonts);
+    render("reel", data, join(root, "out/clips", `${spec.slug}-reel.mp4`), join(root, "out/clips", `${spec.slug}-reel.jpg`), fonts);
+    console.log(`clips: ${spec.slug} done`);
+  }
+} finally {
+  rmSync(scratch, { recursive: true, force: true });
 }

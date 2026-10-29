@@ -34,6 +34,10 @@ describe("clip data", () => {
     expect(() => clipData({ slug: "soar-phoenix-9-60gf", callouts: ["Upper Attack", "Lanciatore d'oro"], tagline: false })).toThrow(/Lanciatore d'oro/);
   });
 
+  it("refuses a product without a part code, which every clip prints", () => {
+    expect(() => clipData({ slug: "blast-pegasus-a-tr", callouts: ["Clip & Rip", "Starter completo"], tagline: false })).toThrow(/part code/);
+  });
+
   it("carries no price, availability or promotion", () => {
     for (const spec of CLIP_SPECS) {
       expect(Object.keys(clipData(spec)).sort()).toEqual(["callouts", "code", "cutout", "mark", "name", "slug", "tagline", "tint", "type"]);

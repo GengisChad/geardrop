@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { useCart, useCartPulse } from "@/lib/store/cart";
+import { MAX_QUANTITY_PER_LINE, useCart, useCartPulse } from "@/lib/store/cart";
 
 /** The pulse drives the motion that answers an add, so only a real add may move it. */
 describe("cart pulse", () => {
@@ -15,6 +15,13 @@ describe("cart pulse", () => {
     expect(useCartPulse.getState().adds).toBe(2);
     useCart.getState().swapIntoBundle("promo-attack", [{ slug: "glory-valkerion-lf", quantity: 1 }]);
     expect(useCartPulse.getState().adds).toBe(3);
+  });
+
+  it("stays still when an add changes nothing, as for a line already at its limit", () => {
+    useCart.getState().add("glory-valkerion-lf", MAX_QUANTITY_PER_LINE);
+    expect(useCartPulse.getState().adds).toBe(1);
+    useCart.getState().add("glory-valkerion-lf");
+    expect(useCartPulse.getState().adds).toBe(1);
   });
 
   it("stays still for removals, quantity changes, clearing and a restored cart", () => {

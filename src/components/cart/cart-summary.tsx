@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { Truck } from "lucide-react";
 import { formatPrice, formatShipping } from "@/lib/format";
 import type { CartTotals } from "@/lib/commerce/types";
@@ -80,7 +80,12 @@ export function MeterRail({
   className?: string;
 }) {
   return (
-    <div aria-hidden="true" data-reached={reached ? "true" : undefined} className={cn("relative flex", className)}>
+    <div
+      aria-hidden="true"
+      data-reached={reached ? "true" : undefined}
+      style={{ "--gd-tooth-on": reached ? "var(--color-available-solid)" : "var(--color-lime)" } as CSSProperties}
+      className={cn("relative flex", className)}
+    >
       {Array.from({ length: METER_TEETH }, (_, index) => {
         const delay = toothDelay(index, from, lit);
         const on = index < lit;
