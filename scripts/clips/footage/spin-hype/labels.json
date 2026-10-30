@@ -1,0 +1,37 @@
+{
+  "tops": {
+    "luster": { "name": "LUSTER DRAGOON", "short": "LUSTER", "code": "1-70 UNITE", "color": "#ffb020" },
+    "drake": { "name": "DRAKE BRAVE", "short": "DRAKE", "code": "GRAVITY", "color": "#1fb6ff" }
+  },
+  "hook": {
+    "vs": "VS",
+    "question": ["CHI COLPISCE", "PIÙ FORTE?"],
+    "end": 3.4
+  },
+  "impacts": [
+    { "at": 4.55, "center": null, "word": null },
+    { "at": 6.27, "center": null, "word": null },
+    { "at": 7.87, "center": null, "word": null },
+    { "at": 9.42, "center": null, "word": null },
+    { "at": 11.17, "center": null, "word": null },
+    { "at": 12.22, "center": null, "word": null },
+    { "at": 13.22, "center": null, "word": null }
+  ],
+  "slowmo": { "text": "SLOW-MO ×{speed}", "decimal": "," },
+  "corner_tags": true,
+  "lower_thirds": true,
+  "finale": {
+    "at": 14.22,
+    "question": [
+      { "text": "LUSTER", "top": "luster" },
+      { "text": "o" },
+      { "text": "DRAKE?", "top": "drake" }
+    ],
+    "cta": "SCRIVILO NEI COMMENTI",
+    "cta_at": 14.8,
+    "logo_seconds": 0.9
+  },
+  "outro_logo": "geardrop",
+  "punch": { "scale": 1.06, "in_frames": 3, "out_frames": 10, "shake_px": 3 },
+  "flash": { "opacity": 0.5, "frames": 3, "max_per_second": 3 }
+}

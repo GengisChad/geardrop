@@ -19,6 +19,9 @@ Le clip della galleria finiscono in `public/video/products/`, i reel verticali i
 (non versionati: si pubblicano sui social). La clip della galleria non ripete il logo, che la
 pagina mostra già nell'intestazione; il reel lo anima in apertura.
 
+I reel su riprese vere (battaglie, test) prendono motion design e musica originale sopra il montaggio
+con `scripts/clips/footage/`: vedi il suo README.
+
 ## Foto prodotto
 
 Regola del proprietario, dal 2026-10-29: se una foto prodotto non è di buona qualità, si può

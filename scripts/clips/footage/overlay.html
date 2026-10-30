@@ -1,0 +1,896 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8">
+<title>SPIN reel overlay</title>
+<style>
+@font-face { font-family: "Barlow Condensed"; font-style: italic; font-weight: 700; src: url("fonts/barlow-condensed-latin-700-italic.woff2") format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-style: italic; font-weight: 800; src: url("fonts/barlow-condensed-latin-800-italic.woff2") format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-style: italic; font-weight: 900; src: url("fonts/barlow-condensed-latin-900-italic.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 500; src: url("fonts/jetbrains-mono-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 700; src: url("fonts/jetbrains-mono-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "Chakra Petch"; font-style: italic; font-weight: 700; src: url("fonts/chakra-petch-latin-700-italic.woff2") format("woff2"); }
+
+/* Every element is placed by window.seek(t): no CSS animation or transition runs on its own clock. */
+:root { --void: #0b0a0f; --white: #ffffff; --paper: #f3f2f7; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; animation: none !important; transition: none !important; }
+html, body { width: 1080px; height: 1920px; background: transparent; overflow: hidden; }
+body { font-family: "Barlow Condensed", sans-serif; -webkit-font-smoothing: antialiased; color: var(--white); }
+#stage, .layer { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; }
+#stage { overflow: hidden; }
+/* Animated wrappers: placed at rest with left/top, moved with transform. */
+/* No will-change: a promoted layer keeps the raster scale it was first drawn at, so a scaled
+   frame would depend on the frames before it. Repainted every frame, the result is a pure function of t. */
+.a { position: absolute; left: 0; top: 0; visibility: hidden; transform-origin: 50% 50%; }
+
+.disp { font-family: "Barlow Condensed", sans-serif; font-style: italic; font-weight: 900; line-height: 1; white-space: nowrap; letter-spacing: 0.005em; }
+.mono { font-family: "JetBrains Mono", monospace; font-weight: 700; line-height: 1; white-space: nowrap; letter-spacing: 0.03em; }
+
+/* Slanted slab with the white die-cut keyline: the shape is skewed, the italic type is not. */
+.slab { display: inline-block; position: relative; isolation: isolate; color: var(--fg, var(--void)); padding: 0.16em 0.28em 0.04em 0.2em; }
+.slab::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--bg, var(--white)); transform: skewX(-12deg); box-shadow: 0 0 0 var(--key, 7px) var(--white), 11px 14px 0 var(--key, 7px) rgba(11,10,15,0.55); }
+.slab.dark { --bg: var(--void); --fg: var(--white); }
+.slab.paper { --bg: var(--paper); --fg: var(--void); }
+
+/* Part code chip (mono), as on the site's code chip. */
+.chip { display: inline-block; font-family: "JetBrains Mono", monospace; font-weight: 700; line-height: 1; white-space: nowrap; letter-spacing: 0.03em; color: var(--white); background: rgba(11,10,15,0.94); border: 4px solid var(--white); padding: 12px 18px 9px; box-shadow: 8px 10px 0 0 rgba(11,10,15,0.5); }
+
+/* White die-cut sticker (gd-sticker): paper face, white keyline, hard shadow. */
+.sticker { display: inline-flex; align-items: center; gap: 0.26em; padding: 0.16em 0.36em 0.08em; background: var(--paper); color: var(--void); border-radius: 6px; box-shadow: 0 0 0 7px var(--white), 11px 14px 0 7px rgba(11,10,15,0.6); }
+.sticker svg { flex: none; }
+
+/* VS slash: a full-height white blade at the type's slant. */
+.blade { position: absolute; top: -160px; height: 2240px; transform-origin: 50% 50%; }
+.blade i { position: absolute; inset: 0; background: var(--white); transform: skewX(-12deg); box-shadow: 0 0 0 6px var(--void); }
+
+/* Toothed rail (the stadium X-line), in white here: lime means "ships now" in this brand. */
+.rail { position: relative; height: 10px; background-image: repeating-linear-gradient(90deg, rgba(255,255,255,0.3) 0 10px, transparent 10px 18px); }
+.rail i { position: absolute; inset: 0; background-image: repeating-linear-gradient(90deg, var(--white) 0 10px, transparent 10px 18px); }
+
+/* HUD: who is on screen, slow motion. */
+.tagbox { font-size: 58px; --key: 5px; }
+.slowbox { display: inline-flex; flex-direction: column; gap: 9px; padding: 12px 16px 12px; background: rgba(11,10,15,0.94); border: 4px solid var(--white); box-shadow: 8px 10px 0 0 rgba(11,10,15,0.5); }
+.slowbox .mono { font-size: 40px; color: var(--white); }
+
+/* Lower third: name on the dark slab, the top's colour on its leading edge, the combo code above. */
+.lt { display: flex; flex-direction: column; align-items: flex-start; gap: 20px; }
+.lt .slab { padding-left: 0.62em; }
+.lt .slab .bar { position: absolute; left: -0.06em; top: 0; bottom: 0; width: 0.34em; background: var(--top); transform: skewX(-12deg); z-index: -1; }
+
+/* Finale */
+.or { font-size: 132px; color: var(--white); -webkit-text-stroke: 10px var(--void); paint-order: stroke fill; }
+
+/* Logo sting: the supplied emblem and the owner-approved wordmark (xrail.css .wm), never redrawn. */
+.wm { font-family: "Chakra Petch", sans-serif; font-style: italic; font-weight: 700; text-transform: uppercase; letter-spacing: -0.01em; line-height: 1; white-space: nowrap; color: #f3f2f7; text-shadow: 0 4px 0 rgba(11,10,15,0.55); }
+.wm .sl { color: #c6ff00; }
+.wm .dr { color: #bba6ff; }
+.emb { display: block; }
+
+/* Debug only (--debug): the Reels safe area and the frame number. */
+#dbg { display: none; }
+#dbg.on { display: block; }
+#dbg .safe { position: absolute; left: 56px; top: 292px; width: 904px; height: 1308px; outline: 3px dashed rgba(255,60,60,0.9); }
+#dbg .fn { position: absolute; right: 12px; top: 200px; font: 700 34px "JetBrains Mono", monospace; color: #fff; background: rgba(0,0,0,0.7); padding: 4px 10px; }
+#dbg .bit { position: absolute; top: 240px; width: 24px; height: 24px; outline: 2px solid #808080; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="layer" id="flash" style="background:#fff; visibility:hidden"></div>
+  <canvas class="layer" id="fx" width="1080" height="1920"></canvas>
+  <div class="layer" id="wipes"></div>
+  <div class="layer" id="cam">
+    <div class="layer" id="lower"></div>
+    <div class="layer" id="hud"></div>
+    <div class="layer" id="hook"></div>
+    <div class="layer" id="words"></div>
+    <div class="layer" id="finale"></div>
+  </div>
+  <div class="layer" id="cover"></div>
+  <div class="layer" id="dbg"><div class="safe"></div><div class="fn" id="fn"></div><div id="bits"></div></div>
+</div>
+<script>
+/* SPIN reel overlay, 1080x1920. A pure function of time: window.seek(t) sets every element from the
+   timeline (cuts, shot kinds, impacts) and the words in labels.json, nothing runs on its own clock.
+   render.mjs screenshots it frame by frame on a transparent background and lays it over the footage;
+   the punch-in on each impact is done there, on the video, from window.__PLAN__.
+   Text stays in the Reels safe area (x 56-960, y 292-1600). No price, availability or "Novità":
+   every word comes from labels.json, every number from labels.json or the timeline. */
+(function () {
+  "use strict";
+  const W = 1080, H = 1920;
+  const SAFE = { l: 56, r: 960, t: 292, b: 1600 };
+  const PAD = 8;                                   // inner margin from the safe edges
+  const LEFT = SAFE.l + PAD, RIGHT = SAFE.r - PAD; // 64 and 952
+  const MAXW = RIGHT - LEFT;                       // 888
+  const VOID = "#0b0a0f";
+  const BRAND_LIME = [0xc6, 0xff, 0x00], BRAND_VIOLET = [0x7a, 0x3c, 0xff];
+
+  /* ---------------- easing and keyframes ---------------- */
+  function bezier(x1, y1, x2, y2) {
+    const cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx;
+    const cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
+    const sx = (t) => ((ax * t + bx) * t + cx) * t, sy = (t) => ((ay * t + by) * t + cy) * t;
+    const dx = (t) => (3 * ax * t + 2 * bx) * t + cx;
+    return (x) => {
+      if (x <= 0) return 0;
+      if (x >= 1) return 1;
+      let t = x;
+      for (let i = 0; i < 8; i++) {
+        const e = sx(t) - x;
+        if (Math.abs(e) < 1e-7) return sy(t);
+        const d = dx(t);
+        if (Math.abs(d) < 1e-6) break;
+        t -= e / d;
+      }
+      let lo = 0, hi = 1;
+      t = x;
+      for (let i = 0; i < 50; i++) { const v = sx(t); if (Math.abs(v - x) < 1e-7) break; if (v < x) lo = t; else hi = t; t = (lo + hi) / 2; }
+      return sy(t);
+    };
+  }
+  const EASE = {
+    lin: (u) => u,
+    out: bezier(0.16, 1, 0.3, 1),        // the brand's --ease
+    in: bezier(0.55, 0, 1, 0.45),
+    soft: bezier(0.45, 0, 0.55, 1),
+    launch: bezier(0.22, 1, 0.36, 1),
+    out3: (u) => 1 - Math.pow(1 - u, 3),
+    in2: (u) => u * u,
+  };
+  /** Value of a keyframe track at frame f. keys: [[frame, value, easeToNext?], ...] in frame order;
+      two keys on the same frame make a hard cut that lands on that frame. */
+  function V(keys, f) {
+    let i = -1;
+    for (let j = 0; j < keys.length; j++) { if (keys[j][0] <= f) i = j; else break; }
+    if (i < 0) return keys[0][1];
+    if (i === keys.length - 1) return keys[i][1];
+    const a = keys[i], b = keys[i + 1];
+    return a[1] + (b[1] - a[1]) * (a[2] || EASE.lin)((f - a[0]) / (b[0] - a[0]));
+  }
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const r3 = (v) => Math.round(v * 1000) / 1000;
+  function rng(seed) {
+    let s = seed >>> 0;
+    return () => { s = (s + 0x6d2b79f5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+
+  /* ---------------- colour ---------------- */
+  const hex = (c) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
+  const lum = (rgb) => { const l = rgb.map((v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * l[0] + 0.7152 * l[1] + 0.0722 * l[2]; };
+  const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+  /** Near-black or white type on a top's colour, whichever reads better. */
+  const onColour = (c) => (contrast(hex(c), hex(VOID)) >= contrast(hex(c), [255, 255, 255]) ? VOID : "#ffffff");
+
+  /* ---------------- element registry: every element is set on every frame ---------------- */
+  const ALL = [], TEXT = [], COMPS = [];
+  let LOG = [], TOUCH = new Set(), FRAME = 0;
+  function mk(tag, cls, parent, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  /** An animated wrapper at rest position (x, y); text: checked against the safe area. */
+  function node(parent, x, y, opts = {}) {
+    const e = mk("div", "a", parent);
+    e.dataset.id = opts.id || "n" + ALL.length;
+    e.style.left = x + "px";
+    e.style.top = y + "px";
+    ALL.push(e);
+    if (opts.text !== false) { TEXT.push(e); e.__text = true; }
+    return e;
+  }
+  /** Record every text wrapper's box at rest (no transform): the reference for fitSafe. */
+  function recordRest() {
+    for (const e of TEXT) {
+      const vis = e.style.visibility, tf = e.style.transform;
+      e.style.visibility = "visible"; e.style.transform = "none";
+      const r = e.getBoundingClientRect();
+      e.__rest = { l: r.left, t: r.top, w: r.width, h: r.height };
+      e.style.visibility = vis; e.style.transform = tf;
+    }
+  }
+  function place(e, x, y) { e.style.left = Math.round(x) + "px"; e.style.top = Math.round(y) + "px"; }
+  /** Text never leaves the safe area, not even for the frames of a slam: the offset is pulled in,
+      then the overshoot (scale, then turn) is cut until the turned, scaled box fits. */
+  function fitSafe(e, p) {
+    const R = e.__rest;
+    if (!R) return p;
+    const hw = R.w / 2, hh = R.h / 2, cx0 = R.l + hw, cy0 = R.t + hh;
+    const ext = (s, r) => { const c = Math.abs(Math.cos(r)), n = Math.abs(Math.sin(r)); return [s * (hw * c + hh * n), s * (hw * n + hh * c)]; };
+    const fits = (s, r, x, y) => { const [ex, ey] = ext(s, r); return cx0 + x - ex >= SAFE.l && cx0 + x + ex <= SAFE.r && cy0 + y - ey >= SAFE.t && cy0 + y + ey <= SAFE.b; };
+    let s = p.s == null ? 1 : p.s, r = ((p.r || 0) * Math.PI) / 180, x = p.x || 0, y = p.y || 0;
+    if (fits(s, r, x, y)) return p;
+    x = clamp(x, SAFE.l - (cx0 - hw), SAFE.r - (cx0 + hw));
+    y = clamp(y, SAFE.t - (cy0 - hh), SAFE.b - (cy0 + hh));
+    if (s > 1 && !fits(s, r, x, y)) {
+      let lo = 1, hi = s;
+      for (let i = 0; i < 20; i++) { const m = (lo + hi) / 2; if (fits(m, r, x, y)) lo = m; else hi = m; }
+      s = lo;
+    }
+    if (!fits(s, r, x, y)) {
+      let lo = 0, hi = 1;
+      for (let i = 0; i < 20; i++) { const m = (lo + hi) / 2; if (fits(s, r * m, x, y)) lo = m; else hi = m; }
+      r *= lo;
+    }
+    return { ...p, s, r: (r * 180) / Math.PI, x, y };
+  }
+  /** Set one wrapper for this frame: x, y (offset from rest), s, sx, r, op, clip, blur. */
+  function put(e, p) {
+    TOUCH.add(e);
+    const op = p.op == null ? 1 : clamp(p.op, 0, 1);
+    if (op <= 0.002) { e.style.visibility = "hidden"; LOG.push(e.dataset.id + ":-"); return; }
+    if (e.__text) p = fitSafe(e, p);
+    let tf = `translate(${r3(p.x || 0)}px,${r3(p.y || 0)}px)`;
+    if (p.r) tf += ` rotate(${r3(p.r)}deg)`;
+    if (p.s != null && p.s !== 1) tf += ` scale(${r3(p.s)})`;
+    if (p.sx != null && p.sx !== 1) tf += ` scaleX(${r3(p.sx)})`;
+    const clip = p.clip || "none", blur = p.blur && p.blur > 0.05 ? `blur(${r3(p.blur)}px)` : "none";
+    e.style.visibility = "visible";
+    e.style.opacity = String(r3(op));
+    e.style.transform = tf;
+    e.style.clipPath = clip;
+    e.style.filter = blur;
+    LOG.push(`${e.dataset.id}:${tf}|${r3(op)}|${clip}|${blur}`);
+  }
+  const hide = (e) => put(e, { op: 0 });
+
+  /** Slanted reveal in px over a box w x h, keyline/shadow margin m: p 0 hidden, 1 shown. */
+  function wipe(p, w, h, dir = 1, m = 46) {
+    const k = Math.tan((12 * Math.PI) / 180) * (h + 2 * m);
+    const span = w + 2 * m + k;
+    p = clamp(p, 0, 1);
+    if (p >= 1) return "none";
+    if (dir > 0) {
+      const xb = -m - k + span * p;
+      return `polygon(${r3(-m - k)}px ${-m}px, ${r3(xb + k)}px ${-m}px, ${r3(xb)}px ${h + m}px, ${r3(-m - k)}px ${h + m}px)`;
+    }
+    const xt = w + m + k - span * p;
+    return `polygon(${r3(xt)}px ${-m}px, ${r3(w + m + k)}px ${-m}px, ${r3(w + m + k)}px ${h + m}px, ${r3(xt - k)}px ${h + m}px)`;
+  }
+  /** A slam landing on frame f: big and blurred two frames before, a touch under size on f, settled at f+4. */
+  function slam(f, fr, s0 = 1.22) {
+    return {
+      op: V([[f - 3, 0], [f - 2, 1]], fr),
+      s: V([[f - 3, s0, EASE.in], [f, 0.965, EASE.out], [f + 4, 1]], fr),
+      blur: V([[f - 3, 9, EASE.in], [f, 0]], fr),
+    };
+  }
+  /** A sticker stamp landing on frame f (gd-slap): from s0 and turned, flat at f+4. */
+  function stamp(f, fr, rot = -4, s0 = 1.4) {
+    return {
+      op: V([[f - 3, 0], [f - 2, 1]], fr),
+      s: V([[f - 3, s0, EASE.in], [f, 0.95, EASE.out], [f + 4, 1]], fr),
+      r: V([[f - 3, rot - 10, EASE.in], [f, rot + 1.5, EASE.out], [f + 4, rot]], fr),
+    };
+  }
+  /** Out: wipe away along the slant over d frames ending at frame f. */
+  const outWipe = (f, fr, w, h, d = 4) => (fr >= f ? 0 : 1 - V([[f - d, 0, EASE.in], [f, 1]], fr));
+
+  /* ---------------- data ---------------- */
+  const TL = window.__TIMELINE__, LB = window.__LABELS__;
+  const FPS = TL.fps;
+  const N = window.__FRAMES__ || Math.round(TL.duration * FPS);
+  const F = (t) => Math.round(t * FPS + 1e-6);
+  const warnings = [];
+  const warn = (m) => { warnings.push(m); console.warn(m); };
+
+  const shots = TL.shots.map((s, i) => ({ i, src: s.src, kind: s.kind, speed: s.speed, a: F(s.start), b: i + 1 < TL.shots.length ? F(TL.shots[i + 1].start) : N }));
+  const shotAt = (f) => { for (let i = shots.length - 1; i >= 0; i--) if (f >= shots[i].a) return shots[i]; return shots[0]; };
+  const topOf = (src) => {
+    const t = LB.tops[src];
+    if (!t) throw new Error(`labels.json has no top "${src}" (timeline shot src)`);
+    return t;
+  };
+  const cuts = shots.slice(1).map((s) => s.a);
+  const snapCut = (f, tol = 6) => { let best = f, d = tol + 1; for (const c of cuts) if (Math.abs(c - f) < d) { d = Math.abs(c - f); best = c; } return best; };
+  const fmtSpeed = (v) => { let s = String(Math.round(v * 100) / 100); if ((LB.slowmo && LB.slowmo.decimal) === ",") s = s.replace(".", ","); return s; };
+
+  /* Impacts: the timeline gives the times; labels.json may give a centre and a word for each one.
+     An entry with "at" goes to the closest timeline impact within 0.35 s (one entry per impact,
+     closest pairs first); an entry without "at" goes to the impact in the same position. */
+  const TIMES = TL.impacts || [], LIST = (LB.impacts || []).filter(Boolean);
+  const pick = new Map(), used = new Set();
+  const pairs = [];
+  TIMES.forEach((t, i) => LIST.forEach((e, j) => { if (typeof e.at === "number" && Math.abs(e.at - t) <= 0.35) pairs.push([Math.abs(e.at - t), i, j]); }));
+  pairs.sort((a, b) => a[0] - b[0]);
+  for (const [, i, j] of pairs) if (!pick.has(i) && !used.has(j)) { pick.set(i, LIST[j]); used.add(j); }
+  TIMES.forEach((t, i) => { const e = (LB.impacts || [])[i]; if (!pick.has(i) && e && typeof e.at !== "number") pick.set(i, e); });
+  LIST.forEach((e, j) => { if (typeof e.at === "number" && !used.has(j)) warn(`labels.json impact at ${e.at} s matches no timeline impact: ignored`); });
+  const IMPACTS = TIMES.map((t, i) => {
+    const lab = pick.get(i) || null;
+    const f = F(t), shot = shotAt(f);
+    const c = lab && Array.isArray(lab.center) ? lab.center : [W / 2, H / 2];
+    return { i, t, f, top: shot.src, cx: clamp(c[0], 0, W), cy: clamp(c[1], 0, H), word: lab && lab.word ? String(lab.word) : null, flash: true };
+  });
+
+  /* Flashes: at most max_per_second in any 1 s window (WCAG 2.3.1). The VS blade counts as one.
+     Candidates are taken in time order, so the limit holds over every window. */
+  const FL = Object.assign({ opacity: 0.5, frames: 3, max_per_second: 3 }, LB.flash || {});
+  FL.opacity = Math.min(0.55, Math.max(0, FL.opacity));
+  FL.max_per_second = Math.min(3, Math.max(0, FL.max_per_second | 0));
+  const FLASH_OK = new Map();
+  function planFlashes(cands) {
+    const kept = [];
+    for (const c of cands.slice().sort((a, b) => a.f - b.f)) {
+      const recent = kept.filter((g) => g > c.f - FPS).length;
+      const ok = recent < FL.max_per_second;
+      if (ok) kept.push(c.f); else warn(`${c.key}: flash dropped, ${recent} already in the last second`);
+      FLASH_OK.set(c.key, ok);
+    }
+  }
+
+  /* ---------------- layout ---------------- */
+  const $ = (id) => document.getElementById(id);
+  const stage = $("stage"), hookL = $("hook"), hudL = $("hud"), lowerL = $("lower"), wordsL = $("words"), finL = $("finale"), wipesL = $("wipes"), coverL = $("cover"), camL = $("cam");
+  const fitFont = (e, maxW, minPx) => { let px = parseFloat(getComputedStyle(e).fontSize); while (e.getBoundingClientRect().width > maxW && px > minPx) { px -= 2; e.style.fontSize = px + "px"; } return px; };
+  function slabEl(parent, text, px, bg, fg, cls = "") {
+    const s = mk("div", "slab disp " + cls, parent, text);
+    s.style.fontSize = px + "px";
+    if (bg) s.style.setProperty("--bg", bg);
+    if (fg) s.style.setProperty("--fg", fg);
+    return s;
+  }
+  const size = (e) => { const r = e.getBoundingClientRect(); return { w: r.width, h: r.height }; };
+  const tops = Object.keys(LB.tops);
+  for (const k of tops) {
+    const c = LB.tops[k].color, rgb = hex(c);
+    const near = (b) => Math.hypot(rgb[0] - b[0], rgb[1] - b[1], rgb[2] - b[2]) < 60;
+    if (near(BRAND_LIME) || near(BRAND_VIOLET)) warn(`${k} colour ${c} is close to the brand lime/violet, which mean "ships now"/"on its way"`);
+  }
+
+  async function build() {
+    await Promise.all([
+      document.fonts.load('italic 900 100px "Barlow Condensed"'),
+      document.fonts.load('italic 800 100px "Barlow Condensed"'),
+      document.fonts.load('italic 700 100px "Barlow Condensed"'),
+      document.fonts.load('700 40px "JetBrains Mono"'),
+      document.fonts.load('italic 700 100px "Chakra Petch"'),
+    ]);
+    await document.fonts.ready;
+    for (const f of ['italic 900 100px "Barlow Condensed"', '700 40px "JetBrains Mono"', 'italic 700 100px "Chakra Petch"']) {
+      if (!document.fonts.check(f)) throw new Error(`font did not load: ${f}`);
+    }
+
+    const s0 = shots[0], other = shots.find((s) => s.src !== s0.src && s.a < F((LB.hook || {}).end || 3.4));
+    planFlashes([...(other ? [{ key: "vs", f: other.a }] : []), ...IMPACTS.map((im) => ({ key: "impact" + im.i, f: im.f }))]);
+    buildHook();
+    buildHud();
+    buildLowerThirds();
+    buildImpacts();
+    buildWipes();
+    buildFinale();
+    buildCover();
+    if (FIN.logoParts) { await FIN.logoParts.img.decode().catch(() => null); placeLogo(FIN.logoParts); }
+    if (window.__DEBUG__) $("dbg").classList.add("on");
+
+    // At rest, every text box must sit inside the safe area.
+    for (const e of TEXT) e.style.visibility = "visible";
+    const rest = checkSafe("rest");
+    for (const e of TEXT) e.style.visibility = "hidden";
+    recordRest();
+    coverL.style.display = "none";
+    await Promise.all([...document.images].map((i) => i.decode().catch(() => null)));
+    window.__PLAN__ = makePlan();
+    window.__LAYOUT__ = { warnings, safeAtRest: rest.length ? rest : "ok", frames: N, fps: FPS };
+    window.__READY__ = true;
+  }
+
+  /* ---------------- 1. hook: names, VS, the two-beat question ---------------- */
+  function buildHook() {
+    const H0 = LB.hook || {};
+    const s0 = shots[0];
+    const other = shots.find((s) => s.src !== s0.src && s.a < F(H0.end || 3.4));
+    const endF = snapCut(F(H0.end || 3.4));
+    // The two beats land on the two cuts after the VS cut (1.3 s and 1.9 s in this edit), a pulse on the next.
+    const k0 = other ? other.i : 0;
+    const cutAfter = (n, fallback) => (shots[k0 + n] && shots[k0 + n].a < endF ? shots[k0 + n].a : fallback);
+    const qBeats = [cutAfter(1, F(1.3)), cutAfter(2, F(1.9))];
+    if (qBeats[1] <= qBeats[0] + 6) qBeats[1] = Math.min(endF - 20, qBeats[0] + 18);
+    const pulseF = cutAfter(3, null);
+    const tagOut = qBeats[0] - 2;   // names gone two frames before the first beat lands
+
+    // Name tag: the top's colour slab, its name, its code chip stamped under it.
+    function nameTag(src, align, top, id) {
+      const t = topOf(src);
+      const g = node(hookL, 0, top, { id });
+      const s = slabEl(g, t.name, 124, t.color, onColour(t.color));
+      fitFont(s, MAXW - 40, 80);
+      const z = size(s);
+      const x = align === "left" ? LEFT + 14 : RIGHT - 14 - z.w;
+      place(g, x, top);
+      let chip = null, cz = null;
+      if (t.code) {
+        chip = node(hookL, 0, 0, { id: id + "-code" });
+        mk("div", "chip", chip, t.code).style.fontSize = "40px";
+        cz = size(chip.firstChild);
+        place(chip, align === "left" ? x + 26 : x + z.w - 26 - cz.w, top + z.h + 22);
+      }
+      return { g, chip, w: z.w, h: z.h, cw: cz ? cz.w : 0, ch: cz ? cz.h : 0 };
+    }
+    const A = nameTag(s0.src, "left", 372, "hook-a");
+    const B = other ? nameTag(other.src, "right", 1300, "hook-b") : null;
+
+    // VS: a white blade cuts across on the cut, the badge stamps in the middle.
+    const blade = mk("div", "blade", wipesL); blade.style.width = "200px"; blade.style.left = "440px"; mk("i", null, blade);
+    blade.classList.add("a"); blade.dataset.id = "vs-blade"; ALL.push(blade);
+    const vs = node(hookL, 0, 0, { id: "vs" });
+    const vsS = slabEl(vs, (H0.vs || "VS"), 176, VOID, "#ffffff", "dark");
+    const vz = size(vsS);
+    const midY = (A.chip ? parseFloat(A.chip.style.top) + 60 : 372 + A.h) / 2 + 1300 / 2;
+    place(vs, (LEFT + RIGHT) / 2 - vz.w / 2, midY - vz.h / 2 + 10);
+
+    // The question, two beats on the next two cuts.
+    const q = H0.question || [];
+    const q1 = node(hookL, 0, 0, { id: "q1" }), q2 = node(hookL, 0, 0, { id: "q2" });
+    const q1s = slabEl(q1, q[0] || "", 150, VOID, "#ffffff", "dark");
+    fitFont(q1s, MAXW - 30, 90);
+    const q2s = slabEl(q2, q[1] || "", 200, "#f3f2f7", VOID, "paper");
+    fitFont(q2s, MAXW - 30, 100);
+    const z1 = size(q1s), z2 = size(q2s);
+    const qTop = 520;
+    place(q1, LEFT + 12, qTop);
+    place(q2, RIGHT - 12 - z2.w, qTop + z1.h + 26);
+
+    const vsF = other ? other.a : null;
+    const bladeOK = vsF != null && FLASH_OK.get("vs") === true;
+    const bF = vsF != null ? vsF + 1 : null;
+
+    COMPS.push((f) => {
+      // A: on screen from the first frame (slam landing on frame 2), wipes out into the first beat.
+      const outA = outWipe(tagOut, f, A.w, A.h, 3);
+      if (f < tagOut) {
+        // Readable from frame 0: two thirds revealed, lightly blurred, landed by frame 2.
+        const a0 = s0.a;
+        const pin = V([[a0, 0.62], [a0 + 2, 1, EASE.out]], f);
+        put(A.g, {
+          s: V([[a0, 1.08, EASE.out], [a0 + 2, 0.975, EASE.soft], [a0 + 5, 1]], f),
+          blur: V([[a0, 4], [a0 + 2, 0]], f),
+          x: V([[a0, 18, EASE.out], [a0 + 4, 0]], f),
+          clip: outA < 1 ? wipe(outA, A.w, A.h, -1) : wipe(pin, A.w, A.h),
+        });
+        if (A.chip) {
+          if (f < s0.a + 4) hide(A.chip);
+          else put(A.chip, { ...stamp(s0.a + 7, f, -3, 1.45), clip: outA < 1 ? wipe(outA, A.cw, A.ch, -1, 24) : "none" });
+        }
+      } else { hide(A.g); if (A.chip) hide(A.chip); }
+      // B: slams in right after the VS cut, from the other side.
+      if (B && f < tagOut && f >= bF - 3) {
+        const outB = outWipe(tagOut, f, B.w, B.h, 3);
+        const pin = V([[bF - 2, 0], [bF + 2, 1, EASE.out]], f);
+        put(B.g, { ...slam(bF + 2, f, 1.16), x: V([[bF - 2, 40, EASE.out], [bF + 5, 0]], f), clip: outB < 1 ? wipe(outB, B.w, B.h, 1) : wipe(pin, B.w, B.h, -1) });
+        if (B.chip) {
+          if (f < bF + 3) hide(B.chip);
+          else put(B.chip, { ...stamp(bF + 6, f, 3, 1.45), clip: outB < 1 ? wipe(outB, B.cw, B.ch, 1, 24) : "none" });
+        }
+      } else if (B) { hide(B.g); if (B.chip) hide(B.chip); }
+      // VS blade sweeps through the frame centred on the cut, the badge stamps right after.
+      if (vsF != null && bladeOK && f >= vsF - 3 && f <= vsF + 3) put(blade, { x: V([[vsF - 3, -980, EASE.in], [vsF, 0, EASE.out], [vsF + 3, 1060]], f), op: 0.92 });
+      else hide(blade);
+      if (vsF != null && f >= vsF - 1 && f < tagOut) put(vs, { ...stamp(vsF + 2, f, -6, 1.6), clip: wipe(outWipe(tagOut, f, vz.w, vz.h, 3), vz.w, vz.h) });
+      else hide(vs);
+      // Question: beat one, beat two (with a jolt on the first line), a pulse on the next cut, out before endF.
+      const outQ = outWipe(endF - 1, f, 900, 220, 5);
+      if (f >= qBeats[0] - 3 && f < endF) {
+        let jx = 0, jy = 0;
+        const j = f - qBeats[1];
+        if (j >= 0 && j < 4) { jx = [0, -7, 5, -2][j]; jy = [9, -6, 4, -2][j]; }
+        const pulse = pulseF != null ? V([[pulseF - 0.5, 1], [pulseF, 1.045, EASE.out], [pulseF + 6, 1]], f) : 1;
+        const s1 = slam(qBeats[0], f, 1.24);
+        put(q1, { ...s1, s: s1.s * pulse, x: jx, y: jy, clip: wipe(outQ, z1.w, z1.h, -1) });
+      } else hide(q1);
+      if (f >= qBeats[1] - 3 && f < endF) {
+        const pulse = pulseF != null ? V([[pulseF - 0.5, 1], [pulseF, 1.06, EASE.out], [pulseF + 6, 1]], f) : 1;
+        const s2 = slam(qBeats[1], f, 1.2);
+        put(q2, { ...s2, s: s2.s * pulse, r: V([[qBeats[1] - 3, 4, EASE.in], [qBeats[1], 0]], f), clip: wipe(outQ, z2.w, z2.h, -1) });
+      } else hide(q2);
+    });
+    HOOK.tagsUntil = qBeats[0];     // corner tags take over on the first question cut
+    HOOK.end = endF;
+    HOOK.vsF = vsF;
+  }
+  const HOOK = {};
+
+  /* ---------------- 3-4. HUD: who is on screen, slow motion ---------------- */
+  function buildHud() {
+    const hudTop = SAFE.t + 18;
+    const tags = {};
+    for (const k of tops) {
+      const t = LB.tops[k];
+      const g = node(hudL, LEFT + 10, hudTop, { id: "tag-" + k });
+      const s = slabEl(g, t.short || t.name, 58, t.color, onColour(t.color), "tagbox");
+      tags[k] = { g, ...size(s) };
+    }
+    const SM = LB.slowmo || {};
+    const slows = shots.filter((s) => s.kind === "slow");
+    const chips = {};
+    for (const s of slows) {
+      const text = (SM.text || "SLOW-MO ×{speed}").replace("{speed}", fmtSpeed(s.speed));
+      if (chips[text]) continue;
+      const g = node(hudL, 0, hudTop, { id: "slow-" + Object.keys(chips).length });
+      const box = mk("div", "slowbox", g);
+      mk("div", "mono", box, text);
+      const rail = mk("div", "rail", box);
+      const lit = mk("i", null, rail);
+      const z = size(box);
+      place(g, RIGHT - z.w, hudTop);
+      chips[text] = { g, lit, w: z.w, h: z.h };
+    }
+    const tagFrom = HOOK.tagsUntil != null ? HOOK.tagsUntil : 0;
+    // First frame of the run of shots of the same top that holds shot i (the tag wipes in once per run).
+    const runStart = (i) => { while (i > 0 && shots[i - 1].src === shots[i].src) i--; return shots[i].a; };
+    COMPS.push((f) => {
+      const shot = shotAt(f);
+      for (const k of tops) {
+        const T = tags[k];
+        if (LB.corner_tags === false || f < tagFrom || shot.src !== k) { hide(T.g); continue; }
+        const since = Math.max(runStart(shot.i), tagFrom);
+        const p = V([[since, 0], [since + 4, 1, EASE.out]], f);
+        // The tag kicks with every impact of its top.
+        let kick = 1;
+        for (const im of IMPACTS) if (im.top === k && f >= im.f && f < im.f + 7) kick = V([[im.f, 1.16, EASE.out], [im.f + 6, 1]], f);
+        put(T.g, { clip: wipe(p, T.w, T.h), x: V([[since, -16, EASE.out], [since + 5, 0]], f), s: kick });
+      }
+      const text = shot.kind === "slow" ? (SM.text || "SLOW-MO ×{speed}").replace("{speed}", fmtSpeed(shot.speed)) : null;
+      for (const [k, c] of Object.entries(chips)) {
+        if (k !== text) { hide(c.g); continue; }
+        const a = shot.a + 1, b = shot.b;
+        const pin = V([[a, 0], [a + 4, 1, EASE.out]], f);
+        const pout = V([[b - 3, 1, EASE.in], [b, 0]], f);
+        put(c.g, { clip: wipe(Math.min(pin, pout), c.w, c.h, 1, 30) });
+        const prog = clamp((f - shot.a + 1) / Math.max(1, shot.b - shot.a), 0, 1);
+        const teeth = Math.ceil((c.w - 40) / 18);
+        const n = Math.round(teeth * prog);
+        c.lit.style.clipPath = `inset(0px ${r3((1 - n / teeth) * 100)}% 0px 0px)`;
+        LOG.push("lit:" + n);
+      }
+    });
+  }
+
+  /* ---------------- lower thirds: the first slow motion of each top ---------------- */
+  function buildLowerThirds() {
+    if (LB.lower_thirds === false) return;
+    const seen = new Set();
+    for (const s of shots) {
+      if (s.kind !== "slow" || seen.has(s.src)) continue;
+      seen.add(s.src);
+      const t = topOf(s.src);
+      const g = node(lowerL, LEFT + 12, 0, { id: "lt-" + s.src });
+      const box = mk("div", "lt", g);
+      box.style.setProperty("--top", t.color);
+      let chip = null;
+      if (t.code) { chip = mk("div", "chip", box, t.code); chip.style.fontSize = "38px"; }
+      const sl = slabEl(box, t.name, 108, VOID, "#ffffff", "dark");
+      mk("i", "bar", sl);
+      fitFont(sl, MAXW - 40, 70);
+      const z = size(box);
+      const bottom = SAFE.b - 34;
+      place(g, LEFT + 12, bottom - z.h);
+      const a = s.a + 3, b = s.b - 1;
+      COMPS.push((f) => {
+        if (f < a || f >= b) { hide(g); return; }
+        const pin = V([[a, 0], [a + 6, 1, EASE.out]], f);
+        const pout = V([[b - 5, 1, EASE.in], [b, 0]], f);
+        put(g, { clip: wipe(Math.min(pin, pout), z.w, z.h), x: V([[a, -60, EASE.out], [a + 8, 0], [b - 5, 0, EASE.in], [b, -40]], f) });
+        LOG.push("lt");
+      });
+    }
+  }
+
+  /* ---------------- 2. impacts: flash, speed-line burst, optional sticker word ---------------- */
+  const BURSTS = [];
+  function buildImpacts() {
+    for (const im of IMPACTS) {
+      im.flash = FLASH_OK.get("impact" + im.i) === true;
+      const R = rng(1000 + im.i * 7919);
+      const n = 40, lines = [];
+      const rot = R() * Math.PI * 2;
+      for (let j = 0; j < n; j++) {
+        lines.push({
+          a: rot + ((j + 0.5 + (R() - 0.5) * 0.8) * Math.PI * 2) / n,
+          d: 0.005 + R() * 0.011,          // half-angle of the wedge
+          m: 0.8 + R() * 0.6,              // where its point starts
+          tint: R() < 0.24,
+        });
+      }
+      BURSTS.push({ im, lines, color: topOf(im.top).color });
+      if (im.word) {
+        const g = node(wordsL, 0, 0, { id: "word-" + im.i });
+        const st = mk("div", "sticker disp", g, im.word);
+        st.style.fontSize = "92px";
+        fitFont(st, MAXW - 40, 60);
+        const z = size(st);
+        const x = clamp(im.cx - z.w / 2, LEFT + 10, RIGHT - 10 - z.w);
+        const y = clamp(im.cy - 300 - z.h / 2, SAFE.t + 120, SAFE.b - 200 - z.h);
+        place(g, x, y);
+        const a = im.f + 1, b = im.f + 24;
+        COMPS.push((f) => {
+          if (f < a - 3 || f >= b) { hide(g); return; }
+          const o = V([[b - 4, 1, EASE.in], [b, 0]], f);
+          put(g, { ...stamp(a + 2, f, -5, 1.5), clip: wipe(o, z.w, z.h) });
+        });
+      }
+    }
+    const flash = $("flash");
+    flash.classList.add("a"); flash.dataset.id = "flash"; ALL.push(flash);
+    const curve = [FL.opacity, FL.opacity * 0.48, FL.opacity * 0.16].slice(0, Math.max(1, Math.min(3, FL.frames)));
+    COMPS.push((f) => {
+      let o = 0;
+      for (const im of IMPACTS) { const k = Math.round(f - im.f); if (im.flash && k >= 0 && k < curve.length) o = Math.max(o, curve[k]); }
+      put(flash, { op: o });
+    });
+  }
+  const fx = $("fx").getContext("2d");
+  function drawFx(f) {
+    fx.clearRect(0, 0, W, H);
+    const D = 11;
+    for (const B of BURSTS) {
+      const k = f - B.im.f;
+      if (k < 0 || k >= D) continue;
+      LOG.push(`burst${B.im.i}:${r3(k)}`);
+      const u = k / D;
+      const rIn = 210 * (1 + 1.9 * EASE.out3(u));
+      const alpha = k < 1 ? 1 : 1 - EASE.in2((k - 1) / (D - 1));
+      const thin = 1 - 0.55 * u;
+      const { cx, cy } = B.im;
+      const wedge = (L, pad) => {
+        const r0 = rIn * L.m, r1 = 2400, d = L.d * thin + pad;
+        fx.moveTo(cx + Math.cos(L.a) * r0, cy + Math.sin(L.a) * r0);
+        fx.lineTo(cx + Math.cos(L.a - d) * r1, cy + Math.sin(L.a - d) * r1);
+        fx.lineTo(cx + Math.cos(L.a + d) * r1, cy + Math.sin(L.a + d) * r1);
+        fx.closePath();
+      };
+      fx.globalAlpha = alpha;
+      fx.lineJoin = "miter";
+      fx.beginPath();
+      for (const L of B.lines) wedge(L, 0);
+      fx.lineWidth = 5;
+      fx.strokeStyle = "rgba(11,10,15,0.75)";
+      fx.stroke();
+      fx.beginPath();
+      for (const L of B.lines) if (!L.tint) wedge(L, 0);
+      fx.fillStyle = "#ffffff";
+      fx.fill();
+      fx.beginPath();
+      for (const L of B.lines) if (L.tint) wedge(L, 0);
+      fx.fillStyle = B.color;
+      fx.fill();
+      // Shock ring out of the contact point.
+      if (k < 8) {
+        const rr = 120 + 420 * EASE.out3(k / 8), lw = 16 * (1 - k / 8) + 2;
+        fx.globalAlpha = 0.9 * (1 - k / 8);
+        fx.beginPath(); fx.arc(cx, cy, rr, 0, Math.PI * 2);
+        fx.lineWidth = lw + 6; fx.strokeStyle = VOID; fx.stroke();
+        fx.lineWidth = lw; fx.strokeStyle = "#ffffff"; fx.stroke();
+      }
+      fx.globalAlpha = 1;
+    }
+  }
+
+  /* ---------------- transitions: a slash on every cut from one top to the other ---------------- */
+  function buildWipes() {
+    const list = shots.filter((s, i) => i > 0 && s.src !== shots[i - 1].src && s.a >= (HOOK.end || 0));
+    const bars = [];
+    for (const s of list) {
+      const c = topOf(s.src).color;
+      const w1 = mk("div", "blade", wipesL); w1.style.width = "30px"; w1.style.left = "525px"; mk("i", null, w1);
+      const w2 = mk("div", "blade", wipesL); w2.style.width = "14px"; w2.style.left = "533px"; const i2 = mk("i", null, w2); i2.style.background = c;
+      for (const [e, id] of [[w1, "cut-w-" + s.i], [w2, "cut-c-" + s.i]]) { e.classList.add("a"); e.dataset.id = id; ALL.push(e); }
+      bars.push({ f: s.a, w1, w2 });
+    }
+    COMPS.push((f) => {
+      for (const b of bars) {
+        if (f < b.f - 2 || f > b.f + 2) { hide(b.w1); hide(b.w2); continue; }
+        const x = V([[b.f - 2, -760, EASE.in], [b.f, 0, EASE.out], [b.f + 2, 760]], f);
+        put(b.w1, { x, op: 0.95 });
+        put(b.w2, { x: x - 46, op: 1 });
+      }
+    });
+  }
+
+  /* ---------------- 5. finale: the question, the call to comment, the logo sting ---------------- */
+  function buildFinale() {
+    const FN = LB.finale || {};
+    const at = snapCut(F(FN.at != null ? FN.at : 14.22));
+    const ctaF = F(FN.cta_at != null ? FN.cta_at : 14.8);
+    const logoOn = (LB.outro_logo || "geardrop") !== "none";
+    const logoF = N - F(FN.logo_seconds != null ? FN.logo_seconds : 0.9);
+
+    // The question: the first word on its top's slab, the rest on the next line, right-aligned.
+    const segs = FN.question || [];
+    const g1 = node(finL, 0, 0, { id: "fq1" });
+    const g2 = node(finL, 0, 0, { id: "fq2" });
+    const row2 = mk("div", null, g2);
+    row2.style.display = "flex"; row2.style.alignItems = "center"; row2.style.gap = "34px";
+    const segEl = (parent, sg, px) => {
+      if (sg.top) { const t = topOf(sg.top); return slabEl(parent, sg.text, px, t.color, onColour(t.color)); }
+      const e = mk("div", "disp or", parent, sg.text); return e;
+    };
+    if (segs[0]) segEl(g1, segs[0], 176);
+    segs.slice(1).forEach((sg) => segEl(row2, sg, 176));
+    fitFont(g1.firstChild || g1, MAXW - 30, 90);
+    for (let px = 176; px > 90 && size(row2).w > MAXW - 30; px -= 4) row2.querySelectorAll(".slab").forEach((e) => { e.style.fontSize = px + "px"; });
+    const z1 = size(g1), z2 = size(row2);
+    const qTop = 404;
+    place(g1, LEFT + 14, qTop);
+    place(g2, RIGHT - 14 - z2.w, qTop + z1.h + 4);
+
+    // Call to comment: a white sticker with a speech bubble.
+    const cta = node(finL, 0, 0, { id: "cta" });
+    const st = mk("div", "sticker disp", cta);
+    st.style.fontSize = "94px";
+    st.insertAdjacentHTML("beforeend", '<svg width="0.9em" height="0.86em" viewBox="0 0 36 34" aria-hidden="true"><path d="M3 3h30v20H15l-8 8v-8H3z" fill="#0b0a0f"/><path d="M10 10h16M10 16h10" stroke="#f3f2f7" stroke-width="3.2"/></svg>');
+    st.appendChild(document.createTextNode(FN.cta || ""));
+    fitFont(st, MAXW - 40, 50);
+    const zc = size(st);
+    const ctaTop = logoOn ? 1112 : 1240;
+    place(cta, (LEFT + RIGHT) / 2 - zc.w / 2, ctaTop);
+
+    // Logo: the emblem launches one turn the way its arrows point, the wordmark slashes in, the rail fills.
+    let logo = null;
+    if (logoOn) {
+      const emb = node(finL, 0, 0, { id: "emblem", text: false });
+      const img = mk("img", "emb", emb);
+      img.src = (window.__ASSETS__ && window.__ASSETS__.emblem) || "brand/emblem.webp";
+      img.alt = "";
+      img.style.width = "172px";
+      const wm = node(finL, 0, 0, { id: "wordmark" });
+      const w = mk("div", "wm", wm);
+      w.append("Gear", mk("span", "sl", null, "//"), mk("span", "dr", null, "Drop"));
+      w.style.fontSize = "106px";
+      const railG = node(finL, 0, 0, { id: "logo-rail", text: false });
+      const rail = mk("div", "rail", railG);
+      const lit = mk("i", null, rail);
+      LOGO_IMG.push(img);
+      logo = { emb, img, wm, w, railG, rail, lit };
+    }
+    COMPS.push((f) => {
+      if (f < at - 3) { hide(g1); hide(g2); } else {
+        put(g1, { ...slam(at + 1, f, 1.2), x: V([[at - 2, -30, EASE.out], [at + 4, 0]], f) });
+        put(g2, { ...slam(at + 6, f, 1.2), x: V([[at + 3, 30, EASE.out], [at + 9, 0]], f) });
+      }
+      if (f < ctaF - 3) hide(cta); else put(cta, stamp(ctaF + 1, f, -3, 1.45));
+      if (logo) layoutLogoFrame(logo, f, logoF);
+    });
+    FIN.at = at; FIN.cta = ctaF; FIN.logo = logoOn ? logoF : null; FIN.logoParts = logo;
+  }
+  const FIN = {}, LOGO_IMG = [];
+  function placeLogo(L) {
+    // Emblem left, wordmark right, rail under both: centred in the safe width, low in the safe area.
+    const embW = 172, embH = Math.round(embW * (L.img.naturalHeight || 1161) / (L.img.naturalWidth || 1206));
+    const wz = size(L.w);
+    const gap = 26, total = embW + gap + wz.w;
+    const x0 = (LEFT + RIGHT) / 2 - total / 2;
+    const cy = 1418;
+    place(L.emb, x0, cy - embH / 2);
+    L.emb.style.transformOrigin = "50% 50%";
+    place(L.wm, x0 + embW + gap, cy - wz.h / 2 + 4);
+    L.wz = wz;
+    const railW = Math.round(total / 18) * 18 - 8;
+    L.rail.style.width = railW + "px";
+    place(L.railG, (LEFT + RIGHT) / 2 - railW / 2, cy + embH / 2 + 22);
+    L.teeth = Math.ceil(railW / 18);
+  }
+  function layoutLogoFrame(L, f, s) {
+    if (f < s) { hide(L.emb); hide(L.wm); hide(L.railG); return; }
+    // One counter-clockwise turn in 20 frames, no step over 60 degrees; scale settles with it.
+    put(L.emb, { op: V([[s, 0], [s + 3, 1]], f), r: V([[s, 0, EASE.launch], [s + 20, -360]], f), s: V([[s, 0.35, EASE.launch], [s + 14, 1.06, EASE.soft], [s + 20, 1]], f) });
+    const w0 = s + 6;
+    put(L.wm, { clip: wipe(V([[w0, 0], [w0 + 8, 1, EASE.out]], f), L.wz.w, L.wz.h), x: V([[w0, -36, EASE.out], [w0 + 9, 0]], f) });
+    const r0 = s + 10;
+    const n = clamp(Math.round(L.teeth * clamp((f - r0) / 12, 0, 1)), 0, L.teeth);
+    put(L.railG, { op: f >= r0 ? 1 : 0 });
+    L.lit.style.clipPath = `inset(0px ${r3((1 - n / L.teeth) * 100)}% 0px 0px)`;
+    LOG.push("lrail:" + n);
+  }
+
+  /* ---------------- cover: the hook title, settled ---------------- */
+  function buildCover() {
+    const H0 = LB.hook || {}, q = H0.question || [];
+    const a = shots[0].src, b = (shots.find((s) => s.src !== a) || shots[0]).src;
+    const row = mk("div", null, coverL);
+    row.style.cssText = "position:absolute; display:flex; align-items:center; gap:30px;";
+    const ta = topOf(a), tb = topOf(b);
+    slabEl(row, ta.short || ta.name, 104, ta.color, onColour(ta.color));
+    slabEl(row, H0.vs || "VS", 84, VOID, "#ffffff", "dark");
+    slabEl(row, tb.short || tb.name, 104, tb.color, onColour(tb.color));
+    const q1 = slabEl(coverL, q[0] || "", 150, VOID, "#ffffff", "dark");
+    const q2 = slabEl(coverL, q[1] || "", 200, "#f3f2f7", VOID, "paper");
+    for (const e of [q1, q2]) e.style.position = "absolute";
+    fitFont(q1, MAXW - 30, 90); fitFont(q2, MAXW - 30, 100);
+    let px = 104;
+    while (size(row).w > MAXW - 20 && px > 60) { px -= 4; row.querySelectorAll(".slab").forEach((e, i) => { e.style.fontSize = (i === 1 ? px * 0.8 : px) + "px"; }); }
+    const zr = size(row), z1 = size(q1), z2 = size(q2);
+    const top = 560;
+    place(row, (LEFT + RIGHT) / 2 - zr.w / 2, top);
+    place(q1, LEFT + 12, top + zr.h + 70);
+    place(q2, RIGHT - 12 - z2.w, top + zr.h + 70 + z1.h + 26);
+    COVER.els = [row, q1, q2];
+  }
+  const COVER = {};
+
+  /* ---------------- plan for the compositor: the punch-in on every impact ---------------- */
+  function makePlan() {
+    const P = Object.assign({ scale: 1.06, in_frames: 3, out_frames: 10, shake_px: 3 }, LB.punch || {});
+    const frames = new Map();
+    const shake = [[1, -1], [-1, 0.7], [0.6, 0.6], [-0.4, -0.4], [0.2, 0.15]];
+    for (const im of IMPACTS) {
+      const A = P.scale - 1;
+      for (let k = 0; k < P.in_frames + P.out_frames; k++) {
+        const n = im.f + k;
+        if (n < 0 || n >= N) continue;
+        let s;
+        if (k < P.in_frames) s = 1 + A * (1 - Math.pow(1 - (k + 1) / P.in_frames, 2));
+        else s = 1 + A * (1 - EASE.soft((k - P.in_frames + 1) / P.out_frames));
+        if (s <= 1.0005) continue;
+        const sh = shake[k] || [0, 0];
+        // The shake never pulls an edge of the footage into the frame.
+        const limX = (s - 1) * Math.min(im.cx, W - im.cx), limY = (s - 1) * Math.min(im.cy, H - im.cy);
+        const dx = clamp(sh[0] * P.shake_px, -limX, limX), dy = clamp(sh[1] * P.shake_px, -limY, limY);
+        const prev = frames.get(n);
+        if (!prev || prev.s < s) frames.set(n, { n, s: r3(s), dx: r3(dx), dy: r3(dy), cx: im.cx, cy: im.cy });
+      }
+    }
+    return {
+      fps: FPS, frames: N, width: W, height: H,
+      impacts: IMPACTS.map((im) => ({ t: im.t, frame: im.f, top: im.top, cx: im.cx, cy: im.cy, flash: im.flash, word: im.word })),
+      punch: [...frames.values()].sort((a, b) => a.n - b.n),
+      cues: { hookTagsUntil: HOOK.tagsUntil, vs: HOOK.vsF, hookEnd: HOOK.end, finale: FIN.at, cta: FIN.cta, logo: FIN.logo },
+    };
+  }
+
+  /* ---------------- seek ---------------- */
+  function hash(s) { let h1 = 0x811c9dc5, h2 = 0x9e3779b9; for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i); h1 = Math.imul(h1 ^ c, 16777619); h2 = Math.imul(h2 ^ c, 2246822507); } return (h1 >>> 0).toString(36) + (h2 >>> 0).toString(36) + ":" + s.length; }
+  function frame(f) {
+    LOG = []; TOUCH = new Set(); FRAME = f;
+    for (const c of COMPS) c(f);
+    for (const e of ALL) if (!TOUCH.has(e)) e.style.visibility = "hidden";
+    drawFx(f);
+    if (window.__DEBUG__) {
+      // Frame number in words and in 10 bits (white = 1), for the alignment test.
+      $("fn").textContent = `f ${Math.round(f)}  ${(f / FPS).toFixed(3)}s`;
+      const bits = $("bits");
+      if (!bits.children.length) for (let i = 0; i < 10; i++) { const b = mk("div", "bit", bits); b.style.left = 300 + i * 34 + "px"; }
+      [...bits.children].forEach((b, i) => { b.style.background = (Math.round(f) >> (9 - i)) & 1 ? "#fff" : "#000"; });
+      LOG.push("dbg" + f);
+    }
+    return hash(LOG.join(";"));
+  }
+  /** The overlay at time t (seconds). Returns a signature: equal signatures draw equal pixels. */
+  window.seek = (t) => frame(Math.round(t * FPS * 1000) / 1000);
+  window.seekFrame = (n) => frame(n);
+
+  /** Text boxes outside the safe area right now (visible ones only, transforms included). */
+  function checkSafe(when) {
+    const out = [];
+    for (const e of TEXT) {
+      if (e.style.visibility === "hidden" || parseFloat(e.style.opacity || "1") < 0.05) continue;
+      const r = e.getBoundingClientRect();
+      if (r.width === 0 && r.height === 0) continue;
+      if (r.left < SAFE.l - 0.5 || r.right > SAFE.r + 0.5 || r.top < SAFE.t - 0.5 || r.bottom > SAFE.b + 0.5) {
+        out.push(`${when}: ${e.dataset.id} at ${Math.round(r.left)},${Math.round(r.top)}-${Math.round(r.right)},${Math.round(r.bottom)}`);
+      }
+    }
+    return out;
+  }
+  window.checkSafe = () => checkSafe("f" + Math.round(FRAME));
+
+  /** Cover mode: only the hook title, settled, over nothing else. */
+  window.cover = () => {
+    for (const e of ALL) e.style.visibility = "hidden";
+    fx.clearRect(0, 0, W, H);
+    camL.style.display = "none";
+    $("dbg").classList.remove("on");
+    coverL.style.display = "block";
+    const out = [];
+    for (const e of COVER.els) {
+      const r = e.getBoundingClientRect();
+      if (r.left < SAFE.l || r.right > SAFE.r || r.top < SAFE.t || r.bottom > SAFE.b) out.push(`cover text outside the safe area: ${Math.round(r.left)},${Math.round(r.top)}-${Math.round(r.right)},${Math.round(r.bottom)}`);
+    }
+    return out;
+  };
+
+  build().catch((e) => { window.__ERROR__ = String((e && e.stack) || e); });
+})();
+</script>
+</body></html>
