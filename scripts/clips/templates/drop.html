@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8">
+<script src="clip.js"></script>
+<script>ClipKit.injectFonts();</script>
+<link rel="stylesheet" href="xrail.css">
+<style>
+  html, body, .stage { width: 1080px; height: 1920px; }
+  /* Every move here is a Web Animations track the script writes on the shared 128 BPM grid; the
+     kit's own CSS animations stay off so nothing runs on a clock of its own. */
+  #stage, #stage * { animation: none !important; }
+  .layer { position: absolute; inset: 0; }
+  .arena { background: var(--void); overflow: hidden; }
+  .arena::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(-72deg, rgba(255,255,255,0.03) 0 3px, transparent 3px 20px); }
+  .seg { overflow: hidden; background: var(--void); }
+  .seg.sticker-card { outline: 30px solid #f3f2f7; box-shadow: 36px 48px 0 30px rgba(0,0,0,0.6); }
+  .emb { position: absolute; display: block; max-width: none; }
+  .wm.big { position: absolute; padding: 0 14px; }
+  /* Die-cut sticker with the logo's white keyline (gd-sticker on the site). */
+  .sticker { position: absolute; display: inline-flex; align-items: center; gap: 0.3em; padding: 16px 26px 13px; background: #f3f2f7; color: var(--void); font-weight: 800; font-stretch: 116%; font-size: 48px; line-height: 1; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; border-radius: 3px; box-shadow: 0 0 0 6px #fff, 9px 12px 0 6px rgba(0,0,0,0.6); }
+  .cta-wrap { position: absolute; }
+  .cta { position: relative; display: flex; align-items: center; justify-content: center; gap: 22px; width: 760px; height: 100px; background: var(--lime); color: var(--void); clip-path: polygon(24px 0, 100% 0, calc(100% - 24px) 100%, 0 100%); font-weight: 900; font-stretch: 112%; font-size: 52px; line-height: 1; text-transform: uppercase; letter-spacing: 0.03em; overflow: hidden; }
+  .cta .sheen { position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,0.85) 50%, transparent 70%); translate: -130% 0; }
+  .streak { transform: skewX(-18deg); }
+  .co .dot { rotate: 45deg; }
+  .co .label { font-size: 40px; }
+  .chip { font-size: 48px; border-color: rgba(255,255,255,0.32); background: rgba(11,10,15,0.7); }
+  .block { gap: 18px; }
+  .name { transform-origin: 0 60%; }
+  /* HUD over the products: the brand bar, the running number and the toothed rail. */
+  .hud-brand { position: absolute; left: 64px; top: 298px; display: flex; align-items: center; gap: 18px; padding: 0 14px 0 0; }
+  .counter { position: absolute; top: 306px; display: flex; align-items: flex-start; font-family: "JetBrains Mono", monospace; font-weight: 500; font-size: 40px; line-height: 48px; letter-spacing: 0.04em; }
+  .counter .mask { height: 48px; overflow: hidden; }
+  .counter .col { display: flex; flex-direction: column; }
+  .counter .tot { color: rgba(243,242,247,0.5); }
+  .rail.x40 { background-image: repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0 14px, transparent 14px 27px); }
+  .rail.x40.lit { background-image: repeating-linear-gradient(90deg, var(--lime) 0 14px, transparent 14px 27px); clip-path: inset(0 100% 0 0); }
+  .rail-head { position: absolute; top: 0; left: 0; width: 14px; height: 14px; background: #fff; opacity: 0; }
+  .slab { position: absolute; left: 0; top: -240px; width: 560px; height: 2400px; background: var(--slab, var(--lime)); transform: skewX(-18deg); opacity: 0; }
+  .slab::after { content: ""; position: absolute; right: 0; top: 0; width: 16px; height: 100%; background: #f3f2f7; }
+  .slash { position: absolute; left: 0; top: -240px; width: 22px; height: 2400px; background: var(--lime); transform: skewX(-18deg); opacity: 0; }
+  .ring { position: absolute; width: 2800px; height: 2800px; border-radius: 50%; border: 26px dashed var(--lime); opacity: 0; }
+  .flash { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body><div class="stage" id="stage">
+  <!-- The lime washes sit between the arena and the camera: they hit the background, the brand and
+       the call to action stay crisp on the hit frame. -->
+  <div class="layer arena" id="intro"><div class="flash" id="flash-slam" style="background:var(--lime)"></div><div class="layer" id="intro-cam"></div></div>
+  <div class="layer" id="segs"></div>
+  <div class="layer" id="hud"></div>
+  <div class="layer arena" id="outro"><div class="flash" id="flash-last" style="background:var(--lime)"></div><div class="layer" id="outro-cam"></div></div>
+  <div class="layer" id="fx"></div>
+  <div class="flash" id="flash-white" style="background:#fff"></div>
+</div>
+<!-- Horizontal motion blur for the whip and the slab: one filter per strength, stepped frame by frame. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs id="hblur"></defs></svg>
+<script>
+/* GEAR//DROP drop reel, 1080x1920, 30 fps, 24.4 s, silent: the music is laid on the same grid.
+   128 BPM: one beat 0.46875 s, one bar 1.875 s, every cue rounded to the nearest frame.
+     bar 1        logo sting: the emblem launches two turns the way its arrows point, the wordmark
+                  slams on beat 3 (shake and a lime flash), "Beyblade X originali" stamps on beat 4,
+                  the rail riser fills into the drop;
+     bars 2-11    five products, two bars each, cut on their downbeat with a different transition
+                  each time: product punch-in on beat 1, part code and blade type on beat 3, name
+                  slam on beat 5, one catalogue feature on beat 7, a kick bump on every beat and the
+                  HUD rail ticking one tooth per beat;
+     bars 12-13   end card: the emblem relaunches with GEARDROPSHOP.IT and LINK IN BIO on beat 1,
+                  last hit on beat 5, the CTA sheen again on beat 7, then on beat 8 everything wipes
+                  back out and the emblem grows into the pose the reel opens with (same angle, same
+                  scale, unlit rail), so the last frame runs straight into the first.
+   Key text stays inside the Reels safe area (x 56-960, y 292-1600). No price, availability or
+   NOVITÀ: a video cannot follow the catalogue. */
+(function () {
+  const K = ClipKit;
+  const FPS = 30, BEAT = 60 / 128, END = 24.4, DUR = END * 1000, W = 1080, H = 1920;
+  const F = (t) => Math.round(t * FPS);
+  const beat = (n) => F(n * BEAT);
+  const SEG0 = 4, SEG_BEATS = 8, OUTRO = 44, LAST_HIT = 48;
+  const SAFE = { l: 56, r: 960, t: 292, b: 1600 };
+  const CX = (SAFE.l + SAFE.r) / 2;
+  const EMB = { cx: CX, cy: 660, w: 400 }, EMB_OPEN = 1.6;
+  const WM_TOP = 888, STICKER_TOP = 1124, CTA_TOP = 1110, LINK_TOP = 1268, RAIL = { y: 1424, w: 870, teeth: 29 };
+  const HUD_RAIL_Y = 392, PITCH = 27;
+  const PRODUCT = { x: 70, y: 462, w: 940, h: 668 }, PUSH = 1.04, BUMP = 1.035;
+  const BLOCK = { left: 64, top: 1300, maxW: 888 };
+  const EASE = {
+    out: "cubic-bezier(0.16, 1, 0.3, 1)", in: "cubic-bezier(0.55, 0, 1, 0.45)",
+    launch: "cubic-bezier(0.22, 1, 0.36, 1)", soft: "cubic-bezier(0.45, 0, 0.55, 1)",
+  };
+
+  /* One track per element and property over the whole timeline: [frame, value, easing to the next
+     key]. Two keys at the same half frame make a hard cut that lands on the later frame. */
+  function track(el, prop, pts) {
+    const off = (f) => Math.min(1, Math.max(0, f / FPS / END));
+    const kf = [];
+    if (pts[0][0] > 0) kf.push({ offset: 0, [prop]: pts[0][1] });
+    for (const [f, v, e] of pts) kf.push(Object.assign({ offset: off(f), [prop]: v }, e ? { easing: e } : {}));
+    const last = pts[pts.length - 1];
+    if (off(last[0]) < 1) kf.push({ offset: 1, [prop]: last[1] });
+    el.animate(kf, { duration: DUR, fill: "both" });
+  }
+  const cut = (f, a, b) => [[f - 0.5, a], [f - 0.5, b]];
+  /** Visible on frames [from, to): hidden before and after, so covered layers cost nothing. */
+  function show(el, from, to) {
+    const pts = from > 0 ? cut(from, 0, 1) : [[0, 1]];
+    if (to != null) pts.push(...cut(to, 1, 0));
+    track(el, "opacity", pts);
+  }
+  /** A camera jolt: translate offsets frame by frame from f, back to rest. */
+  const shakePts = (f, offsets) => [...cut(f, "0px 0px", `${offsets[0][0]}px ${offsets[0][1]}px`), ...offsets.slice(1).map(([x, y], i) => [f + i + 1, `${x}px ${y}px`]), [f + offsets.length, "0px 0px"]];
+  /** Slapped on a little large and turned, then flat (gd-slap), landing on frame f. */
+  function stamp(el, f, rot, from = 1.9, outPts = []) {
+    track(el, "opacity", [[f - 3, 0], [f - 2, 1], ...outPts]);
+    track(el, "scale", [[f - 3, from, EASE.in], [f, 0.94, EASE.out], [f + 4, 1]]);
+    track(el, "rotate", [[f - 3, `${rot - 12}deg`, EASE.in], [f, `${rot + 1.5}deg`, EASE.out], [f + 4, `${rot}deg`]]);
+  }
+  const railClip = (n, teeth, pitch, width, tooth) => `inset(0px ${n <= 0 ? width : n >= teeth ? 0 : width - (n * pitch - (pitch - tooth))}px 0px 0px)`;
+  const wordmark = (cls) => {
+    const w = K.el("div", cls);
+    w.append("Gear", K.el("span", "sl", "//"), K.el("span", "dr", "Drop"));
+    return w;
+  };
+  const px = (v) => v + "px";
+  /** Horizontal motion blur, frame by frame: {frame: stdDeviation in px}, none before and after. */
+  const hblurIds = new Set();
+  function hblur(el, perFrame) {
+    const defs = document.getElementById("hblur");
+    const pts = [[0, "none"]];
+    const frames = Object.keys(perFrame).map(Number).sort((a, b) => a - b);
+    for (const f of frames) {
+      const s = perFrame[f];
+      const id = `hb${s}`;
+      if (s > 0 && !hblurIds.has(id)) {
+        hblurIds.add(id);
+        defs.insertAdjacentHTML("beforeend", `<filter id="${id}" x="-15%" y="0%" width="130%" height="100%" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="${s} 0" edgeMode="duplicate"/></filter>`);
+      }
+      pts.push(...cut(f, pts[pts.length - 1][1], s > 0 ? `url(#${id})` : "none"));
+    }
+    pts.push(...cut(frames[frames.length - 1] + 1, pts[pts.length - 1][1], "none"));
+    track(el, "filter", pts);
+  }
+  const warnings = [];
+  /** Key text must sit inside the safe area once at rest (measured before any track runs). */
+  function checkSafe(el, what, scale = 1, origin = {}) {
+    const r = el.getBoundingClientRect();
+    const o = { x: origin.x ?? r.left + r.width / 2, y: origin.y ?? r.top + r.height / 2 };
+    const box = { l: o.x + (r.left - o.x) * scale, r: o.x + (r.right - o.x) * scale, t: o.y + (r.top - o.y) * scale, b: o.y + (r.bottom - o.y) * scale };
+    if (box.l < SAFE.l - 0.5 || box.r > SAFE.r + 0.5 || box.t < SAFE.t - 0.5 || box.b > SAFE.b + 0.5) {
+      const msg = `${what} leaves the safe area: ${Math.round(box.l)},${Math.round(box.t)} - ${Math.round(box.r)},${Math.round(box.b)}`;
+      warnings.push(msg);
+      console.warn(msg);
+    }
+  }
+
+  async function main() {
+    const clips = window.__CLIP__;
+    if (!Array.isArray(clips) || clips.length !== 5) throw new Error("window.__CLIP__ must hold the five clips of the drop");
+    await Promise.all([
+      document.fonts.load('italic 900 100px "Anybody Variable"'),
+      document.fonts.load('normal 800 100px "Anybody Variable"'),
+      document.fonts.load('normal 900 100px "Anybody Variable"'),
+      document.fonts.load('500 40px "JetBrains Mono"'),
+      document.fonts.load('italic 700 100px "Chakra Petch"'),
+    ]);
+    await document.fonts.ready;
+    const emblemSrc = (window.__BRAND__ && window.__BRAND__.emblem) || "emblem.webp";
+    const emblem = await K.loadImage(emblemSrc);
+    const embH = EMB.w * emblem.naturalHeight / emblem.naturalWidth;
+    const pieces = await Promise.all(clips.map(async (clip) => { const img = await K.loadImage(clip.cutout); return { clip, img, trim: K.trim(img) }; }));
+
+    const stage = document.getElementById("stage");
+    const fx = document.getElementById("fx");
+    const tracks = []; // deferred: measure everything at rest first, then animate
+    const later = (fn) => tracks.push(fn);
+
+    /* ---------- the lockup shared by the sting and the end card (same place, same pose) ---------- */
+    function lockup(cam) {
+      const emb = K.el("img", "emb", null, { left: px(EMB.cx - EMB.w / 2), top: px(EMB.cy - embH / 2), width: px(EMB.w) });
+      emb.src = emblem.src; emb.alt = "";
+      cam.appendChild(emb);
+      const wm = wordmark("wm big");
+      wm.style.fontSize = "132px";
+      wm.style.top = px(WM_TOP);
+      cam.appendChild(wm);
+      K.fit1(wm, 880, 90);
+      wm.style.left = px(CX - wm.offsetWidth / 2);
+      const railLeft = CX - RAIL.w / 2;
+      cam.appendChild(K.el("div", "rail", null, { left: px(railLeft), width: px(RAIL.w), top: px(RAIL.y) }));
+      const lit = K.el("div", "rail lit", null, { left: px(railLeft), width: px(RAIL.w), top: px(RAIL.y) });
+      cam.appendChild(lit);
+      checkSafe(wm, "wordmark");
+      return { emb, wm, lit };
+    }
+    const railAt = (n) => railClip(n, RAIL.teeth, 30, RAIL.w, 14);
+
+    /* ---------- bar 1: logo sting ---------- */
+    const intro = document.getElementById("intro"), introCam = document.getElementById("intro-cam");
+    const I = lockup(introCam);
+    const sticker = K.el("div", "sticker");
+    sticker.append("Beyblade X", K.el("b", null, "originali"));
+    sticker.style.top = px(STICKER_TOP);
+    introCam.appendChild(sticker);
+    sticker.style.left = px(CX - sticker.offsetWidth / 2);
+    checkSafe(sticker, "sticker", 1.06);
+    const intros = [0, 1, 2, 3].map((i) => { const s = K.el("div", "streak", null, { width: px([64, 16, 120, 10][i]), background: ["rgba(198,255,0,.5)", "rgba(255,255,255,.45)", "rgba(122,60,255,.5)", "rgba(198,255,0,.8)"][i] }); intro.appendChild(s); return s; });
+    // Two fainter copies trailing the emblem while it spins fast: a rotational motion blur.
+    const ghosts = [10, 20].map(() => { const g = I.emb.cloneNode(); introCam.insertBefore(g, I.emb); return g; });
+    later(() => {
+      const slam = beat(2), stampF = beat(3), drop = beat(SEG0);
+      introCam.style.transformOrigin = `${EMB.cx}px ${EMB.cy}px`;
+      // Two counter-clockwise turns that come to rest on the slam, then a wind-up into the drop.
+      // Every frame-to-frame step stays under 60 degrees: the emblem looks almost the same turned
+      // half a turn, so a step over 90 degrees would read as a turn the wrong way.
+      const LAUNCH = "cubic-bezier(0.3, 0.6, 0.4, 1)", WIND = "cubic-bezier(0.55, 0, 0.85, 0.55)";
+      const spinPts = (d) => [[0, `${d}deg`, LAUNCH], [slam, `${d - 720}deg`], [stampF, `${d - 720}deg`, WIND], [drop - 1, `${d - 1000}deg`]];
+      // It opens large (the first frame in the feed) and settles to the lockup size on the slam;
+      // the end card finishes on the same 1.6 so the loop closes.
+      const scalePts = [[0, EMB_OPEN, LAUNCH], [slam - 1, 1], ...cut(slam, 1, 1.08), [slam + 6, 1]];
+      track(I.emb, "rotate", spinPts(0));
+      track(I.emb, "scale", scalePts);
+      ghosts.forEach((g, i) => {
+        const a = [0.3, 0.12][i];
+        track(g, "rotate", spinPts([10, 20][i]));
+        track(g, "scale", scalePts);
+        track(g, "opacity", [[0, 0], ...cut(1, 0, a), [9, a], [12, 0], [drop - 6, 0], [drop - 4, a]]);
+      });
+      track(I.wm, "opacity", [[slam - 4, 0], [slam - 2, 1]]);
+      track(I.wm, "scale", [[slam - 4, 2.6, EASE.in], [slam, 0.95, EASE.out], [slam + 3, 1.02, EASE.soft], [slam + 6, 1]]);
+      track(I.wm, "filter", [[slam - 4, "blur(10px)", EASE.in], [slam, "blur(0px)"]]);
+      stamp(sticker, stampF, -4, 1.45);
+      track(introCam, "translate", [...shakePts(slam, [[-18, 12], [15, -10], [-10, 7], [6, -4], [-3, 2]]).slice(0, -1), [slam + 5, "0px 0px"], ...shakePts(stampF, [[0, 9], [0, -5], [0, 2]])]);
+      // The riser: the rail fills faster and faster, the camera pushes, then punches through the emblem.
+      const riser = [[0, railAt(0)]];
+      for (let f = stampF; f < drop - 1; f++) riser.push(...cut(f, riser[riser.length - 1][1], railAt(Math.round(RAIL.teeth * Math.pow((f - stampF + 1) / (drop - 1 - stampF), 1.5)))));
+      track(I.lit, "clipPath", riser);
+      track(introCam, "scale", [[stampF, 1], [drop - 5, 1.02, "cubic-bezier(0.7, 0, 1, 0.6)"], [drop - 0.5, 7.5]]);
+      intros.forEach((s, i) => {
+        track(s, "translate", [[2 + i * 2, "-260px 0px", "cubic-bezier(0.45, 0, 0.25, 1)"], [14 + i * 2, "1400px 0px"], [drop - 8 + i, "-260px 0px", EASE.in], [drop - 2 + i * 0.4, "1400px 0px"]]);
+        track(s, "opacity", [[2 + i * 2, 0], [4 + i * 2, 1], [12 + i * 2, 1], [14 + i * 2, 0], [drop - 8 + i, 0], [drop - 7 + i, 1], [drop - 2, 0]]);
+      });
+      show(intro, 0, drop);
+      track(document.getElementById("flash-slam"), "opacity", [...cut(slam, 0, 0.42), [slam + 1.5, 0.18], [slam + 3, 0]]);
+      // The drop flash stays short and light so the first product reads through it.
+      track(document.getElementById("flash-white"), "opacity", [...cut(drop, 0, 0.5), [drop + 2, 0]]);
+    });
+
+    /* ---------- bars 2-11: five products ---------- */
+    const segsRoot = document.getElementById("segs");
+    const segs = [];
+    const layout = { trimmed: true, trim: [], loosePiece: [] };
+    pieces.forEach(({ clip, img, trim }, k) => {
+      const N = beat(SEG0 + SEG_BEATS * k), next = beat(SEG0 + SEG_BEATS * (k + 1));
+      const b = (j) => beat(SEG0 + SEG_BEATS * k + j - 1);
+      const seg = K.el("div", "layer seg" + (k === 4 ? " sticker-card" : ""));
+      seg.style.setProperty("--tint", clip.tint);
+      segsRoot.appendChild(seg);
+      const out = K.el("div", "layer"); seg.appendChild(out);
+      const cam = K.el("div", "layer"); out.appendChild(cam);
+      const plate = K.el("div", "plate"); cam.appendChild(plate);
+      const wmDrift = K.el("div", "layer"); cam.appendChild(wmDrift);
+      // A bit-only mark ("LF") sits behind the pack and reads as stray outlines: ratchets only.
+      const mark = K.watermark(wmDrift, null, clip.mark && /\d/.test(clip.mark) ? clip.mark : null, { left: 40, top: 420, px: 340, maxW: 1000, t: 0 });
+      const fit = K.fit(img, trim, PRODUCT);
+      const cx = fit.box.x + fit.box.w / 2, cy = fit.box.y + fit.box.h / 2;
+      plate.style.setProperty("--px", ((cx / W) * 100).toFixed(1) + "%");
+      plate.style.setProperty("--py", ((cy / H) * 100).toFixed(1) + "%");
+      const group = K.el("div", "layer", null, { transformOrigin: `${cx}px ${cy}px` }); cam.appendChild(group);
+      const bump = K.el("div", "layer", null, { transformOrigin: `${cx}px ${cy}px` }); group.appendChild(bump);
+      const product = K.product(img, fit, 0);
+      product.style.transformOrigin = `${cx - fit.left}px ${cy - fit.top}px`;
+      bump.appendChild(product);
+      cam.style.transformOrigin = `${cx}px ${cy}px`;
+
+      // One catalogue feature, on the piece it describes: the bottom of the loose top in a pack
+      // (left of centre, so the leader clears the launcher below it), the bit of a bare top.
+      // Margins keep the label in the safe area at the push's widest.
+      const piece = K.loosePiece(trim);
+      const anchor = K.edgeAnchor(trim, fit, piece ? 0.3 : 0.5, "bottom", piece || undefined);
+      const S = PUSH * BUMP;
+      const o = { frameW: W, marginL: Math.ceil(cx - (cx - SAFE.l - 8) / S), marginR: Math.ceil(W - (cx + (SAFE.r - 8 - cx) / S)), gap: 24, topLimit: SAFE.t, bottomLimit: Math.floor(cy + (BLOCK.top - 16 - cy) / S), t: 0, out: 0 };
+      K.callout(bump, clip.callouts[0], anchor, "below", fit.box, o);
+      const co = bump.lastElementChild;
+      const label = co.querySelector(".label");
+      checkSafe(label, `${clip.slug} callout`, S, { x: cx, y: cy });
+
+      const block = K.el("div", "block", null, { left: px(BLOCK.left), top: px(BLOCK.top) });
+      cam.appendChild(block);
+      const row = K.identityRow(clip, { chipPx: 48, typePx: 44, tChip: 0, tType: 0 });
+      block.appendChild(row);
+      const name = K.el("div", "name", clip.name, { fontSize: "150px" });
+      block.appendChild(name);
+      K.fit1(name, BLOCK.maxW, 90);
+      checkSafe(row, `${clip.slug} code row`, 1.02);
+      checkSafe(name, `${clip.slug} name`, 1.02, { x: BLOCK.left });
+      layout.trimmed = layout.trimmed && trim.trimmed;
+      layout.trim.push({ x: trim.x, y: trim.y, w: trim.w, h: trim.h });
+      layout.loosePiece.push(piece ? { x: piece.x, y: piece.y, w: piece.w, h: piece.h } : null);
+      const parts = { seg, out, cam, N };
+      segs.push(parts);
+
+      later(() => {
+        // Beat 1: the punch-in, the ratchet number sliding in along the slash, the camera push.
+        track(product, "scale", [[N - 8, 0.8], ...cut(N, 0.86, 1.09).map((p, i) => (i ? [...p, EASE.out] : p)), [N + 3, 0.985, EASE.soft], [N + 7, 1]]);
+        track(product, "rotate", [[N - 8, "-14deg"], ...cut(N, "-10deg", "3deg").map((p, i) => (i ? [...p, EASE.out] : p)), [N + 3, "-0.8deg", EASE.soft], [N + 7, "0deg"]]);
+        track(cam, "translate", shakePts(N, [[0, 16], [0, -9], [0, 5], [0, -2]]));
+        track(group, "scale", [[N, 1], [next, PUSH]]);
+        const bumps = [[0, 1]];
+        for (let j = 2; j <= 8; j++) bumps.push(...cut(b(j), 1, BUMP).map((p, i) => (i ? [...p, EASE.out] : p)), [b(j) + 5, 1]);
+        track(bump, "scale", bumps);
+        if (mark) {
+          track(mark, "translate", [[N - 2, "-68px 209px", EASE.out], [N + 14, "0px 0px"]]);
+          track(mark, "opacity", [[N - 2, 0], [N + 8, 1]]);
+          track(wmDrift, "translate", [[N, "0px 0px"], [next + 8, "-52px 0px"]]);
+        }
+        // Beat 3: the part code stamps, the blade type slides in beside it.
+        const chip = row.querySelector(".chip"), type = row.querySelector(".type");
+        stamp(chip, b(3), 0);
+        if (type) {
+          track(type, "opacity", [[b(3) - 1, 0], [b(3) + 1, 1]]);
+          track(type, "translate", [[b(3) - 1, "-44px 0px", EASE.out], [b(3) + 6, "0px 0px"]]);
+        }
+        // Beat 5: the name slams in.
+        const fN = b(5);
+        track(name, "opacity", [[fN - 3, 0], [fN - 2, 1]]);
+        track(name, "scale", [[fN - 3, 2.3, EASE.in], [fN, 0.95, EASE.out], [fN + 3, 1.015, EASE.soft], [fN + 6, 1]]);
+        track(name, "filter", [[fN - 3, "blur(12px)", EASE.in], [fN, "blur(0px)"]]);
+        track(block, "translate", shakePts(fN, [[0, 10], [0, -6], [0, 3]]));
+        // Beat 7: the feature callout.
+        const fO = b(7);
+        track(co.querySelector(".dot"), "scale", [[fO - 2, 0, EASE.out], [fO + 1, 1]]);
+        track(co.querySelector(".line"), "scale", [[fO - 1, "1 0", EASE.out], [fO + 2, "1 1"]]);
+        track(label, "clipPath", [[fO - 1, "inset(0% 100% 0% 0%)", EASE.out], [fO + 2, "inset(0% 0% 0% 0%)"]]);
+      });
+    });
+
+    /* Transitions, each landing on its downbeat with 0.25 s of run-up (the whoosh). */
+    const slab = K.el("div", "slab"); fx.appendChild(slab);
+    const slashA = K.el("div", "slash"), slashB = K.el("div", "slash"); fx.append(slashA, slashB);
+    const whips = [0, 1, 2, 3].map((i) => { const s = K.el("div", "streak", null, { width: px([90, 18, 140, 12][i]), background: ["rgba(255,255,255,.35)", "rgba(198,255,0,.8)", "rgba(122,60,255,.5)", "rgba(255,255,255,.7)"][i] }); fx.appendChild(s); return s; });
+    const ring = K.el("div", "ring", null, { left: px(EMB.cx - 1400), top: px(EMB.cy - 1400) }); fx.appendChild(ring);
+    later(() => {
+      const [s0, s1, s2, s3, s4] = segs;
+      const outroF = beat(OUTRO);
+      // 1. The drop: the sting punches through the emblem (above); the first product lands zoomed.
+      show(s0.seg, s0.N, s1.N + 1);
+      track(s0.cam, "scale", [[s0.N, 1.16, EASE.out], [s0.N + 7, 1]]);
+      // 2. Slab wipe: a slab in the next product's own colour runs across the slash and leaves the
+      // product behind it. Like the slash cut, the sticker slap and the iris it accelerates into the
+      // downbeat (EASE.in): the old product stays on screen until the frame before the hit, so the
+      // swap lands with it.
+      {
+        const N = s1.N, from = N - 8;
+        const band = (e) => `polygon(-700px 0px, ${e + 312}px 0px, ${e - 312}px 1920px, -700px 1920px)`;
+        slab.style.setProperty("--slab", pieces[1].clip.tint);
+        show(s1.seg, from, s2.N + 1);
+        track(s1.seg, "clipPath", [[from, band(-900), EASE.in], [N, band(1420)]]);
+        track(slab, "translate", [[from, "-900px 0px", EASE.in], [N, "1420px 0px"]]);
+        show(slab, from, N + 1);
+        track(s0.out, "translate", [[from, "0px 0px", EASE.in], [N, "240px 0px"]]);
+        hblur(s0.out, { [N - 3]: 4, [N - 2]: 8, [N - 1]: 14 });
+      }
+      // 3. Slash cut: two lime slashes cross in, then open the frame between them.
+      {
+        const N = s2.N, from = N - 7, open = N - 4;
+        const band = (l, r) => `polygon(${l + 312}px 0px, ${r + 312}px 0px, ${r - 312}px 1920px, ${l - 312}px 1920px)`;
+        track(slashA, "translate", [[from, "-260px 0px", EASE.out], [open, "478px 0px", EASE.in], [N, "-560px 0px"]]);
+        track(slashB, "translate", [[from, "-216px 0px", EASE.out], [open, "522px 0px", EASE.in], [N, "1600px 0px"]]);
+        show(slashA, from, N); show(slashB, from, N);
+        show(s2.seg, open, s3.N + 1);
+        track(s2.seg, "clipPath", [[open, band(500, 522), EASE.in], [N, band(-538, 1600)]]);
+        track(s1.out, "scale", [[from, 1, EASE.in], [N, 0.94]]);
+        track(s1.out, "filter", [[from, "brightness(1)", EASE.in], [N, "brightness(0.55)"]]);
+      }
+      // 4. Whip pan: the frame whips left, speed streaks across; the whip accelerates into the
+      // downbeat (EASE.in) so the frame is still half the old product one frame before the hit.
+      {
+        const N = s3.N, from = N - 8;
+        show(s3.seg, from + 1, s4.N + 1);
+        track(s3.seg, "translate", [[from, "1080px 0px", EASE.in], [N, "0px 0px"]]);
+        track(s2.out, "translate", [[from, "0px 0px", EASE.in], [N, "-1080px 0px"]]);
+        // Directional blur in step with the speed (66 to 521 px a frame), clean again after the hit.
+        const whipBlur = { [N - 4]: 8, [N - 3]: 14, [N - 2]: 22, [N - 1]: 36, [N]: 18 };
+        hblur(s2.out, whipBlur);
+        hblur(s3.seg, whipBlur);
+        whips.forEach((s, i) => {
+          track(s, "translate", [[from + 1 + i, "1300px 0px", "cubic-bezier(0.45, 0, 0.25, 1)"], [N - 1 + i * 0.5, "-300px 0px"]]);
+          track(s, "opacity", [[from + 1 + i, 0], [from + 2 + i, 1], [N - 2, 1], [N, 0]]);
+        });
+      }
+      // 5. Sticker slap: the last product lands as a die-cut card with the white keyline.
+      {
+        const N = s4.N, from = N - 7;
+        show(s4.seg, from, outroF + 1);
+        track(s4.seg, "scale", [[from, 0.22, EASE.in], [N, 1]]);
+        track(s4.seg, "rotate", [[from, "18deg", EASE.in], [N, "0deg"]]);
+        track(s4.seg, "translate", [[from, "160px 380px", EASE.in], [N, "0px 0px"]]);
+        track(s3.out, "scale", [[from, 1, EASE.in], [N, 0.9]]);
+        track(s3.out, "filter", [[from, "brightness(1)", EASE.in], [N, "brightness(0.45)"]]);
+      }
+      // 6. Iris: the end card opens from the emblem's centre inside the toothed ring.
+      {
+        const N = outroF, from = N - 7;
+        track(s4.out, "scale", [[from, 1, EASE.in], [N, 1.22]]);
+        track(ring, "scale", [[from, 0, EASE.in], [N, 1]]);
+        show(ring, from, N);
+      }
+    });
+
+    /* ---------- HUD over the products: brand bar, running number, the rail ticking per beat ---------- */
+    const hud = document.getElementById("hud");
+    const brand = K.el("div", "hud-brand");
+    const hudEmb = K.el("img", "emb", null, { position: "static", height: "64px", width: "auto" });
+    hudEmb.src = emblem.src; hudEmb.alt = "";
+    const hudWm = wordmark("wm"); hudWm.style.fontSize = "44px";
+    brand.append(hudEmb, hudWm);
+    hud.appendChild(brand);
+    const counter = K.el("div", "counter");
+    const mask = K.el("span", "mask"), col = K.el("span", "col");
+    // "1/5", the carousel index: zero-padded pairs ("04/05") read as a date or a count of pieces left.
+    for (let i = 1; i <= 5; i++) col.appendChild(K.el("span", null, String(i)));
+    mask.appendChild(col);
+    counter.append(mask, K.el("span", "tot", "/5"));
+    hud.appendChild(counter);
+    counter.style.left = px(SAFE.r - 8 - counter.offsetWidth);
+    checkSafe(brand, "brand bar"); checkSafe(counter, "counter");
+    const hudRail = K.el("div", "rail x40", null, { left: "0px", width: px(W), top: px(HUD_RAIL_Y) });
+    const hudLit = K.el("div", "rail x40 lit", null, { left: "0px", width: px(W), top: px(HUD_RAIL_Y) });
+    const head = K.el("div", "rail-head", null, { top: px(HUD_RAIL_Y) });
+    hud.append(hudRail, hudLit, head);
+    later(() => {
+      const drop = beat(SEG0), outroF = beat(OUTRO);
+      show(hud, drop, outroF + 1);
+      track(brand, "clipPath", [[drop, "polygon(0% 0%, 0% 0%, -9% 100%, -9% 100%)", EASE.out], [drop + 10, "polygon(0% 0%, 109% 0%, 100% 100%, -9% 100%)"]]);
+      track(counter, "clipPath", [[drop + 2, "inset(0% 100% 0% 0%)", EASE.out], [drop + 10, "inset(0% 0% 0% 0%)"]]);
+      const spin = [[drop, "360deg", EASE.out], [drop + 14, "0deg"]], roll = [[0, "0px 0px"]];
+      for (let k = 1; k < 5; k++) {
+        const N = beat(SEG0 + SEG_BEATS * k);
+        spin.push([N - 3, `${-360 * (k - 1)}deg`, EASE.out], [N + 10, `${-360 * k}deg`]);
+        roll.push([N - 3, `0px ${-48 * (k - 1)}px`, EASE.out], [N + 2, `0px ${-48 * k}px`]);
+      }
+      track(hudEmb, "rotate", spin);
+      track(col, "translate", roll);
+      const lit = [[0, railClip(0, 40, PITCH, W, 14)]], headX = [[0, "0px 0px"]], headO = [[0, 0]];
+      for (let g = 0; g < 40; g++) {
+        const f = beat(SEG0 + g);
+        lit.push(...cut(f, lit[lit.length - 1][1], railClip(g + 1, 40, PITCH, W, 14)));
+        headX.push(...cut(f, headX[headX.length - 1][1], `${g * PITCH}px 0px`));
+        headO.push(...cut(f, 0, 1), [f + 6, 0]);
+      }
+      track(hudLit, "clipPath", lit);
+      track(head, "translate", headX);
+      track(head, "opacity", headO);
+    });
+
+    /* ---------- bars 12-13: end card ---------- */
+    const outro = document.getElementById("outro"), outroCam = document.getElementById("outro-cam");
+    const E = lockup(outroCam);
+    const ctaWrap = K.el("div", "cta-wrap", null, { top: px(CTA_TOP) });
+    const cta = K.el("div", "cta", "geardropshop.it");
+    cta.insertAdjacentHTML("beforeend", '<svg width="46" height="34" viewBox="0 0 46 34" aria-hidden="true"><path d="M2 17h38M26 3l14 14-14 14" fill="none" stroke="#0b0a0f" stroke-width="6" stroke-linecap="square"/></svg>');
+    const sheen = K.el("span", "sheen"); cta.appendChild(sheen);
+    ctaWrap.appendChild(cta); outroCam.appendChild(ctaWrap);
+    ctaWrap.style.left = px(CX - cta.offsetWidth / 2);
+    const link = K.el("div", "sticker", "Link in bio", { top: px(LINK_TOP), fontSize: "46px" });
+    outroCam.appendChild(link);
+    link.style.left = px(CX - link.offsetWidth / 2);
+    checkSafe(cta, "call to action"); checkSafe(link, "link in bio", 1.06);
+    later(() => {
+      const N = beat(OUTRO), hit = beat(LAST_HIT);
+      show(outro, N - 7);
+      track(outro, "clipPath", [[N - 7, `circle(0px at ${EMB.cx}px ${EMB.cy}px)`, EASE.in], [N, `circle(1400px at ${EMB.cx}px ${EMB.cy}px)`]]);
+      // The emblem relaunches: two turns the way its arrows point, landing on the last hit in the
+      // exact pose the sting starts from.
+      // Beat 7 runs the CTA sheen once more; beat 8 wipes everything back out over 8 frames while
+      // the emblem grows to the 1.6 it opens with, so the last frame matches the first.
+      const sheen2 = beat(OUTRO + 6), close = beat(OUTRO + 7), closed = close + 8, last = Math.round(END * FPS) - 1;
+      track(E.emb, "rotate", [[N - 7, "150deg"], [N, "0deg", "cubic-bezier(0.2, 0.75, 0.3, 1)"], [hit - 3, "-720deg"]]);
+      track(E.emb, "scale", [[N - 7, 0.25, EASE.out], [N + 2, 0.9, EASE.out], [N + 26, 1], ...cut(hit, 1, 1.08).map((p, i) => (i ? [...p, EASE.out] : p)), [hit + 9, 1], [close + 2, 1, EASE.soft], [last, EMB_OPEN]]);
+      const wmOpen = "polygon(0% 0%, 109% 0%, 100% 100%, -9% 100%)", wmShut = "polygon(0% 0%, 0% 0%, -9% 100%, -9% 100%)";
+      track(E.wm, "clipPath", [[N, wmShut, EASE.out], [N + 9, wmOpen], [close, wmOpen, EASE.in], [closed, wmShut]]);
+      track(E.wm, "translate", [[N, "-40px 0px", EASE.out], [N + 9, "0px 0px"]]);
+      track(ctaWrap, "clipPath", [[N + 2, "inset(0% 100% 0% 0%)", EASE.out], [N + 11, "inset(0% 0% 0% 0%)"], [close, "inset(0% 0% 0% 0%)", EASE.in], [closed, "inset(0% 100% 0% 0%)"]]);
+      track(sheen, "translate", [[hit, "-130% 0px", EASE.out], [hit + 16, "130% 0px"], ...cut(sheen2, "130% 0px", "-130% 0px").map((p, i) => (i ? [...p, EASE.out] : p)), [sheen2 + 12, "130% 0px"]]);
+      stamp(link, N + 6, -3, 1.45, [[close, 1, EASE.in], [closed, 0]]);
+      const ticks = [[0, railAt(0)]];
+      [0, 1, 2, 3, 4].forEach((i) => ticks.push(...cut(beat(OUTRO + i), ticks[ticks.length - 1][1], railAt(Math.min(RAIL.teeth, 6 * (i + 1))))));
+      for (let f = close; f < closed; f++) ticks.push(...cut(f, ticks[ticks.length - 1][1], railAt(Math.round(RAIL.teeth * (1 - (f - close + 1) / (closed - close))))));
+      track(E.lit, "clipPath", ticks);
+      track(document.getElementById("flash-last"), "opacity", [...cut(hit, 0, 0.32), [hit + 1.5, 0.15], [hit + 4, 0]]);
+      track(outroCam, "translate", shakePts(hit, [[0, 12], [-9, -8], [6, 5], [-3, -2]]));
+    });
+
+    /* Measure first, then animate: every track starts from the layout at rest. */
+    tracks.forEach((fn) => fn());
+    await Promise.all([...document.images].map((i) => i.decode().catch(() => null)));
+    window.__CLIP_LAYOUT__ = Object.assign(layout, { safeArea: warnings.length ? warnings : "ok" });
+    window.__CLIP_READY__ = true;
+  }
+  main().catch((e) => { window.__CLIP_ERROR__ = String((e && e.stack) || e); });
+})();
+</script>
+</body></html>

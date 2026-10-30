@@ -2,9 +2,12 @@
 /**
  * GEAR//DROP product clip renderer.
  *
- *   node render.mjs --template gallery|reel --data clip.json --out clip.mp4 --poster clip.jpg
+ *   node render.mjs --template gallery|reel|drop --data clip.json --out clip.mp4 --poster clip.jpg
  *                   [--contact sheet.png] [--fonts dir] [--emblem emblem.webp] [--ffmpeg ffmpeg]
  *                   [--crf 22] [--frames jpeg|png]
+ *
+ * gallery and reel read one clip (a JSON object); drop, the multi-product reel on the 128 BPM
+ * grid, reads an array of exactly five clips in the order they play.
  *
  * Opens templates/<template>.html in headless Chromium with window.__CLIP__ set from the JSON,
  * waits for the template's layout (window.__CLIP_READY__), pauses every CSS animation and seeks
@@ -27,6 +30,9 @@ const FPS = 30;
 const TEMPLATES = {
   gallery: { width: 1080, height: 1080, seconds: 6, contact: { cols: 4, tile: 360, times: [0.3, 0.7, 1.1, 1.7, 2.1, 2.6, 3.1, 3.5, 3.8, 4.1, 4.6, 5.97] } },
   reel: { width: 1080, height: 1920, seconds: 8, contact: { cols: 6, tile: 270, times: [0.2, 0.6, 1.0, 1.4, 1.9, 2.4, 2.9, 3.3, 3.7, 4.1, 4.5, 4.9, 5.3, 5.7, 6.1, 6.6, 7.2, 7.97] } },
+  // 128 BPM: 1 bar of logo sting, 5 products of 2 bars each, 2 bars of end card (24.375 s, 731
+  // frames), rendered to 24.4 s so it lines up with the audio. The sheet shows every cue.
+  drop: { width: 1080, height: 1920, seconds: 24.4, clips: 5, contact: { cols: 6, tile: 270, times: [0.3, 0.97, 1.45, 1.8, 1.9, 2.85, 3.8, 4.75, 5.65, 7.6, 9.4, 11.3, 13.15, 15.05, 16.9, 18.8, 20.4, 20.65, 21.3, 22.53, 23.2, 24.37] } },
 };
 const FONT_FILES = {
   anybodyNormal: "anybody-latin-standard-normal.woff2",
@@ -34,7 +40,7 @@ const FONT_FILES = {
   mono: "jetbrains-mono-latin-500-normal.woff2",
   chakra: "chakra-petch-latin-700-italic.woff2",
 };
-const USAGE = "usage: node render.mjs --template gallery|reel --data clip.json --out clip.mp4 --poster clip.jpg [--contact sheet.png] [--fonts dir] [--emblem file] [--ffmpeg bin] [--crf 22] [--frames jpeg|png]";
+const USAGE = "usage: node render.mjs --template gallery|reel|drop --data clip.json --out clip.mp4 --poster clip.jpg [--contact sheet.png] [--fonts dir] [--emblem file] [--ffmpeg bin] [--crf 22] [--frames jpeg|png]";
 
 class UsageError extends Error {}
 
@@ -50,7 +56,7 @@ function parseArgs(argv) {
     args[flag.slice(2)] = value;
   }
   for (const req of ["template", "data", "out", "poster"]) if (!args[req]) throw new UsageError(`--${req} is required\n${USAGE}`);
-  if (!TEMPLATES[args.template]) throw new UsageError(`--template must be gallery or reel, got "${args.template}"`);
+  if (!Object.hasOwn(TEMPLATES, args.template)) throw new UsageError(`--template must be ${Object.keys(TEMPLATES).join(", ")}, got "${args.template}"`);
   args.crf = args.crf === undefined ? 22 : Number(args.crf);
   if (!Number.isInteger(args.crf) || args.crf < 0 || args.crf > 51) throw new UsageError("--crf must be an integer 0-51");
   args.frames = args.frames || "jpeg";
@@ -73,6 +79,13 @@ function validateClip(raw, dataPath) {
     callouts: raw.callouts.map((c) => c.trim()), tagline: opt("tagline"), tint: raw.tint.toLowerCase(),
     cutout: pathToFileURL(cutoutPath).href,
   };
+}
+
+/** A multi-clip template (drop) reads an array of exactly tpl.clips clips; the others one clip. */
+function validateData(raw, dataPath, tpl) {
+  if (!tpl.clips) return validateClip(raw, dataPath);
+  if (!Array.isArray(raw) || raw.length !== tpl.clips) throw new UsageError(`${dataPath}: must be an array of ${tpl.clips} clips`);
+  return raw.map((c, i) => validateClip(c, `${dataPath} [${i}]`));
 }
 
 function findFonts(dir) {
@@ -123,7 +136,7 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   const tpl = TEMPLATES[args.template];
   const dataPath = path.resolve(args.data);
-  const clip = validateClip(JSON.parse(fs.readFileSync(dataPath, "utf8")), dataPath);
+  const clip = validateData(JSON.parse(fs.readFileSync(dataPath, "utf8")), dataPath, tpl);
   if (!args.fonts) throw new UsageError("--fonts is required: a folder with the @fontsource 5.3.0 files (render-clips.ts builds one)");
   const fonts = findFonts(path.resolve(args.fonts));
   // The supplied emblem itself, never redrawn (components/layout/logo.tsx).
@@ -187,7 +200,8 @@ async function main() {
       const rows = Math.ceil(nums.length / c.cols);
       await run(ffmpeg, ["-v", "error", "-y", "-i", out, "-vf", `select='${nums.map((n) => `eq(n,${n})`).join("+")}',scale=${c.tile}:-2,tile=${c.cols}x${rows}:padding=6:color=0x3c3c3c`, "-fps_mode", "vfr", "-frames:v", "1", contact]);
     }
-    const result = { template: args.template, slug: clip.slug, width: tpl.width, height: tpl.height, fps: FPS, seconds: tpl.seconds, frames, out, bytes: fs.statSync(out).size, poster, contact, trimmed: layout && layout.trimmed, trim: layout && layout.trim, loosePiece: layout && layout.loosePiece, warnings };
+    const slug = Array.isArray(clip) ? clip.map((c) => c.slug) : clip.slug;
+    const result = { template: args.template, slug, width: tpl.width, height: tpl.height, fps: FPS, seconds: tpl.seconds, frames, out, bytes: fs.statSync(out).size, poster, contact, trimmed: layout && layout.trimmed, trim: layout && layout.trim, loosePiece: layout && layout.loosePiece, warnings };
     process.stdout.write(JSON.stringify(result) + "\n");
   } finally {
     await browser.close();

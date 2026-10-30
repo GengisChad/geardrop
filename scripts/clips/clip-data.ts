@@ -12,14 +12,20 @@ export type ClipSpec = {
   readonly slug: string;
   readonly callouts: readonly [string, string];
   readonly tagline: boolean;
+  /**
+   * The plate colour, taken from the pack's artwork, for a product with no palette of its own in
+   * holo.ts: there it falls back to violet, which in X-Rail means "on its way" (pre-orders). The
+   * site cards keep holo.ts until the owner adds these palettes there.
+   */
+  readonly tint?: string;
 };
 
 export const CLIP_SPECS: readonly ClipSpec[] = [
   { slug: "glory-valkerion-lf", callouts: ["Ratchet integrato", "Starter completo"], tagline: true },
-  { slug: "wand-wizard-1-60r", callouts: ["La blade più larga", "Starter completo"], tagline: true },
+  { slug: "wand-wizard-1-60r", callouts: ["La blade più larga", "Starter completo"], tagline: true, tint: "#3dff8a" },
   // "Il Low Rush al prezzo di un booster" compares prices, so this one runs without its tagline.
-  { slug: "impact-drake-9-60lr", callouts: ["Bit Low Rush", "Solo la trottola"], tagline: false },
-  { slug: "hover-wyvern-3-85n", callouts: ["Bit Needle", "Solo la trottola"], tagline: true },
+  { slug: "impact-drake-9-60lr", callouts: ["Bit Low Rush", "Solo la trottola"], tagline: false, tint: "#ff5470" },
+  { slug: "hover-wyvern-3-85n", callouts: ["Bit Needle", "Solo la trottola"], tagline: true, tint: "#1fd1a5" },
   { slug: "soar-phoenix-9-60gf", callouts: ["Upper Attack", "Starter completo"], tagline: true },
 ];
 
@@ -60,7 +66,7 @@ export function clipData(spec: ClipSpec): ClipData {
     type: product.bladeType ? BLADE_TYPE_LABEL[product.bladeType] : null,
     callouts: [first.toLocaleUpperCase("it-IT"), second.toLocaleUpperCase("it-IT")],
     tagline: spec.tagline ? product.tagline : null,
-    tint: holoPalette(product).f2,
+    tint: spec.tint ?? holoPalette(product).f2,
     cutout,
   };
 }
