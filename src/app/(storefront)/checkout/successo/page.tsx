@@ -72,6 +72,9 @@ export default async function CheckoutResultPage({ searchParams }: { searchParam
             <Link href="/ordine" className="mt-3 text-small text-grey-600 underline-offset-2 hover:underline hover:text-lime">
               Segui il tuo ordine
             </Link>
+            <Link href="/account" className="mt-1 text-[0.6875rem] text-grey-600 underline-offset-2 hover:underline hover:text-lime">
+              Tutti i tuoi ordini e dove si trova il pacco: nel tuo account
+            </Link>
             {survey ? <GoogleReviewOptIn optIn={survey} /> : null}
           </>
         ) : (
