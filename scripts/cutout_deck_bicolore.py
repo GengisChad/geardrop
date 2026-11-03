@@ -1,6 +1,6 @@
-"""Tiles and cut-outs for the two-colour deck cases (owner's photos, 2026-10-24).
+"""Tiles and cut-outs for the two-colour deck cases (owner's photos, 2026-10-24 and 2026-11-03).
 
-Each photo shows one case on the workshop table (assets-source/porta-deck-bicolore/). Per colour:
+Each photo shows one case on a table (assets-source/porta-deck-bicolore/). Per colour:
   1. rembg's isnet-general-use model separates the case from the table (the model must already
      be in ~/.u2net: this script never downloads anything);
   2. the largest piece of the mask is kept, so a scrap of paper or the table's edge never joins it,
@@ -8,11 +8,13 @@ Each photo shows one case on the workshop table (assets-source/porta-deck-bicolo
   3. the case is cropped to that outline and fitted in 900 px on a 1000 px square: a white tile
      (public/products/<slug>.webp) and a transparent cut-out (public/products/cutout/<slug>.webp).
 
-Usage: python scripts/cutout_deck_bicolore.py
+Usage: python scripts/cutout_deck_bicolore.py [slug ...]
+With slugs, only those colours are cut, so adding a colour leaves the others' files untouched.
 """
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -33,6 +35,14 @@ SLUGS = [
     "porta-deck-nero-oro",
     "porta-deck-viola-verde",
     "porta-deck-viola-argento",
+    # Second batch, photographed on a wooden table (owner, 2026-11-03).
+    "porta-deck-viola-menta",
+    "porta-deck-argento-nero",
+    "porta-deck-verde-nero",
+    "porta-deck-verde-rosso",
+    "porta-deck-blu-bianco",
+    "porta-deck-bianco-blu",
+    "porta-deck-arancione-nero",
 ]
 
 
@@ -64,9 +74,13 @@ def square(image: Image.Image, background: tuple[int, ...]) -> Image.Image:
 
 
 def main() -> None:
+    wanted = sys.argv[1:] or SLUGS
+    unknown = sorted(set(wanted) - set(SLUGS))
+    if unknown:
+        raise SystemExit(f"not a two-colour case: {', '.join(unknown)}")
     session = new_session("isnet-general-use")
     CUTOUT.mkdir(parents=True, exist_ok=True)
-    for slug in SLUGS:
+    for slug in wanted:
         photo = Image.open(SOURCES / f"{slug}.jpg").convert("RGB")
         mask = case_mask(photo, session, drop_white=slug in PAPER_TOUCHING)
         # A soft edge, one pixel wide, so the case does not look stamped out.

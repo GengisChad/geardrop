@@ -22,7 +22,7 @@ async function quote(lines: readonly { slug: string; quantity: number }[]): Prom
 }
 
 describe("deck cases, 2026-10-24", () => {
-  it("sells seven two-colour cases at €18, each with its own photo and a two-colour swatch", () => {
+  it("sells fourteen two-colour cases at €18 (seven more on 2026-11-03), each with its own photo and a two-colour swatch", () => {
     expect(bicolore.map((product) => product.variant?.label)).toEqual([
       "Nero e blu",
       "Nero e rosso",
@@ -31,6 +31,13 @@ describe("deck cases, 2026-10-24", () => {
       "Rosso e oro",
       "Viola e verde",
       "Viola e argento",
+      "Viola e menta",
+      "Argento e nero",
+      "Verde e nero",
+      "Verde e rosso",
+      "Blu e bianco",
+      "Bianco e blu",
+      "Arancione e nero",
     ]);
     for (const product of bicolore) {
       expect(product).toMatchObject({ category: "accessori", price: { amount: DECK_CASE_PRICE }, stock: "disponibile", unofficial: true });
@@ -44,13 +51,13 @@ describe("deck cases, 2026-10-24", () => {
       expect(product.name).not.toMatch(/beyblade/i);
     }
     expect(DECK_CASE_PRICE).toBe(1800);
-    expect(VARIANT_FAMILIES["porta-deck-bicolore"]?.colours).toHaveLength(7);
+    expect(VARIANT_FAMILIES["porta-deck-bicolore"]?.colours).toHaveLength(14);
   });
 
   it("keeps only the two-colour cases off Google", () => {
     expect([...KEPT_OFF_GOOGLE].sort()).toEqual(bicolore.map((product) => product.slug).sort());
     expect(KEPT_OFF_GOOGLE.has("porta-deck-giallo")).toBe(false);
-    expect(DECK_CASE_SLUGS.size).toBe(14);
+    expect(DECK_CASE_SLUGS.size).toBe(21);
   });
 
   it("prices the kits that hold a case as their pieces at full price with the case at €15", () => {

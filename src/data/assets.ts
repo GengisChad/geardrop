@@ -334,6 +334,14 @@ export const productImages = {
   "porta-deck-rosso-oro": [deckBicoloreImage("porta-deck-rosso-oro", "rosso con scritta e clip oro")],
   "porta-deck-viola-verde": [deckBicoloreImage("porta-deck-viola-verde", "viola con scritta e clip verdi")],
   "porta-deck-viola-argento": [deckBicoloreImage("porta-deck-viola-argento", "viola con scritta e clip argento")],
+  // Seven more (owner's photos 2026-11-03).
+  "porta-deck-viola-menta": [deckBicoloreImage("porta-deck-viola-menta", "viola con scritta verde menta e clip bianche")],
+  "porta-deck-argento-nero": [deckBicoloreImage("porta-deck-argento-nero", "argento con scritta e clip nere")],
+  "porta-deck-verde-nero": [deckBicoloreImage("porta-deck-verde-nero", "verde con scritta e clip nere")],
+  "porta-deck-verde-rosso": [deckBicoloreImage("porta-deck-verde-rosso", "verde con scritta e clip rosse")],
+  "porta-deck-blu-bianco": [deckBicoloreImage("porta-deck-blu-bianco", "blu con scritta e clip bianche")],
+  "porta-deck-bianco-blu": [deckBicoloreImage("porta-deck-bianco-blu", "bianco con scritta e clip blu")],
+  "porta-deck-arancione-nero": [deckBicoloreImage("porta-deck-arancione-nero", "arancione con scritta nera e clip bianche")],
   "cx-00-evangelion-deck-set": [
     {
       src: "/products/cx-00-evangelion-deck-set.webp",

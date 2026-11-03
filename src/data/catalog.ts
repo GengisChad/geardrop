@@ -83,9 +83,9 @@ function deckCase({ slug, label, swatch }: VariantColour): Product {
 }
 
 /**
- * The two-colour deck cases (owner, 2026-10-24): the same three-slot case, printed in two colours,
- * one photo per colour. Their lids carry a printed logo the shop holds no licence for, so they
- * stay off Google (KEPT_OFF_GOOGLE): no Merchant Center row, no product markup.
+ * The two-colour deck cases (owner, 2026-10-24; seven more 2026-11-03): the same three-slot case,
+ * printed in two colours, one photo per colour. Their lids carry a printed logo the shop holds no
+ * licence for, so they stay off Google (KEPT_OFF_GOOGLE): no Merchant Center row, no product markup.
  */
 const DECK_CASE_BICOLORE = VARIANT_FAMILIES["porta-deck-bicolore"]!;
 
@@ -96,7 +96,7 @@ function deckCaseBicolore({ slug, label, swatch }: VariantColour): Product {
     price: eur(DECK_CASE_PRICE), category: "accessori", stock: "disponibile", tags: [], rating: 0, reviewCount: 0,
     images: productImages[slug],
     specs: [{ label: "Tipo", value: "Porta deck" }, { label: "Produttore", value: "Non ufficiale, non prodotto da Hasbro o Takara Tomy" }, { label: "Compatibilità", value: "Beyblade X, compresi Expanded e Infinity" }, { label: "Scomparti", value: "3, uno per trottola" }, { label: "Colore", value: label }, { label: "Materiale", value: "Plastica stampata in 3D" }, { label: "Nota", value: "Trottole non incluse" }],
-    features: [{ title: "Un deck completo", description: "Tre scomparti, uno per ogni trottola" }, { title: "Anche Expanded e Infinity", description: "Compatibile con i bey Expanded e Infinity" }, { title: "Chiusura a clip", description: "Ogni scomparto si chiude con la sua clip" }, { title: "Sette combinazioni", description: "Nero e blu, nero e rosso, nero e oro, giallo e nero, rosso e oro, viola e verde, viola e argento" }],
+    features: [{ title: "Un deck completo", description: "Tre scomparti, uno per ogni trottola" }, { title: "Anche Expanded e Infinity", description: "Compatibile con i bey Expanded e Infinity" }, { title: "Chiusura a clip", description: "Ogni scomparto si chiude con la sua clip" }, { title: "Quattordici combinazioni", description: "Dal nero e blu all'arancione e nero, ognuna con la sua foto" }],
     boxContents: [`1 × ${DECK_CASE_BICOLORE.name} ${label} (trottole non incluse)`],
     relatedSlugs: ["porta-deck-giallo", "hurricane-enlil-is-7-55t", "cobalt-drake-4-60f"],
     variant: { family: "porta-deck-bicolore", familyName: DECK_CASE_BICOLORE.name, label, swatch },
