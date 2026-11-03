@@ -40,6 +40,13 @@ const BY_SLUG: Readonly<Record<string, HoloPalette>> = {
   "porta-deck-rosso-oro": palette("#ffe2c4", "#e5384a", "#e6b422", "#ffd36b", "rgba(229, 56, 74, 0.35)"),
   "porta-deck-viola-verde": palette("#eadcff", "#6f5ad8", "#2fcf63", "#c6ff00", "rgba(111, 90, 216, 0.35)"),
   "porta-deck-viola-argento": palette("#eadcff", "#6450d2", "#b9bcc4", "#e8ecf5", "rgba(100, 80, 210, 0.35)"),
+  "porta-deck-viola-menta": palette("#eadcff", "#4a3cc0", "#8de8d4", "#c9fbff", "rgba(74, 60, 192, 0.35)"),
+  "porta-deck-argento-nero": palette("#ffffff", "#b9bcc4", "#1b1b1f", "#e8ecf5", "rgba(185, 188, 196, 0.35)"),
+  "porta-deck-verde-nero": palette("#d9fff3", "#12d6a4", "#1fae5b", "#c6ff00", "rgba(18, 214, 164, 0.35)"),
+  "porta-deck-verde-rosso": palette("#d9fff3", "#0f9c7c", "#d8343f", "#ffd36b", "rgba(15, 156, 124, 0.35)"),
+  "porta-deck-blu-bianco": palette("#d6e2ff", "#1240d0", "#3a5bff", "#ffffff", "rgba(18, 64, 208, 0.35)"),
+  "porta-deck-bianco-blu": palette("#ffffff", "#e8ecf5", "#1a3fc0", "#3cf0ff", "rgba(26, 63, 192, 0.3)"),
+  "porta-deck-arancione-nero": palette("#ffe2c4", "#e8833f", "#ff7a3d", "#ffd36b", "rgba(232, 131, 63, 0.35)"),
 };
 
 const BY_TYPE: Readonly<Record<BladeType, HoloPalette>> = {

@@ -40,8 +40,8 @@ export const VARIANT_FAMILIES: Readonly<Record<string, VariantFamily>> = {
     ],
   },
   /**
-   * The two-colour cases, one photo each (owner, 2026-10-24). Three are black, so a swatch shows
-   * both colours: the case's and the logo and latches'.
+   * The two-colour cases, one photo each (owner, 2026-10-24; seven more on 2026-11-03). Three are
+   * black, so a swatch shows both colours: the case's and the logo and latches'.
    */
   "porta-deck-bicolore": {
     name: "Porta Deck Bicolore",
@@ -54,6 +54,13 @@ export const VARIANT_FAMILIES: Readonly<Record<string, VariantFamily>> = {
       { slug: "porta-deck-rosso-oro", label: "Rosso e oro", swatch: "linear-gradient(135deg, #e5384a 50%, #e6b422 50%)" },
       { slug: "porta-deck-viola-verde", label: "Viola e verde", swatch: "linear-gradient(135deg, #6f5ad8 50%, #2fcf63 50%)" },
       { slug: "porta-deck-viola-argento", label: "Viola e argento", swatch: "linear-gradient(135deg, #6450d2 50%, #b9bcc4 50%)" },
+      { slug: "porta-deck-viola-menta", label: "Viola e menta", swatch: "linear-gradient(135deg, #4a3cc0 50%, #8de8d4 50%)" },
+      { slug: "porta-deck-argento-nero", label: "Argento e nero", swatch: "linear-gradient(135deg, #b9bcc4 50%, #1b1b1f 50%)" },
+      { slug: "porta-deck-verde-nero", label: "Verde e nero", swatch: "linear-gradient(135deg, #12d6a4 50%, #1b1b1f 50%)" },
+      { slug: "porta-deck-verde-rosso", label: "Verde e rosso", swatch: "linear-gradient(135deg, #0f9c7c 50%, #d8343f 50%)" },
+      { slug: "porta-deck-blu-bianco", label: "Blu e bianco", swatch: "linear-gradient(135deg, #1240d0 50%, #f4f6f8 50%)" },
+      { slug: "porta-deck-bianco-blu", label: "Bianco e blu", swatch: "linear-gradient(135deg, #eceff1 50%, #1a3fc0 50%)" },
+      { slug: "porta-deck-arancione-nero", label: "Arancione e nero", swatch: "linear-gradient(135deg, #e8833f 50%, #1b1b1f 50%)" },
     ],
   },
 };
