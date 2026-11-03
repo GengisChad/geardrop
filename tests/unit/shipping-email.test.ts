@@ -55,6 +55,9 @@ describe("shipping email", () => {
     }
     expect(email.text).toContain("Segui il pacco: https://");
     expect(email.html).not.toContain("3331234567");
+    // The buyer learns the account page follows the parcel too, so they need not write to the shop.
+    expect(email.html).toContain('href="https://geardropshop.it/account"');
+    expect(email.text).toContain("https://geardropshop.it/account");
   });
 
   it("still reads well without courier details and escapes stored text", () => {

@@ -6,24 +6,8 @@ import { Button } from "@/components/ui/button";
 import { inputClass } from "@/components/ui/field";
 import { PREORDER_DELIVERY, deliveryClause } from "@/lib/labels";
 import { trackingLink } from "@/lib/orders/carriers";
+import { ORDER_STATUS_LABEL, ORDER_STEPS, orderStepIndex } from "@/lib/orders/customer-order-status";
 import { lookupOrderAction, type OrderLookupResult } from "./actions";
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: "In attesa",
-  confirmed: "Confermato",
-  processing: "In lavorazione",
-  shipped: "Spedito",
-  completed: "Completato",
-  cancelled: "Annullato",
-};
-
-const STATUS_STEPS = ["confirmed", "processing", "shipped", "completed"] as const;
-type ActiveStep = (typeof STATUS_STEPS)[number];
-
-function stepIndex(status: string): number {
-  const idx = STATUS_STEPS.indexOf(status as ActiveStep);
-  return idx === -1 ? -1 : idx;
-}
 
 const dateFormat = new Intl.DateTimeFormat("it-IT", {
   dateStyle: "medium",
@@ -101,7 +85,7 @@ function OrderResult({
   readonly order: Extract<OrderLookupResult, { ok: true }>["order"];
 }) {
   const link = trackingLink(order.tracking_carrier, order.tracking_code, order.tracking_url);
-  const current = stepIndex(order.status);
+  const current = orderStepIndex(order.status);
   const cancelled = order.status === "cancelled";
   const hasPreorder = order.items.some((item) => item.preorder_quantity > 0);
 
@@ -127,7 +111,7 @@ function OrderResult({
           </div>
         ) : (
           <ol className="flex flex-col gap-3">
-            {STATUS_STEPS.map((step, index) => {
+            {ORDER_STEPS.map((step, index) => {
               const reached = current >= index;
               const active = current === index;
               return (
@@ -159,7 +143,7 @@ function OrderResult({
                   <span
                     className={`text-small ${reached ? "font-medium text-graphite" : "text-grey-600"}`}
                   >
-                    {STATUS_LABELS[step] ?? step}
+                    {ORDER_STATUS_LABEL[step] ?? step}
                     {step === "shipped" && order.shipped_at
                       ? ` · ${dateFormat.format(new Date(order.shipped_at))}`
                       : ""}

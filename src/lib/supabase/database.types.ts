@@ -2220,6 +2220,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      claim_customer_orders: { Args: never; Returns: number }
       complete_media_delete: {
         Args: { p_media_asset_id: number }
         Returns: undefined

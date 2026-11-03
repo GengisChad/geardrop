@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Heart, LogOut, MapPin, Package, ShoppingCart } from "lucide-react";
+import { OrderCard } from "@/components/account/order-card";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { ProfileForm } from "@/components/auth/profile-form";
 import { getCustomerSession } from "@/lib/auth/customer";
+import { loadCustomerOrders } from "@/lib/orders/customer-orders";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { AppHref } from "@/lib/routes";
 import { logoutAction } from "./auth-actions";
@@ -24,33 +26,18 @@ const SHORTCUTS: readonly { label: string; hint: string; href: AppHref; Icon: ty
   { label: "Spedizioni", hint: "Tempi, costi e tracciamento", href: "/assistenza/spedizioni", Icon: Package },
 ];
 
-const EURO = new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" });
-const DATE = new Intl.DateTimeFormat("it-IT", { day: "2-digit", month: "short", year: "numeric" });
-
-const ORDER_STATUS_LABEL: Record<string, string> = {
-  pending: "In attesa",
-  paid: "Pagato",
-  processing: "In preparazione",
-  shipped: "Spedito",
-  delivered: "Consegnato",
-  cancelled: "Annullato",
-  refunded: "Rimborsato",
-};
-
 export default async function AccountPage() {
   const session = await getCustomerSession();
 
   if (!session) redirect("/login?next=/account");
 
   // Both reads are RLS-bound: orders_customer_read and customer_addresses_own_all return
-  // this visitor's rows only, so no filter here is load-bearing for privacy.
+  // this visitor's rows only, so no filter here is load-bearing for privacy. The orders come
+  // with the parcel's InPost journey, and the guest orders placed with this account's
+  // confirmed email are filed under it first.
   const client = await createSupabaseServerClient();
-  const [{ data: orders }, { data: addresses }] = await Promise.all([
-    client
-      .from("orders")
-      .select("id, order_number, status, total_cents, created_at")
-      .order("created_at", { ascending: false })
-      .limit(10),
+  const [orders, { data: addresses }] = await Promise.all([
+    loadCustomerOrders(client),
     client.from("customer_addresses").select("id, label, line_one, postal_code, city, province").limit(5),
   ]);
 
@@ -91,7 +78,7 @@ export default async function AccountPage() {
         </div>
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_1.2fr]">
+      <div className="mt-8 grid items-start gap-6 lg:grid-cols-[1fr_1.2fr]">
         <section aria-labelledby="profilo" className="gd-glass-panel rounded-[--radius-glass] p-6">
           <h2 id="profilo" className="gd-display text-small font-bold tracking-wider text-graphite">
             I TUOI DATI
@@ -104,27 +91,30 @@ export default async function AccountPage() {
             I TUOI ORDINI
           </h2>
 
-          {orders && orders.length > 0 ? (
+          <p className="mt-1 text-[0.6875rem] text-grey-600">
+            Qui trovi gli ordini fatti con {session.email}, anche quelli di prima della registrazione. La posizione del
+            pacco si aggiorna da sola.
+          </p>
+
+          {orders.length > 0 ? (
             <ul className="mt-4 flex flex-col gap-3" data-testid="order-list">
               {orders.map((order) => (
-                <li
-                  key={order.id}
-                  className="gd-glass-card flex flex-wrap items-center justify-between gap-2 rounded-2xl px-4 py-3"
-                >
-                  <span className="gd-display text-small font-bold text-graphite">{order.order_number}</span>
-                  <span className="text-[0.6875rem] text-grey-600">{DATE.format(new Date(order.created_at))}</span>
-                  <span className="text-[0.6875rem] text-grey-600">
-                    {ORDER_STATUS_LABEL[order.status] ?? order.status}
-                  </span>
-                  <span className="text-small font-bold text-graphite">{EURO.format(order.total_cents / 100)}</span>
-                </li>
+                <OrderCard key={order.orderNumber} order={order} />
               ))}
             </ul>
           ) : (
             <p className="mt-3 text-small text-grey-600" data-testid="orders-empty">
-              Non hai ancora ordini. Quando ne farai uno lo troverai qui, con stato e tracciamento.
+              Non hai ancora ordini con questa email. Quando ne farai uno lo troverai qui, con stato e tracciamento.
             </p>
           )}
+
+          <p className="mt-3 text-[0.6875rem] text-grey-600">
+            Hai ordinato con un&rsquo;altra email?{" "}
+            <Link href="/ordine" className="font-bold text-violet-soft underline-offset-2 hover:underline">
+              Cerca l&rsquo;ordine
+            </Link>{" "}
+            con numero ed email.
+          </p>
 
           <h3 className="gd-display mt-7 text-small font-bold tracking-wider text-graphite">I TUOI INDIRIZZI</h3>
 
