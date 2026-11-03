@@ -4,7 +4,7 @@ import { unstable_cache } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createInpostClient, inpostConfig, type TrackingEvent } from "@/lib/shipping/inpost";
 import type { Database } from "@/lib/supabase/database.types";
-import { liveTrackingCodes } from "./customer-order-status";
+import { liveTrackingCodes, type TrackableOrder } from "./customer-order-status";
 
 /**
  * The buyer's own orders for the account page, with where each parcel is (owner, 2026-11-03:
@@ -70,6 +70,16 @@ export async function loadCustomerOrders(client: SupabaseClient<Database>, limit
       .map((item) => ({ name: item.product_name_snapshot, quantity: item.quantity, preorderQuantity: item.preorder_quantity })),
   }));
 
+  return withParcelEvents(orders);
+}
+
+/**
+ * Each order with InPost's events for its parcel, when the parcel is still travelling. Never throws:
+ * tracking is a bonus, and a buyer must see their order whatever InPost does.
+ */
+export async function withParcelEvents<T extends TrackableOrder>(
+  orders: readonly T[],
+): Promise<readonly (T & { readonly parcelEvents: readonly TrackingEvent[] | null })[]> {
   const live = liveTrackingCodes(orders);
   const journeys = await inpostJourneys(live);
   return orders.map((order) => {

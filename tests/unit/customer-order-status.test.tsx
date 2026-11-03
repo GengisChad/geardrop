@@ -1,7 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { OrderResult } from "@/app/(storefront)/ordine/order-lookup-form";
 import { OrderCard } from "@/components/account/order-card";
-import { ORDER_STATUS_LABEL, ORDER_STEPS, liveTrackingCodes, orderStepIndex, parcelJourney } from "@/lib/orders/customer-order-status";
+import { ORDER_STATUS_LABEL, ORDER_STEPS, liveTrackingCodes, orderProgress, orderStepIndex, parcelDeliveredAt, parcelJourney } from "@/lib/orders/customer-order-status";
 import type { CustomerOrder } from "@/lib/orders/customer-orders";
 
 const LOCKER_EVENTS = [
@@ -38,6 +39,15 @@ describe("an order as its buyer reads it", () => {
     expect(journey.map((update) => update.code)).toEqual(["LMD.1005", "MMD.1004", "FMD.1002"]);
     expect(journey[0]).toMatchObject({ label: "Pronta per il ritiro nel Locker", place: "ITLRM05261P, Roma", readyForPickup: true });
     expect(journey.slice(1).every((update) => !update.readyForPickup)).toBe(true);
+  });
+
+  it("counts a parcel InPost reports as collected as delivered, whatever the order says yet", () => {
+    const collected = [...LOCKER_EVENTS, { code: "EOL.1001", at: "2026-11-03T17:20:00Z", place: null }];
+    expect(parcelDeliveredAt(collected)).toBe("2026-11-03T17:20:00Z");
+    expect(orderProgress("shipped", collected)).toBe(ORDER_STEPS.indexOf("completed"));
+    expect(parcelDeliveredAt(LOCKER_EVENTS)).toBeNull();
+    expect(orderProgress("shipped", LOCKER_EVENTS)).toBe(ORDER_STEPS.indexOf("shipped"));
+    expect(orderProgress("confirmed", null)).toBe(0);
   });
 
   it("asks InPost only about its parcels still travelling", () => {
@@ -117,5 +127,50 @@ describe("the account page's order card", () => {
     );
     // 23:30 UTC is already the 4th in Rome.
     expect(html).toContain("04 nov");
+  });
+});
+
+describe("the public lookup's result", () => {
+  const found = {
+    order_number: "GD-TEST-1",
+    status: "shipped",
+    created_at: "2026-10-31T19:00:00Z",
+    shipped_at: "2026-11-01T16:00:00Z",
+    tracking_carrier: "InPost",
+    tracking_code: "520000012345678901234567",
+    tracking_url: null,
+    parcel_events: LOCKER_EVENTS,
+    items: [{ product_name_snapshot: "Porta Deck Giallo", quantity: 1, preorder_quantity: 0 }],
+  };
+  const litSteps = (html: string) => html.match(/bg-lime text-void/g)?.length ?? 0;
+
+  it("shows where an InPost parcel is, with every step behind a tap", () => {
+    const html = renderToStaticMarkup(<OrderResult order={found} />);
+    expect(html).toContain("Pronta per il ritiro nel Locker");
+    expect(html).toContain("ITLRM05261P, Roma");
+    expect(html).toContain("Tutti i passaggi (3)");
+    expect(html).toContain("Segui il pacco");
+    expect(litSteps(html)).toBe(3);
+  });
+
+  it("reads a parcel InPost reports as collected as delivered", () => {
+    const events = [...LOCKER_EVENTS, { code: "EOL.1001", at: "2026-11-03T17:20:00Z", place: null }];
+    const html = renderToStaticMarkup(<OrderResult order={{ ...found, parcel_events: events }} />);
+    expect(litSteps(html)).toBe(4);
+    expect(html).toContain("Consegnato");
+    expect(html).not.toContain("Completato");
+  });
+
+  it("keeps the code and the link when InPost did not answer", () => {
+    const html = renderToStaticMarkup(<OrderResult order={{ ...found, parcel_events: null }} />);
+    expect(html).toContain("520000012345678901234567");
+    expect(html).toContain("Segui il pacco");
+    expect(html).not.toContain('data-testid="parcel-latest"');
+    expect(html).not.toContain("InPost non ha ancora");
+  });
+
+  it("says InPost has nothing yet for a parcel it does not know", () => {
+    const html = renderToStaticMarkup(<OrderResult order={{ ...found, parcel_events: [] }} />);
+    expect(html).toContain("InPost non ha ancora registrato movimenti");
   });
 });

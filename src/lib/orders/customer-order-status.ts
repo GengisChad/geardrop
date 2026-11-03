@@ -1,5 +1,5 @@
 import type { TrackingEvent } from "@/lib/shipping/inpost";
-import { eventLabel } from "@/lib/shipping/inpost-tracking";
+import { eventLabel, parcelOutcome } from "@/lib/shipping/inpost-tracking";
 import { carrierByLabel } from "./carriers";
 
 /**
@@ -24,6 +24,17 @@ export const ORDER_STEPS = ["confirmed", "processing", "shipped", "completed"] a
 /** How far the order got: its step's index in ORDER_STEPS, -1 when it walks none. */
 export function orderStepIndex(status: string): number {
   return ORDER_STEPS.indexOf(status as (typeof ORDER_STEPS)[number]);
+}
+
+/** When InPost reports the parcel collected. InPost knows first: the order closes on the next tracking run. */
+export function parcelDeliveredAt(events: readonly TrackingEvent[] | null): string | null {
+  const outcome = events ? parcelOutcome(events) : null;
+  return outcome?.kind === "delivered" ? outcome.at : null;
+}
+
+/** How far the order got, counting a parcel InPost already reports as collected. */
+export function orderProgress(status: string, events: readonly TrackingEvent[] | null): number {
+  return parcelDeliveredAt(events) ? ORDER_STEPS.indexOf("completed") : orderStepIndex(status);
 }
 
 /** Events that mean the parcel is waiting for the buyer, at a Locker or a pickup point. */
