@@ -1,14 +1,13 @@
-import { MapPin, Truck, XCircle } from "lucide-react";
+import { Truck, XCircle } from "lucide-react";
+import { ParcelUpdates } from "@/components/orders/parcel-updates";
 import { trackingLink } from "@/lib/orders/carriers";
-import { ORDER_STATUS_LABEL, ORDER_STEPS, orderStepIndex, parcelJourney } from "@/lib/orders/customer-order-status";
+import { ORDER_STATUS_LABEL, ORDER_STEPS, orderProgress, parcelDeliveredAt } from "@/lib/orders/customer-order-status";
 import type { CustomerOrder } from "@/lib/orders/customer-orders";
-import { parcelOutcome } from "@/lib/shipping/inpost-tracking";
 
 const EURO = new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" });
 // The server renders in UTC: dates and times are the buyer's, in Italy.
 const DAY = new Intl.DateTimeFormat("it-IT", { day: "2-digit", month: "short", timeZone: "Europe/Rome" });
 const DATE = new Intl.DateTimeFormat("it-IT", { day: "2-digit", month: "short", year: "numeric", timeZone: "Europe/Rome" });
-const WHEN = new Intl.DateTimeFormat("it-IT", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" });
 
 /** The date a step was reached, when the order or InPost records it. */
 function stepDate(step: (typeof ORDER_STEPS)[number], order: CustomerOrder, deliveredAt: string | null): string | null {
@@ -24,13 +23,9 @@ function stepDate(step: (typeof ORDER_STEPS)[number], order: CustomerOrder, deli
  */
 export function OrderCard({ order }: { readonly order: CustomerOrder }) {
   const cancelled = order.status === "cancelled";
-  // InPost knows first: the order itself closes on the next tracking run, the buyer need not wait.
-  const outcome = order.parcelEvents ? parcelOutcome(order.parcelEvents) : null;
-  const inpostDelivered = outcome?.kind === "delivered" ? outcome.at : null;
-  const current = inpostDelivered ? ORDER_STEPS.indexOf("completed") : orderStepIndex(order.status);
+  const current = orderProgress(order.status, order.parcelEvents);
+  const deliveredAt = order.deliveredAt ?? parcelDeliveredAt(order.parcelEvents);
   const link = trackingLink(order.trackingCarrier, order.trackingCode, order.trackingUrl);
-  const journey = order.parcelEvents ? parcelJourney(order.parcelEvents) : [];
-  const latest = journey[0];
 
   return (
     <li className="gd-glass-card rounded-2xl px-4 py-4" data-testid="order-card">
@@ -49,7 +44,7 @@ export function OrderCard({ order }: { readonly order: CustomerOrder }) {
         <ol className="mt-3 grid grid-cols-4 gap-1.5" aria-label="Stato dell'ordine" data-testid="order-status">
           {ORDER_STEPS.map((step, index) => {
             const reached = index <= current;
-            const date = reached ? stepDate(step, order, order.deliveredAt ?? inpostDelivered) : null;
+            const date = reached ? stepDate(step, order, deliveredAt) : null;
             return (
               <li key={step} className="flex min-w-0 flex-col gap-1" aria-current={index === current ? "step" : undefined}>
                 <span className={`h-1.5 rounded-full ${reached ? "bg-lime" : "bg-white/10"}`} aria-hidden="true" />
@@ -81,43 +76,7 @@ export function OrderCard({ order }: { readonly order: CustomerOrder }) {
             ) : null}
           </p>
 
-          {latest ? (
-            <p className="mt-2 text-small" data-testid="parcel-latest">
-              <span className={latest.readyForPickup ? "font-bold text-lime" : "font-bold text-graphite"}>{latest.label}</span>
-              {latest.place ? (
-                <span className="mt-0.5 flex items-start gap-1 text-[0.6875rem] text-grey-600">
-                  <MapPin className="mt-px size-3 shrink-0" aria-hidden="true" />
-                  {latest.place}
-                </span>
-              ) : null}
-              <time dateTime={latest.at} className="block text-[0.6875rem] text-grey-600">
-                {WHEN.format(new Date(latest.at))}
-              </time>
-            </p>
-          ) : order.parcelEvents ? (
-            <p className="mt-2 text-[0.6875rem] text-grey-600">
-              InPost non ha ancora registrato movimenti: li vedi qui appena il pacco entra nella sua rete.
-            </p>
-          ) : null}
-
-          {journey.length > 1 ? (
-            <details className="mt-2">
-              <summary className="cursor-pointer text-[0.6875rem] font-bold text-violet-soft">
-                Tutti i passaggi ({journey.length})
-              </summary>
-              <ol className="mt-2 flex flex-col gap-2 border-l border-white/10 pl-3" data-testid="parcel-journey">
-                {journey.map((update) => (
-                  <li key={`${update.code}-${update.at}`} className="text-[0.6875rem] text-grey-600">
-                    <span className="font-bold text-graphite">{update.label}</span>
-                    {update.place ? ` · ${update.place}` : ""}
-                    <time dateTime={update.at} className="block">
-                      {WHEN.format(new Date(update.at))}
-                    </time>
-                  </li>
-                ))}
-              </ol>
-            </details>
-          ) : null}
+          <ParcelUpdates events={order.parcelEvents} />
         </div>
       ) : !cancelled && current < ORDER_STEPS.indexOf("shipped") ? (
         <p className="mt-3 text-[0.6875rem] text-grey-600">
