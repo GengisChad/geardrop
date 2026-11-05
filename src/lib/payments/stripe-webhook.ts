@@ -13,6 +13,8 @@ export const STRIPE_SIGNATURE_TOLERANCE_SECONDS = 300;
 export type StripeEvent = {
   readonly id: string;
   readonly type: string;
+  /** The API request behind the event, when there was one. */
+  readonly request?: { readonly id?: string | null; readonly idempotency_key?: string | null } | null;
   readonly data: { readonly object: { readonly id?: string; readonly object?: string } };
 };
 

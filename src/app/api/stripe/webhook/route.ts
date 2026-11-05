@@ -1,17 +1,19 @@
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email/resend";
 import { processPaidCheckout } from "@/lib/orders/process-paid-checkout";
 import { loadPaidCheckout } from "@/lib/orders/stripe-order";
-import { createSupabaseOrderStore } from "@/lib/orders/supabase-order-store";
+import { CHARGE_REFUNDED_EVENT, processChargeRefund } from "@/lib/orders/stripe-refund";
+import { createSupabaseOrderStore, createSupabaseRefundStore } from "@/lib/orders/supabase-order-store";
 import { createStripeClient } from "@/lib/payments/stripe-api";
 import { parseStripeEvent, verifyStripeSignature } from "@/lib/payments/stripe-webhook";
 import { STOREFRONT_CACHE_TAGS } from "@/lib/storefront/cache";
 
 /**
  * Stripe → shop. Register https://geardropshop.it/api/stripe/webhook in Stripe with the events
- * below; its signing secret goes in STRIPE_WEBHOOK_SECRET. A non-2xx answer makes Stripe retry
- * for up to three days, which is how a temporary database or email failure heals itself.
+ * below and charge.refunded; its signing secret goes in STRIPE_WEBHOOK_SECRET. A non-2xx answer
+ * makes Stripe retry for up to three days, which is how a temporary database or email failure
+ * heals itself.
  */
 
 export const runtime = "nodejs";
@@ -41,6 +43,24 @@ export async function POST(request: Request) {
 
   const event = parseStripeEvent(payload);
   if (!event) return NextResponse.json({ error: "invalid_event" }, { status: 400 });
+
+  if (event.type === CHARGE_REFUNDED_EVENT) {
+    const refund = await processChargeRefund(event, createSupabaseRefundStore());
+    if (refund.status === "failed") {
+      console.error(`[stripe-webhook] ${event.id} refund failed: ${refund.detail}`);
+      return NextResponse.json({ error: "refund" }, { status: 500 });
+    }
+    if (refund.status === "ignored") return NextResponse.json({ received: true, ignored: refund.reason });
+    if (refund.order.recorded) {
+      revalidateTag("orders", "max");
+      revalidateTag("dashboard", "max");
+      revalidatePath("/admin/ordini");
+      revalidatePath(`/admin/ordini/${refund.order.orderId}`);
+    }
+    console.info(`[stripe-webhook] ${event.id} order ${refund.order.orderNumber} refund ${refund.order.recorded ? "recorded" : "already known"}: ${refund.order.refundedCents} cents`);
+    return NextResponse.json({ received: true, order: refund.order.orderNumber });
+  }
+
   if (!PAID_EVENTS.has(event.type) || event.data.object.object !== "checkout.session" || !event.data.object.id) {
     return NextResponse.json({ received: true, ignored: event.type });
   }

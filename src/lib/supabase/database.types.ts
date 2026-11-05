@@ -2347,6 +2347,19 @@ export type Database = {
         Returns: undefined
       }
       record_staff_login: { Args: never; Returns: undefined }
+      record_stripe_charge_refund: {
+        Args: {
+          p_amount_refunded_cents: number
+          p_charge_id: string
+          p_payment_intent_id: string
+        }
+        Returns: {
+          order_id: number
+          order_number: string
+          recorded: boolean
+          refunded_cents: number
+        }[]
+      }
       record_stripe_checkout_order: {
         Args: {
           p_coupon_code?: string
