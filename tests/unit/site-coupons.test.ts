@@ -11,25 +11,43 @@ import { BUNDLES, DECK_CASE_WITH_KIT, FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPIN
 import type { PlaceOrderInput } from "@/lib/checkout-schema";
 import { readSiteCoupon, type FindSiteCoupon, type SiteCoupon } from "@/lib/commerce/cart-code";
 import { createMockProvider } from "@/lib/commerce/mock-provider";
+import { findSiteCoupon } from "@/lib/commerce/site-coupons";
 import type { CartQuote, CartQuoteRequest } from "@/lib/commerce/types";
 import { stripeProductId } from "@/lib/payments/stripe-api";
 import { buildCheckoutSessionFields, matchStripePrices, openQuoteForStripe, type StripePriceRow } from "@/lib/payments/stripe-checkout";
 
-const supabase = vi.hoisted(() => ({ coupon: { data: null as unknown, error: null as unknown }, orders: { count: 0 as number | null, error: null as unknown } }));
+const supabase = vi.hoisted(() => ({
+  coupon: { data: null as unknown, error: null as unknown },
+  orders: { count: 0 as number | null, error: null as unknown },
+  // What the orders table answers once the query names a buyer, and that buyer's use of the code.
+  buyerOrders: { count: 0 as number | null, error: null as unknown },
+  buyerOrdersWithCode: { count: 0 as number | null, error: null as unknown },
+  emails: [] as string[],
+}));
 
 vi.mock("@/lib/supabase/admin", () => {
-  const builder = (result: unknown) => {
+  const builder = (table: string) => {
+    const filters = new Map<string, unknown>();
+    const result = () => {
+      if (table === "coupons") return supabase.coupon;
+      if (!filters.has("email")) return supabase.orders;
+      supabase.emails.push(String(filters.get("email")));
+      return filters.has("coupon_code") ? supabase.buyerOrdersWithCode : supabase.buyerOrders;
+    };
     const chain = {
       select: () => chain,
-      eq: () => chain,
+      eq: (column: string, value: unknown) => {
+        filters.set(column, value);
+        return chain;
+      },
       neq: () => chain,
       abortSignal: () => chain,
-      maybeSingle: async () => result,
-      then: (resolve: (value: unknown) => unknown) => resolve(result),
+      maybeSingle: async () => result(),
+      then: (resolve: (value: unknown) => unknown) => resolve(result()),
     };
     return chain;
   };
-  return { createPrivilegedSupabaseClient: () => ({ from: (table: string) => builder(table === "coupons" ? supabase.coupon : supabase.orders) }) };
+  return { createPrivilegedSupabaseClient: () => ({ from: builder }) };
 });
 
 const flat15: SiteCoupon = {
@@ -42,6 +60,7 @@ const flat15: SiteCoupon = {
   productSlugs: [],
   categorySlugs: [],
   bundleSlugs: [],
+  buyerNote: null,
 };
 
 const finding = (coupon: SiteCoupon): FindSiteCoupon => async (code) => (code === coupon.code ? { status: "valid", coupon } : { status: "unknown" });
@@ -239,8 +258,6 @@ describe("whether a coupon holds", () => {
     ["disabled", { disabled_at: "2026-11-01T00:00:00Z" }],
     ["not started", { starts_at: "2026-12-01T00:00:00Z" }],
     ["expired", { expires_at: "2026-11-01T00:00:00Z" }],
-    ["first purchase only: a cart cannot tell", { first_purchase_only: true }],
-    ["limited per customer: a cart cannot tell", { per_customer_limit: 1 }],
   ])("does not hold when %s", (_name, changes) => {
     expect(status(changes)).toBe("inactive");
   });
@@ -325,13 +342,16 @@ describe("reading a coupon from the database", () => {
     coupon_bundles: [],
   };
 
-  const load = async () => (await import("@/lib/commerce/site-coupons")).findSiteCoupon("CLUBTEST15");
+  const load = () => findSiteCoupon("CLUBTEST15");
 
   beforeEach(() => {
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
     vi.stubEnv("SUPABASE_SECRET_KEY", "test-only");
     supabase.coupon = { data: stored, error: null };
     supabase.orders = { count: 0, error: null };
+    supabase.buyerOrders = { count: 0, error: null };
+    supabase.buyerOrdersWithCode = { count: 0, error: null };
+    supabase.emails = [];
     vi.spyOn(console, "error").mockImplementation(() => undefined);
   });
 
@@ -408,5 +428,75 @@ describe("what the buyer reads", () => {
       }),
     );
     expect(html.split('data-lit="true"').length - 1).toBe(19);
+  });
+});
+
+describe("reading a first-order coupon from the database", () => {
+  const stored = {
+    code: "PRIMOTEST5",
+    discount_kind: "percentage",
+    discount_value: 5,
+    free_shipping: false,
+    minimum_subtotal_cents: 5000,
+    maximum_discount_cents: null,
+    usage_limit: null,
+    per_customer_limit: 1,
+    first_purchase_only: true,
+    starts_at: null,
+    expires_at: null,
+    active: true,
+    disabled_at: null,
+    coupon_products: [],
+    coupon_categories: [],
+    coupon_bundles: [],
+  };
+  const load = (email?: string) => findSiteCoupon("PRIMOTEST5", email);
+
+  beforeEach(() => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("SUPABASE_SECRET_KEY", "test-only");
+    supabase.coupon = { data: stored, error: null };
+    supabase.buyerOrders = { count: 0, error: null };
+    supabase.buyerOrdersWithCode = { count: 0, error: null };
+    supabase.emails = [];
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("asks nothing of the orders until the email is known, and says it waits for it", async () => {
+    const found = await load();
+    expect(found.status === "valid" ? found.coupon.buyerNote : "not valid").toContain("primo ordine");
+    expect(supabase.emails).toEqual([]);
+  });
+
+  it("matches the email as orders store it, lowercased and trimmed", async () => {
+    expect((await load("  Mario.Rossi@Email.IT ")).status).toBe("valid");
+    expect(supabase.emails).toEqual(["mario.rossi@email.it", "mario.rossi@email.it"]);
+  });
+
+  it("refuses an email with an order", async () => {
+    supabase.buyerOrders = { count: 1, error: null };
+    expect(await load("cliente@email.it")).toEqual({ status: "not-first-order" });
+  });
+
+  it("refuses an email that used up its turns", async () => {
+    supabase.coupon = { data: { ...stored, first_purchase_only: false }, error: null };
+    supabase.buyerOrders = { count: 4, error: null };
+    supabase.buyerOrdersWithCode = { count: 1, error: null };
+    expect(await load("cliente@email.it")).toEqual({ status: "used-by-buyer" });
+  });
+
+  it("does not read the buyer's orders for a coupon open to anyone", async () => {
+    supabase.coupon = { data: { ...stored, first_purchase_only: false, per_customer_limit: null }, error: null };
+    expect((await load("cliente@email.it")).status).toBe("valid");
+    expect(supabase.emails).toEqual([]);
+  });
+
+  it("says it could not check when the orders do not answer, rather than letting the code through", async () => {
+    supabase.buyerOrders = { count: null, error: { message: "boom" } };
+    expect(await load("cliente@email.it")).toEqual({ status: "unavailable" });
   });
 });

@@ -20,7 +20,7 @@ import { placeOrder } from "@/lib/commerce/order-intake";
 import { getCommerceProvider, resolveCommerceProviderName } from "@/lib/commerce/provider";
 import type { CartQuote, Money } from "@/lib/commerce/types";
 import { createStripeCheckout, openQuoteForStripe, stripeCheckoutEnabled, STRIPE_UNAVAILABLE_MESSAGE } from "@/lib/payments/stripe-checkout";
-import { EXPRESS_CHECKOUT_LOCKED_MESSAGE, EXPRESS_LOCKER_MISSING_MESSAGE } from "@/lib/payments/express-checkout";
+import { EXPRESS_CHECKOUT_LOCKED_MESSAGE, EXPRESS_CODE_NEEDS_EMAIL_MESSAGE, EXPRESS_LOCKER_MISSING_MESSAGE } from "@/lib/payments/express-checkout";
 import { authRedirectUrl, PRODUCTION_ORIGIN } from "@/lib/site-url";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -81,6 +81,7 @@ export async function submitOrder(input: PlaceOrderInput): Promise<PlaceOrderRes
           lines: toQuoteLines(parsed.data.lines),
           shippingCode: parsed.data.contact.shippingMethod,
           ...(parsed.data.couponCode ? { couponCode: parsed.data.couponCode } : {}),
+          buyerEmail: parsed.data.contact.email,
         }),
       );
       if (!quote.orderable) return { ok: false, message: quote.notice ?? CHECKOUT_FALLBACK_MESSAGE };
@@ -208,6 +209,7 @@ export async function startExpressCheckout(input: ExpressCheckoutInput): Promise
     }
     const refusedCode = codeRefused(parsed.data.couponCode, quote);
     if (refusedCode) return { ok: false, message: refusedCode };
+    if (quote.couponBuyerNote) return { ok: false, message: EXPRESS_CODE_NEEDS_EMAIL_MESSAGE };
 
     // Consignment pieces leave from the partner's warehouse: those carts go through the normal checkout.
     const method = shippingMethodByCode(quote.shippingCode);

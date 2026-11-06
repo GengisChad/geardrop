@@ -289,7 +289,7 @@ export function createMockProvider(
 
       // A code in the cart prices the lines it covers, from its minimum cart at full price. A deck
       // case already at the kit price takes the code on that price.
-      const cartCode = await resolveCartCode(request.couponCode, findCoupon);
+      const cartCode = await resolveCartCode(request.couponCode, findCoupon, request.buyerEmail);
       const pricing = cartCode && "pricing" in cartCode ? cartCode.pricing : null;
       const shortfall = pricing ? Math.max(0, pricing.minimumCents - subtotal) : 0;
       const codeApplies = pricing !== null && shortfall === 0;
@@ -370,6 +370,7 @@ export function createMockProvider(
         // silently swallowed.
         couponCode: codeApplies ? pricing.code : null,
         couponError,
+        ...(codeApplies && pricing.buyerNote ? { couponBuyerNote: pricing.buyerNote } : {}),
         // There is no order backend behind the local catalogue, and pretending
         // otherwise is exactly the bug this replaces.
         orderIntake: "unconfigured",
