@@ -91,7 +91,7 @@ function offer(product: Product): string {
   }
 
   // One row per carrier the checkout offers for this product on its own: the partner's Poste route
-  // for Takara Tomy, Poste to the door for a stadium box, the InPost Locker for everything else.
+  // for consignment pieces, Poste to the door for a stadium box, the InPost Locker for everything else.
   const free = product.price.amount >= FREE_SHIPPING_THRESHOLD;
   for (const method of shippingMethodsFor(product)) {
     rows.push(

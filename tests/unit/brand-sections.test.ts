@@ -2,8 +2,8 @@
  * Tests for the brand-sections feature: shippingPlanFor, mock provider brand awareness,
  * SEO brand/shipping, Merchant feed brand/shipping, and the checkout server refusal.
  *
- * No real Takara Tomy products are in src/data/catalog.ts. Every test that needs one
- * injects a fixture defined here.
+ * Every test that needs a consignment piece injects a fixture defined here. The Takara Tomy
+ * pieces on the shop's own shelf have their tests in takara-own-stock.test.ts.
  */
 import { describe, expect, it } from "vitest";
 import {

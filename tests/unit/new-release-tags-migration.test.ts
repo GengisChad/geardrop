@@ -41,7 +41,16 @@ describe("new release tags", () => {
       "strike-dran-4-50ff",
       "tread-croc-tq-5-50gn",
     ];
-    expect(tagged).toEqual([...september, "soar-phoenix-9-60gf"]);
+    // Then the Takara Tomy pieces that landed on the shop's shelf on 2026-11-06, ahead of Soar Phoenix.
+    const takara = [
+      "bx-48-random-booster-vol-9",
+      "cx-18-random-booster-brachio-whip",
+      "custom-grip-takara-tomy",
+      "long-winder-launcher-takara-tomy",
+      "string-launcher-takara-tomy",
+      "winder-launcher-takara-tomy",
+    ];
+    expect(tagged).toEqual([...september, ...takara, "soar-phoenix-9-60gf"]);
     for (const slug of september) expect(drop, slug).toContain(`('${slug}', 'novita')`);
     // The starters keep selling, they just stop leading the homepage.
     for (const slug of STARTERS) expect(drop).toContain(`'${slug}'`);

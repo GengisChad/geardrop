@@ -15,7 +15,7 @@ Italian Beyblade X players and the parents who buy for them.
 
 ## Product Purpose
 
-GEAR//DROP (geardropshop.it) sells original Hasbro Beyblade X online, plus Takara Tomy pieces on consignment.
+GEAR//DROP (geardropshop.it) sells original Hasbro Beyblade X online, plus Takara Tomy pieces: boosters, launchers and grips from its own shelf (since 2026-11-06), limited editions on consignment.
 - Online only: InPost point 5,65 €, Poste home 6,65 €, free shipping from 100 €.
 - Release pre-orders are sold apart from pieces in stock. A sold-out product offers "Avvisami".
 - Success means more completed orders from mobile visitors: a clear price, an honest availability, the shipping cost and an obvious next step on every product.

@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ProductCard } from "@/components/product/product-card";
 import { startExpressCheckout } from "@/app/(storefront)/checkout/actions";
+import { orderChoices } from "@/lib/commerce/order-choices";
 import { useCartQuote } from "@/lib/use-cart-quote";
 import { MAX_QUANTITY_PER_LINE, useCart } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/format";
@@ -43,7 +44,7 @@ export function CartClient({ shelfProducts }: CartClientProps) {
   });
 
   // Express checkout skips the form, so the InPost Locker is picked here (owner, 2026-10-23); a
-  // cart with a stadium box goes to the door with Poste, and Takara pieces leave from the
+  // cart with a stadium box goes to the door with Poste, and consignment pieces leave from the
   // partner's warehouse, so those carts take the normal checkout.
   const [expressLocker, setExpressLocker] = useState<PickedLocker | null>(null);
   const showExpressButton = Boolean(
@@ -51,6 +52,8 @@ export function CartClient({ shelfProducts }: CartClientProps) {
       !quote.shippingOptions.some((opt) => opt.lockReasons?.some((reason) => reason === "partner" || reason === "mixed")),
   );
   const expressNeedsLocker = Boolean(quote && shippingMethodByCode(quote.shippingCode)?.pickupPoint);
+  // Pieces sold out of a mixed lot: the buyer says which one they want in the order notes.
+  const choices = orderChoices(quote?.lines.map((line) => line.slug) ?? []);
   // A Locker picked before a stadium joined the cart is forgotten once it went to the door: when
   // the stadium leaves again, the buyer picks afresh rather than paying to a choice they no longer see.
   const [lockerShown, setLockerShown] = useState(expressNeedsLocker);
@@ -254,6 +257,11 @@ export function CartClient({ shelfProducts }: CartClientProps) {
           <FreeShippingMeter totals={quote.totals} threshold={quote.freeShippingThreshold} />
           <CartTotalsPanel totals={quote.totals} deliveryHint={cartDelivery(quote.lines.filter((line) => !line.issue))} carrierChosenLater={quote.shippingOptions.length > 1} />
           <ClubCodeField quote={quote} />
+          {choices.length > 0 ? (
+            <p className="text-[0.6875rem] text-grey-600" data-testid="cart-order-choices">
+              Da specificare: {choices.join("; ")}. Lo scrivi al checkout, nelle note dell&apos;ordine{showExpressButton ? "; con Paga subito, via email dopo l'acquisto" : ""}.
+            </p>
+          ) : null}
           <Button as={Link} href="/checkout" variant="primary" size="lg" fullWidth data-testid="go-to-checkout" aria-disabled={blocked}>
             Vai al checkout
             <ArrowRight className="size-4" aria-hidden="true" />

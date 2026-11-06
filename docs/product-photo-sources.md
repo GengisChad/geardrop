@@ -36,6 +36,25 @@ cornice nera aggiunta dalla copia Amazon; nient'altro è ritoccato. Prima, Glory
 foto di una scatola contro un muro presa da un annuncio, con il watermark coperto a mano: ora è il
 packshot Hasbro. Il formato più grande che Hasbro dà ai rivenditori europei è 1000 px.
 
+## Takara Tomy in magazzino, 2026-11-06
+
+Render ufficiali Takara Tomy, senza watermark, presi da
+`beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/<file>@2.png` (1172×1418) e salvati in
+`assets-source/takara-tomy/` con lo stesso nome. Lo scontorno è di `scripts/cutout_takara.py`.
+
+| Prodotto | File | Pagina ufficiale | Fedeltà |
+| --- | --- | --- | --- |
+| Winder Launcher | `CX04_04`, `BX46_11`, `CX14_09` | `lineup/cx04.html`, `bx46.html`, `cx14.html` | Tre colori ufficiali di esempio: il lotto è misto e non contato per colore. Foto indicativa, e la scheda lo dice. |
+| String Launcher | `UX20_04`, `BX34_05` | `lineup/ux20.html`, `bx34.html` | I due pezzi fotografati dal proprietario: blu scuro con puntini oro, azzurro L. |
+| Long Winder Launcher | `BXG57_23`, `CX07_07` | `lineup/cx00-eva.html`, `cx07.html` | Il NERV è il pezzo fotografato dal proprietario. Il verde è un esempio di colore normale. |
+| Custom Grip | `BX30`, `BX42`, `BX41`, `BX41_01` | `lineup/bx30.html`, `bx42.html`, `bx41.html` | Le tre edizioni fotografate dal proprietario. |
+| CX-18 Random Booster | `CX18`, `CX18_01`, `CX18_03`, `CX18_04` | `lineup/cx18.html` | Le trottole ufficiali. La scatola è `box-cx-18.jpg`, foto del proprietario raddrizzata. |
+| BX-48 Random Booster Vol. 9 | `BX48`, `BX48_02`–`BX48_06` | `lineup/bx48.html` | Le trottole ufficiali. La scatola è `box-bx-48.jpg`, foto del proprietario raddrizzata. |
+
+Il packshot della scatola sarebbe su Takara Tomy Mall, che oggi risponde con un certificato revocato:
+per questo le due scatole vengono dalle foto del proprietario. Scatola e trottole nella stessa card
+sono un montaggio: nessuno scatto ufficiale le mostra insieme.
+
 ## Ancora da migliorare
 
 - **UX-00 Glory Valkyrie LF** (750 px, foto del partner): l'unica foto ufficiale della scatola

@@ -62,6 +62,13 @@ describe("reviewed catalogue", () => {
       { slug: "suppress-superion-0-70lp", price: 2500, stock: "pre-ordine", availableQuantity: 5, rating: 0, reviewCount: 0 },
       { slug: "strike-dran-4-50ff", price: 2300, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
       { slug: "tread-croc-tq-5-50gn", price: 2500, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
+      // Takara Tomy pieces on the shop's own shelf (owner, 2026-11-06).
+      { slug: "bx-48-random-booster-vol-9", price: 3699, stock: "disponibile", availableQuantity: 6, rating: 0, reviewCount: 0 },
+      { slug: "cx-18-random-booster-brachio-whip", price: 3000, stock: "disponibile", availableQuantity: 20, rating: 0, reviewCount: 0 },
+      { slug: "custom-grip-takara-tomy", price: 2599, stock: "disponibile", availableQuantity: 15, rating: 0, reviewCount: 0 },
+      { slug: "long-winder-launcher-takara-tomy", price: 2000, stock: "disponibile", availableQuantity: 6, rating: 0, reviewCount: 0 },
+      { slug: "string-launcher-takara-tomy", price: 1699, stock: "disponibile", availableQuantity: 9, rating: 0, reviewCount: 0 },
+      { slug: "winder-launcher-takara-tomy", price: 1299, stock: "disponibile", availableQuantity: 33, rating: 0, reviewCount: 0 },
       { slug: "soar-phoenix-9-60gf", price: 2490, stock: "disponibile", availableQuantity: 199, rating: 0, reviewCount: 0 },
       // Takara Tomy on consignment from the partner, two of each (owner, 2026-10-07).
       { slug: "cx-00-evangelion-deck-set", price: 13500, stock: "disponibile", availableQuantity: 2, rating: 0, reviewCount: 0 },

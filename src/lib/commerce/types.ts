@@ -9,9 +9,9 @@
 import type { ProductImage, ProductSlug } from "@/data/assets";
 
 /**
- * Which manufacturer's line the product comes from. Absent means Hasbro (the default
- * and the only line in the catalogue today). Takara Tomy items are consignment stock
- * from our partner and ship from his warehouse.
+ * Which manufacturer's line the product comes from. Absent means Hasbro (the default).
+ * Takara Tomy items are either the shop's own stock or consignment stock from our partner
+ * (see Product.consignment): the brand says who made a piece, not where it ships from.
  */
 export type BrandSlug = "hasbro" | "takara-tomy";
 
@@ -122,13 +122,14 @@ export type Product = {
    */
   readonly unofficial?: true;
   /**
-   * Which manufacturer's line the product belongs to. Absent means Hasbro. Takara Tomy items
-   * arrive on consignment from our partner and are shipped from his warehouse.
+   * Which manufacturer's line the product belongs to. Absent means Hasbro. It says nothing about
+   * shipping: that follows `consignment`.
    */
   readonly brand?: BrandSlug;
   /**
-   * True for partner-stocked, partner-shipped items (all Takara Tomy pieces). The shop never
-   * holds this stock: the order is passed straight to the partner and he ships it.
+   * True for partner-stocked, partner-shipped items (the Takara Tomy limited editions). The shop
+   * never holds this stock: the order is passed straight to the partner and he ships it. Takara
+   * Tomy pieces the shop bought itself (owner, 2026-11-06) do not set it and ship like Hasbro ones.
    */
   readonly consignment?: true;
   /**

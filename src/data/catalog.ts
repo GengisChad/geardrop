@@ -116,9 +116,10 @@ export const DECK_CASE_SLUGS: ReadonlySet<string> = new Set(
 export const KEPT_OFF_GOOGLE: ReadonlySet<string> = new Set(DECK_CASE_BICOLORE.colours.map((colour) => colour.slug));
 
 /**
- * Brand descriptors for the two lines we sell. Hasbro is the Western Beyblade X line
- * (the products we stock and ship ourselves). Takara Tomy is the original Japanese line,
- * sold on consignment: our partner holds and ships those pieces from his warehouse.
+ * Brand descriptors for the two lines we sell. Hasbro is the Western Beyblade X line. Takara Tomy
+ * is the original Japanese line: boosters, launchers and grips the shop bought itself and ships
+ * like Hasbro (owner, 2026-11-06), plus limited editions on consignment, which our partner holds
+ * and ships from his warehouse.
  */
 export const BRANDS: readonly Brand[] = [
   {
@@ -131,13 +132,22 @@ export const BRANDS: readonly Brand[] = [
     slug: "takara-tomy",
     name: "Takara Tomy",
     tagline: "L'originale giapponese. Dal Giappone al tuo stadio.",
-    description: "La linea originale giapponese di Beyblade X, l'inizio di tutto. I pezzi Takara Tomy sono venduti in consignment: il nostro partner li spedisce direttamente dal suo magazzino, in un pacco separato.",
+    description: "La linea originale giapponese di Beyblade X, l'inizio di tutto. Random Booster, lanciatori e grip partono dal nostro magazzino. Le edizioni limitate in conto vendita le spedisce il nostro partner, in un pacco separato.",
   },
 ];
 
 /** Returns the brand a product belongs to. Absent means Hasbro. */
 export function brandOf(product: Pick<Product, "brand">): BrandSlug {
   return product.brand ?? "hasbro";
+}
+
+/**
+ * The side of shippingPlanFor an item falls on, which is about warehouses, not makers: consignment
+ * pieces leave from the partner's, everything else from the shop's. That includes the Takara Tomy
+ * pieces the shop bought itself (owner, 2026-11-06), and it is why this can differ from brandOf.
+ */
+export function shippingBrandOf(product: Pick<Product, "consignment" | "unofficial">): BrandSlug {
+  return product.consignment && !product.unofficial ? "takara-tomy" : "hasbro";
 }
 
 export const CATEGORIES: readonly Category[] = [
@@ -340,6 +350,71 @@ export const PRODUCTS: readonly Product[] = [
     features: [{ title: "Blade in quattro pezzi", description: "Lock chip e blade scomponibili per assetti su misura" }, { title: "Linea CX", description: "Combina i pezzi con le altre trottole Custom Line" }, { title: "Starter completo", description: "Include il lanciatore" }, { title: "Compatibile Beyblade X", description: "Blade, Ratchet e Bit intercambiabili con la serie" }],
     boxContents: ["1 × Trottola Tread Croc TQ 5-50GN", "1 × Lanciatore con ripcord", "Manuale"],
     relatedSlugs: ["hurricane-enlil-is-7-55t", "strike-dran-4-50ff", "cobalt-drake-4-60f"],
+  },
+  // Takara Tomy pieces the shop bought itself (owner, 2026-11-06): they sit on its own shelf and ship
+  // like Hasbro, so no `consignment`. Parts, variants and spin come from Takara Tomy's product pages.
+  {
+    slug: "bx-48-random-booster-vol-9", name: "BX-48 Random Booster Vol. 9", tagline: "Cinque Metal Coat tornate dalle esclusive. Una a sorpresa.",
+    description: "BX-48 è la Random Booster Vol. 9 di Takara Tomy, la Limited Revival: cinque trottole nate come esclusive di eventi, app e B4 Store, tornate in versione Metal Coat con un assetto rivisto. In ogni scatola ce n'è una sola, a caso e sigillata: non si sceglie. Sono Cobalt Dragoon 9-80F nera, Shark Edge 4-70E blu, Mammoth Tusk 7-60S nera, Hells Scythe 3-85GB oro e Dran Buster 2-80Q rossa. Cobalt Dragoon gira a sinistra e chiede un lanciatore L. Il lanciatore non è incluso. Richiede lanciatore e Beystadium Beyblade X (venduti a parte). Prodotto originale giapponese, confezione in giapponese.",
+    price: eur(3699), category: "beyblade-x", brand: "takara-tomy", stock: "disponibile", availableQuantity: 6, tags: ["novita"], rating: 0, reviewCount: 0,
+    images: productImages["bx-48-random-booster-vol-9"],
+    specs: [{ label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codice prodotto", value: "BX-48" }, { label: "Contenuto", value: "1 trottola a caso tra 5, non si sceglie" }, { label: "Varianti", value: "Cobalt Dragoon 9-80F nera · Shark Edge 4-70E blu · Mammoth Tusk 7-60S nera · Hells Scythe 3-85GB oro · Dran Buster 2-80Q rossa" }, { label: "Rotazione", value: "Destra. Cobalt Dragoon gira a sinistra" }, { label: "Confezione", value: "Sigillata, in giapponese" }, { label: "Età", value: "Dai 6 anni (indicazione della confezione)" }, { label: "Nota", value: "Richiede lanciatore e Beystadium (venduti a parte)" }],
+    features: [{ title: "Una su cinque", description: "Una trottola a caso per scatola: non si sceglie" }, { title: "Limited Revival", description: "Esclusive di eventi, app e B4 Store, tornate con un assetto rivisto" }, { title: "Metal Coat", description: "Nera, blu, oro o rossa. La vernice può consumarsi con l'uso" }, { title: "Da sapere prima di comprare", description: "Cobalt Dragoon gira a sinistra e chiede un lanciatore L. Il lanciatore non è incluso" }],
+    boxContents: ["1 × Trottola a caso tra le cinque varianti", "Istruzioni in giapponese"],
+    relatedSlugs: ["cx-18-random-booster-brachio-whip", "string-launcher-takara-tomy", "winder-launcher-takara-tomy"],
+  },
+  {
+    slug: "cx-18-random-booster-brachio-whip", name: "CX-18 Random Booster Brachio Whip Select", tagline: "Uno di tre colori, a sorpresa.",
+    description: "CX-18 è la Random Booster di Takara Tomy dedicata a Brachio Whip OW5-70Nr, trottola della Custom Line con Expand Blade che Takara Tomy classifica stamina: blade spessa e rotonda con il peso verso l'esterno, e Bit Nr (Narrow) per perdere meno rotazione. In ogni scatola ce n'è una sola, sigillata: la trottola è sempre questa, a caso è solo il colore (viola, oro o nera), che non si sceglie. Rotazione destra. Il lanciatore non è incluso. Richiede lanciatore e Beystadium Beyblade X (venduti a parte). Prodotto originale giapponese, confezione in giapponese con etichetta in cinese.",
+    price: eur(3000), category: "beyblade-x", brand: "takara-tomy", stock: "disponibile", availableQuantity: 20, tags: ["novita"], rating: 0, reviewCount: 0,
+    images: productImages["cx-18-random-booster-brachio-whip"],
+    specs: [{ label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "CX (Expand Blade)" }, { label: "Codice", value: "OW5-70Nr" }, { label: "Contenuto", value: "1 trottola, a caso solo il colore: viola, oro o nera" }, { label: "Componenti", value: "Lock Chip Brachio, Over Blade Outer, Metal Blade Whip, Assist Blade Wheel, Ratchet 5-70, Bit Narrow" }, { label: "Rotazione", value: "Destra" }, { label: "Confezione", value: "Sigillata, in giapponese, con etichetta in cinese" }, { label: "Età", value: "Dai 6 anni (indicazione della confezione)" }, { label: "Nota", value: "Richiede lanciatore e Beystadium (venduti a parte)" }],
+    features: [{ title: "Uno di tre colori", description: "Stessa trottola, a caso solo il colore: viola, oro o nera" }, { title: "Peso verso l'esterno", description: "Blade spessa e rotonda, pensata per durare" }, { title: "Bit Narrow", description: "Punta sottile e tonda, perde poca rotazione" }, { title: "Da sapere prima di comprare", description: "Solo la trottola: il lanciatore non è incluso" }],
+    boxContents: ["1 × Trottola Brachio Whip OW5-70Nr, in un colore a caso", "Istruzioni in giapponese"],
+    relatedSlugs: ["bx-48-random-booster-vol-9", "winder-launcher-takara-tomy", "custom-grip-takara-tomy"],
+  },
+  {
+    // Three editions out of one mixed lot, not counted per edition (owner, 2026-11-06): one price and
+    // one shelf of 15, and the buyer asks for a colour. The words on the grip come from Takara Tomy's
+    // product pages; right- and left-handed mounting from the instruction sheet in the bag.
+    slug: "custom-grip-takara-tomy", name: "Custom Grip Takara Tomy", tagline: "Si monta sul lanciatore. Tre colori, stesso prezzo.",
+    description: "La Custom Grip è l'impugnatura originale Takara Tomy che si monta sul lanciatore (venduto a parte): più comoda da tenere, per un lancio più stabile, e si monta sia per destri sia per mancini. Tre versioni, stesso prezzo: BX-30 rossa con i pannelli intercambiabili, BX-41 gunmetal e BX-42 blu in gomma, con quattro tipi di pannelli in gomma per regolare la presa. Vuoi un colore preciso? Scrivilo nelle note dell'ordine o via email dopo l'acquisto: se è rimasto è tuo, altrimenti ti scriviamo prima di spedire. Senza indicazioni spediamo quello che c'è. Lanciatore, trottola e Beystadium non inclusi. Prodotto originale giapponese, confezione in giapponese con etichetta in cinese.",
+    price: eur(2599), category: "accessori", brand: "takara-tomy", stock: "disponibile", availableQuantity: 15, tags: ["novita"], rating: 0, reviewCount: 0,
+    images: productImages["custom-grip-takara-tomy"],
+    specs: [{ label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Tipo", value: "Impugnatura per lanciatore" }, { label: "Versioni", value: "BX-30 rossa · BX-41 gunmetal · BX-42 blu" }, { label: "Colore", value: "Scrivilo nelle note dell'ordine: se è rimasto è tuo" }, { label: "Pannelli", value: "BX-30 intercambiabili. BX-41 e BX-42 quattro tipi, in gomma" }, { label: "Confezione", value: "In giapponese, con etichetta in cinese" }, { label: "Età", value: "Dai 6 anni (indicazione della confezione)" }, { label: "Nota", value: "Lanciatore non incluso" }],
+    features: [{ title: "Lancio più stabile", description: "La forma è più comoda da impugnare" }, { title: "Tre colori, stesso prezzo", description: "BX-30 rossa, BX-41 gunmetal e BX-42 blu" }, { title: "Per destri e mancini", description: "Si monta in tutti e due i versi" }, { title: "Da sapere prima di comprare", description: "Scrivi nelle note dell'ordine il colore che vuoi: vediamo se è rimasto. Il lanciatore non è incluso" }],
+    boxContents: ["1 × Custom Grip Takara Tomy", "Pannelli per regolare la presa", "Istruzioni in giapponese"],
+    relatedSlugs: ["winder-launcher-takara-tomy", "string-launcher-takara-tomy", "long-winder-launcher-takara-tomy"],
+  },
+  {
+    slug: "long-winder-launcher-takara-tomy", name: "Long Winder Launcher Takara Tomy", tagline: "La winder lunga. Anche con la stampa Evangelion.",
+    description: "Il lanciatore Takara Tomy con la Long Winder, più lunga della winder classica: la infili, la tiri e la trottola parte. Ci sono due versioni, secondo disponibilità e non a scelta: la stampa speciale con il logo NERV dell'Evangelion Deck Set (CX-00), nera con la winder rossa, oppure in colore normale, come il verde in foto. Arriva in busta, senza scatola. Per trottole a rotazione destra. Trottola e Beystadium non inclusi.",
+    price: eur(2000), category: "lanciatori", brand: "takara-tomy", stock: "disponibile", availableQuantity: 6, tags: ["novita"], rating: 0, reviewCount: 0,
+    images: productImages["long-winder-launcher-takara-tomy"],
+    specs: [{ label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Tipo", value: "Lanciatore a winder" }, { label: "Winder", value: "Long Winder" }, { label: "Versione", value: "Stampa Evangelion o colore normale, non si sceglie" }, { label: "Rotazione", value: "Destra" }, { label: "Confezione", value: "In busta, senza scatola" }, { label: "Età", value: "Dai 6 anni (indicazione della confezione)" }, { label: "Nota", value: "Trottola e Beystadium non inclusi" }],
+    features: [{ title: "Long Winder", description: "Più lunga della winder classica" }, { title: "Stampa Evangelion", description: "Il logo NERV dell'Evangelion Deck Set, finché ce n'è" }, { title: "Originale Takara Tomy", description: "Lo stesso lanciatore degli starter giapponesi" }, { title: "Da sapere prima di comprare", description: "La versione non si sceglie: arriva in busta, senza scatola" }],
+    boxContents: ["1 × Lanciatore Takara Tomy", "1 × Long Winder"],
+    relatedSlugs: ["custom-grip-takara-tomy", "winder-launcher-takara-tomy", "string-launcher-takara-tomy"],
+  },
+  {
+    slug: "string-launcher-takara-tomy", name: "String Launcher Takara Tomy", tagline: "Tiri la corda e parte. Colore assortito.",
+    description: "Lo String Launcher è il lanciatore a corda lunga di Takara Tomy: si tira la corda e la trottola parte. Viene dagli starter giapponesi, come il blu scuro di UX-20 e l'azzurro L di BX-34 in foto. Ci sono sia destri (right) sia sinistri (L), che lanciano solo le trottole a rotazione sinistra: scrivi quale vuoi nelle note dell'ordine o via email dopo l'acquisto. Se non è rimasto ti scriviamo prima di spedire; senza indicazioni spediamo il destro. Il colore è assortito e non si sceglie. Arriva in busta, senza scatola. Trottola e Beystadium non inclusi.",
+    price: eur(1699), category: "lanciatori", brand: "takara-tomy", stock: "disponibile", availableQuantity: 9, tags: ["novita"], rating: 0, reviewCount: 0,
+    images: productImages["string-launcher-takara-tomy"],
+    specs: [{ label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Tipo", value: "Lanciatore a corda" }, { label: "Colore", value: "Assortito, non si sceglie" }, { label: "Rotazione", value: "Destra (right) o sinistra (L): scrivilo nelle note dell'ordine" }, { label: "Confezione", value: "In busta, senza scatola" }, { label: "Età", value: "Dai 6 anni (indicazione della confezione)" }, { label: "Nota", value: "Trottola e Beystadium non inclusi" }],
+    features: [{ title: "Corda lunga", description: "Si tira la corda e la trottola parte" }, { title: "Originale Takara Tomy", description: "Lo stesso lanciatore degli starter giapponesi" }, { title: "Colore assortito", description: "Ne abbiamo di diversi: il colore non si sceglie" }, { title: "Da sapere prima di comprare", description: "Scrivi nelle note dell'ordine se lo vuoi destro (right) o sinistro (L). Senza indicazioni spediamo il destro" }],
+    boxContents: ["1 × String Launcher Takara Tomy"],
+    relatedSlugs: ["custom-grip-takara-tomy", "winder-launcher-takara-tomy", "long-winder-launcher-takara-tomy"],
+  },
+  {
+    slug: "winder-launcher-takara-tomy", name: "Winder Launcher Takara Tomy", tagline: "Il lanciatore degli starter giapponesi. Colore assortito.",
+    description: "Il Winder Launcher è il lanciatore degli starter Takara Tomy: infili la winder, la striscia dentata, e la tiri per far partire la trottola. Winder di lunghezza classica. Ci sono sia destri (right) sia sinistri (L), che lanciano solo le trottole a rotazione sinistra: scrivi quale vuoi nelle note dell'ordine o via email dopo l'acquisto. Se non è rimasto ti scriviamo prima di spedire; senza indicazioni spediamo il destro. Il colore è assortito e non si sceglie: ne abbiamo di diversi (in foto alcuni) e spediamo quello che c'è. Arriva in busta, senza scatola. Trottola e Beystadium non inclusi.",
+    price: eur(1299), category: "lanciatori", brand: "takara-tomy", stock: "disponibile", availableQuantity: 33, tags: ["novita"], rating: 0, reviewCount: 0,
+    images: productImages["winder-launcher-takara-tomy"],
+    specs: [{ label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Tipo", value: "Lanciatore a winder" }, { label: "Winder", value: "Lunghezza classica" }, { label: "Colore", value: "Assortito, non si sceglie" }, { label: "Rotazione", value: "Destra (right) o sinistra (L): scrivilo nelle note dell'ordine" }, { label: "Confezione", value: "In busta, senza scatola" }, { label: "Età", value: "Dai 6 anni (indicazione della confezione)" }, { label: "Nota", value: "Trottola e Beystadium non inclusi" }],
+    features: [{ title: "Winder classica", description: "La striscia dentata che tiri per lanciare" }, { title: "Originale Takara Tomy", description: "Lo stesso lanciatore degli starter giapponesi" }, { title: "Colore assortito", description: "Ne abbiamo di diversi: il colore non si sceglie" }, { title: "Da sapere prima di comprare", description: "Scrivi nelle note dell'ordine se lo vuoi destro (right) o sinistro (L). Senza indicazioni spediamo il destro" }],
+    boxContents: ["1 × Winder Launcher Takara Tomy", "1 × Winder"],
+    relatedSlugs: ["custom-grip-takara-tomy", "string-launcher-takara-tomy", "long-winder-launcher-takara-tomy"],
   },
   {
     slug: "soar-phoenix-9-60gf", name: "Soar Phoenix 9-60GF", tagline: "Upper attack. Colpisci verso l'alto.",
@@ -573,10 +648,16 @@ const RETIRED_SHIPPING_METHODS: readonly ShippingMethodDefinition[] = [
 export const SHIPPING_FLAT_RATE = Math.min(...SHIPPING_METHODS.map((m) => m.priceCents));
 
 /**
- * Pieces sold out of an opened Battle Set: a sealed bag with no retail box, so no barcode of their
- * own. Merchant Center is told so; every boxed Hasbro item does have an EAN, recorded when known.
+ * Pieces sold out of an opened Battle Set or starter: a sealed bag with no retail box, so no barcode
+ * of their own. Merchant Center is told so; every boxed Hasbro item does have an EAN, recorded when known.
  */
-export const SOLD_WITHOUT_BARCODE: ReadonlySet<string> = new Set(["impact-drake-9-60lr", "hover-wyvern-3-85n"]);
+export const SOLD_WITHOUT_BARCODE: ReadonlySet<string> = new Set([
+  "impact-drake-9-60lr",
+  "hover-wyvern-3-85n",
+  "winder-launcher-takara-tomy",
+  "string-launcher-takara-tomy",
+  "long-winder-launcher-takara-tomy",
+]);
 
 /** Where the buyer finds the InPost point or Locker nearest to them. */
 export const INPOST_POINT_FINDER_URL = "https://inpost.it/trova-un-locker";
@@ -618,9 +699,9 @@ export function shippingMethodByCode(code: string | null | undefined): ShippingM
  * and its structured data quote.
  */
 export function shippingMethodsFor(
-  product: Pick<Product, "slug" | "bundleOf" | "brand" | "unofficial">,
+  product: Pick<Product, "slug" | "bundleOf" | "consignment" | "unofficial">,
 ): readonly ShippingMethodDefinition[] {
-  if (brandOf(product) === "takara-tomy" && !product.unofficial) return [PARTNER_SHIPPING_METHOD];
+  if (shippingBrandOf(product) === "takara-tomy") return [PARTNER_SHIPPING_METHOD];
   return fitsLocker(product) ? SHIPPING_METHODS : [BULKY_SHIPPING_METHOD];
 }
 
@@ -636,12 +717,13 @@ export type ShippingPlan = {
 };
 
 /**
- * Derives the shipping plan for a cart based on the brands it contains and whether one of its
- * boxes is too big for a Locker.
+ * Derives the shipping plan for a cart based on whose warehouses its pieces leave from
+ * (shippingBrandOf: "takara-tomy" stands for the partner's, "hasbro" for the shop's, whoever made
+ * the piece) and whether one of its boxes is too big for a Locker.
  *
- * - Hasbro-only (or empty): SHIPPING_METHODS (the InPost Locker).
+ * - Shop's pieces only (or empty): SHIPPING_METHODS (the InPost Locker).
  * - A stadium box in the cart: Poste to the door only, locked (owner, 2026-10-23).
- * - Takara-only: only the partner's Poste Punto-Poste route, locked.
+ * - Partner's pieces only: only the partner's Poste Punto-Poste route, locked.
  * - Mixed: InPost Locker for the shop's parcel, locked; the partner sends his to the buyer's
  *   address with Poste (owner, 2026-10-23 — one charge, two warehouses, two parcels; was
  *   poste-point from 2026-10-14 and inpost-point before).

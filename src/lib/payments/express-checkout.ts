@@ -1,6 +1,6 @@
 /**
- * Shown when the cart cannot use express checkout: Takara-only and mixed Hasbro+Takara carts ship
- * partly from the partner's warehouse, and the buyer reaches them via the normal checkout.
+ * Shown when the cart cannot use express checkout: a cart holding the partner's consignment pieces
+ * ships at least partly from that warehouse, and the buyer reaches it via the normal checkout.
  *
  * It lives outside the checkout actions because a "use server" file may export only async
  * functions: a constant exported there fails the production build.

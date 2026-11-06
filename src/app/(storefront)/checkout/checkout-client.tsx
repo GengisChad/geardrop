@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Field, TextInput, inputClass } from "@/components/ui/field";
 import { CartTotalsPanel } from "@/components/cart/cart-summary";
 import { ClubCodeField } from "@/components/cart/club-code";
+import { orderChoices } from "@/lib/commerce/order-choices";
 import { useCartQuote } from "@/lib/use-cart-quote";
 import { useCart } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/format";
@@ -126,6 +127,8 @@ export function CheckoutClient() {
   }
 
   const blocked = !quote.orderable;
+  // Pieces sold out of a mixed lot: the notes are where the buyer says which one they want.
+  const choices = orderChoices(quote.lines.map((line) => line.slug));
   const stripe = quote.payment === "stripe";
   const busy = pending || redirecting;
   const submitLabel = stripe
@@ -393,7 +396,7 @@ export function CheckoutClient() {
                       </span>
                     </div>
                     {/* Why the buyer cannot switch (owner, 2026-10-23): a stadium box no Locker takes,
-                        or Takara pieces that leave from the partner's warehouse. */}
+                        or consignment pieces that leave from the partner's warehouse. */}
                     {option.lockReasons?.includes("bulky") ? (
                       <p className="text-[0.6875rem] text-grey-600 sm:col-span-2" data-testid="bulky-cart-note">
                         Lo stadio non entra in nessun Locker InPost: l&apos;ordine arriva a casa con Poste Italiane.
@@ -401,7 +404,7 @@ export function CheckoutClient() {
                     ) : null}
                     {option.lockReasons?.includes("mixed") ? (
                       <p className="text-[0.6875rem] text-grey-600 sm:col-span-2" data-testid="mixed-cart-note">
-                        I pezzi Takara Tomy partono dal nostro partner e arrivano a casa tua con Poste Italiane: due
+                        I pezzi spediti dal nostro partner arrivano a casa tua con Poste Italiane: due
                         pacchi, paghi una sola spedizione.
                       </p>
                     ) : null}
@@ -511,7 +514,7 @@ export function CheckoutClient() {
             )}
           </p>
 
-          <Field label="Note per il corriere (facoltativo)" htmlFor="notes" error={errors.notes?.message} className="mt-4">
+          <Field label="Note sull'ordine (facoltativo)" htmlFor="notes" error={errors.notes?.message} className="mt-4">
             <textarea
               id="notes"
               rows={3}
@@ -519,6 +522,11 @@ export function CheckoutClient() {
               {...register("notes")}
             />
           </Field>
+          {choices.length > 0 ? (
+            <p className="mt-1.5 text-[0.6875rem] text-grey-600" data-testid="checkout-order-choices">
+              Scrivi qui cosa vuoi: {choices.join("; ")}. Se non è rimasto ti scriviamo prima di spedire.
+            </p>
+          ) : null}
         </fieldset>
       </div>
 

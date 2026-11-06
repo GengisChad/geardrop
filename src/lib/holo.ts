@@ -47,6 +47,12 @@ const BY_SLUG: Readonly<Record<string, HoloPalette>> = {
   "porta-deck-blu-bianco": palette("#d6e2ff", "#1240d0", "#3a5bff", "#ffffff", "rgba(18, 64, 208, 0.35)"),
   "porta-deck-bianco-blu": palette("#ffffff", "#e8ecf5", "#1a3fc0", "#3cf0ff", "rgba(26, 63, 192, 0.3)"),
   "porta-deck-arancione-nero": palette("#ffe2c4", "#e8833f", "#ff7a3d", "#ffd36b", "rgba(232, 131, 63, 0.35)"),
+  "winder-launcher-takara-tomy": palette("#d6e2ff", "#3a5bff", "#e5384a", "#c6ff00", "rgba(58, 91, 255, 0.35)"),
+  "string-launcher-takara-tomy": palette("#d6e2ff", "#1240d0", "#62a6d8", "#e6b422", "rgba(18, 64, 208, 0.35)"),
+  "long-winder-launcher-takara-tomy": palette("#ffd3db", "#e5384a", "#12d6a4", "#c6ff00", "rgba(229, 56, 74, 0.35)"),
+  "custom-grip-takara-tomy": palette("#ffd3db", "#e0202c", "#1d5fd0", "#e8ecf5", "rgba(224, 32, 44, 0.35)"),
+  "cx-18-random-booster-brachio-whip": palette("#eadcff", "#9d6bff", "#12d6a4", "#ffd36b", "rgba(157, 107, 255, 0.35)"),
+  "bx-48-random-booster-vol-9": palette("#ffe2c4", "#e5384a", "#e6b422", "#ffd36b", "rgba(229, 56, 74, 0.35)"),
 };
 
 const BY_TYPE: Readonly<Record<BladeType, HoloPalette>> = {

@@ -180,8 +180,8 @@ export type ExpressCheckoutResult =
  * the webhook via collected_information.shipping_details (or shipping_details on older
  * API versions) rather than payment_intent.shipping.
  *
- * Express is available only for Hasbro-only carts: Takara-only and mixed carts ship partly from
- * the partner's warehouse. Since 2026-10-23 it ships to the InPost Locker the buyer picked in the
+ * Express is available only for carts that leave from the shop's own shelf: a cart holding the
+ * partner's consignment pieces ships partly from his warehouse. Since 2026-10-23 it ships to the InPost Locker the buyer picked in the
  * cart (Stripe cannot ask for one), or, for a cart with a stadium box, to the door with Poste.
  */
 export async function startExpressCheckout(input: ExpressCheckoutInput): Promise<ExpressCheckoutResult> {
@@ -209,7 +209,7 @@ export async function startExpressCheckout(input: ExpressCheckoutInput): Promise
     const refusedCode = codeRefused(parsed.data.couponCode, quote);
     if (refusedCode) return { ok: false, message: refusedCode };
 
-    // Takara pieces leave from the partner's warehouse: those carts go through the normal checkout.
+    // Consignment pieces leave from the partner's warehouse: those carts go through the normal checkout.
     const method = shippingMethodByCode(quote.shippingCode);
     const partner = quote.shippingOptions.some((option) => option.lockReasons?.some((reason) => reason === "partner" || reason === "mixed"));
     if (!method || partner) {
