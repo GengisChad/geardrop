@@ -320,12 +320,12 @@ describe("what Google is told about shipping", () => {
     expect(shipping(item("sneak-attack-battle-set"))).toEqual([["Poste Italiane · consegna a casa", "6.65 EUR"]]);
     const items = xml.split("<item>").slice(1);
     expect(items.length).toBeGreaterThan(0);
-    // Every offer lists exactly one carrier: the partner's route for Takara Tomy pieces, Poste a casa for a
+    // Every offer lists exactly one carrier: the partner's route for consignment pieces, Poste a casa for a
     // stadium box or a kit holding one, the Locker for the rest.
     const bulky = new Set(["drop-attack-battle-set", "sneak-attack-battle-set", "kit-arena-drop-completo", "kit-arena-sneak-completo"]);
     for (const chunk of items) {
       const id = chunk.match(/<g:id>([^<]+)<\/g:id>/)?.[1] ?? "";
-      const expected = chunk.includes("<g:brand>Takara Tomy</g:brand>")
+      const expected = PRODUCTS.find((product) => product.slug === id)?.consignment
         ? PARTNER_SHIPPING_METHOD.label
         : bulky.has(id)
           ? BULKY_SHIPPING_METHOD.label

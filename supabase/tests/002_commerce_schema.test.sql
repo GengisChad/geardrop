@@ -36,7 +36,9 @@ select results_eq(
         -- The two-colour deck cases, no stock limit (2026-10-24).
         'porta-deck-nero-blu', 'porta-deck-nero-rosso', 'porta-deck-nero-oro', 'porta-deck-giallo-nero', 'porta-deck-rosso-oro', 'porta-deck-viola-verde', 'porta-deck-viola-argento',
         -- Seven more two-colour deck cases, no stock limit (2026-11-03).
-        'porta-deck-viola-menta', 'porta-deck-argento-nero', 'porta-deck-verde-nero', 'porta-deck-verde-rosso', 'porta-deck-blu-bianco', 'porta-deck-bianco-blu', 'porta-deck-arancione-nero')$$,
+        'porta-deck-viola-menta', 'porta-deck-argento-nero', 'porta-deck-verde-nero', 'porta-deck-verde-rosso', 'porta-deck-blu-bianco', 'porta-deck-bianco-blu', 'porta-deck-arancione-nero',
+        -- Takara Tomy pieces on the shop's own shelf (2026-11-06).
+        'bx-48-random-booster-vol-9', 'cx-18-random-booster-brachio-whip', 'custom-grip-takara-tomy', 'long-winder-launcher-takara-tomy', 'string-launcher-takara-tomy', 'winder-launcher-takara-tomy')$$,
   array[0::bigint],
   'only the owner-reviewed catalogue carries stock'
 );
@@ -118,13 +120,13 @@ select results_eq(
 );
 select results_eq(
   $$select count(*)::bigint from public.products$$,
-  array[44::bigint],
+  array[50::bigint],
   'double seed keeps the catalogue products'
 );
 select results_eq(
   $$select count(*)::bigint from public.product_images$$,
-  array[44::bigint],
-  'double seed keeps one image per catalogue product'
+  array[62::bigint],
+  'double seed keeps every catalogue image'
 );
 select results_eq(
   $$select count(*)::bigint from public.site_settings$$,

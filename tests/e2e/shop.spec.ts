@@ -8,17 +8,18 @@ const buyPanel = (page: Page) => page.locator("#buy-panel");
 
 
 test.describe("home", () => {
-  test("renders the drop up front, what ships now, then the rest, with no fight animation", async ({ page }) => {
+  test("renders the spotlight up front, what ships now, then the rest, with no fight animation", async ({ page }) => {
     await page.goto("/");
 
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("Beyblade X originali");
+    // The owner's spotlight holds the first screen (2026-11-06).
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Takara Tomy appena arrivati");
     await expect(page.getByRole("link", { name: "GEAR//DROP — vai alla home" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Scegli. Carica. Lancia." })).toHaveCount(0);
     await expect(page.getByTestId("arena")).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Pronti da spedire" })).toBeVisible();
     // A new release on the shelf has its own row (owner, 2026-10-08); "Tutto il resto" holds only
     // what no named row took, which in the reviewed catalogue is nothing.
-    await expect(page.getByRole("heading", { name: "Appena arrivati" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Appena arrivati", exact: true })).toBeVisible();
     await expect(page.getByTestId("product-carousel")).toHaveCount(0);
     await expect(page.getByTestId("product-card").first()).toBeVisible();
   });
@@ -45,8 +46,9 @@ test.describe("home", () => {
 test.describe("deck case colours", () => {
   test("one card per family in Accessori opens a page that offers every colour", async ({ page }) => {
     await page.goto("/negozio/accessori");
-    // Two families since 2026-10-24: the single-colour cases and the two-colour ones.
-    await expect(page.getByTestId("product-card")).toHaveCount(2);
+    // Two families since 2026-10-24, the single-colour cases and the two-colour ones, and the
+    // Takara Tomy grip since 2026-11-06.
+    await expect(page.getByTestId("product-card")).toHaveCount(3);
     const card = page.getByTestId("product-card").filter({ hasText: "Porta Deck" }).filter({ hasNotText: "Bicolore" });
     await expect(card).toHaveCount(1);
     await expect(card.getByTestId("card-colours")).toContainText("7 colori");
@@ -140,9 +142,9 @@ test.describe("catalogue", () => {
     }
   });
 
-  test("an empty category shows the designed empty state, not a blank grid", async ({ page }) => {
-    // Lanciatori and Accessori have no SKUs: see docs/reference-audit.md §9.2.
-    await page.goto("/negozio/lanciatori");
+  test("a category with nothing to show has the designed empty state, not a blank grid", async ({ page }) => {
+    // Every category holds something since the launchers of 2026-11-06, and none of them is on pre-order.
+    await page.goto("/negozio/lanciatori?stock=pre-ordine");
     await expect(page.getByTestId("empty-state")).toBeVisible();
     await expect(page.getByTestId("result-count")).toHaveText("0");
   });
@@ -211,12 +213,12 @@ test.describe("product page", () => {
 
 test.describe("search", () => {
   test("finds a product by name", async ({ page }) => {
-    // Two Cobalts in the catalogue since the 2026-09-21 drop, and since 2026-10-05 the Deck
-    // Completo that contains one. The search finds all three; the two actually named Cobalt
-    // rank above the bundle that only lists one among its contents.
+    // Two Cobalts in the catalogue since the 2026-09-21 drop, since 2026-10-05 the Deck Completo
+    // that contains one, and since 2026-11-06 the BX-48 booster that can hold one. The search
+    // finds all four; the two actually named Cobalt rank above the ones that only mention it.
     await page.goto("/ricerca?q=cobalt");
     await expect(page.getByTestId("search-results")).toBeVisible();
-    await expect(page.getByTestId("product-card")).toHaveCount(3);
+    await expect(page.getByTestId("product-card")).toHaveCount(4);
     await expect(page.getByTestId("product-card").nth(0)).toContainText("Cobalt");
     await expect(page.getByTestId("product-card").nth(1)).toContainText("Cobalt");
     await expect(page.getByTestId("search-results")).toContainText("Cobalt Dragoon");

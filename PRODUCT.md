@@ -15,7 +15,7 @@ Italian Beyblade X players and the parents who buy for them.
 
 ## Product Purpose
 
-GEAR//DROP (geardropshop.it) sells original Hasbro Beyblade X online, plus Takara Tomy pieces on consignment.
+GEAR//DROP (geardropshop.it) sells original Hasbro Beyblade X online, plus Takara Tomy pieces: boosters, launchers and grips from its own shelf (since 2026-11-06), limited editions on consignment.
 - Online only: InPost point 5,65 €, Poste home 6,65 €, free shipping from 100 €.
 - Release pre-orders are sold apart from pieces in stock. A sold-out product offers "Avvisami".
 - Success means more completed orders from mobile visitors: a clear price, an honest availability, the shipping cost and an obvious next step on every product.
@@ -35,7 +35,7 @@ Lime means "ships now / buy", violet means "on its way" (pre-orders). Energy com
 - A generic Shopify or marketplace template (white grid, stock badges, "Best seller" ribbons everywhere).
 - Motion-heavy sections like the old "battle" animation, which the owner removed on 2026-09-21.
 - Fake urgency or invented numbers (counters, reviews, "X people are watching").
-- Changing the owner's home order: best sellers, then new arrivals and pre-orders, then ready to ship, then the rest.
+- Changing the owner's home order: best sellers, then new arrivals and pre-orders, then ready to ship, then the rest. A spotlight the owner asks for (`SPOTLIGHT_SLUGS`, since 2026-11-06) goes before them, and only while the owner wants it.
 
 ## Design Principles
 

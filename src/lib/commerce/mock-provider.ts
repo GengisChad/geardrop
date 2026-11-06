@@ -6,7 +6,7 @@
  * contract for the whole UI to keep working.
  */
 
-import { BUNDLE, BUNDLES, CATEGORIES, DECK_CASE_SLUGS, DECK_CASE_WITH_KIT, FREE_SHIPPING_THRESHOLD, PRODUCTS, brandOf, fitsLocker, shippingMethodByCode, shippingPlanFor, toShippingOption } from "@/data/catalog";
+import { BUNDLE, BUNDLES, CATEGORIES, DECK_CASE_SLUGS, DECK_CASE_WITH_KIT, FREE_SHIPPING_THRESHOLD, PRODUCTS, brandOf, fitsLocker, shippingBrandOf, shippingMethodByCode, shippingPlanFor, toShippingOption } from "@/data/catalog";
 import { STANDARD_DELIVERY } from "@/lib/labels";
 import { piecesOf, withBundles } from "./bundles";
 import { CLUB_CODE_UNKNOWN, CLUB_MIN_ORDER_CENTS, clubMinimumMessage, clubUnitPrice, findClub } from "./club-pricing";
@@ -35,8 +35,8 @@ import { separatePreorders } from "./separate-preorders";
 // 48 since 2026-10-24: the two-colour deck cases made 25 cards, one past the old 24.
 const DEFAULT_PER_PAGE = 48;
 
-// No module-level shipping constants: shipping options are derived per-cart from the
-// brands present (shippingPlanFor), so the plan is computed inside quoteCart.
+// No module-level shipping constants: shipping options are derived per-cart from whose
+// warehouse the pieces leave (shippingPlanFor), so the plan is computed inside quoteCart.
 
 /** Popularity is not a stored field; the mockups rank by review volume. */
 const byPopularity = (a: Product, b: Product) => b.reviewCount - a.reviewCount;
@@ -309,11 +309,12 @@ export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CA
       const isEmpty = subtotal === 0;
       const qualifies = subtotal - discount >= FREE_SHIPPING_THRESHOLD;
 
-      // Derive the shipping plan from the brands actually in the sellable lines.
+      // Derive the shipping plan from the warehouses the sellable lines leave from: the partner's
+      // for his consignment pieces, the shop's for everything else, Takara Tomy pieces it owns included.
       const cartBrands = new Set<BrandSlug>(
         sellable.map((line) => {
           const product = bySlug.get(line.slug);
-          return product ? brandOf(product) : "hasbro";
+          return product ? shippingBrandOf(product) : "hasbro";
         }),
       );
       // A stadium box goes to the door with Poste: no InPost Locker takes it.

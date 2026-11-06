@@ -39,10 +39,10 @@ function clip(text: string): string {
 }
 
 export function productDescription(
-  product: Pick<Product, "slug" | "bundleOf" | "brand" | "name" | "tagline" | "price" | "stock" | "unofficial" | "releasePreorder">,
+  product: Pick<Product, "slug" | "bundleOf" | "brand" | "consignment" | "name" | "tagline" | "price" | "stock" | "unofficial" | "releasePreorder">,
 ): string {
   // The item's own cheapest delivery: a stadium box only goes to the door with Poste (2026-10-23),
-  // a Takara piece only through the partner's route.
+  // a consignment piece only through the partner's route.
   const cheapest = Math.min(...shippingMethodsFor(product).map((method) => method.priceCents));
   const shipping = product.price.amount >= FREE_SHIPPING_THRESHOLD
       ? "spedizione gratuita"
@@ -91,7 +91,7 @@ const euros = (cents: number) => Number((cents / 100).toFixed(2));
  *
  * Poste to the door is listed for the stadium boxes, which no InPost Locker takes. When
  * `includePartner` is true the partner's Poste Punto-Poste service is added too — this
- * happens only when the catalogue contains at least one Takara Tomy product.
+ * happens only when the catalogue contains at least one consignment piece.
  */
 function shippingServices(includePartner = false) {
   const condition = (orderValue: { readonly minValue?: number; readonly maxValue?: number }, cents: number) => ({
@@ -146,7 +146,7 @@ function buildOrganization(includePartner = false) {
 
 /**
  * The shop as Google's OnlineStore. Pass `includePartner: true` when the catalogue
- * contains at least one Takara Tomy product, to add the partner's shipping service.
+ * contains at least one consignment piece, to add the partner's shipping service.
  */
 export function siteJsonLd({ includePartner = false }: { includePartner?: boolean } = {}) {
   const organization = buildOrganization(includePartner);
@@ -260,8 +260,8 @@ const AVAILABILITY = {
   esaurito: "https://schema.org/OutOfStock",
 } as const;
 
-/** The shipping methods that apply to a single product: its brand's route, or Poste for a stadium box. */
-function productShippingMethods(product: Pick<Product, "slug" | "bundleOf" | "brand" | "unofficial">) {
+/** The shipping methods that apply to a single product: the partner's route for his pieces, or Poste for a stadium box. */
+function productShippingMethods(product: Pick<Product, "slug" | "bundleOf" | "consignment" | "unofficial">) {
   return shippingMethodsFor(product);
 }
 

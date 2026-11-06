@@ -254,6 +254,21 @@ describe("startExpressCheckout", () => {
     expect(createStripeCheckoutMock).not.toHaveBeenCalled();
   });
 
+  // Owner, 2026-11-06: Takara Tomy pieces the shop bought itself leave from its own shelf.
+  it("takes a cart of Takara Tomy pieces the shop owns, to the Locker the buyer picked", async () => {
+    createStripeCheckoutMock.mockResolvedValue({ ok: true, url: EXPRESS_SESSION_URL });
+
+    const result = await startExpressCheckout({
+      lines: [{ slug: "bx-48-random-booster-vol-9", quantity: 1 }],
+      idempotencyKey: IDEMPOTENCY_KEY,
+      ...LOCKER,
+    });
+
+    expect(result.ok).toBe(true);
+    const [input] = createStripeCheckoutMock.mock.calls[0]!;
+    expect(input.quote.shippingCode).toBe("inpost-locker");
+  });
+
   it("refuses a Takara-only cart (locked to the partner's Poste route)", async () => {
     // The Takara piece triggers the partner shipping plan: his parcel leaves his warehouse, so express cannot serve it.
     const result = await startExpressCheckout({

@@ -4,6 +4,9 @@ export const DEFAULT_HERO_TITLE = "Beyblade X\noriginali,\ndisponibili in Italia
 /** Headline when the hero deals the owner's new releases. */
 export const NEW_RELEASES_HERO_TITLE = "Beyblade X\noriginali,\ndisponibili in Italia.";
 
+/** Headline while the hero deals the owner's spotlight (2026-11-06). */
+export const SPOTLIGHT_HERO_TITLE = "Takara Tomy\nappena arrivati.";
+
 /**
  * Split a hero headline into rendered lines, with the last line carrying the holographic accent.
  *

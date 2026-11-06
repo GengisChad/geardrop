@@ -20,7 +20,7 @@ const VIEWPORTS = [
 
 /** Every card of the storefront: an item sold in several colours (the deck case) is one card. */
 const STOREFRONT_CARDS = oneCardPerFamily(STOREFRONT_CATALOGUE);
-/** The owner's order (2026-10-05): the best sellers, the new arrivals, the pre-order drop, what ships now, the rest. */
+/** The owner's spotlight (2026-11-06), then the order of 2026-10-05: the best sellers, the new arrivals, the pre-order drop, what ships now, the rest. */
 const PLAN = homepagePlan(STOREFRONT_CARDS, 5);
 const slugs = (products: readonly { readonly slug: string }[]) => products.map((product) => product.slug);
 
@@ -32,18 +32,19 @@ test.describe("public homepage", () => {
     // The owner removed the scrolling lime ticker (2026-09-16): it must not come back.
     await expect(page.getByTestId("ticker")).toHaveCount(0);
 
-    // One h1 in three typed lines; the closing line puts its first word on the lime slab.
+    // One h1 in two typed lines while the spotlight is on; the closing line puts its first word on the lime slab.
     const h1 = page.getByRole("heading", { level: 1 });
     await expect(h1).toHaveCount(1);
     const lines = h1.locator("span.block");
-    await expect(lines).toHaveCount(3);
-    await expect(lines.last()).toHaveText("disponibili in Italia.");
-    await expect(lines.last().locator(".gd-slab")).toHaveText("disponibili");
+    await expect(lines).toHaveCount(2);
+    await expect(lines.last()).toHaveText("appena arrivati.");
+    await expect(lines.last().locator(".gd-slab")).toHaveText("appena");
 
-    // The hero deals the best sellers as product cards right under the pitch, then the drop.
+    // The hero deals the spotlight as product cards right under the pitch, then the best sellers, then the drop.
     const cardSlugs = (testId: string) =>
       page.getByTestId(testId).getByTestId("product-card").evaluateAll((cards) => cards.map((card) => card.getAttribute("data-slug")));
     expect(await cardSlugs("hero-products")).toEqual(slugs(PLAN.hero));
+    expect(await cardSlugs("best-sellers")).toEqual(slugs(PLAN.bestsellers));
     expect(await cardSlugs("new-arrivals")).toEqual(slugs(PLAN.arrivals));
     expect(await cardSlugs("preorder-drop")).toEqual(slugs(PLAN.drop));
     expect(await cardSlugs("ready-to-ship")).toEqual(slugs(PLAN.ready));
@@ -94,7 +95,7 @@ test.describe("public homepage", () => {
     await expect(visibleCards).toHaveCount(PLAN.rest.length);
   });
 
-  test("a best seller goes to the cart straight from the hero", async ({ page }) => {
+  test("a new arrival goes to the cart straight from the hero", async ({ page }) => {
     await page.goto("/");
     await page.getByTestId("hero-products").getByTestId("add-to-cart").first().click();
     await expect(page.getByTestId("cart-count")).toHaveText("1");

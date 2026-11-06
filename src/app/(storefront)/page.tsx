@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Arsenal } from "@/components/home/arsenal";
 import { HERO_CARDS, Hero } from "@/components/home/hero";
+import { SPOTLIGHT_HERO_TITLE } from "@/lib/home/hero-title";
 import { ProductShelf } from "@/components/home/product-shelf";
 import { TrustBandDark } from "@/components/home/trust";
 import { Reveal } from "@/components/ui/reveal";
@@ -10,7 +11,7 @@ import { getCommerceProvider } from "@/lib/commerce/provider";
 import { storefrontContent } from "@/lib/content/provider";
 import { RELEASE_DELIVERY, STANDARD_DELIVERY } from "@/lib/labels";
 import { HOME_FEATURED_LIMIT, homepagePlan } from "@/lib/home/product-selection";
-import { PRODUCTS, brandOf } from "@/data/catalog";
+import { PRODUCTS } from "@/data/catalog";
 import { jsonLd, siteJsonLd } from "@/lib/seo";
 import { resolveHomepageSections } from "@/lib/storefront/homepage-resolver";
 
@@ -52,8 +53,8 @@ export default async function HomePage() {
   };
 
   // Tells Google who sells here and how to search the shop (sitelinks search box).
-  const hasTakaraProducts = PRODUCTS.some((p) => brandOf(p) === "takara-tomy");
-  const structuredData = <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(siteJsonLd({ includePartner: hasTakaraProducts })) }} />;
+  const hasPartnerPieces = PRODUCTS.some((p) => p.consignment);
+  const structuredData = <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(siteJsonLd({ includePartner: hasPartnerPieces })) }} />;
 
   // Managed path: the CMS controls order, copy, visibility and product targets; the same
   // Holo Drop components render them. When no managed content is published, the approved
@@ -68,7 +69,8 @@ export default async function HomePage() {
     );
   }
 
-  // The owner's order (2026-10-05): the best sellers on the first screen, the new arrivals and
+  // A spotlight, when the owner sets one (2026-11-06), takes the first screen and the best sellers
+  // follow it. Otherwise the owner's order (2026-10-05): the best sellers on the first screen, the new arrivals and
   // the pre-order drop right under them, then what ships now, then everything else. It used to open on the drop
   // (2026-09-21); a shopper who arrives wanting what everyone buys now finds it first.
   // Clean on purpose: no fight animation, no banner in between.
@@ -78,7 +80,20 @@ export default async function HomePage() {
       {/* The hero holds the LCP image, so it is never revealed on scroll: it paints at once. */}
       <Hero
         products={plan.hero}
-        isNewRelease={plan.heroIsNewRelease}
+        isNewRelease={plan.heroIsNewRelease || plan.heroIsSpotlight}
+        limit={plan.heroIsSpotlight ? plan.hero.length : HERO_CARDS}
+        {...(plan.heroIsSpotlight
+          ? {
+              heading: "Nuovi arrivi Takara Tomy",
+              content: {
+                eyebrow: "Disponibili ora · Nuovi arrivi",
+                title: SPOTLIGHT_HERO_TITLE,
+                description: "Random Booster BX-48 e CX-18, Custom Grip, Long Winder, String e Winder Launcher. Originali giapponesi, pronti da spedire.",
+                ctaHref: "/negozio/takara-tomy",
+                ctaLabel: "Tutto Takara Tomy",
+              },
+            }
+          : {})}
         {...(plan.heroIsBestsellers
           ? {
               heading: "I più venduti",
@@ -89,6 +104,7 @@ export default async function HomePage() {
             }
           : {})}
       />
+      <ProductShelf testId="best-sellers" title="I più venduti" note={STANDARD_DELIVERY} products={plan.bestsellers} />
       <ProductShelf
         testId="new-arrivals"
         title="Appena arrivati"

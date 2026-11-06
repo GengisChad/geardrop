@@ -1,3 +1,4 @@
+import { SPOTLIGHT_SLUGS } from "@/lib/home/product-selection";
 import type { BundleComponent, Product, StockStatus } from "./types";
 
 /**
@@ -36,10 +37,18 @@ export function resolveBundle(bundle: Product, bySlug: ReadonlyMap<string, Produ
   return available === undefined ? resolved : { ...resolved, availableQuantity: available };
 }
 
-/** The storefront catalogue: bundles first, with the stock their components hold right now. */
+/**
+ * The storefront catalogue: what the owner has in the spotlight (2026-11-06), then the bundles with
+ * the stock their components hold right now, then the other products.
+ */
 export function withBundles(products: readonly Product[], bundles: readonly Product[]): readonly Product[] {
   const bySlug = new Map(products.map((product) => [product.slug as string, product]));
-  return [...bundles.map((bundle) => resolveBundle(bundle, bySlug)), ...products];
+  const inSpotlight = (product: Product) => SPOTLIGHT_SLUGS.includes(product.slug);
+  return [
+    ...products.filter(inSpotlight),
+    ...bundles.map((bundle) => resolveBundle(bundle, bySlug)),
+    ...products.filter((product) => !inSpotlight(product)),
+  ];
 }
 
 /** The catalogue products a cart line takes: a bundle's components, or the product itself. */

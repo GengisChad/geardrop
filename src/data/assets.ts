@@ -61,6 +61,11 @@ function deckBicoloreImage(slug: string, colours: string) {
   return { src: `/products/${slug}.webp`, width: 1000, height: 1000, alt: `Porta deck a tre scomparti stampato in 3D, ${colours}` };
 }
 
+/** A photo of a Takara Tomy piece the shop bought itself: tile and cut-out from scripts/cutout_takara.py. */
+function takaraImage(name: string, alt: string) {
+  return { src: `/products/${name}.webp`, width: 1000, height: 1000, alt };
+}
+
 /**
  * Owner-supplied packshots, normalised to square WebP tiles. Every single-colour deck case shows
  * the same picture, which offers them all; each two-colour case has its own.
@@ -366,6 +371,38 @@ export const productImages = {
       alt: "Confezione Takara Tomy Beyblade X CX-00 Tigarage FT3-60T B4 Limited con Ultraman Tiga",
     },
   ],
+  // The Takara Tomy pieces the shop bought itself (owner, 2026-11-06): the maker's own renders and,
+  // for the two boxes, the owner's photo. Sources in docs/product-photo-sources.md.
+  "winder-launcher-takara-tomy": [
+    takaraImage("winder-launcher-takara-tomy", "Tre Winder Launcher Takara Tomy Beyblade X in colori diversi: bianco e blu, rosso, nero e verde"),
+  ],
+  "string-launcher-takara-tomy": [
+    takaraImage("string-launcher-takara-tomy", "Due String Launcher Takara Tomy Beyblade X: blu scuro con puntini oro, e azzurro nella versione L"),
+  ],
+  "long-winder-launcher-takara-tomy": [
+    takaraImage("long-winder-launcher-takara-tomy", "Due lanciatori Takara Tomy Beyblade X con Long Winder: verde acqua, e nero con il logo NERV di Evangelion e la winder rossa"),
+  ],
+  "custom-grip-takara-tomy": [
+    takaraImage("custom-grip-takara-tomy", "Tre Custom Grip Takara Tomy Beyblade X: BX-41 gunmetal, BX-42 blu e BX-30 rossa"),
+    takaraImage("custom-grip-takara-tomy-bx30", "Custom Grip BX-30 rossa e nera"),
+    takaraImage("custom-grip-takara-tomy-bx42", "Rubber Custom Grip BX-42 blu con pannelli trasparenti"),
+    takaraImage("custom-grip-takara-tomy-bx41", "Rubber Custom Grip BX-41 gunmetal con pannelli rossi"),
+    takaraImage("custom-grip-takara-tomy-bx41_01", "La Rubber Custom Grip BX-41 con i suoi pannelli smontati"),
+  ],
+  "cx-18-random-booster-brachio-whip": [
+    takaraImage("cx-18-random-booster-brachio-whip", "Confezione Takara Tomy Beyblade X CX-18 Random Booster Brachio Whip Select con le tre trottole: viola, oro e nera"),
+    takaraImage("cx-18-random-booster-brachio-whip-cx18_01", "Brachio Whip OW5-70Nr viola, vista di lato"),
+    takaraImage("cx-18-random-booster-brachio-whip-cx18_03", "Brachio Whip OW5-70Nr oro"),
+    takaraImage("cx-18-random-booster-brachio-whip-cx18_04", "Brachio Whip OW5-70Nr nera"),
+  ],
+  "bx-48-random-booster-vol-9": [
+    takaraImage("bx-48-random-booster-vol-9", "Confezione Takara Tomy Beyblade X BX-48 Random Booster Vol. 9 con le cinque trottole Metal Coat"),
+    takaraImage("bx-48-random-booster-vol-9-bx48_02", "Cobalt Dragoon 9-80F Metal Coat nera"),
+    takaraImage("bx-48-random-booster-vol-9-bx48_04", "Shark Edge 4-70E Metal Coat blu"),
+    takaraImage("bx-48-random-booster-vol-9-bx48_03", "Mammoth Tusk 7-60S Metal Coat nera"),
+    takaraImage("bx-48-random-booster-vol-9-bx48_05", "Hells Scythe 3-85GB Metal Coat oro"),
+    takaraImage("bx-48-random-booster-vol-9-bx48_06", "Dran Buster 2-80Q Metal Coat rossa"),
+  ],
 } as const satisfies Record<string, readonly ProductImage[]>;
 
 export type ProductSlug = keyof typeof productImages;
@@ -377,6 +414,10 @@ export type ProductSlug = keyof typeof productImages;
 const PRODUCT_CUTOUTS: Readonly<Record<string, string>> = Object.fromEntries([
   ...Object.keys(productImages).map((slug) => [`/products/${slug}.webp`, `/products/cutout/${slug}.webp`]),
   [DECK_IMAGE.src, "/products/cutout/porta-deck.webp"],
+  // A gallery's further photos have a cut-out of their own too.
+  ...(Object.values(productImages) as readonly (readonly ProductImage[])[])
+    .flatMap((images) => images.slice(1))
+    .map((image) => [image.src, image.src.replace("/products/", "/products/cutout/")]),
 ]);
 
 /** The cut-out for a packshot path, or null when that image has none. */

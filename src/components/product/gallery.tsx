@@ -154,9 +154,10 @@ export function Gallery({ images, slug, name, promo, mark, style, clip, transiti
         onIndexChange={setIndex}
       />
 
-      {/* Horizontal thumbnails: only on mobile; lg uses the vertical strip above */}
+      {/* Horizontal thumbnails: only on mobile; lg uses the vertical strip above. They wrap: a row of
+          six would otherwise push the whole page wider than a phone. */}
       {many ? (
-        <ul className="flex gap-2.5 lg:hidden">
+        <ul className="flex flex-wrap gap-2.5 lg:hidden">
           {images.map((image, i) => (
             <li key={image.src}>
               <button
