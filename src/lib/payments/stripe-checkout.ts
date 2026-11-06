@@ -157,7 +157,7 @@ export function buildCheckoutSessionFields(
   // The carrier the quote was priced with: the cheapest unless the buyer picked another.
   const method = shippingMethodByCode(quote.shippingCode) ?? SHIPPING_METHODS[0]!;
 
-  // A club's quote: its tiered lines are charged at the club price, and no promotion code stacks on it.
+  // A code in the cart: the lines it covers are charged at its price, and no promotion code stacks on it.
   const clubCode = quote.couponCode;
 
   const fields: Record<string, string | number> = {
@@ -236,7 +236,7 @@ export function buildCheckoutSessionFields(
   quote.lines.forEach((line, index) => {
     const priceId = priceIds.get(line.slug);
     if (!priceId) throw new Error(`Missing Stripe price for ${line.slug}`);
-    // A club's price, or a deck case at the kit price: the catalogue's Stripe product at that amount.
+    // A price from a code, or a deck case at the kit price: the catalogue's Stripe product at that amount.
     const specialPrice = (clubCode ? line.clubUnitPrice : undefined) ?? line.kitUnitPrice;
     if (specialPrice) {
       // The webhook still reads the slug from the product id, and the price list in Stripe stays
@@ -261,7 +261,7 @@ export function buildCheckoutSessionFields(
     fields["metadata[preorder]"] = truncate(preorders.map(({ line, units }) => `${line.slug} x${units}`).join(", "), METADATA_LIMIT);
   }
   const submitNotes = [
-    ...(clubCode ? [`Prezzi club applicati (${clubCode}).`] : []),
+    ...(clubCode && quote.lines.some((line) => line.clubUnitPrice) ? [`Sconto applicato (${clubCode}).`] : []),
     ...(quote.lines.some((line) => line.kitUnitPrice) ? ["Porta deck a 15 € con il kit."] : []),
     ...(preorders.length > 0
       ? [`In pre-ordine: ${preorders.map(({ line, units }) => `${units} × ${line.name}`).join(", ")}. ${preorderDelivery(preorders.some(({ line }) => line.releasePreorder))}.`]

@@ -19,9 +19,9 @@ import { cn } from "@/lib/cn";
  * along it and slaps the sticker on; a cart that opens above the threshold shows both at rest.
  */
 export function FreeShippingMeter({ totals, threshold }: { totals: CartTotals; threshold: number | null }) {
-  // Measured on what the buyer pays, as freeShippingRemaining is: a club discount counts.
+  // The server's own measure: what freeShippingRemaining leaves of the threshold.
   const reached = totals.freeShippingRemaining === 0 && totals.subtotal.amount > 0;
-  const lit = reached ? METER_TEETH : meterTeeth(totals.subtotal.amount - totals.discount.amount, threshold);
+  const lit = reached ? METER_TEETH : totals.subtotal.amount > 0 && threshold ? meterTeeth(threshold - totals.freeShippingRemaining, threshold) : 0;
 
   // What the meter showed before this quote, so only the change animates (React's "adjust state
   // when a prop changes" pattern: no effect, no extra paint).

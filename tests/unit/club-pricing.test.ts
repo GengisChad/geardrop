@@ -132,11 +132,11 @@ describe("club quote", () => {
   it("refuses a code no club holds", async () => {
     const priced = await quote(clubCart, "NESSUNO");
     expect(priced.couponCode).toBeNull();
-    expect(priced.couponError).toBe("Codice club non valido.");
+    expect(priced.couponError).toBe("Codice non valido.");
     expect(priced.totals.discount.amount).toBe(0);
   });
 
-  it("measures free shipping on what the club pays", async () => {
+  it("keeps free shipping on a club's cart", async () => {
     const priced = await quote(clubCart, "ROYALBLADE");
     expect(priced.totals.subtotal.amount - priced.totals.discount.amount).toBeGreaterThanOrEqual(FREE_SHIPPING_THRESHOLD);
     expect(priced.totals.shipping.amount).toBe(0);
@@ -160,7 +160,7 @@ describe("club checkout on Stripe", () => {
     expect(fields[`line_items[${enlil}][price]`]).toBe("price_hurricane-enlil-is-7-55t");
     expect(fields["metadata[club]"]).toBe("ROYALBLADE");
     expect(fields["allow_promotion_codes"]).toBe("false");
-    expect(fields["custom_text[submit][message]"]).toBe("Prezzi club applicati (ROYALBLADE).");
+    expect(fields["custom_text[submit][message]"]).toBe("Sconto applicato (ROYALBLADE).");
   });
 
   it("charges exactly what the quote showed", async () => {

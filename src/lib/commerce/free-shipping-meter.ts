@@ -9,7 +9,7 @@ export const METER_TEETH = 20;
 /** Gap between two teeth lighting one after the other, in milliseconds. */
 export const TOOTH_STAGGER_MS = 45;
 
-/** Teeth lit for `paid` cents (subtotal minus discount, as `freeShippingRemaining` measures it). */
+/** Teeth lit for `paid` cents of the threshold (what `freeShippingRemaining` leaves of it). */
 export function meterTeeth(paid: number, threshold: number | null): number {
   if (!threshold || threshold <= 0 || paid <= 0) return 0;
   return Math.min(METER_TEETH, Math.floor((paid / threshold) * METER_TEETH));
