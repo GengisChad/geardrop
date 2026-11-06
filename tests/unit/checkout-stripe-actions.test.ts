@@ -118,10 +118,10 @@ describe("checkout with Stripe and no order database", () => {
     expect(short).toMatchObject({ ok: false });
     expect(short.ok ? "" : short.message).toContain("ne mancano");
 
-    expect(await submitOrder({ ...order, couponCode: "NESSUNO" })).toEqual({ ok: false, message: "Codice club non valido." });
+    expect(await submitOrder({ ...order, couponCode: "NESSUNO" })).toEqual({ ok: false, message: "Codice non valido." });
     expect(
       await startExpressCheckout({ lines: order.lines, idempotencyKey: "9f8e7d6c-5b4a-4321-8765-a1b2c3d4e5f6", couponCode: "NESSUNO" }),
-    ).toEqual({ ok: false, message: "Codice club non valido." });
+    ).toEqual({ ok: false, message: "Codice non valido." });
     expect(createStripeCheckoutMock).not.toHaveBeenCalled();
   });
 

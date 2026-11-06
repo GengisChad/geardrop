@@ -202,7 +202,7 @@ export function CartClient({ shelfProducts }: CartClientProps) {
                         ) : null}
                         {!line.issue && line.clubUnitPrice ? (
                           <p className="mt-1 tabular text-[0.6875rem] font-bold text-available" data-testid="club-unit-price">
-                            Prezzo club {formatPrice(line.clubUnitPrice)} cad.
+                            Con il codice {formatPrice(line.clubUnitPrice)} cad.
                           </p>
                         ) : null}
                         {!line.issue && line.kitUnitPrice ? (

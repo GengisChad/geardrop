@@ -1,4 +1,3 @@
-import { formatPrice } from "@/lib/format";
 import type { Money } from "./types";
 
 /**
@@ -66,11 +65,4 @@ export function findClub(code: string | undefined, env: Env = process.env): Club
 export function clubUnitPrice(slug: string, unitPrice: Money): Money {
   const percent = CLUB_DISCOUNT_PERCENT[slug] ?? 0;
   return { amount: Math.round((unitPrice.amount * (100 - percent)) / 100), currency: unitPrice.currency };
-}
-
-export const CLUB_CODE_UNKNOWN = "Codice club non valido.";
-
-export function clubMinimumMessage(missingCents: number): string {
-  const euro = (amount: number) => formatPrice({ amount, currency: "EUR" });
-  return `Il codice club vale da ${euro(CLUB_MIN_ORDER_CENTS)} di ordine: ne mancano ${euro(missingCents)}.`;
 }

@@ -189,7 +189,7 @@ export type CartQuoteLine = {
   readonly releasePreorder?: true;
   /** Units of this line that are not on the shelf and ship as a pre-order. */
   readonly preorderQuantity?: number;
-  /** Set when a club code applies and this product has a club tier: what one unit costs the club. */
+  /** Set when a code in the cart lowers this line: what one unit costs with the code. */
   readonly clubUnitPrice?: Money;
   /** Set on a deck case line that a kit in the cart makes cheaper: what one unit costs (€15). */
   readonly kitUnitPrice?: Money;

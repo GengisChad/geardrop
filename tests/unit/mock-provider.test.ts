@@ -281,13 +281,13 @@ describe("quoteCart", () => {
     expect(quote.notice).toContain("Gli ordini non sono ancora attivi");
   });
 
-  it("refuses a code that is no club's rather than silently ignoring it", async () => {
+  it("refuses a code it does not know rather than silently ignoring it", async () => {
     const quote = await provider.quoteCart({
       lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }],
       couponCode: "SCONTO10",
     });
     expect(quote.couponCode).toBeNull();
-    expect(quote.couponError).toBe("Codice club non valido.");
+    expect(quote.couponError).toBe("Codice non valido.");
     expect(quote.totals.discount.amount).toBe(0);
   });
 });
