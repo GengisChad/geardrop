@@ -366,8 +366,7 @@ export function createMockProvider(
           freeShippingRemaining: isEmpty || qualifies ? 0 : FREE_SHIPPING_THRESHOLD - beforeCode,
         },
         freeShippingThreshold: FREE_SHIPPING_THRESHOLD,
-        // A club's code or a coupon made on the site; anything else is refused aloud, never
-        // silently swallowed.
+        // A coupon made on the site; anything else is refused aloud, never silently swallowed.
         couponCode: codeApplies ? pricing.code : null,
         couponError,
         ...(codeApplies && pricing.buyerNote ? { couponBuyerNote: pricing.buyerNote } : {}),

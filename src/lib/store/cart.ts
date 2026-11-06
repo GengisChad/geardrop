@@ -25,7 +25,7 @@ type CartState = {
    */
   swapIntoBundle: (bundleSlug: string, components: readonly { readonly slug: string; readonly quantity: number }[]) => void;
   clear: () => void;
-  /** A partner club's code as typed; the server decides whether it holds (see club-pricing). */
+  /** A discount code as typed; the server decides whether it holds (see commerce/cart-code). */
   clubCode: string | null;
   setClubCode: (code: string | null) => void;
 };
