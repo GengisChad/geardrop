@@ -1,18 +1,16 @@
 import { formatPrice } from "@/lib/format";
 import type { Database } from "@/lib/supabase/database.types";
-import { CLUB_MIN_ORDER_CENTS, clubUnitPrice, findClub, normaliseClubCode } from "./club-pricing";
 import type { CategorySlug, Money } from "./types";
 
 /**
- * The code a buyer types in the cart (owner, 2026-11-06: clubs typed their code there and read
- * "non valido", so the codes now live on the site). One field answers for two kinds of code:
+ * The code a buyer types in the cart: a coupon the owner made in /admin/coupon, which holds from the
+ * moment it is saved (owner, 2026-11-06: clubs typed their code there and read "non valido", and every
+ * club gets "15% su tutto il catalogo"). A coupon with no products or categories chosen covers the
+ * whole catalogue, whatever is added to it later.
  *
- * - a club's tier code, from the server-only CLUB_CODES variable (club-pricing.ts);
- * - a coupon the owner made in /admin/coupon, which holds from the moment it is saved.
- *
- * Both end the same way: a unit price per line, charged on Stripe as `price_data` on the catalogue's
- * own product, and the code in the order's coupon_code. A code never stacks with one typed on
- * Stripe's page: a cart holding a code has no promotion field there.
+ * It ends as a unit price per line, charged on Stripe as `price_data` on the catalogue's own product,
+ * and the code in the order's coupon_code. A code never stacks with one typed on Stripe's page: a cart
+ * holding a code has no promotion field there.
  */
 
 export type SiteCoupon = {
@@ -182,21 +180,9 @@ const REFUSALS: Readonly<Record<Exclude<SiteCouponLookup["status"], "valid">, st
   unavailable: CODE_UNAVAILABLE,
 };
 
-/** What the code typed in the cart does, or why it does nothing. A club's code answers first. */
+/** What the code typed in the cart does, or why it does nothing. */
 export async function resolveCartCode(typed: string | undefined, findCoupon: FindSiteCoupon, buyerEmail?: string): Promise<CartCode | null> {
   if (!typed) return null;
-  const club = findClub(typed);
-  if (club) {
-    return {
-      pricing: {
-        code: club.code,
-        minimumCents: CLUB_MIN_ORDER_CENTS,
-        freeShipping: false,
-        buyerNote: null,
-        unitPrices: (lines) => new Map(lines.map((line) => [line.slug, clubUnitPrice(line.slug, line.price)])),
-      },
-    };
-  }
-  const found = await findCoupon(normaliseClubCode(typed), buyerEmail);
+  const found = await findCoupon(typed.trim().toUpperCase(), buyerEmail);
   return found.status === "valid" ? { pricing: siteCouponPricing(found.coupon) } : { refused: REFUSALS[found.status] };
 }

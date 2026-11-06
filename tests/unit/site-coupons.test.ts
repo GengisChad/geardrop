@@ -9,10 +9,11 @@ import { FreeShippingMeter } from "@/components/cart/cart-summary";
 import { ClubCodeField } from "@/components/cart/club-code";
 import { BUNDLES, DECK_CASE_WITH_KIT, FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_METHODS } from "@/data/catalog";
 import type { PlaceOrderInput } from "@/lib/checkout-schema";
-import { readSiteCoupon, type FindSiteCoupon, type SiteCoupon } from "@/lib/commerce/cart-code";
+import { readSiteCoupon, resolveCartCode, type CodeLine, type FindSiteCoupon, type SiteCoupon } from "@/lib/commerce/cart-code";
 import { createMockProvider } from "@/lib/commerce/mock-provider";
 import { findSiteCoupon } from "@/lib/commerce/site-coupons";
 import type { CartQuote, CartQuoteRequest } from "@/lib/commerce/types";
+import { paidCheckoutFromStripe } from "@/lib/orders/stripe-order";
 import { stripeProductId } from "@/lib/payments/stripe-api";
 import { buildCheckoutSessionFields, matchStripePrices, openQuoteForStripe, type StripePriceRow } from "@/lib/payments/stripe-checkout";
 
@@ -162,6 +163,64 @@ describe("a flat coupon in the cart", () => {
   });
 });
 
+describe("a club's 15% on the whole catalogue (owner, 2026-11-06)", () => {
+  const catalogue = [...PRODUCTS, ...BUNDLES];
+  const asLines = (products: typeof catalogue): CodeLine[] =>
+    products.map((candidate) => ({
+      slug: candidate.slug,
+      quantity: 1,
+      price: candidate.price,
+      category: candidate.category,
+      consignment: Boolean(candidate.consignment),
+    }));
+  const pricesOf = async (lines: readonly CodeLine[]) => {
+    const code = await resolveCartCode(flat15.code, finding(flat15));
+    if (!code || !("pricing" in code)) throw new Error("the coupon should hold");
+    return code.pricing.unitPrices(lines);
+  };
+
+  it("takes 15% off everything the shop owns, with no list to keep", async () => {
+    const owned = catalogue.filter((candidate) => !candidate.consignment);
+    const prices = await pricesOf(asLines(owned));
+    expect(owned.length).toBeGreaterThan(40);
+    for (const candidate of owned) {
+      expect(prices.get(candidate.slug)?.amount, candidate.slug).toBe(Math.round((candidate.price.amount * 85) / 100));
+    }
+  });
+
+  it("covers a product added tomorrow", async () => {
+    const tomorrow: CodeLine = { slug: "nuovo-arrivo-di-domani", quantity: 1, price: { amount: 2000, currency: "EUR" }, category: "beyblade-x", consignment: false };
+    expect((await pricesOf([tomorrow])).get(tomorrow.slug)?.amount).toBe(1700);
+  });
+
+  it("leaves the partner's pieces out: he is owed his price, and the commission could not carry it", async () => {
+    const partner = catalogue.filter((candidate) => candidate.consignment);
+    expect(partner.length).toBeGreaterThan(0);
+    for (const candidate of partner) {
+      expect((candidate.price.amount * 15) / 100, candidate.slug).toBeGreaterThan(candidate.commissionCents!);
+    }
+    expect((await pricesOf(asLines(partner))).size).toBe(0);
+  });
+
+  it("files the paid order under the code, read from the product id", () => {
+    const checkout = paidCheckoutFromStripe(
+      {
+        id: "cs_live_a1b2c3d4e5f6",
+        created: 1_792_000_000,
+        payment_status: "paid",
+        client_reference_id: "GD-CLUB0001",
+        customer_details: { email: "club@email.it" },
+        metadata: { club: "CLUBTEST15" },
+        amount_total: 12702,
+        total_details: { amount_shipping: 0, amount_discount: 0 },
+      },
+      [{ description: "Soar Phoenix 9-60GF", quantity: 6, price: { lookup_key: null, unit_amount: 2117, product: "gd_soar_phoenix_9_60gf" } }],
+    );
+    expect(checkout?.couponCode).toBe("CLUBTEST15");
+    expect(checkout?.lines).toEqual([{ slug: "soar-phoenix-9-60gf", name: "Soar Phoenix 9-60GF", quantity: 6, unitPriceCents: 2117 }]);
+  });
+});
+
 describe("what the admin form can set", () => {
   it("covers only the products it names", async () => {
     const priced = await quote({ ...flat15, productSlugs: ["soar-phoenix-9-60gf"] }, BIG_CART);
@@ -214,17 +273,6 @@ describe("refusals", () => {
     expect(priced.couponCode).toBeNull();
     expect(priced.couponError).toBe(message);
     expect(priced.totals.discount.amount).toBe(0);
-  });
-
-  it("a club's tier code answers first, without asking the database", async () => {
-    vi.stubEnv("CLUB_CODES", "ROYALBLADE=Royal Blade");
-    const findCoupon = vi.fn<FindSiteCoupon>();
-    const priced = await createMockProvider(undefined, findCoupon).quoteCart({
-      lines: [{ slug: "soar-phoenix-9-60gf", quantity: 8 }],
-      couponCode: "ROYALBLADE",
-    } as CartQuoteRequest);
-    expect(priced.couponCode).toBe("ROYALBLADE");
-    expect(findCoupon).not.toHaveBeenCalled();
   });
 });
 

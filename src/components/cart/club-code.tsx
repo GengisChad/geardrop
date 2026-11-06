@@ -9,8 +9,8 @@ import { useCart } from "@/lib/store/cart";
 import { cn } from "@/lib/cn";
 
 /**
- * Where a buyer types a code: a club's or a coupon made on the site. Folded away by default: a buyer
- * without one should not be sent hunting for it. Whether the code holds, and whether it lowers
+ * Where a buyer types a discount code, made in /admin/coupon. Folded away by default: a buyer without
+ * one should not be sent hunting for it. Whether the code holds, and whether it lowers
  * anything in this cart, is the quote's answer, never the browser's.
  */
 export function ClubCodeField({ quote }: { quote: CartQuote }) {
@@ -20,7 +20,7 @@ export function ClubCodeField({ quote }: { quote: CartQuote }) {
   const inputId = useId();
 
   if (quote.couponCode) {
-    // A valid code can still cover nothing here: a club's tiers skip the new arrivals, for one.
+    // A valid code can still cover nothing here: only the partner's pieces, or a coupon aimed elsewhere.
     const lowersSomething = quote.lines.some((line) => line.clubUnitPrice);
     return (
       <div

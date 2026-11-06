@@ -13,7 +13,24 @@ const originMock = vi.hoisted(() => vi.fn(() => "http://localhost:3000"));
 vi.mock("@/lib/commerce/order-intake", () => ({ placeOrder: placeOrderMock }));
 vi.mock("@/lib/commerce/provider", async () => {
   const { createMockProvider } = await import("@/lib/commerce/mock-provider");
-  return { getCommerceProvider: async () => createMockProvider(), resolveCommerceProviderName: () => "mock" };
+  // A club's coupon, as /admin/coupon holds it.
+  const coupon = {
+    code: "ROYALBLADE",
+    discountKind: "percentage" as const,
+    discountValue: 15,
+    freeShipping: false,
+    minimumSubtotalCents: 10000,
+    maximumDiscountCents: null,
+    productSlugs: [],
+    categorySlugs: [],
+    bundleSlugs: [],
+    buyerNote: null,
+  };
+  return {
+    getCommerceProvider: async () =>
+      createMockProvider(undefined, async (code) => (code === coupon.code ? { status: "valid", coupon } : { status: "unknown" })),
+    resolveCommerceProviderName: () => "mock",
+  };
 });
 vi.mock("@/lib/payments/stripe-checkout", async (importOriginal) => ({
   ...(await importOriginal<typeof StripeCheckoutModule>()),
@@ -101,7 +118,6 @@ describe("checkout with Stripe and no order database", () => {
   });
 
   it("hands a club's cart to Stripe at the club price", async () => {
-    vi.stubEnv("CLUB_CODES", "ROYALBLADE=Royal Blade");
     const lines = [{ slug: "soar-phoenix-9-60gf", quantity: 7 }];
 
     expect(await submitOrder({ ...order, lines, couponCode: "royalblade" })).toMatchObject({ ok: true });
@@ -111,8 +127,6 @@ describe("checkout with Stripe and no order database", () => {
   });
 
   it("never charges full price for a code the quote refused", async () => {
-    vi.stubEnv("CLUB_CODES", "ROYALBLADE=Royal Blade");
-
     // One Cobalt Dragoon is far below the club minimum.
     const short = await submitOrder({ ...order, couponCode: "ROYALBLADE" });
     expect(short).toMatchObject({ ok: false });
