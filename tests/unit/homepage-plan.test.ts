@@ -36,6 +36,36 @@ describe("homepage plan", () => {
     expect(shown.sort()).toEqual(slugs(catalogue).sort());
   });
 
+  describe("with a spotlight (owner, 2026-11-06)", () => {
+    const best = ["glory", "enlil"];
+    const spotlight = ["horus", "deck", "superion"];
+
+    it("deals the whole spotlight on sale first, whatever the hero's limit, then the best sellers' row", () => {
+      const plan = homepagePlan(catalogue, 1, best, spotlight);
+      // Superion is in the spotlight but sold out: it is not dealt.
+      expect(slugs(plan.hero)).toEqual(["horus", "deck"]);
+      expect(plan.heroIsSpotlight).toBe(true);
+      expect(plan.heroIsBestsellers).toBe(false);
+      expect(plan.heroIsNewRelease).toBe(false);
+      expect(slugs(plan.bestsellers)).toEqual(["glory"]);
+      expect(slugs(plan.drop)).toEqual(["drake", "clock", "dran", "croc"]);
+    });
+
+    it("shows every product exactly once", () => {
+      const plan = homepagePlan(catalogue, 4, best, spotlight);
+      const shown = [...plan.hero, ...plan.bestsellers, ...plan.arrivals, ...plan.drop, ...plan.ready, ...plan.rest].map((product) => product.slug);
+      expect(shown.sort()).toEqual(slugs(catalogue).sort());
+    });
+
+    it("gives the first screen back to the best sellers once nothing of it is on sale", () => {
+      const plan = homepagePlan(catalogue, 4, best, ["superion", "not-in-the-catalogue"]);
+      expect(plan.heroIsSpotlight).toBe(false);
+      expect(plan.heroIsBestsellers).toBe(true);
+      expect(slugs(plan.hero)).toEqual(["glory", "enlil"]);
+      expect(plan.bestsellers).toEqual([]);
+    });
+  });
+
   describe("with best sellers to lead (owner, 2026-10-05)", () => {
     const best = ["glory", "enlil", "superion"];
 

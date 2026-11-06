@@ -102,7 +102,7 @@ describe("an item sold in several colours", () => {
     const page = await provider.listProducts({ category: "accessori" });
     // Two families since 2026-10-24: the single-colour and the two-colour cases, one card each.
     // Takara Tomy's grip (2026-11-06) is a single item.
-    expect(page.items.map((product) => product.slug)).toEqual(["porta-deck-giallo", "porta-deck-nero-blu", "custom-grip-takara-tomy"]);
+    expect(page.items.map((product) => product.slug)).toEqual(["custom-grip-takara-tomy", "porta-deck-giallo", "porta-deck-nero-blu"]);
     expect(page.total).toBe(3);
     const facets = await provider.getFacets();
     expect(facets.categories.find((facet) => facet.value === "accessori")?.count).toBe(3);

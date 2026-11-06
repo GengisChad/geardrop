@@ -35,7 +35,7 @@ Lime means "ships now / buy", violet means "on its way" (pre-orders). Energy com
 - A generic Shopify or marketplace template (white grid, stock badges, "Best seller" ribbons everywhere).
 - Motion-heavy sections like the old "battle" animation, which the owner removed on 2026-09-21.
 - Fake urgency or invented numbers (counters, reviews, "X people are watching").
-- Changing the owner's home order: best sellers, then new arrivals and pre-orders, then ready to ship, then the rest.
+- Changing the owner's home order: best sellers, then new arrivals and pre-orders, then ready to ship, then the rest. A spotlight the owner asks for (`SPOTLIGHT_SLUGS`, since 2026-11-06) goes before them, and only while the owner wants it.
 
 ## Design Principles
 

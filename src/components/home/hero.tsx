@@ -62,14 +62,17 @@ export function Hero({
   content,
   isNewRelease = true,
   heading,
+  limit = HERO_CARDS,
 }: {
   readonly products: readonly Product[];
   readonly content?: HeroContent;
   readonly isNewRelease?: boolean;
   /** What the dealt cards are, for screen readers; defaults from `isNewRelease`. */
   readonly heading?: string;
+  /** How many cards to deal: a spotlight shows every piece it holds. */
+  readonly limit?: number;
 }) {
-  const shown = products.slice(0, HERO_CARDS);
+  const shown = products.slice(0, limit);
   if (shown.length === 0) return null;
 
   const counted = shown.every((product) => product.availableQuantity !== undefined);

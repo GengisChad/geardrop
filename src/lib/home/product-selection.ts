@@ -40,9 +40,24 @@ export const BESTSELLER_SLUGS: readonly string[] = [
 ];
 
 /**
+ * What the owner wants in the foreground (2026-11-06, "mettili in primo piano"): while any of these
+ * is on sale they hold the first screen, and the best sellers take the row right under them. Kept by
+ * hand: empty the list to give the first screen back to the best sellers.
+ */
+export const SPOTLIGHT_SLUGS: readonly string[] = [
+  "bx-48-random-booster-vol-9",
+  "cx-18-random-booster-brachio-whip",
+  "custom-grip-takara-tomy",
+  "long-winder-launcher-takara-tomy",
+  "string-launcher-takara-tomy",
+  "winder-launcher-takara-tomy",
+];
+
+/**
  * The homepage in the owner's order (2026-10-05): the best sellers lead, then the new releases
  * still on pre-order, then what ships right away (single pieces, then bundles, then
  * accessories), then everything else with sold-out pieces last. Every product appears once.
+ * A spotlight goes before all of them, whole, however many pieces it holds.
  *
  * A new release already on the shelf (owner, 2026-10-08: 199 Soar Phoenix landed) gets a row
  * of its own, "Appena arrivati", between the best sellers and the pre-orders: it ships now, so
@@ -55,20 +70,29 @@ export function homepagePlan<T extends PlannedProduct>(
   products: readonly T[],
   heroLimit: number,
   bestsellers: readonly string[] = BESTSELLER_SLUGS,
+  spotlight: readonly string[] = SPOTLIGHT_SLUGS,
 ) {
   const onSale = (product: T) => product.stock !== "esaurito";
   const bySlug = new Map(products.map((product) => [product.slug, product]));
-  const best = bestsellers
-    .map((slug) => bySlug.get(slug))
-    .filter((product): product is T => product !== undefined && onSale(product))
-    .slice(0, heroLimit);
+  const onSaleOf = (slugs: readonly string[]) =>
+    slugs.map((slug) => bySlug.get(slug)).filter((product): product is T => product !== undefined && onSale(product));
+  const lead = onSaleOf(spotlight);
+  const best = onSaleOf(bestsellers).slice(0, heroLimit);
   const releases = newReleases(products).filter(onSale);
-  const heroIsBestsellers = best.length > 0;
-  const hero = heroIsBestsellers ? best : (releases.length > 0 ? releases : products.filter(onSale)).slice(0, heroLimit);
+  const heroIsSpotlight = lead.length > 0;
+  const heroIsBestsellers = !heroIsSpotlight && best.length > 0;
+  const hero = heroIsSpotlight
+    ? lead
+    : heroIsBestsellers
+      ? best
+      : (releases.length > 0 ? releases : products.filter(onSale)).slice(0, heroLimit);
   const taken = new Set(hero.map((product) => product.slug));
-  // The new releases get rows of their own once the best sellers hold the first screen: what
+  // Under a spotlight the best sellers keep the first row of the page.
+  const bestsellerRow = heroIsSpotlight ? best.filter((product) => !taken.has(product.slug)) : [];
+  for (const product of bestsellerRow) taken.add(product.slug);
+  // The new releases get rows of their own once something else holds the first screen: what
   // has landed, then what is still on pre-order.
-  const unseen = heroIsBestsellers ? releases.filter((product) => !taken.has(product.slug)) : [];
+  const unseen = heroIsSpotlight || heroIsBestsellers ? releases.filter((product) => !taken.has(product.slug)) : [];
   const arrivals = unseen.filter((product) => product.stock === "disponibile");
   const drop = unseen.filter((product) => product.stock !== "disponibile");
   for (const product of unseen) taken.add(product.slug);
@@ -82,8 +106,10 @@ export function homepagePlan<T extends PlannedProduct>(
   const others = products.filter((product) => !taken.has(product.slug));
   return {
     hero,
+    heroIsSpotlight,
     heroIsBestsellers,
-    heroIsNewRelease: !heroIsBestsellers && releases.length > 0,
+    heroIsNewRelease: !heroIsSpotlight && !heroIsBestsellers && releases.length > 0,
+    bestsellers: bestsellerRow,
     arrivals,
     drop,
     ready,
