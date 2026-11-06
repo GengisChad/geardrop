@@ -11,6 +11,7 @@ import { deliveryConfirmationEmail } from "@/lib/orders/delivery-email";
 import { refundNotificationEmail } from "@/lib/orders/refund-email";
 import { shippingNotificationEmail } from "@/lib/orders/shipping-email";
 import { shippingEmailDue } from "@/lib/orders/shipping-notice";
+import { siteRefundKey } from "@/lib/orders/stripe-refund";
 import { PREORDER_SHIPPED_NOTE } from "@/lib/admin/preorders";
 import type { Database } from "@/lib/supabase/database.types";
 import {
@@ -245,10 +246,11 @@ async function shipAndNotify(
 ): Promise<OrderActionState> {
   const saved = await client
     .from("orders")
-    .select("status,tracking_carrier,tracking_code,tracking_url,shipping_notified_at")
+    .select("status,payment_status,tracking_carrier,tracking_code,tracking_url,shipping_notified_at")
     .eq("id", orderId)
     .single();
   if (saved.error) return { ok: false, message: "Ordine non trovato." };
+  if (saved.data.payment_status === "refunded" && saved.data.status !== "shipped") return { ok: false, message: "Ordine rimborsato: non va spedito." };
 
   const { error } = await client.rpc("ship_order", {
     p_order_id: orderId,
@@ -485,6 +487,12 @@ export async function refundStripeAction(_previous: OrderActionState, formData: 
       return { ok: false, message: `Puoi rimborsare al massimo ${(remaining / 100).toFixed(2).replace(".", ",")} €.` };
     }
 
+    // The webhook records dashboard refunds by itself: ticking the box after it would count the money twice.
+    if (parsed.data.alreadyRefunded && order.refunded_cents > 0) {
+      const counted = (order.refunded_cents / 100).toFixed(2).replace(".", ",");
+      return { ok: false, message: `Risultano già rimborsati ${counted} €: i rimborsi fatti dalla dashboard di Stripe si registrano da soli.` };
+    }
+
     let refund: { readonly id: string };
     if (parsed.data.alreadyRefunded) {
       // Done by hand in the Stripe dashboard: the shop only records it and writes to the buyer.
@@ -495,7 +503,7 @@ export async function refundStripeAction(_previous: OrderActionState, formData: 
 
       // Call Stripe to create the refund
       const stripe = createStripeClient(secretKey);
-      const idempotencyKey = `gd-refund-${order.order_number}-${parsed.data.attempt}`;
+      const idempotencyKey = siteRefundKey(order.order_number, parsed.data.attempt);
       type StripeRefund = { readonly id: string; readonly status: string };
       refund = await stripe.post<StripeRefund>("/refunds", {
         payment_intent: order.stripe_payment_intent_id,

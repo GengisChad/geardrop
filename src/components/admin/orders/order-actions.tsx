@@ -40,7 +40,8 @@ export function OrderActions({ orderId, status, paymentStatus, role, tracking, s
   const cancellable = manager && ["pending", "confirmed", "processing"].includes(status);
   const refundable = manager && ["authorized", "paid"].includes(paymentStatus);
   const stripeRefundable = refundable && Boolean(stripePaymentIntentId) && totalCents - refundedCents > 0;
-  const shippable = manager && ["confirmed", "processing", "shipped"].includes(status);
+  // A refunded order that has not left stays unshipped; one already on its way can still have its tracking corrected.
+  const shippable = manager && (status === "shipped" || (["confirmed", "processing"].includes(status) && paymentStatus !== "refunded"));
   const deliverable = manager && ["shipped", "completed"].includes(status);
   const [shipState, shipAction, shipPending] = useActionState(shipOrderAction, initial);
   const [deliverState, deliverAction, deliverPending] = useActionState(deliverOrderAction, initial);
@@ -114,7 +115,7 @@ export function OrderActions({ orderId, status, paymentStatus, role, tracking, s
 
     {stripeRefundable ? <form action={stripeRefundAction} className={`${styles.actionCard} ${styles.dangerCard}`}>
       <h3>Rimborsa su Stripe</h3>
-      <p>Esegue il rimborso direttamente su Stripe. Operazione irreversibile.</p>
+      <p>Esegue il rimborso direttamente su Stripe. Operazione irreversibile. Quelli fatti dalla dashboard di Stripe si registrano da soli.</p>
       <input name="orderId" type="hidden" value={orderId}/>
       <input name="attempt" type="hidden" value={refundAttempt}/>
       <label>Importo EUR (max {(refundable_cents / 100).toFixed(2)})<input defaultValue={(refundable_cents / 100).toFixed(2)} key={refundAttempt} max={(refundable_cents / 100).toFixed(2)} min="0.01" name="amount" required step="0.01" type="number"/></label>
