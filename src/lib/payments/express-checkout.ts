@@ -8,5 +8,8 @@
 export const EXPRESS_CHECKOUT_LOCKED_MESSAGE =
   "La consegna rapida non è disponibile per questo carrello: usa il checkout normale per scegliere il metodo di spedizione.";
 
+/** A code tied to a buyer needs the email before the price is fixed, and only the checkout form asks first. */
+export const EXPRESS_CODE_NEEDS_EMAIL_MESSAGE = "Questo codice si controlla con la tua email: usa \"Vai al checkout\" per pagare.";
+
 /** Express ships to an InPost Locker picked in the cart, since Stripe cannot ask for one (2026-10-23). */
 export const EXPRESS_LOCKER_MISSING_MESSAGE = "Scegli il Locker InPost dove ritirare il pacco, poi paga.";

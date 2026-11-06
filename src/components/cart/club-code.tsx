@@ -51,6 +51,11 @@ export function ClubCodeField({ quote }: { quote: CartQuote }) {
             Su questi pezzi il codice non dà sconto.
           </p>
         )}
+        {quote.couponBuyerNote ? (
+          <p data-testid="club-code-buyer-note" className="mt-1 text-[0.6875rem] text-grey-600">
+            {quote.couponBuyerNote}
+          </p>
+        ) : null}
       </div>
     );
   }

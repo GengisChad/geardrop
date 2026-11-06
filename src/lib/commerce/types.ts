@@ -223,6 +223,11 @@ export type CartQuote = {
   readonly freeShippingThreshold: number | null;
   readonly couponCode: string | null;
   readonly couponError: string | null;
+  /**
+   * Set while the code holds only for some buyers and the email is not known yet: what the buyer is
+   * told. Express checkout cannot take such a code, because Stripe asks for the email after the price.
+   */
+  readonly couponBuyerNote?: string;
   readonly orderIntake: OrderIntake;
   /** True only when every line is orderable and a shipping option exists. */
   readonly orderable: boolean;
@@ -238,6 +243,8 @@ export type CartQuoteRequest = {
   readonly lines: readonly CartLine[];
   readonly shippingCode?: string;
   readonly couponCode?: string;
+  /** The buyer's email, once the checkout form has it: a code tied to a buyer is checked against it. */
+  readonly buyerEmail?: string;
 };
 
 export type SortKey = "popolari" | "novita" | "prezzo-asc" | "prezzo-desc" | "nome";

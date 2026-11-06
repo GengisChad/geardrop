@@ -27,17 +27,23 @@ export type SiteCoupon = {
   readonly productSlugs: readonly string[];
   readonly categorySlugs: readonly string[];
   readonly bundleSlugs: readonly string[];
+  /** Set while the coupon is tied to a buyer whose email is not known yet: what the buyer is told. */
+  readonly buyerNote: string | null;
 };
 
 export type SiteCouponLookup =
   | { readonly status: "valid"; readonly coupon: SiteCoupon }
-  /** It exists but does not hold now: switched off, out of its dates, used up, or tied to a buyer. */
+  /** It exists but does not hold now: switched off, out of its dates, used up. */
   | { readonly status: "inactive" }
+  /** Only for a first order, and this email has one already. */
+  | { readonly status: "not-first-order" }
+  /** This email has used it as many times as one buyer may. */
+  | { readonly status: "used-by-buyer" }
   | { readonly status: "unknown" }
   /** The database did not answer: neither a yes nor a no. */
   | { readonly status: "unavailable" };
 
-export type FindSiteCoupon = (code: string) => Promise<SiteCouponLookup>;
+export type FindSiteCoupon = (code: string, buyerEmail?: string) => Promise<SiteCouponLookup>;
 
 type CouponRow = Pick<
   Database["public"]["Tables"]["coupons"]["Row"],
@@ -58,18 +64,28 @@ type CouponRow = Pick<
 
 export type CouponTargets = Pick<SiteCoupon, "productSlugs" | "categorySlugs" | "bundleSlugs">;
 
+/** What the shop knows of a buyer once the email is known: live orders, and those carrying this code. */
+export type BuyerHistory = { readonly orders: number; readonly ordersWithCode: number };
+
+/** A coupon tied to a buyer needs the email, which only the checkout form asks for before paying. */
+function buyerNoteOf(row: CouponRow): string | null {
+  if (row.first_purchase_only) return "Vale solo sul primo ordine: controlliamo l'email quando vai al pagamento.";
+  if (row.per_customer_limit === null) return null;
+  const times = row.per_customer_limit === 1 ? "una volta" : `${row.per_customer_limit} volte`;
+  return `Vale ${times} per cliente: controlliamo l'email quando vai al pagamento.`;
+}
+
 /**
- * Whether a coupon holds right now. `usedCount` is how many live orders already carry it.
- *
- * "Solo primo acquisto" and "limite per cliente" need to know the buyer, and a cart does not: most
- * buyers reach Stripe as guests. A coupon with either one is refused rather than honoured unchecked.
+ * Whether a coupon holds right now. `usedCount` is how many live orders already carry it; `buyer` is
+ * null until the buyer's email is known. A customer here is an email: the orders hold no other name.
  */
-export function readSiteCoupon(row: CouponRow, targets: CouponTargets, usedCount: number, now: Date): SiteCouponLookup {
+export function readSiteCoupon(row: CouponRow, targets: CouponTargets, usedCount: number, now: Date, buyer: BuyerHistory | null = null): SiteCouponLookup {
   const started = !row.starts_at || new Date(row.starts_at) <= now;
   const running = !row.expires_at || new Date(row.expires_at) > now;
   const left = row.usage_limit === null || usedCount < row.usage_limit;
-  const forAnyone = !row.first_purchase_only && row.per_customer_limit === null;
-  if (!row.active || row.disabled_at || !started || !running || !left || !forAnyone) return { status: "inactive" };
+  if (!row.active || row.disabled_at || !started || !running || !left) return { status: "inactive" };
+  if (buyer && row.first_purchase_only && buyer.orders > 0) return { status: "not-first-order" };
+  if (buyer && row.per_customer_limit !== null && buyer.ordersWithCode >= row.per_customer_limit) return { status: "used-by-buyer" };
   return {
     status: "valid",
     coupon: {
@@ -80,6 +96,7 @@ export function readSiteCoupon(row: CouponRow, targets: CouponTargets, usedCount
       minimumSubtotalCents: row.minimum_subtotal_cents,
       maximumDiscountCents: row.maximum_discount_cents,
       ...targets,
+      buyerNote: buyer ? null : buyerNoteOf(row),
     },
   };
 }
@@ -87,6 +104,8 @@ export function readSiteCoupon(row: CouponRow, targets: CouponTargets, usedCount
 export const CODE_UNKNOWN = "Codice non valido.";
 export const CODE_INACTIVE = "Questo codice non è attivo.";
 export const CODE_UNAVAILABLE = "Non riesco a controllare il codice: riprova tra poco.";
+export const CODE_NOT_FIRST_ORDER = "Questo codice vale solo sul primo ordine: con questa email non si può usare.";
+export const CODE_USED_BY_BUYER = "Con questa email questo codice è già stato usato.";
 
 export function codeMinimumMessage(minimumCents: number, missingCents: number): string {
   const euro = (amount: number) => formatPrice({ amount, currency: "EUR" });
@@ -106,6 +125,8 @@ export type CartCodePricing = {
   readonly code: string;
   readonly minimumCents: number;
   readonly freeShipping: boolean;
+  /** Set while the code still waits for the buyer's email. */
+  readonly buyerNote: string | null;
   /** What one unit costs with the code, by slug, for the lines it covers. */
   unitPrices(lines: readonly CodeLine[]): ReadonlyMap<string, Money>;
 };
@@ -138,6 +159,7 @@ function siteCouponPricing(coupon: SiteCoupon): CartCodePricing {
     code: coupon.code,
     minimumCents: coupon.minimumSubtotalCents,
     freeShipping: coupon.freeShipping,
+    buyerNote: coupon.buyerNote,
     unitPrices(lines) {
       const covered = lines.filter((line) => siteCouponCovers(coupon, line));
       const coveredCents = covered.reduce((sum, line) => sum + line.price.amount * line.quantity, 0);
@@ -152,8 +174,16 @@ function siteCouponPricing(coupon: SiteCoupon): CartCodePricing {
 
 export type CartCode = { readonly pricing: CartCodePricing } | { readonly refused: string };
 
+const REFUSALS: Readonly<Record<Exclude<SiteCouponLookup["status"], "valid">, string>> = {
+  inactive: CODE_INACTIVE,
+  "not-first-order": CODE_NOT_FIRST_ORDER,
+  "used-by-buyer": CODE_USED_BY_BUYER,
+  unknown: CODE_UNKNOWN,
+  unavailable: CODE_UNAVAILABLE,
+};
+
 /** What the code typed in the cart does, or why it does nothing. A club's code answers first. */
-export async function resolveCartCode(typed: string | undefined, findCoupon: FindSiteCoupon): Promise<CartCode | null> {
+export async function resolveCartCode(typed: string | undefined, findCoupon: FindSiteCoupon, buyerEmail?: string): Promise<CartCode | null> {
   if (!typed) return null;
   const club = findClub(typed);
   if (club) {
@@ -162,11 +192,11 @@ export async function resolveCartCode(typed: string | undefined, findCoupon: Fin
         code: club.code,
         minimumCents: CLUB_MIN_ORDER_CENTS,
         freeShipping: false,
+        buyerNote: null,
         unitPrices: (lines) => new Map(lines.map((line) => [line.slug, clubUnitPrice(line.slug, line.price)])),
       },
     };
   }
-  const found = await findCoupon(normaliseClubCode(typed));
-  if (found.status === "valid") return { pricing: siteCouponPricing(found.coupon) };
-  return { refused: found.status === "inactive" ? CODE_INACTIVE : found.status === "unavailable" ? CODE_UNAVAILABLE : CODE_UNKNOWN };
+  const found = await findCoupon(normaliseClubCode(typed), buyerEmail);
+  return found.status === "valid" ? { pricing: siteCouponPricing(found.coupon) } : { refused: REFUSALS[found.status] };
 }

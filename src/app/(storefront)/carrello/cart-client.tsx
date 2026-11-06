@@ -45,10 +45,12 @@ export function CartClient({ shelfProducts }: CartClientProps) {
 
   // Express checkout skips the form, so the InPost Locker is picked here (owner, 2026-10-23); a
   // cart with a stadium box goes to the door with Poste, and consignment pieces leave from the
-  // partner's warehouse, so those carts take the normal checkout.
+  // partner's warehouse, so those carts take the normal checkout. So does a code tied to a buyer:
+  // it needs the email before the price is fixed, and Stripe asks for it after.
   const [expressLocker, setExpressLocker] = useState<PickedLocker | null>(null);
   const showExpressButton = Boolean(
     quote?.orderable &&
+      !quote.couponBuyerNote &&
       !quote.shippingOptions.some((opt) => opt.lockReasons?.some((reason) => reason === "partner" || reason === "mixed")),
   );
   const expressNeedsLocker = Boolean(quote && shippingMethodByCode(quote.shippingCode)?.pickupPoint);
