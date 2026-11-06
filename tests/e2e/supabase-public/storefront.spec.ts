@@ -173,6 +173,9 @@ test.describe("anonymous storefront on Supabase", () => {
   });
 
   test("every published product page renders", async ({ page }) => {
+    // One page after another, every product included, so the time it takes grows with the catalogue:
+    // 57 s of the config's fixed 60 on 2026-11-06, then a timeout with no page at fault.
+    test.setTimeout(30_000 + PRODUCTS.length * 3_000);
     await visit(page, "/negozio");
     const hrefs = await page.getByTestId("product-card").locator("a[href^='/prodotto/']").evaluateAll(
       // A sold-out card also links to its own page's "Avvisami" form (#restock-form): same page.
