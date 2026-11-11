@@ -123,6 +123,7 @@ export default async function AdminPreordersPage({ searchParams }: { searchParam
                     <br />
                     <a href={`mailto:${order.email}`}>{order.email}</a>
                     {order.phone ? <><br />{order.phone}</> : null}
+                    {order.customerNote ? <span className={styles.noteFlag} data-testid="customer-note-flag">Nota: {order.customerNote}</span> : null}
                   </td>
                   <td>
                     {order.lines.map((line) => (

@@ -23,7 +23,7 @@ export async function GET(request: Request) {
   }
   const columns = ["order_number","email","created_at","status","payment_status","shipping_method_code","coupon_code","subtotal_cents","discount_cents","shipping_cents","total_cents","currency"] as const;
   // The carrier the buyer picked lives in the shipping snapshot: the column says "standard" for every Stripe order.
-  const header=[...columns,"carrier","pickup_point","partner_owed_cents"];
+  const header=[...columns,"carrier","pickup_point","partner_owed_cents","customer_note"];
   const body=[header.join(","),...rows.map(row=>{
     const choice=shipmentChoice(row.shipping_address_snapshot);
     const items=itemsByOrder.get(row.id)??[];
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
     const owedCents=pLines.reduce((sum,l)=>sum+l.owed,0);
     // Only show owed for orders that actually contain consignment items (blank for pure Hasbro orders).
     const hasConsignment=items.some(i=>CONSIGNMENT_SLUGS.has(i.sku_snapshot));
-    return [...columns.map(column=>csvOrderCell(row[column])),csvOrderCell(choice.label??"Poste Italiane · consegna a casa"),csvOrderCell(choice.pickupPoint),hasConsignment?csvOrderCell(owedCents):csvOrderCell(null)].join(",");
+    return [...columns.map(column=>csvOrderCell(row[column])),csvOrderCell(choice.label??"Poste Italiane · consegna a casa"),csvOrderCell(choice.pickupPoint),hasConsignment?csvOrderCell(owedCents):csvOrderCell(null),csvOrderCell(row.notes)].join(",");
   })].join("\r\n");
   return new Response(`﻿${body}`,{headers:{"Content-Disposition":`attachment; filename="geardrop-ordini-${new Date().toISOString().slice(0,10)}.csv"`,"Content-Type":"text/csv; charset=utf-8","Cache-Control":"no-store"}});
 }
