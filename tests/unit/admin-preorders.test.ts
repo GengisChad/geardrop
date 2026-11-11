@@ -51,6 +51,12 @@ describe("pre-order desk (owner, 2026-10-11)", () => {
     expect(board.openPieces).toBe(3);
   });
 
+  it("carries what the buyer wrote at checkout to whoever packs", () => {
+    const noted = [order(1, "2026-10-13T10:00:00Z", { notes: "  Grip rosso, launcher destro  " }), order(3, "2026-10-13T12:00:00Z", { notes: "   " })];
+    const board = preorderBoard(items, noted);
+    expect(board.orders.map((entry) => entry.customerNote)).toEqual(["Grip rosso, launcher destro", null]);
+  });
+
   it("counts per product what to set aside and what already went out", () => {
     const board = preorderBoard(items, orders);
     expect(board.products).toEqual([

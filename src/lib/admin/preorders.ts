@@ -37,6 +37,8 @@ export type PreorderOrderRow = {
   readonly shipped_at: string | null;
   readonly tracking_code: string | null;
   readonly shipping_address_snapshot: unknown;
+  /** What the buyer wrote at checkout. */
+  readonly notes?: string | null;
 };
 
 export type PreorderNoteRow = {
@@ -74,6 +76,8 @@ export type PreorderOrder = {
   readonly destination: string | null;
   readonly totalCents: number;
   readonly trackingCode: string | null;
+  /** What the buyer wrote at checkout (colour, launcher, which piece): shown to whoever packs. */
+  readonly customerNote: string | null;
   readonly lines: readonly PreorderLine[];
 };
 
@@ -159,6 +163,7 @@ export function preorderBoard(
         destination,
         totalCents: order.total_cents,
         trackingCode: order.tracking_code,
+        customerNote: order.notes?.trim() || null,
         lines: linesByOrder.get(order.id)!,
       };
     })
