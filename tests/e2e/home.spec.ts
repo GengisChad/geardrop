@@ -32,11 +32,13 @@ test.describe("public homepage", () => {
     // The owner removed the scrolling lime ticker (2026-09-16): it must not come back.
     await expect(page.getByTestId("ticker")).toHaveCount(0);
 
-    // One h1 in two typed lines while the spotlight is on; the closing line puts its first word on the lime slab.
+    // One h1 while the spotlight is on, three typed lines while the Phoenix promotion leads it (2026-11-13);
+    // the closing line puts its first word on the lime slab.
     const h1 = page.getByRole("heading", { level: 1 });
     await expect(h1).toHaveCount(1);
     const lines = h1.locator("span.block");
-    await expect(lines).toHaveCount(2);
+    await expect(lines).toHaveCount(3);
+    await expect(lines.first()).toHaveText("Phoenix in offerta,");
     await expect(lines.last()).toHaveText("appena arrivati.");
     await expect(lines.last().locator(".gd-slab")).toHaveText("appena");
 

@@ -16,6 +16,8 @@ describe("reviewed catalogue", () => {
       // Shop order, 2026-09-30: what sells and ships leads, and everything that cannot ship today
       // sits at the bottom. Glory Valkerion is first because it is the best seller the shop can
       // actually send — nine pieces, second only to the sold-out Suppress Superion.
+      // The promotion of 2026-11-13: two red Phoenix without the launcher, leading the shop.
+      { slug: "soar-phoenix-9-60gf-solo-trottola", price: 1299, stock: "disponibile", availableQuantity: 2, rating: 0, reviewCount: 0 },
       // Takara Tomy pieces on the shop's own shelf (owner, 2026-11-06).
       { slug: "bx-48-random-booster-vol-9", price: 3699, stock: "disponibile", availableQuantity: 6, rating: 0, reviewCount: 0 },
       { slug: "cx-18-random-booster-brachio-whip", price: 3000, stock: "disponibile", availableQuantity: 20, rating: 0, reviewCount: 0 },

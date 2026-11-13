@@ -10,7 +10,8 @@ import { mkdirSync } from "node:fs";
  * composed from the cut-outs rather than photographed. Node rather than Python so the
  * whole thing runs from `pnpm assets:tops` on a machine with no Python.
  *
- *   node scripts/build-loose-tops.mjs
+ *   node scripts/build-loose-tops.mjs              every loose top and bundle
+ *   node scripts/build-loose-tops.mjs <slug…>      only the ones named
  */
 
 const SIZE = 1000;
@@ -24,6 +25,13 @@ const LOOSE = [
   // bottom edge, which would read as ours on a product page.
   // No floor shadow in this render, so the strict threshold holds all the way down.
   { slug: "impact-drake-9-60lr", src: "assets-source/products/impact-drake-9-60lr.jpg", cropBottom: 0.07, shadow: null },
+  // Hasbro's render of the Soar Phoenix starter's contents (F9324): the launcher stands above and to
+  // the left of the top, which ships without it. The region keeps the top's corner of the frame and
+  // `largestOnly` drops the corner of launcher still inside it, so the card shows only what is sold.
+  {
+    slug: "soar-phoenix-9-60gf-solo-trottola", src: "assets-source/products/soar-phoenix-9-60gf-solo-trottola.jpg",
+    cropBottom: 0, shadow: null, region: { left: 900, top: 850, width: 1100, height: 1150 }, largestOnly: true,
+  },
 ];
 
 /** Two across the top, one centred under them — the shape kit-doppio-starter-deck uses. */
@@ -33,6 +41,9 @@ const BUNDLES = [
 ];
 
 mkdirSync("public/products/cutout", { recursive: true });
+
+const only = new Set(process.argv.slice(2));
+const wanted = (slug) => only.size === 0 || only.has(slug);
 
 async function writePair(slug, composite, background) {
   await sharp({ create: { width: SIZE, height: SIZE, channels: 4, background: { r: 255, g: 255, b: 255, alpha: 1 } } })
@@ -53,11 +64,11 @@ async function writePair(slug, composite, background) {
  * highlights inside the blade are never reached, because nothing light connects them to
  * the edge.
  */
-async function liftOff(src, cropBottom, shadow) {
+async function liftOff(src, cropBottom, shadow, region, largestOnly) {
   const meta = await sharp(src).metadata();
   const height = Math.round(meta.height * (1 - cropBottom));
   const { data, info } = await sharp(src)
-    .extract({ left: 0, top: 0, width: meta.width, height })
+    .extract(region ?? { left: 0, top: 0, width: meta.width, height })
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
@@ -123,6 +134,42 @@ async function liftOff(src, cropBottom, shadow) {
     }
   }
 
+  // A render that shows more than the piece sold: keep the biggest solid shape, which is the top,
+  // and clear whatever else stands apart from it on the backdrop.
+  if (largestOnly) {
+    const label = new Int32Array(total);
+    let best = 0;
+    let bestSize = 0;
+    let next = 0;
+    for (let start = 0; start < total; start += 1) {
+      if (background[start] || label[start]) continue;
+      next += 1;
+      label[start] = next;
+      let size = 0;
+      head = 0;
+      tail = 0;
+      queue[tail++] = start;
+      while (head < tail) {
+        const pixel = queue[head++];
+        size += 1;
+        const x = pixel % width;
+        for (const near of [pixel - 1, pixel + 1, pixel - width, pixel + width]) {
+          if (near < 0 || near >= total || background[near] || label[near]) continue;
+          if ((near === pixel - 1 && x === 0) || (near === pixel + 1 && x === width - 1)) continue;
+          label[near] = next;
+          queue[tail++] = near;
+        }
+      }
+      if (size > bestSize) {
+        bestSize = size;
+        best = next;
+      }
+    }
+    for (let pixel = 0; pixel < total; pixel += 1) {
+      if (label[pixel] !== best) background[pixel] = 1;
+    }
+  }
+
   for (let pixel = 0; pixel < total; pixel += 1) {
     if (background[pixel]) data[pixel * channels + 3] = 0;
   }
@@ -149,7 +196,8 @@ async function liftOff(src, cropBottom, shadow) {
 const LOOSE_FILL = 0.7;
 
 for (const job of LOOSE) {
-  const lifted = await sharp(await liftOff(job.src, job.cropBottom, job.shadow)).trim({ threshold: 1 }).toBuffer();
+  if (!wanted(job.slug)) continue;
+  const lifted = await sharp(await liftOff(job.src, job.cropBottom, job.shadow, job.region, job.largestOnly)).trim({ threshold: 1 }).toBuffer();
   const box = Math.round(SIZE * LOOSE_FILL);
   const top = await sharp(lifted)
     .resize(box, box, { fit: "inside" })
@@ -176,6 +224,7 @@ async function fit(slug, boxWidth, boxHeight) {
 }
 
 for (const job of BUNDLES) {
+  if (!wanted(job.slug)) continue;
   const layers = [];
   for (const [index, slug] of job.top.entries()) {
     const piece = await fit(slug, 430, 470);

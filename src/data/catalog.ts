@@ -158,6 +158,20 @@ export const CATEGORIES: readonly Category[] = [
 ];
 
 export const PRODUCTS: readonly Product[] = [
+  // The owner, 2026-11-13: two red Phoenix without the launcher, only the top with its ratchet and
+  // bit (like Hover Wyvern and Impact Drake), at 12,99, two on the shelf for now, as a promotion. It
+  // leads the catalogue and the homepage (SPOTLIGHT_SLUGS) while it lasts, under the "Offerta" tag.
+  // No compare-at price: the starter it is measured against is a different product, with a launcher.
+  {
+    slug: "soar-phoenix-9-60gf-solo-trottola", name: "Soar Phoenix 9-60GF solo trottola", tagline: "La Phoenix rossa, senza lanciatore.",
+    description: "Soar Phoenix 9-60GF è la trottola d'attacco rossa dello starter Hasbro, qui venduta da sola: tre lame che salgono verso l'alto per un Upper Attack capace di sollevare l'avversario, una delle blade più pesanti della serie, con Ratchet 9-60 e Bit GF (Gear Flat). Solo la trottola con ratchet e bit montati: il lanciatore non è incluso. Arriva in busta, senza scatola. Richiede lanciatore e Beystadium Beyblade X (venduti separatamente).",
+    price: eur(1299), category: "beyblade-x", bladeType: "attacco", stock: "disponibile", availableQuantity: 2, tags: ["offerta"], rating: 0, reviewCount: 0,
+    images: productImages["soar-phoenix-9-60gf-solo-trottola"],
+    specs: [{ label: "Tipo", value: "Attacco" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codice", value: "9-60GF" }, { label: "Componenti", value: "1 trottola: blade, Ratchet 9-60 e Bit GF" }, { label: "Rotazione", value: "Destra" }, { label: "Confezione", value: "In busta, senza scatola" }, { label: "Nota", value: "Richiede lanciatore e Beystadium (venduti a parte)" }],
+    features: [{ title: "Upper Attack", description: "Le tre lame sollevano l'avversario da terra" }, { title: "Ratchet 9-60", description: "Assetto basso a 6,0 mm, nove punti di contatto" }, { title: "Solo la trottola", description: "Blade, ratchet e bit: il lanciatore non è incluso" }, { title: "Da sapere prima di comprare", description: "Arriva in busta, senza scatola e senza lanciatore" }],
+    boxContents: ["1 × Trottola Soar Phoenix 9-60GF in busta (blade, ratchet e bit)"],
+    relatedSlugs: ["soar-phoenix-9-60gf", "impact-drake-9-60lr", "hover-wyvern-3-85n"],
+  },
   // Takara Tomy pieces the shop bought itself (owner, 2026-11-06): they sit on its own shelf and ship
   // like Hasbro, so no `consignment`. Parts, variants and spin come from Takara Tomy's product pages.
   // They lead the catalogue, and with it the shop, because the owner wants them in the foreground.
@@ -205,14 +219,16 @@ export const PRODUCTS: readonly Product[] = [
     relatedSlugs: ["custom-grip-takara-tomy", "winder-launcher-takara-tomy", "string-launcher-takara-tomy"],
   },
   {
-    slug: "string-launcher-takara-tomy", name: "String Launcher Takara Tomy", tagline: "Tiri la corda e parte. Colore assortito.",
-    description: "Lo String Launcher è il lanciatore a corda lunga di Takara Tomy: si tira la corda e la trottola parte. Viene dagli starter giapponesi, come il blu scuro di UX-20 e l'azzurro L di BX-34 in foto. Ci sono sia destri (right) sia sinistri (L), che lanciano solo le trottole a rotazione sinistra: scrivi quale vuoi nelle note dell'ordine o via email dopo l'acquisto. Se non è rimasto ti scriviamo prima di spedire; senza indicazioni spediamo il destro. Il colore è assortito e non si sceglie. Arriva in busta, senza scatola. Trottola e Beystadium non inclusi.",
+    // Only the left-spin ones are left (owner, 2026-11-13: "leva gli string right, sono rimasti solo
+    // left"), so there is nothing to choose and the order notes ask for nothing.
+    slug: "string-launcher-takara-tomy", name: "String Launcher L Takara Tomy", tagline: "Solo sinistro (L), per le trottole left-spin.",
+    description: "Lo String Launcher L è il lanciatore a corda lunga di Takara Tomy per le trottole a rotazione sinistra (left-spin), come Cobalt Dragoon: si tira la corda e la trottola parte. Sono rimasti solo i sinistri (L), come l'azzurro di BX-34 in foto: le trottole a rotazione destra non le lancia. Il colore è assortito e non si sceglie. Viene dagli starter giapponesi e arriva in busta, senza scatola. Trottola e Beystadium non inclusi.",
     price: eur(1699), category: "lanciatori", brand: "takara-tomy", stock: "disponibile", availableQuantity: 9, tags: ["novita"], rating: 0, reviewCount: 0,
     images: productImages["string-launcher-takara-tomy"],
-    specs: [{ label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Tipo", value: "Lanciatore a corda" }, { label: "Colore", value: "Assortito, non si sceglie" }, { label: "Rotazione", value: "Destra (right) o sinistra (L): scrivilo nelle note dell'ordine" }, { label: "Confezione", value: "In busta, senza scatola" }, { label: "Età", value: "Dai 6 anni (indicazione della confezione)" }, { label: "Nota", value: "Trottola e Beystadium non inclusi" }],
-    features: [{ title: "Corda lunga", description: "Si tira la corda e la trottola parte" }, { title: "Originale Takara Tomy", description: "Lo stesso lanciatore degli starter giapponesi" }, { title: "Colore assortito", description: "Ne abbiamo di diversi: il colore non si sceglie" }, { title: "Da sapere prima di comprare", description: "Scrivi nelle note dell'ordine se lo vuoi destro (right) o sinistro (L). Senza indicazioni spediamo il destro" }],
-    boxContents: ["1 × String Launcher Takara Tomy"],
-    relatedSlugs: ["custom-grip-takara-tomy", "winder-launcher-takara-tomy", "long-winder-launcher-takara-tomy"],
+    specs: [{ label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Tipo", value: "Lanciatore a corda" }, { label: "Rotazione", value: "Sinistra (L): solo trottole left-spin" }, { label: "Colore", value: "Assortito, non si sceglie" }, { label: "Confezione", value: "In busta, senza scatola" }, { label: "Età", value: "Dai 6 anni (indicazione della confezione)" }, { label: "Nota", value: "Trottola e Beystadium non inclusi" }],
+    features: [{ title: "Per le left-spin", description: "Lancia le trottole a rotazione sinistra, come Cobalt Dragoon" }, { title: "Corda lunga", description: "Si tira la corda e la trottola parte" }, { title: "Originale Takara Tomy", description: "Lo stesso lanciatore degli starter giapponesi" }, { title: "Da sapere prima di comprare", description: "Solo sinistro (L): non lancia le trottole a rotazione destra" }],
+    boxContents: ["1 × String Launcher L Takara Tomy"],
+    relatedSlugs: ["cobalt-dragoon-2-60c", "bx-48-random-booster-vol-9", "custom-grip-takara-tomy"],
   },
   {
     slug: "winder-launcher-takara-tomy", name: "Winder Launcher Takara Tomy", tagline: "Il lanciatore degli starter giapponesi. Colore assortito.",
@@ -653,6 +669,7 @@ export const SHIPPING_FLAT_RATE = Math.min(...SHIPPING_METHODS.map((m) => m.pric
  * of their own. Merchant Center is told so; every boxed Hasbro item does have an EAN, recorded when known.
  */
 export const SOLD_WITHOUT_BARCODE: ReadonlySet<string> = new Set([
+  "soar-phoenix-9-60gf-solo-trottola",
   "impact-drake-9-60lr",
   "hover-wyvern-3-85n",
   "winder-launcher-takara-tomy",

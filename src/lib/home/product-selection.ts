@@ -44,7 +44,14 @@ export const BESTSELLER_SLUGS: readonly string[] = [
  * is on sale they hold the first screen, and the best sellers take the row right under them. Kept by
  * hand: empty the list to give the first screen back to the best sellers.
  */
+/**
+ * The promotion of 2026-11-13 (owner: "mettile come promo"): it leads the spotlight while it lasts,
+ * and the hero names it in its headline. Sold out, it drops out of both on its own.
+ */
+export const SPOTLIGHT_PROMO_SLUG = "soar-phoenix-9-60gf-solo-trottola";
+
 export const SPOTLIGHT_SLUGS: readonly string[] = [
+  SPOTLIGHT_PROMO_SLUG,
   "bx-48-random-booster-vol-9",
   "cx-18-random-booster-brachio-whip",
   "custom-grip-takara-tomy",
