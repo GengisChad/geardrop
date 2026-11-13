@@ -8,6 +8,12 @@ export const NEW_RELEASES_HERO_TITLE = "Beyblade X\noriginali,\ndisponibili in I
 export const SPOTLIGHT_HERO_TITLE = "Takara Tomy\nappena arrivati.";
 
 /**
+ * Headline while the spotlight also deals the red Phoenix promotion (owner, 2026-11-13): it is a
+ * Hasbro piece, so the Takara Tomy headline alone would claim it. Gone with the last piece.
+ */
+export const PROMO_SPOTLIGHT_HERO_TITLE = "Phoenix in offerta,\nTakara Tomy\nappena arrivati.";
+
+/**
  * Split a hero headline into rendered lines, with the last line carrying the holographic accent.
  *
  * Newlines are honoured as explicit line breaks. A single-line title is split once at its

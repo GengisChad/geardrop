@@ -308,6 +308,19 @@ export const productImages = {
       alt: "Trottola Beyblade X Hover Wyvern 3-85N argento con la blade verde trasparente e il gear chip del wyvern",
     },
   ],
+  /**
+   * The red Phoenix sold without its launcher (owner, 2026-11-13). Hasbro's own render of the starter's
+   * contents (F9324, Amazon B0D1YLNVB4) shows the top beside the launcher; `pnpm assets:tops` keeps the
+   * top alone, because the launcher is not in the bag.
+   */
+  "soar-phoenix-9-60gf-solo-trottola": [
+    {
+      src: "/products/soar-phoenix-9-60gf-solo-trottola.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Trottola Beyblade X Soar Phoenix 9-60GF rossa e giallo-verde trasparente con il gear chip della fenice",
+    },
+  ],
   "deck-completo-meta": [
     {
       src: "/products/deck-completo-meta.webp",
@@ -377,7 +390,7 @@ export const productImages = {
     takaraImage("winder-launcher-takara-tomy", "Tre Winder Launcher Takara Tomy Beyblade X in colori diversi: bianco e blu, rosso, nero e verde"),
   ],
   "string-launcher-takara-tomy": [
-    takaraImage("string-launcher-takara-tomy", "Due String Launcher Takara Tomy Beyblade X: blu scuro con puntini oro, e azzurro nella versione L"),
+    takaraImage("string-launcher-takara-tomy", "String Launcher L Takara Tomy Beyblade X azzurro, per trottole a rotazione sinistra"),
   ],
   "long-winder-launcher-takara-tomy": [
     takaraImage("long-winder-launcher-takara-tomy", "Due lanciatori Takara Tomy Beyblade X con Long Winder: verde acqua, e nero con il logo NERV di Evangelion e la winder rossa"),

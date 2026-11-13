@@ -55,6 +55,20 @@ Il packshot della scatola sarebbe su Takara Tomy Mall, che oggi risponde con un 
 per questo le due scatole vengono dalle foto del proprietario. Scatola e trottole nella stessa card
 sono un montaggio: nessuno scatto ufficiale le mostra insieme.
 
+## Soar Phoenix solo trottola, 2026-11-13
+
+| Prodotto | File | Px | Fonte dell'immagine | Pagina | Fedeltà |
+| --- | --- | --- | --- | --- | --- |
+| Soar Phoenix 9-60GF solo trottola | `assets-source/products/soar-phoenix-9-60gf-solo-trottola.jpg` | 2000 | `m.media-amazon.com/images/I/71sKwutK96L.jpg` | amazon.it/dp/B0D1YLNVB4, Store di Beyblade, Hasbro F9324 | Render Hasbro del contenuto dello starter: trottola e lanciatore. La card tiene solo la trottola, l'unica cosa venduta. |
+
+L'originale è intatto: `node scripts/build-loose-tops.mjs soar-phoenix-9-60gf-solo-trottola` ritaglia
+l'angolo della trottola, toglie lo sfondo bianco e scarta il pezzo di lanciatore rimasto nel ritaglio.
+
+## String Launcher solo L, 2026-11-13
+
+Sono rimasti solo i sinistri (L): la card mostra solo `BX34_05`, l'azzurro L di BX-34. Si rifà con
+`python scripts/cutout_takara.py string-launcher-takara-tomy`.
+
 ## Ancora da migliorare
 
 - **UX-00 Glory Valkyrie LF** (750 px, foto del partner): l'unica foto ufficiale della scatola

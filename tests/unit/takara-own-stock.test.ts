@@ -124,14 +124,25 @@ describe("the page says what the box does not", () => {
     expect(features.at(-1)?.title).toBe("Da sapere prima di comprare");
   });
 
-  it.each(["winder-launcher-takara-tomy", "string-launcher-takara-tomy"])("%s: the buyer says right or left, the colour is assorted", (slug) => {
-    const { description, specs, features } = piece(slug);
+  it("the winder: the buyer says right or left, the colour is assorted", () => {
+    const { description, specs, features } = piece("winder-launcher-takara-tomy");
     expect(description).toContain("Ci sono sia destri (right) sia sinistri (L), che lanciano solo le trottole a rotazione sinistra");
     expect(description).toContain("scrivi quale vuoi nelle note dell'ordine");
     expect(description).toContain("senza indicazioni spediamo il destro");
     expect(description).toContain("non si sceglie");
     expect(specs.find((spec) => spec.label === "Rotazione")?.value).toContain("nelle note dell'ordine");
     expect(features.at(-1)?.description).toContain("destro (right) o sinistro (L)");
+  });
+
+  it("the string launcher: only the left-spin ones are left (owner, 2026-11-13), so nothing to choose", () => {
+    const { name, description, specs, features, boxContents } = piece("string-launcher-takara-tomy");
+    expect(name).toBe("String Launcher L Takara Tomy");
+    expect(description).toContain("Sono rimasti solo i sinistri (L)");
+    expect(description).toContain("le trottole a rotazione destra non le lancia");
+    expect(description).not.toMatch(/destri \(right\)|spediamo il destro|note dell'ordine/);
+    expect(specs.find((spec) => spec.label === "Rotazione")?.value).toBe("Sinistra (L): solo trottole left-spin");
+    expect(features.at(-1)?.description).toContain("Solo sinistro (L)");
+    expect(boxContents).toEqual(["1 × String Launcher L Takara Tomy"]);
   });
 
   it("the grip: one price and one shelf, the buyer asks for a colour and the shop checks it is left", () => {
@@ -160,7 +171,7 @@ describe("the page says what the box does not", () => {
 describe("what the buyer is asked at the checkout", () => {
   it("lists a choice for each piece that has one, and nothing for the rest", () => {
     expect(orderChoices(["winder-launcher-takara-tomy"])).toEqual(["Winder Launcher, destro (right) o sinistro (L)"]);
-    expect(orderChoices(["string-launcher-takara-tomy"])).toEqual(["String Launcher, destro (right) o sinistro (L)"]);
+    expect(orderChoices(["string-launcher-takara-tomy"])).toEqual([]);
     expect(orderChoices(["custom-grip-takara-tomy"])).toEqual(["Custom Grip, rossa, blu o gunmetal"]);
     expect(orderChoices(["bx-48-random-booster-vol-9", "long-winder-launcher-takara-tomy", hasbroPiece.slug])).toEqual([]);
   });
@@ -175,13 +186,16 @@ describe("what the buyer is asked at the checkout", () => {
 
 describe("the migration", () => {
   const migration = readFileSync("supabase/migrations/20261106120000_takara_tomy_on_the_shop_shelf.sql", "utf8");
+  // The String Launcher's words were rewritten when only the left-spin ones were left.
+  const leftOnly = readFileSync("supabase/migrations/20261113120000_soar_phoenix_loose_and_string_launcher_l.sql", "utf8");
 
   it("mirrors the catalogue: price, stock and every photo", () => {
     for (const product of pieces) {
       const listed = OWNER_LIST[product.slug]!;
+      const words = product.slug === "string-launcher-takara-tomy" ? leftOnly : migration;
       expect(migration, product.slug).toContain(`${listed.price}, ${listed.stock},`);
       expect(migration, product.slug).toContain(`'${product.slug}'`);
-      expect(migration, product.slug).toContain(`${product.description.replaceAll("'", "''")}`);
+      expect(words, product.slug).toContain(`${product.description.replaceAll("'", "''")}`);
       for (const image of product.images) expect(migration, image.src).toContain(`'${image.src}'`);
     }
   });

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Arsenal } from "@/components/home/arsenal";
 import { HERO_CARDS, Hero } from "@/components/home/hero";
-import { SPOTLIGHT_HERO_TITLE } from "@/lib/home/hero-title";
+import { PROMO_SPOTLIGHT_HERO_TITLE, SPOTLIGHT_HERO_TITLE } from "@/lib/home/hero-title";
 import { ProductShelf } from "@/components/home/product-shelf";
 import { TrustBandDark } from "@/components/home/trust";
 import { Reveal } from "@/components/ui/reveal";
@@ -10,7 +10,7 @@ import { ManagedHomepage, type ManagedHomepageFallback } from "@/components/cont
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { storefrontContent } from "@/lib/content/provider";
 import { RELEASE_DELIVERY, STANDARD_DELIVERY } from "@/lib/labels";
-import { HOME_FEATURED_LIMIT, homepagePlan } from "@/lib/home/product-selection";
+import { HOME_FEATURED_LIMIT, SPOTLIGHT_PROMO_SLUG, homepagePlan } from "@/lib/home/product-selection";
 import { PRODUCTS } from "@/data/catalog";
 import { jsonLd, siteJsonLd } from "@/lib/seo";
 import { resolveHomepageSections } from "@/lib/storefront/homepage-resolver";
@@ -40,6 +40,8 @@ export default async function HomePage() {
 
   // The new releases still on sale lead, then what ships right away, then the rest.
   const plan = homepagePlan(all.items, HERO_CARDS);
+  // The red Phoenix promotion (2026-11-13) is Hasbro: while it is in the spotlight the pitch names it.
+  const promoInHero = plan.heroIsSpotlight && plan.hero.some((product) => product.slug === SPOTLIGHT_PROMO_SLUG);
 
   const fallback: ManagedHomepageFallback = {
     heroProducts: plan.hero,
@@ -84,11 +86,13 @@ export default async function HomePage() {
         limit={plan.heroIsSpotlight ? plan.hero.length : HERO_CARDS}
         {...(plan.heroIsSpotlight
           ? {
-              heading: "Nuovi arrivi Takara Tomy",
+              heading: promoInHero ? "Offerta e nuovi arrivi Takara Tomy" : "Nuovi arrivi Takara Tomy",
               content: {
-                eyebrow: "Disponibili ora · Nuovi arrivi",
-                title: SPOTLIGHT_HERO_TITLE,
-                description: "Random Booster BX-48 e CX-18, Custom Grip, Long Winder, String e Winder Launcher. Originali giapponesi, pronti da spedire.",
+                eyebrow: promoInHero ? "Disponibili ora · Offerta e nuovi arrivi" : "Disponibili ora · Nuovi arrivi",
+                title: promoInHero ? PROMO_SPOTLIGHT_HERO_TITLE : SPOTLIGHT_HERO_TITLE,
+                description: promoInHero
+                  ? "Soar Phoenix 9-60GF solo trottola, senza lanciatore, finché dura. Poi i Takara Tomy originali giapponesi: Random Booster BX-48 e CX-18, Custom Grip, Long Winder, String e Winder Launcher."
+                  : "Random Booster BX-48 e CX-18, Custom Grip, Long Winder, String e Winder Launcher. Originali giapponesi, pronti da spedire.",
                 ctaHref: "/negozio/takara-tomy",
                 ctaLabel: "Tutto Takara Tomy",
               },

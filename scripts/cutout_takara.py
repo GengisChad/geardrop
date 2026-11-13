@@ -58,8 +58,8 @@ BOX_SIZE = (1170, 2600)
 STAGED: dict[str, tuple[tuple[str, int, int, int], ...]] = {
     # Three of the colours in the pile (owner: mixed, no count by colour).
     "winder-launcher-takara-tomy": (("CX04_04", 305, 500, 700), ("BX46_11", 500, 500, 700), ("CX14_09", 695, 500, 700)),
-    # The two the owner photographed: UX-20's navy and BX-34's left-spin blue.
-    "string-launcher-takara-tomy": (("BX34_05", 690, 300, 470), ("UX20_04", 330, 680, 520)),
+    # Only the left-spin ones are left (owner, 2026-11-13): BX-34's L blue, the one he photographed.
+    "string-launcher-takara-tomy": (("BX34_05", 500, 500, 760),),
     # The Evangelion print the owner photographed and a plain Long Winder, CX-07's green.
     "long-winder-launcher-takara-tomy": (("CX07_07", 330, 500, 760), ("BXG57_23", 670, 500, 760)),
     # The three editions in the owner's lot: one listing, the buyer asks for a colour.

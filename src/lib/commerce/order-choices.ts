@@ -1,11 +1,11 @@
 /**
  * Pieces sold out of a mixed lot with no count per version (owner, 2026-11-06): one price and one
  * shelf, and the buyer says in the order notes which version they want, so the shop can check it is
- * still there. A small index of its own, because the cart and the checkout are client bundles.
+ * still there. A small index of its own, because the cart and the checkout are client bundles. The
+ * String Launcher left it on 2026-11-13: only the left-spin (L) ones are left, so there is no choice.
  */
 const CHOICES: Readonly<Record<string, string>> = {
   "winder-launcher-takara-tomy": "Winder Launcher, destro (right) o sinistro (L)",
-  "string-launcher-takara-tomy": "String Launcher, destro (right) o sinistro (L)",
   "custom-grip-takara-tomy": "Custom Grip, rossa, blu o gunmetal",
 };
 
