@@ -11,8 +11,8 @@ test.describe("home", () => {
   test("renders the spotlight up front, what ships now, then the rest, with no fight animation", async ({ page }) => {
     await page.goto("/");
 
-    // The owner's spotlight holds the first screen (2026-11-06).
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("Takara Tomy appena arrivati");
+    // The promotions and bundles on sale hold the first screen (owner, 2026-11-13).
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Promo e bundle attivi adesso");
     await expect(page.getByRole("link", { name: "GEAR//DROP — vai alla home" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Scegli. Carica. Lancia." })).toHaveCount(0);
     await expect(page.getByTestId("arena")).toHaveCount(0);

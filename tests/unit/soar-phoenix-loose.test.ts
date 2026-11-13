@@ -5,7 +5,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { PRODUCTS, SOLD_WITHOUT_BARCODE, brandOf } from "@/data/catalog";
-import { SPOTLIGHT_SLUGS } from "@/lib/home/product-selection";
+import { homepagePlan } from "@/lib/home/product-selection";
 
 const SLUG = "soar-phoenix-9-60gf-solo-trottola";
 const phoenix = PRODUCTS.find((product) => product.slug === SLUG)!;
@@ -39,9 +39,11 @@ describe("Soar Phoenix 9-60GF solo trottola", () => {
     expect(readFileSync("docs/product-photo-sources.md", "utf8")).toContain("71sKwutK96L");
   });
 
-  it("leads the catalogue and the first screen while it lasts", () => {
+  it("leads the catalogue and, among the promotions, the first screen while it lasts", () => {
     expect(PRODUCTS[0]?.slug).toBe(SLUG);
-    expect(SPOTLIGHT_SLUGS[0]).toBe(SLUG);
+    const plan = homepagePlan(PRODUCTS, 5);
+    expect(plan.heroIsPromos).toBe(true);
+    expect(plan.hero[0]?.slug).toBe(SLUG);
   });
 
   it("tells Google it has no barcode of its own", () => {

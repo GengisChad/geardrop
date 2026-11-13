@@ -640,6 +640,14 @@
   }
 }
 
+/* A panel rising into place, once, as it opens (the newsletter ask, 2026-11-13). */
+@keyframes gd-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+
 /* The part number behind a packshot sliding in along the slash, once, as the product page opens. */
 @keyframes gd-mark-in {
   from {

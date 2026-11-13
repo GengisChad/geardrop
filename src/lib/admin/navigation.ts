@@ -18,6 +18,8 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { label: "Footer", href: "/admin/footer", disabled: false },
   { label: "Promozioni", href: "/admin/promozioni", disabled: false },
   { label: "Coupon", href: "/admin/coupon", disabled: false },
+  // Owner, 2026-11-13: who signed up from the home banner for news on arrivals.
+  { label: "Newsletter", href: "/admin/newsletter", disabled: false },
   { label: "Ordini", href: "/admin/ordini", disabled: false },
   // Owner, 2026-10-11: who paid for a pre-order and whether it has shipped.
   { label: "Pre-ordini", href: "/admin/ordini/pre-ordini", disabled: false },

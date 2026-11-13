@@ -20,7 +20,10 @@ const VIEWPORTS = [
 
 /** Every card of the storefront: an item sold in several colours (the deck case) is one card. */
 const STOREFRONT_CARDS = oneCardPerFamily(STOREFRONT_CATALOGUE);
-/** The owner's spotlight (2026-11-06), then the order of 2026-10-05: the best sellers, the new arrivals, the pre-order drop, what ships now, the rest. */
+/**
+ * The promotions and bundles on sale (owner, 2026-11-13), the spotlight's row (2026-11-06), then the order of
+ * 2026-10-05: the best sellers, the new arrivals, the pre-order drop, what ships now, the rest.
+ */
 const PLAN = homepagePlan(STOREFRONT_CARDS, 5);
 const slugs = (products: readonly { readonly slug: string }[]) => products.map((product) => product.slug);
 
@@ -32,20 +35,22 @@ test.describe("public homepage", () => {
     // The owner removed the scrolling lime ticker (2026-09-16): it must not come back.
     await expect(page.getByTestId("ticker")).toHaveCount(0);
 
-    // One h1 while the spotlight is on, three typed lines while the Phoenix promotion leads it (2026-11-13);
-    // the closing line puts its first word on the lime slab.
+    // One h1 while the promotions lead, in two typed lines (owner, 2026-11-13); the closing line puts
+    // its first word on the lime slab.
     const h1 = page.getByRole("heading", { level: 1 });
     await expect(h1).toHaveCount(1);
     const lines = h1.locator("span.block");
-    await expect(lines).toHaveCount(3);
-    await expect(lines.first()).toHaveText("Phoenix in offerta,");
-    await expect(lines.last()).toHaveText("appena arrivati.");
-    await expect(lines.last().locator(".gd-slab")).toHaveText("appena");
+    await expect(lines).toHaveCount(2);
+    await expect(lines.first()).toHaveText("Promo e bundle");
+    await expect(lines.last()).toHaveText("attivi adesso.");
+    await expect(lines.last().locator(".gd-slab")).toHaveText("attivi");
 
     // The hero deals the spotlight as product cards right under the pitch, then the best sellers, then the drop.
     const cardSlugs = (testId: string) =>
       page.getByTestId(testId).getByTestId("product-card").evaluateAll((cards) => cards.map((card) => card.getAttribute("data-slug")));
+    expect(PLAN.heroIsPromos).toBe(true);
     expect(await cardSlugs("hero-products")).toEqual(slugs(PLAN.hero));
+    expect(await cardSlugs("spotlight")).toEqual(slugs(PLAN.spotlight));
     expect(await cardSlugs("best-sellers")).toEqual(slugs(PLAN.bestsellers));
     expect(await cardSlugs("new-arrivals")).toEqual(slugs(PLAN.arrivals));
     expect(await cardSlugs("preorder-drop")).toEqual(slugs(PLAN.drop));
@@ -101,6 +106,43 @@ test.describe("public homepage", () => {
     await page.goto("/");
     await page.getByTestId("hero-products").getByTestId("add-to-cart").first().click();
     await expect(page.getByTestId("cart-count")).toHaveText("1");
+  });
+
+  test("keeps the newsletter banner off a local build unless asked for", async ({ page }) => {
+    // It runs on the live site only, like the cookie banner it waits for: the first screen here is the promotions.
+    await page.goto("/");
+    await expect(page.getByTestId("hero-products")).toBeVisible();
+    await expect(page.getByTestId("newsletter-banner")).toHaveCount(0);
+  });
+
+  test("the newsletter banner docks at the bottom, says the owner's line, and once closed stays closed", async ({ page }) => {
+    await page.goto("/?iscriviti=1");
+    const banner = page.getByTestId("newsletter-banner");
+    await expect(banner).toBeVisible();
+    await expect(banner.getByRole("heading", { level: 2 })).toContainText("Questo è solo il primo drop,");
+    await expect(banner.getByRole("heading", { level: 2 })).toContainText("iscriviti per le novità.");
+    await expect(banner.getByLabel("La tua email")).toHaveAttribute("type", "email");
+    await expect(banner.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/legale/privacy");
+
+    // Docked, not modal: it sits in the lower part of the screen and the promotions stay above it.
+    const box = await banner.boundingBox();
+    const viewport = page.viewportSize();
+    expect(box && viewport ? box.y + box.height / 2 : 0).toBeGreaterThan((viewport?.height ?? 0) / 2);
+
+    await page.getByTestId("newsletter-close").click();
+    await expect(banner).toHaveCount(0);
+    await expect(page.getByTestId("hero-products").getByTestId("product-card").first()).toBeVisible();
+    expect(await page.evaluate(() => window.localStorage.getItem("gd-newsletter"))).toMatch(/^closed:\d+$/);
+  });
+
+  test("the confirm and unsubscribe links open a page that waits for its button", async ({ page }) => {
+    const token = "3f2c9a54-8e1b-4c6d-9a0f-7b5e2d1c4a98";
+    await page.goto(`/newsletter/conferma?t=${token}`);
+    await expect(page.getByTestId("newsletter-confirm-form")).toBeVisible();
+    await page.goto(`/newsletter/disiscriviti?t=${token}`);
+    await expect(page.getByTestId("newsletter-unsubscribe-form")).toBeVisible();
+    await page.goto("/newsletter/conferma?t=non-valido");
+    await expect(page.getByText("Link non valido")).toBeVisible();
   });
 
   for (const viewport of VIEWPORTS) {
