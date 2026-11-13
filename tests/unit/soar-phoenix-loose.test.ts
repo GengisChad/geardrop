@@ -5,6 +5,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { PRODUCTS, SOLD_WITHOUT_BARCODE, brandOf } from "@/data/catalog";
+import { STOREFRONT_CATALOGUE } from "@/lib/commerce/mock-provider";
+import { oneCardPerFamily } from "@/lib/commerce/variants";
 import { homepagePlan } from "@/lib/home/product-selection";
 
 const SLUG = "soar-phoenix-9-60gf-solo-trottola";
@@ -41,9 +43,11 @@ describe("Soar Phoenix 9-60GF solo trottola", () => {
 
   it("leads the catalogue and, among the promotions, the first screen while it lasts", () => {
     expect(PRODUCTS[0]?.slug).toBe(SLUG);
-    const plan = homepagePlan(PRODUCTS, 5);
+    // In the shop's own order, where the bundles come before the single pieces (seen live on 2026-11-14).
+    const plan = homepagePlan(oneCardPerFamily(STOREFRONT_CATALOGUE), 5);
     expect(plan.heroIsPromos).toBe(true);
     expect(plan.hero[0]?.slug).toBe(SLUG);
+    expect(plan.hero.findIndex((product) => product.bundleOf)).toBeGreaterThan(plan.hero.findLastIndex((product) => !product.bundleOf));
   });
 
   it("tells Google it has no barcode of its own", () => {
