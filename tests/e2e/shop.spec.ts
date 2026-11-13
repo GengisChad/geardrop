@@ -214,11 +214,12 @@ test.describe("product page", () => {
 test.describe("search", () => {
   test("finds a product by name", async ({ page }) => {
     // Two Cobalts in the catalogue since the 2026-09-21 drop, since 2026-10-05 the Deck Completo
-    // that contains one, and since 2026-11-06 the BX-48 booster that can hold one. The search
-    // finds all four; the two actually named Cobalt rank above the ones that only mention it.
+    // that contains one, since 2026-11-06 the BX-48 booster that can hold one, and since 2026-11-13
+    // the left-only String Launcher L, which names Cobalt Dragoon as a top it launches. The search
+    // finds all five; the two actually named Cobalt rank above the ones that only mention it.
     await page.goto("/ricerca?q=cobalt");
     await expect(page.getByTestId("search-results")).toBeVisible();
-    await expect(page.getByTestId("product-card")).toHaveCount(4);
+    await expect(page.getByTestId("product-card")).toHaveCount(5);
     await expect(page.getByTestId("product-card").nth(0)).toContainText("Cobalt");
     await expect(page.getByTestId("product-card").nth(1)).toContainText("Cobalt");
     await expect(page.getByTestId("search-results")).toContainText("Cobalt Dragoon");
