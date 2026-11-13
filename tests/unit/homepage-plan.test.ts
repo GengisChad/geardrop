@@ -36,6 +36,43 @@ describe("homepage plan", () => {
     expect(shown.sort()).toEqual(slugs(catalogue).sort());
   });
 
+  describe("with promotions on sale (owner, 2026-11-13)", () => {
+    const best = ["glory", "enlil"];
+    const spotlight = ["horus", "deck"];
+    const offers = catalogue.map((product) =>
+      ["duo", "enlil", "superion"].includes(product.slug) ? { ...product, tags: [...product.tags, "offerta"] } : product,
+    );
+
+    it("opens on every promotion and bundle on sale, then the spotlight's row, then the best sellers", () => {
+      const plan = homepagePlan(offers, 1, best, spotlight);
+      // Superion is on offer but sold out: it is not dealt. The limit does not cut the promotions.
+      expect(slugs(plan.hero)).toEqual(["duo", "enlil"]);
+      expect(plan.heroIsPromos).toBe(true);
+      expect(plan.heroIsSpotlight).toBe(false);
+      expect(plan.heroIsBestsellers).toBe(false);
+      expect(plan.heroIsNewRelease).toBe(false);
+      expect(slugs(plan.spotlight)).toEqual(["horus", "deck"]);
+      // Enlil is a best seller already dealt among the promotions: it is not repeated.
+      expect(slugs(plan.bestsellers)).toEqual(["glory"]);
+      expect(slugs(plan.drop)).toEqual(["drake", "clock", "dran", "croc"]);
+    });
+
+    it("shows every product exactly once", () => {
+      const plan = homepagePlan(offers, 4, best, spotlight);
+      const shown = [...plan.hero, ...plan.spotlight, ...plan.bestsellers, ...plan.arrivals, ...plan.drop, ...plan.ready, ...plan.rest].map(
+        (product) => product.slug,
+      );
+      expect(shown.sort()).toEqual(slugs(catalogue).sort());
+    });
+
+    it("hands the first screen back to the spotlight once no promotion is on sale", () => {
+      const plan = homepagePlan(catalogue, 4, best, spotlight);
+      expect(plan.heroIsPromos).toBe(false);
+      expect(plan.heroIsSpotlight).toBe(true);
+      expect(plan.spotlight).toEqual([]);
+    });
+  });
+
   describe("with a spotlight (owner, 2026-11-06)", () => {
     const best = ["glory", "enlil"];
     const spotlight = ["horus", "deck", "superion"];

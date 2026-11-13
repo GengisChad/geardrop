@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Arsenal } from "@/components/home/arsenal";
 import { HERO_CARDS, Hero } from "@/components/home/hero";
-import { PROMO_SPOTLIGHT_HERO_TITLE, SPOTLIGHT_HERO_TITLE } from "@/lib/home/hero-title";
+import { PROMOS_HERO_TITLE, SPOTLIGHT_HERO_TITLE } from "@/lib/home/hero-title";
 import { ProductShelf } from "@/components/home/product-shelf";
 import { TrustBandDark } from "@/components/home/trust";
 import { Reveal } from "@/components/ui/reveal";
@@ -10,8 +10,10 @@ import { ManagedHomepage, type ManagedHomepageFallback } from "@/components/cont
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { storefrontContent } from "@/lib/content/provider";
 import { RELEASE_DELIVERY, STANDARD_DELIVERY } from "@/lib/labels";
-import { HOME_FEATURED_LIMIT, SPOTLIGHT_PROMO_SLUG, homepagePlan } from "@/lib/home/product-selection";
+import { HOME_FEATURED_LIMIT, homepagePlan } from "@/lib/home/product-selection";
 import { PRODUCTS } from "@/data/catalog";
+import { NewsletterBanner } from "@/components/home/newsletter-banner";
+import { displayName } from "@/lib/holo";
 import { jsonLd, siteJsonLd } from "@/lib/seo";
 import { resolveHomepageSections } from "@/lib/storefront/homepage-resolver";
 
@@ -40,8 +42,15 @@ export default async function HomePage() {
 
   // The new releases still on sale lead, then what ships right away, then the rest.
   const plan = homepagePlan(all.items, HERO_CARDS);
-  // The red Phoenix promotion (2026-11-13) is Hasbro: while it is in the spotlight the pitch names it.
-  const promoInHero = plan.heroIsSpotlight && plan.hero.some((product) => product.slug === SPOTLIGHT_PROMO_SLUG);
+  // Owner, 2026-11-13: the promotions and bundles on sale open the page, named from the catalogue of the day.
+  const promoBundles = plan.hero.filter((product) => product.bundleOf).length;
+  const promoSingles = plan.hero.filter((product) => !product.bundleOf).map((product) => displayName(product.name));
+  const promoDescription = [
+    promoSingles.join(", "),
+    promoBundles > 0 ? `${promoBundles} ${promoBundles === 1 ? "bundle che costa" : "bundle che costano"} meno dei pezzi presi da soli` : "",
+  ]
+    .filter(Boolean)
+    .join(promoSingles.length > 0 && promoBundles > 0 ? " e " : "");
 
   const fallback: ManagedHomepageFallback = {
     heroProducts: plan.hero,
@@ -83,16 +92,24 @@ export default async function HomePage() {
       <Hero
         products={plan.hero}
         isNewRelease={plan.heroIsNewRelease || plan.heroIsSpotlight}
-        limit={plan.heroIsSpotlight ? plan.hero.length : HERO_CARDS}
+        limit={plan.heroIsPromos || plan.heroIsSpotlight ? plan.hero.length : HERO_CARDS}
+        {...(plan.heroIsPromos
+          ? {
+              heading: "Promo e bundle attivi",
+              content: {
+                eyebrow: `Disponibili ora · ${plan.hero.length} ${plan.hero.length === 1 ? "offerta" : "offerte"}`,
+                title: PROMOS_HERO_TITLE,
+                description: `${promoDescription}.`,
+              },
+            }
+          : {})}
         {...(plan.heroIsSpotlight
           ? {
-              heading: promoInHero ? "Offerta e nuovi arrivi Takara Tomy" : "Nuovi arrivi Takara Tomy",
+              heading: "Nuovi arrivi Takara Tomy",
               content: {
-                eyebrow: promoInHero ? "Disponibili ora · Offerta e nuovi arrivi" : "Disponibili ora · Nuovi arrivi",
-                title: promoInHero ? PROMO_SPOTLIGHT_HERO_TITLE : SPOTLIGHT_HERO_TITLE,
-                description: promoInHero
-                  ? "Soar Phoenix 9-60GF solo trottola, senza lanciatore, finché dura. Poi i Takara Tomy originali giapponesi: Random Booster BX-48 e CX-18, Custom Grip, Long Winder, String e Winder Launcher."
-                  : "Random Booster BX-48 e CX-18, Custom Grip, Long Winder, String e Winder Launcher. Originali giapponesi, pronti da spedire.",
+                eyebrow: "Disponibili ora · Nuovi arrivi",
+                title: SPOTLIGHT_HERO_TITLE,
+                description: "Random Booster BX-48 e CX-18, Custom Grip, Long Winder, String e Winder Launcher. Originali giapponesi, pronti da spedire.",
                 ctaHref: "/negozio/takara-tomy",
                 ctaLabel: "Tutto Takara Tomy",
               },
@@ -108,6 +125,15 @@ export default async function HomePage() {
             }
           : {})}
       />
+      {plan.spotlight.length > 0 ? (
+        <ProductShelf
+          testId="spotlight"
+          title="Nuovi arrivi Takara Tomy"
+          note={STANDARD_DELIVERY}
+          products={plan.spotlight}
+          tile={{ href: "/negozio/takara-tomy", kicker: "Originali giapponesi", title: "Tutto Takara Tomy" }}
+        />
+      ) : null}
       <ProductShelf testId="best-sellers" title="I più venduti" note={STANDARD_DELIVERY} products={plan.bestsellers} />
       <ProductShelf
         testId="new-arrivals"
@@ -123,6 +149,11 @@ export default async function HomePage() {
       <Reveal>
         <TrustBandDark />
       </Reveal>
+      {/* Owner, 2026-11-13: the newsletter ask, on the live site only, like the cookie banner it waits for. */}
+      <NewsletterBanner
+        enabled={process.env["VERCEL_ENV"] === "production" || process.env["NEWSLETTER_BANNER_PREVIEW"] === "1"}
+        cookieBanner={process.env["VERCEL_ENV"] === "production" || process.env["COOKIE_BANNER_PREVIEW"] === "1"}
+      />
     </>
   );
 }

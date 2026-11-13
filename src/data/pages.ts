@@ -251,7 +251,7 @@ export const LEGAL_PAGES = {
   },
   privacy: {
     title: "Privacy e cookie",
-    lead: "Come trattiamo i dati personali. Ultimo aggiornamento: 7 ottobre 2026.",
+    lead: "Come trattiamo i dati personali. Ultimo aggiornamento: 13 novembre 2026.",
     sections: [
       {
         heading: "Titolare del trattamento",
@@ -266,6 +266,7 @@ export const LEGAL_PAGES = {
           "Ordine: nome, cognome, email, telefono, indirizzo di spedizione, note per il corriere, prodotti e importi.",
           "Pagamento: esito, metodo usato e riferimento della transazione. I dati completi della carta sono trattati esclusivamente da Stripe.",
           "Assistenza: i messaggi e i dati che ci invii. Account: se ne crei uno, l'email e le credenziali di accesso.",
+          "Novità: se ti iscrivi dal banner della home, l'email, il testo che hai accettato iscrivendoti e le date di iscrizione, conferma ed eventuale cancellazione.",
           "Navigazione: dati tecnici necessari al funzionamento del sito e statistiche aggregate sulle pagine visitate (anonime con Vercel Web Analytics; con Google Analytics solo se lo accetti) e, se accetti il marketing, le visite e gli acquisti arrivati dalle nostre pubblicità su Google. Carrello e preferiti restano salvati nel tuo browser. Quando fai un ordine registriamo anche da quale canale è arrivata la visita (per esempio «Google Ads», «Instagram» o «diretto», più la pagina d'arrivo): è un'etichetta generica, senza identificativi, che ci dice quali canali portano gli ordini.",
         ],
       },
@@ -277,6 +278,7 @@ export const LEGAL_PAGES = {
           "Per rispondere alle richieste di assistenza, sulla base del contratto o di misure precontrattuali (art. 6.1.b GDPR).",
           "Per la sicurezza del sito, la prevenzione delle frodi e le statistiche anonime di visita, sulla base del legittimo interesse (art. 6.1.f GDPR).",
           "Per misurare le visite con Google Analytics e, se accetti il marketing, per misurare e mostrare le nostre pubblicità con Google Ads, solo con il tuo consenso (art. 6.1.a GDPR), che puoi revocare in qualsiasi momento da «Gestisci cookie» in fondo a ogni pagina.",
+          `Per mandarti le email sulle novità (arrivi e riassortimenti), solo con il tuo consenso (art. 6.1.a GDPR): lo dai iscrivendoti e lo confermi dal link che ricevi via email; senza conferma non ti scriviamo. Puoi revocarlo quando vuoi dal link per cancellarti presente in ogni email o scrivendo a ${SELLER.email}.`,
           "Senza il tuo consenso al marketing non usiamo i tuoi dati per pubblicità, e non vendiamo dati a nessuno. Fornire i dati dell'ordine è necessario per evaderlo.",
         ],
       },
@@ -285,6 +287,7 @@ export const LEGAL_PAGES = {
         body: [
           "Dati dell'ordine e documenti contabili: 10 anni, come previsto dall'art. 2220 del Codice civile.",
           "Richieste di assistenza: fino a 24 mesi dall'ultima comunicazione. Dati dell'account: fino alla sua cancellazione.",
+          "Iscrizione alle novità: finché non ti cancelli. Un'iscrizione non confermata entro 30 giorni viene eliminata; dopo la cancellazione conserviamo l'email con la data in cui l'hai chiesta, solo per non scriverti più.",
         ],
       },
       {
@@ -292,8 +295,8 @@ export const LEGAL_PAGES = {
         body: [
           "Stripe Payments Europe Ltd. (Irlanda), per l'elaborazione dei pagamenti.",
           "Vercel Inc. (Stati Uniti), per l'hosting del sito e le statistiche aggregate e anonime di visita.",
-          "Supabase, Inc. (Stati Uniti), per la gestione degli ordini, degli account, delle giacenze e delle richieste di notifica disponibilità.",
-          "Resend Inc. (Stati Uniti), per l'invio delle email relative ad ordini, spedizioni e notifiche di disponibilità.",
+          "Supabase, Inc. (Stati Uniti), per la gestione degli ordini, degli account, delle giacenze, delle richieste di notifica disponibilità e delle iscrizioni alle novità.",
+          "Resend Inc. (Stati Uniti), per l'invio delle email relative ad ordini, spedizioni, notifiche di disponibilità e novità.",
           "Google Ireland Limited (Irlanda), per le statistiche di Google Analytics e, se accetti il marketing, per le pubblicità di Google Ads, solo con il tuo consenso. Se dopo un acquisto scegli di partecipare al sondaggio Google Customer Reviews, Google riceve la tua email, il numero d'ordine e la data di consegna prevista per mandarti il sondaggio: il programma è di Google e segue la sua informativa privacy. Senza quel clic non riceve nulla.",
           "L'email lasciata per ricevere una notifica di disponibilità è usata esclusivamente per quella notifica e viene eliminata dopo l'invio o entro sei mesi dalla registrazione. Il tracciamento di un ordine tramite numero d'ordine ed email mostra unicamente lo stato dell'ordine e il numero di spedizione.",
           "Corrieri, per la consegna, e consulenti fiscali, per gli adempimenti contabili.",

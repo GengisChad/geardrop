@@ -7,11 +7,8 @@ export const NEW_RELEASES_HERO_TITLE = "Beyblade X\noriginali,\ndisponibili in I
 /** Headline while the hero deals the owner's spotlight (2026-11-06). */
 export const SPOTLIGHT_HERO_TITLE = "Takara Tomy\nappena arrivati.";
 
-/**
- * Headline while the spotlight also deals the red Phoenix promotion (owner, 2026-11-13): it is a
- * Hasbro piece, so the Takara Tomy headline alone would claim it. Gone with the last piece.
- */
-export const PROMO_SPOTLIGHT_HERO_TITLE = "Phoenix in offerta,\nTakara Tomy\nappena arrivati.";
+/** Headline while the promotions and bundles on sale open the page (owner, 2026-11-13). */
+export const PROMOS_HERO_TITLE = "Promo e bundle\nattivi adesso.";
 
 /**
  * Split a hero headline into rendered lines, with the last line carrying the holographic accent.
