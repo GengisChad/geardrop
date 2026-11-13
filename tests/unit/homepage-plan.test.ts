@@ -45,8 +45,9 @@ describe("homepage plan", () => {
 
     it("opens on every promotion and bundle on sale, then the spotlight's row, then the best sellers", () => {
       const plan = homepagePlan(offers, 1, best, spotlight);
-      // Superion is on offer but sold out: it is not dealt. The limit does not cut the promotions.
-      expect(slugs(plan.hero)).toEqual(["duo", "enlil"]);
+      // Superion is on offer but sold out: it is not dealt. The limit does not cut the promotions,
+      // and the single piece leads the bundle although the catalogue lists the bundle first.
+      expect(slugs(plan.hero)).toEqual(["enlil", "duo"]);
       expect(plan.heroIsPromos).toBe(true);
       expect(plan.heroIsSpotlight).toBe(false);
       expect(plan.heroIsBestsellers).toBe(false);

@@ -79,7 +79,10 @@ export function homepagePlan<T extends PlannedProduct>(
   const onSaleOf = (slugs: readonly string[]) =>
     slugs.map((slug) => bySlug.get(slug)).filter((product): product is T => product !== undefined && onSale(product));
   // Owner, 2026-11-13: the first section is the promotions and bundles on sale, before everything else.
-  const promos = promosFirst ? products.filter((product) => onSale(product) && product.tags.includes("offerta")) : [];
+  // Single pieces on offer lead their bundles, whatever order the catalogue lists them in: they are
+  // the promotion the owner names first (the loose Phoenix), and the pitch lists them first too.
+  const offered = promosFirst ? products.filter((product) => onSale(product) && product.tags.includes("offerta")) : [];
+  const promos = [...offered.filter((product) => !product.bundleOf), ...offered.filter((product) => product.bundleOf)];
   const heroIsPromos = promos.length > 0;
   const lead = onSaleOf(spotlight);
   const best = onSaleOf(bestsellers).slice(0, heroLimit);
