@@ -54,6 +54,13 @@ export const SPOTLIGHT_SLUGS: readonly string[] = [
 ];
 
 /**
+ * The promotion that opens the first row (owner, 2026-11-13: the loose Phoenix leads while it lasts).
+ * Kept by hand: without it a spotlight piece that goes on offer, like the Brachio Whip on 2026-11-15,
+ * would pass it, because the shop lists the spotlight before everything else.
+ */
+export const PROMO_LEAD_SLUGS: readonly string[] = ["soar-phoenix-9-60gf-solo-trottola"];
+
+/**
  * The homepage in the owner's order (2026-10-05): the best sellers lead, then the new releases
  * still on pre-order, then what ships right away (single pieces, then bundles, then
  * accessories), then everything else with sold-out pieces last. Every product appears once.
@@ -82,7 +89,9 @@ export function homepagePlan<T extends PlannedProduct>(
   // Single pieces on offer lead their bundles, whatever order the catalogue lists them in: they are
   // the promotion the owner names first (the loose Phoenix), and the pitch lists them first too.
   const offered = promosFirst ? products.filter((product) => onSale(product) && product.tags.includes("offerta")) : [];
-  const promos = [...offered.filter((product) => !product.bundleOf), ...offered.filter((product) => product.bundleOf)];
+  const leads = (product: T) => PROMO_LEAD_SLUGS.includes(product.slug);
+  const singles = offered.filter((product) => !product.bundleOf);
+  const promos = [...singles.filter(leads), ...singles.filter((product) => !leads(product)), ...offered.filter((product) => product.bundleOf)];
   const heroIsPromos = promos.length > 0;
   const lead = onSaleOf(spotlight);
   const best = onSaleOf(bestsellers).slice(0, heroLimit);
