@@ -185,10 +185,14 @@ export const PRODUCTS: readonly Product[] = [
     boxContents: ["1 × Trottola a caso tra le cinque varianti", "Istruzioni in giapponese"],
     relatedSlugs: ["cx-18-random-booster-brachio-whip", "string-launcher-takara-tomy", "winder-launcher-takara-tomy"],
   },
+  // The owner, 2026-11-15: Brachio Whip down to 28,00 and on promotion. The struck-through 30,00 is
+  // the only price it has had since it was listed on 2026-11-06, so it is the lowest of the previous
+  // 30 days, as Italian law asks of an announced reduction. "offerta" comes first: the card shows
+  // the first tag, and the piece is still a new release.
   {
     slug: "cx-18-random-booster-brachio-whip", name: "CX-18 Random Booster Brachio Whip Select", tagline: "Uno di tre colori, a sorpresa.",
     description: "CX-18 è la Random Booster di Takara Tomy dedicata a Brachio Whip OW5-70Nr, trottola della Custom Line con Expand Blade che Takara Tomy classifica stamina: blade spessa e rotonda con il peso verso l'esterno, e Bit Nr (Narrow) per perdere meno rotazione. In ogni scatola ce n'è una sola, sigillata: la trottola è sempre questa, a caso è solo il colore (viola, oro o nera), che non si sceglie. Rotazione destra. Il lanciatore non è incluso. Richiede lanciatore e Beystadium Beyblade X (venduti a parte). Prodotto originale giapponese, confezione in giapponese con etichetta in cinese.",
-    price: eur(3000), category: "beyblade-x", brand: "takara-tomy", stock: "disponibile", availableQuantity: 20, tags: ["novita"], rating: 0, reviewCount: 0,
+    price: eur(2800), compareAtPrice: eur(3000), category: "beyblade-x", brand: "takara-tomy", stock: "disponibile", availableQuantity: 20, tags: ["offerta", "novita"], rating: 0, reviewCount: 0,
     images: productImages["cx-18-random-booster-brachio-whip"],
     specs: [{ label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "CX (Expand Blade)" }, { label: "Codice", value: "OW5-70Nr" }, { label: "Contenuto", value: "1 trottola, a caso solo il colore: viola, oro o nera" }, { label: "Componenti", value: "Lock Chip Brachio, Over Blade Outer, Metal Blade Whip, Assist Blade Wheel, Ratchet 5-70, Bit Narrow" }, { label: "Rotazione", value: "Destra" }, { label: "Confezione", value: "Sigillata, in giapponese, con etichetta in cinese" }, { label: "Età", value: "Dai 6 anni (indicazione della confezione)" }, { label: "Nota", value: "Richiede lanciatore e Beystadium (venduti a parte)" }],
     features: [{ title: "Uno di tre colori", description: "Stessa trottola, a caso solo il colore: viola, oro o nera" }, { title: "Peso verso l'esterno", description: "Blade spessa e rotonda, pensata per durare" }, { title: "Bit Narrow", description: "Punta sottile e tonda, perde poca rotazione" }, { title: "Da sapere prima di comprare", description: "Solo la trottola: il lanciatore non è incluso" }],

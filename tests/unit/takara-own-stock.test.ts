@@ -5,8 +5,10 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { PRODUCTS, SHIPPING_METHODS, brandOf, partnerLines, shippingBrandOf, shippingMethodsFor } from "@/data/catalog";
-import { createMockProvider } from "@/lib/commerce/mock-provider";
+import { STOREFRONT_CATALOGUE, createMockProvider } from "@/lib/commerce/mock-provider";
 import { orderChoices } from "@/lib/commerce/order-choices";
+import { oneCardPerFamily } from "@/lib/commerce/variants";
+import { homepagePlan } from "@/lib/home/product-selection";
 
 /** What the owner listed: selling price in cents and pieces on the shelf. */
 const OWNER_LIST: Readonly<Record<string, { readonly price: number; readonly stock: number }>> = {
@@ -16,6 +18,11 @@ const OWNER_LIST: Readonly<Record<string, { readonly price: number; readonly sto
   "long-winder-launcher-takara-tomy": { price: 2000, stock: 6 },
   "string-launcher-takara-tomy": { price: 1699, stock: 9 },
   "winder-launcher-takara-tomy": { price: 1299, stock: 33 },
+};
+
+/** What sells below its listing price today. The owner, 2026-11-15: the Brachio at 28,00, on promotion. */
+const PROMOTIONS: Readonly<Record<string, number>> = {
+  "cx-18-random-booster-brachio-whip": 2800,
 };
 
 const pieces = PRODUCTS.filter((product) => product.slug in OWNER_LIST);
@@ -28,7 +35,7 @@ describe("the owner's list", () => {
     expect(pieces).toHaveLength(Object.keys(OWNER_LIST).length);
     for (const product of pieces) {
       const listed = OWNER_LIST[product.slug]!;
-      expect(product.price.amount, product.slug).toBe(listed.price);
+      expect(product.price.amount, product.slug).toBe(PROMOTIONS[product.slug] ?? listed.price);
       expect(product.availableQuantity, product.slug).toBe(listed.stock);
       expect(product.stock, product.slug).toBe("disponibile");
       expect(brandOf(product), product.slug).toBe("takara-tomy");
@@ -40,6 +47,47 @@ describe("the owner's list", () => {
     const slugs = page.items.map((product) => product.slug);
     expect(slugs).toEqual(expect.arrayContaining(Object.keys(OWNER_LIST)));
     expect(slugs.indexOf("winder-launcher-takara-tomy")).toBeLessThan(slugs.indexOf(consignmentPiece.slug));
+  });
+});
+
+describe("the Brachio Whip promotion (owner, 2026-11-15)", () => {
+  const SLUG = "cx-18-random-booster-brachio-whip";
+  const brachio = piece(SLUG);
+
+  it("sells at 28,00 against the 30,00 it was listed at, under the offer tag and still a new release", () => {
+    expect(brachio.price.amount).toBe(2800);
+    // The listing price is the only one it has had: the lowest of the previous 30 days.
+    expect(brachio.compareAtPrice?.amount).toBe(OWNER_LIST[SLUG]!.price);
+    // The card shows the first tag.
+    expect(brachio.tags).toEqual(["offerta", "novita"]);
+  });
+
+  it("joins the promotions on the first screen, after the loose Phoenix and before the bundles", () => {
+    const plan = homepagePlan(oneCardPerFamily(STOREFRONT_CATALOGUE), 5);
+    const slugs = plan.hero.map((product) => product.slug);
+    expect(plan.heroIsPromos).toBe(true);
+    expect(slugs).toContain(SLUG);
+    expect(slugs.indexOf(SLUG)).toBeGreaterThan(slugs.indexOf("soar-phoenix-9-60gf-solo-trottola"));
+    expect(slugs.indexOf(SLUG)).toBeLessThan(plan.hero.findIndex((product) => product.bundleOf));
+    expect(plan.spotlight.map((product) => product.slug)).not.toContain(SLUG);
+  });
+
+  it("tells Google the sale price next to the full one", async () => {
+    const { GET } = await import("@/app/google-merchant.xml/route");
+    const xml = await (await GET()).text();
+    const chunk = xml.split("<item>").find((item) => item.includes(`<g:id>${SLUG}</g:id>`)) ?? "";
+    expect(chunk).toContain("<g:price>30.00 EUR</g:price>");
+    expect(chunk).toContain("<g:sale_price>28.00 EUR</g:sale_price>");
+  });
+
+  it("is mirrored by its migration: price, struck-through price and offer tag, stock untouched", () => {
+    const promo = readFileSync("supabase/migrations/20261115120000_brachio_whip_promo.sql", "utf8");
+    expect(promo).toContain(`where slug = '${SLUG}'`);
+    expect(promo).toContain("price_cents = 2800");
+    expect(promo).toContain("compare_at_price_cents = 3000");
+    expect(promo).toContain("'offerta'::public.promo_tag");
+    expect(promo).toContain("on conflict (product_id, tag) do nothing");
+    expect(promo).not.toContain("stock_quantity");
   });
 });
 

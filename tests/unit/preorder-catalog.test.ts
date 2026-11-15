@@ -20,7 +20,8 @@ describe("reviewed catalogue", () => {
       { slug: "soar-phoenix-9-60gf-solo-trottola", price: 1299, stock: "disponibile", availableQuantity: 2, rating: 0, reviewCount: 0 },
       // Takara Tomy pieces on the shop's own shelf (owner, 2026-11-06).
       { slug: "bx-48-random-booster-vol-9", price: 3699, stock: "disponibile", availableQuantity: 6, rating: 0, reviewCount: 0 },
-      { slug: "cx-18-random-booster-brachio-whip", price: 3000, stock: "disponibile", availableQuantity: 20, rating: 0, reviewCount: 0 },
+      // On promotion at 28,00 since 2026-11-15 (was 30,00).
+      { slug: "cx-18-random-booster-brachio-whip", price: 2800, stock: "disponibile", availableQuantity: 20, rating: 0, reviewCount: 0 },
       { slug: "custom-grip-takara-tomy", price: 2599, stock: "disponibile", availableQuantity: 15, rating: 0, reviewCount: 0 },
       { slug: "long-winder-launcher-takara-tomy", price: 2000, stock: "disponibile", availableQuantity: 6, rating: 0, reviewCount: 0 },
       { slug: "string-launcher-takara-tomy", price: 1699, stock: "disponibile", availableQuantity: 9, rating: 0, reviewCount: 0 },
