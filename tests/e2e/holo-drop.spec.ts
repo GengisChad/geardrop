@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * Regression cover for the Holo Drop look: the translucent sticky header, the holographic
- * card interaction and the layering of the header above the hero. The assertions read
- * computed styles, custom properties and real hit-testing, so a refactor that silently drops
- * an effect fails here instead of on the public domain.
+ * Regression cover for the storefront look (Holo Drop, restyled as X-Rail on 2026-10-23): the
+ * translucent sticky header, the catalogue card's hover and the layering of the header above
+ * the hero. The assertions read computed styles and real hit-testing, so a refactor that
+ * silently drops an effect fails here instead of on the public domain.
  */
 
 const VIEWPORTS = [
@@ -25,33 +25,30 @@ test.describe("holo drop storefront", () => {
     });
 
     expect(material.backdrop).toMatch(/blur\((?!0px)/);
-    // Tailwind mixes `bg-void/80` in oklab; either notation must carry an alpha below 1.
+    // Tailwind mixes `bg-void/90` in oklab; either notation must carry an alpha below 1.
     expect(material.background).toMatch(/(?:rgba\(.*,\s*0?\.\d+\)|\/\s*0?\.\d+\))$/);
     expect(material.position).toBe("sticky");
   });
 
-  test("a catalogue card tilts and lights its foil under the pointer", async ({ page, isMobile }) => {
-    test.skip(isMobile, "the pointer effects belong to hover devices; touch gets the automatic sweep");
+  test("a catalogue card lights its rim and turns its top under the pointer", async ({ page, isMobile }) => {
+    test.skip(isMobile, "hover belongs to pointer devices");
     await page.goto("/negozio");
 
     const card = page.getByTestId("product-card").first();
     await expect(card).toBeVisible();
     await card.scrollIntoViewIfNeeded();
-    const surface = card.locator("xpath=..");
-    const shine = surface.locator(".gd-holo-shine");
-    await expect(shine).toBeHidden();
+    const packshot = card.locator("img").first();
+    await expect.poll(() => packshot.evaluate((element) => getComputedStyle(element).rotate)).toMatch(/^(none|0deg)$/);
 
-    const box = await surface.boundingBox();
+    const box = await card.boundingBox();
     expect(box).not.toBeNull();
-    await page.mouse.move(box!.x + box!.width * 0.3, box!.y + box!.height * 0.6);
-    await page.mouse.move(box!.x + box!.width * 0.78, box!.y + box!.height * 0.22, { steps: 6 });
+    await page.mouse.move(box!.x + box!.width * 0.5, box!.y + box!.height * 0.3);
 
-    await expect(shine).toBeVisible();
-    await expect.poll(() => surface.evaluate((element) => element.style.getPropertyValue("--o"))).toBe("1");
-    await expect.poll(() => surface.evaluate((element) => element.style.getPropertyValue("--ry"))).not.toMatch(/^(0deg)?$/);
+    await expect.poll(() => card.evaluate((element) => getComputedStyle(element).borderTopColor)).toBe("rgb(198, 255, 0)");
+    await expect.poll(() => packshot.evaluate((element) => getComputedStyle(element).rotate)).toBe("-5deg");
 
     await page.mouse.move(2, 2);
-    await expect.poll(() => surface.evaluate((element) => element.style.getPropertyValue("--o"))).toBe("0");
+    await expect.poll(() => packshot.evaluate((element) => getComputedStyle(element).rotate)).toMatch(/^(none|0deg)$/);
   });
 
   test("reduced motion keeps the cards still", async ({ page, isMobile }) => {
@@ -62,13 +59,12 @@ test.describe("holo drop storefront", () => {
     const card = page.getByTestId("product-card").first();
     await expect(card).toBeVisible();
     await card.scrollIntoViewIfNeeded();
-    const surface = card.locator("xpath=..");
-    const box = await surface.boundingBox();
+    const box = await card.boundingBox();
     expect(box).not.toBeNull();
-    await page.mouse.move(box!.x + box!.width * 0.2, box!.y + box!.height * 0.2);
-    await page.mouse.move(box!.x + box!.width * 0.8, box!.y + box!.height * 0.8, { steps: 6 });
+    await page.mouse.move(box!.x + box!.width * 0.5, box!.y + box!.height * 0.3);
 
-    expect(await surface.evaluate((element) => element.style.getPropertyValue("--ry"))).toBe("");
+    await expect.poll(() => card.evaluate((element) => getComputedStyle(element).borderTopColor)).toBe("rgb(198, 255, 0)");
+    expect(await card.locator("img").first().evaluate((element) => getComputedStyle(element).rotate)).toMatch(/^(none|0deg)$/);
   });
 
   for (const viewport of VIEWPORTS) {

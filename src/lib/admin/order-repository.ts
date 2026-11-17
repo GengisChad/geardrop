@@ -79,7 +79,7 @@ export async function loadAdminOrderDetail(client: SupabaseClient<Database>, org
 }
 
 export async function listAdminOrdersForCsv(client: SupabaseClient<Database>, organizationId: number, query: AdminOrderQuery) {
-  let builder = client.from("orders").select("id,order_number,email,created_at,status,payment_status,shipping_method_code,coupon_code,subtotal_cents,discount_cents,shipping_cents,total_cents,currency,shipping_address_snapshot").eq("organization_id", organizationId);
+  let builder = client.from("orders").select("id,order_number,email,created_at,status,payment_status,shipping_method_code,coupon_code,subtotal_cents,discount_cents,shipping_cents,total_cents,currency,shipping_address_snapshot,notes").eq("organization_id", organizationId);
   if (query.q) { const pattern = `%${escapePattern(query.q)}%`; builder = builder.or(`order_number.ilike.${pattern},email.ilike.${pattern}`); }
   if (query.from) builder = builder.gte("created_at", `${query.from}T00:00:00.000Z`);
   if (query.to) builder = builder.lt("created_at", exclusiveEnd(query.to));
@@ -137,7 +137,7 @@ export async function listPreorderOrders(client: SupabaseClient<Database>, organ
     client.from("order_items").select("order_id,sku_snapshot,product_name_snapshot,quantity,preorder_quantity").eq("organization_id", organizationId).in("order_id", orderIds),
     client
       .from("orders")
-      .select("id,order_number,created_at,status,payment_status,email,phone,total_cents,shipped_at,tracking_code,shipping_address_snapshot")
+      .select("id,order_number,created_at,status,payment_status,email,phone,total_cents,shipped_at,tracking_code,shipping_address_snapshot,notes")
       .eq("organization_id", organizationId)
       .in("id", orderIds)
       .eq("payment_status", "paid"),

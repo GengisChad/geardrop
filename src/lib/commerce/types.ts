@@ -9,9 +9,9 @@
 import type { ProductImage, ProductSlug } from "@/data/assets";
 
 /**
- * Which manufacturer's line the product comes from. Absent means Hasbro (the default
- * and the only line in the catalogue today). Takara Tomy items are consignment stock
- * from our partner and ship from his warehouse.
+ * Which manufacturer's line the product comes from. Absent means Hasbro (the default).
+ * Takara Tomy items are either the shop's own stock or consignment stock from our partner
+ * (see Product.consignment): the brand says who made a piece, not where it ships from.
  */
 export type BrandSlug = "hasbro" | "takara-tomy";
 
@@ -122,13 +122,14 @@ export type Product = {
    */
   readonly unofficial?: true;
   /**
-   * Which manufacturer's line the product belongs to. Absent means Hasbro. Takara Tomy items
-   * arrive on consignment from our partner and are shipped from his warehouse.
+   * Which manufacturer's line the product belongs to. Absent means Hasbro. It says nothing about
+   * shipping: that follows `consignment`.
    */
   readonly brand?: BrandSlug;
   /**
-   * True for partner-stocked, partner-shipped items (all Takara Tomy pieces). The shop never
-   * holds this stock: the order is passed straight to the partner and he ships it.
+   * True for partner-stocked, partner-shipped items (the Takara Tomy limited editions). The shop
+   * never holds this stock: the order is passed straight to the partner and he ships it. Takara
+   * Tomy pieces the shop bought itself (owner, 2026-11-06) do not set it and ship like Hasbro ones.
    */
   readonly consignment?: true;
   /**
@@ -153,6 +154,9 @@ export type CartTotals = {
   readonly freeShippingRemaining: number;
 };
 
+/** Why a cart cannot switch method: the partner's own route, two warehouses, or a box no Locker takes. */
+export type ShippingLockReason = "partner" | "mixed" | "bulky";
+
 /** A delivery option the backend currently sells. Never a hardcoded UI constant. */
 export type ShippingOption = {
   readonly code: string;
@@ -161,9 +165,12 @@ export type ShippingOption = {
   readonly price: Money;
   /**
    * True when the cart's composition forces exactly this method and the buyer cannot switch.
-   * A Takara-only cart locks to the partner's Poste route; a mixed cart locks to InPost point.
+   * A Takara-only cart locks to the partner's Poste route, a mixed cart to the InPost Locker and a
+   * cart with a stadium box to Poste to the door.
    */
   readonly locked?: boolean;
+  /** Set with `locked`: what forced the method, so the checkout can tell the buyer. */
+  readonly lockReasons?: readonly ShippingLockReason[];
 };
 
 export type CartQuoteLine = {
@@ -182,6 +189,10 @@ export type CartQuoteLine = {
   readonly releasePreorder?: true;
   /** Units of this line that are not on the shelf and ship as a pre-order. */
   readonly preorderQuantity?: number;
+  /** Set when a code in the cart lowers this line: what one unit costs with the code. */
+  readonly clubUnitPrice?: Money;
+  /** Set on a deck case line that a kit in the cart makes cheaper: what one unit costs (€15). */
+  readonly kitUnitPrice?: Money;
   /** Italian sentence when this line cannot be ordered as requested, else null. */
   readonly issue: string | null;
 };
@@ -212,6 +223,11 @@ export type CartQuote = {
   readonly freeShippingThreshold: number | null;
   readonly couponCode: string | null;
   readonly couponError: string | null;
+  /**
+   * Set while the code holds only for some buyers and the email is not known yet: what the buyer is
+   * told. Express checkout cannot take such a code, because Stripe asks for the email after the price.
+   */
+  readonly couponBuyerNote?: string;
   readonly orderIntake: OrderIntake;
   /** True only when every line is orderable and a shipping option exists. */
   readonly orderable: boolean;
@@ -219,12 +235,16 @@ export type CartQuote = {
   readonly notice: string | null;
   /** Set when Stripe takes the payment for this cart; checkout then hands the buyer to Stripe. */
   readonly payment?: "stripe";
+  /** Kits in the cart still without a deck case at the kit price: how many more cases cost €15. */
+  readonly kitDeckSlots?: number;
 };
 
 export type CartQuoteRequest = {
   readonly lines: readonly CartLine[];
   readonly shippingCode?: string;
   readonly couponCode?: string;
+  /** The buyer's email, once the checkout form has it: a code tied to a buyer is checked against it. */
+  readonly buyerEmail?: string;
 };
 
 export type SortKey = "popolari" | "novita" | "prezzo-asc" | "prezzo-desc" | "nome";

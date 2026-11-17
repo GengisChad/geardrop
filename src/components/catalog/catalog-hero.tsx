@@ -18,7 +18,7 @@ export function CatalogHero({ title, tagline, description, crumbs }: CatalogHero
       <div className="gd-streaks absolute inset-0" aria-hidden="true" />
       <div
         aria-hidden="true"
-        className="absolute -right-16 top-1/2 size-[30rem] -translate-y-1/2 rounded-full bg-violet/12 blur-3xl"
+        className="hidden absolute -right-16 top-1/2 size-[30rem] -translate-y-1/2 rounded-full bg-violet/12 blur-3xl"
       />
 
       <div className="relative mx-auto max-w-[1400px] px-5 py-8 sm:px-8 lg:py-12">

@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, ZoomIn } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { PromoBadge } from "@/components/ui/badge";
+import { SharedPackshot } from "@/components/product/shared-packshot";
+import { ProductClipPlayer } from "@/components/product/product-clip";
 import { ProductZoom } from "@/components/product/product-zoom";
 import { WishlistButton } from "@/components/product/wishlist-button";
-import { cutoutSrc, type ProductImage } from "@/data/assets";
+import { cutoutSrc, type ProductClip, type ProductImage } from "@/data/assets";
 import type { PromoTag } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
 
@@ -16,15 +18,26 @@ type GalleryProps = {
   slug: string;
   name: string;
   promo?: PromoTag;
+  /** The part number printed large behind the packshot ("9-60"). */
+  mark?: string;
+  /** The pack's colours (lib/holo.ts), which tint the plate. */
+  style?: CSSProperties;
+  /** A motion-designed clip, offered after the photos (data/assets productClips). */
+  clip?: ProductClip;
+  /** The name the first photo shares with its catalogue card (lib/view-transitions.ts). */
+  transitionName?: string | undefined;
 };
 
-export function Gallery({ images, slug, name, promo }: GalleryProps) {
+export function Gallery({ images, slug, name, promo, mark, style, clip, transitionName }: GalleryProps) {
   const [index, setIndex] = useState(0);
   const [zoomOpen, setZoomOpen] = useState(false);
-  const active = images[index];
-  const many = images.length > 1;
+  // The clip, when there is one, is the last item: after every photo.
+  const count = images.length + (clip ? 1 : 0);
+  const showingClip = clip !== undefined && index === images.length;
+  const active = images[showingClip ? 0 : index];
+  const many = count > 1;
 
-  const step = (delta: number) => setIndex((current) => (current + delta + images.length) % images.length);
+  const step = (delta: number) => setIndex((current) => (current + delta + count) % count);
 
   if (!active) return null;
 
@@ -35,7 +48,7 @@ export function Gallery({ images, slug, name, promo }: GalleryProps) {
      * On lg with 2+ images the thumbnails switch to a vertical strip on the left of the
      * main image; on mobile they keep the horizontal row below it.
      */
-    <div className="flex flex-col gap-3 lg:sticky lg:top-[calc(4.5rem+1.5rem)] lg:self-start">
+    <div style={style} className="flex flex-col gap-3 lg:sticky lg:top-[calc(4.5rem+1.5rem)] lg:self-start">
       <div className={cn("flex flex-col gap-3", many && "lg:flex-row lg:items-start")}>
         {/* Vertical thumbnail strip — hidden on mobile, shown on lg when there are 2+ images */}
         {many ? (
@@ -48,20 +61,33 @@ export function Gallery({ images, slug, name, promo }: GalleryProps) {
                   aria-label={`Immagine ${i + 1} di ${images.length}`}
                   aria-current={i === index}
                   className={cn(
-                    "gd-glass-compact relative size-16 overflow-hidden rounded-lg border-2 transition-colors",
-                    i === index ? "border-violet" : "border-grey-200 hover:border-grey-400",
+                    "relative size-16 overflow-hidden border-2 bg-surface transition-colors",
+                    i === index ? "border-lime" : "border-white/10 hover:border-white/30",
                   )}
                 >
                   <Image src={cutoutSrc(image.src) ?? image.src} alt="" aria-hidden="true" fill sizes="64px" className="object-contain p-1.5" />
                 </button>
               </li>
             ))}
+            {clip ? <ClipThumb clip={clip} selected={showingClip} onSelect={() => setIndex(images.length)} /> : null}
           </ul>
         ) : null}
 
         <div data-testid="product-gallery" className="gd-glass-panel relative overflow-hidden rounded-[--radius-glass] lg:flex-1">
         {/* The cut-out floats in a dark art window tinted like the holographic cards. */}
-        <div className="gd-product-plate relative m-2 aspect-square overflow-hidden rounded-[calc(var(--radius-glass)-0.45rem)] sm:m-3">
+        <div className="gd-product-plate aspect-square overflow-hidden">
+          {mark && !showingClip ? (
+            <span
+              aria-hidden="true"
+              className="gd-watermark left-4 top-2 animate-[gd-mark-in_0.9s_var(--ease-out-gear)_0.15s_both] text-[5.5rem] [-webkit-text-stroke-width:1.6px] motion-reduce:animate-none sm:left-6 sm:text-[9rem] sm:[-webkit-text-stroke-width:2px] xl:text-[10.5rem]"
+            >
+              {mark}
+            </span>
+          ) : null}
+          {showingClip ? (
+            <ProductClipPlayer clip={clip} name={name} />
+          ) : (
+          <>
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={active.src}
@@ -71,15 +97,17 @@ export function Gallery({ images, slug, name, promo }: GalleryProps) {
               transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
               className="absolute inset-0"
             >
-              <Image
-                src={cutoutSrc(active.src) ?? active.src}
-                alt={active.alt}
-                fill
-                priority
-                quality={90}
-                sizes="(min-width: 1400px) 720px, (min-width: 1024px) calc(100vw - 660px), 92vw"
-                className="object-contain p-6 drop-shadow-[0_24px_28px_rgba(0,0,0,0.55)] sm:p-10"
-              />
+              <SharedPackshot name={index === 0 ? transitionName : undefined}>
+                <Image
+                  src={cutoutSrc(active.src) ?? active.src}
+                  alt={active.alt}
+                  fill
+                  priority
+                  quality={90}
+                  sizes="(min-width: 1400px) 720px, (min-width: 1024px) calc(100vw - 660px), 92vw"
+                  className="object-contain p-6 drop-shadow-[0_24px_28px_rgba(0,0,0,0.55)] sm:p-10"
+                />
+              </SharedPackshot>
             </motion.div>
           </AnimatePresence>
           <button
@@ -90,14 +118,16 @@ export function Gallery({ images, slug, name, promo }: GalleryProps) {
             data-testid="product-zoom-open"
             className="group absolute inset-0 cursor-zoom-in"
           >
-            <span className="gd-glass-compact absolute bottom-3 right-3 inline-flex size-10 items-center justify-center rounded-full text-graphite transition-colors group-hover:text-violet-soft">
+            <span className="absolute bottom-3 right-3 inline-flex size-11 items-center justify-center border border-white/15 bg-void/65 text-graphite transition-colors group-hover:border-lime group-hover:text-lime">
               <ZoomIn className="size-4" aria-hidden="true" />
             </span>
           </button>
+          </>
+          )}
         </div>
 
-        {promo ? (
-          <span className="absolute left-4 top-4">
+        {promo && !showingClip ? (
+          <span className="pointer-events-none absolute bottom-5 left-5">
             <PromoBadge tag={promo} />
           </span>
         ) : null}
@@ -117,16 +147,17 @@ export function Gallery({ images, slug, name, promo }: GalleryProps) {
 
       <ProductZoom
         images={images}
-        index={index}
+        index={showingClip ? 0 : index}
         name={name}
         open={zoomOpen}
         onClose={() => setZoomOpen(false)}
         onIndexChange={setIndex}
       />
 
-      {/* Horizontal thumbnails: only on mobile; lg uses the vertical strip above */}
+      {/* Horizontal thumbnails: only on mobile; lg uses the vertical strip above. They wrap: a row of
+          six would otherwise push the whole page wider than a phone. */}
       {many ? (
-        <ul className="flex gap-2.5 lg:hidden">
+        <ul className="flex flex-wrap gap-2.5 lg:hidden">
           {images.map((image, i) => (
             <li key={image.src}>
               <button
@@ -135,17 +166,43 @@ export function Gallery({ images, slug, name, promo }: GalleryProps) {
                 aria-label={`Immagine ${i + 1} di ${images.length}`}
                 aria-current={i === index}
                 className={cn(
-                  "gd-glass-compact relative size-16 overflow-hidden rounded-lg border-2 transition-colors sm:size-20",
-                  i === index ? "border-violet" : "border-grey-200 hover:border-grey-400",
+                  "relative size-16 overflow-hidden border-2 bg-surface transition-colors sm:size-20",
+                  i === index ? "border-lime" : "border-white/10 hover:border-white/30",
                 )}
               >
                 <Image src={cutoutSrc(image.src) ?? image.src} alt="" aria-hidden="true" fill sizes="80px" className="object-contain p-1.5" />
               </button>
             </li>
           ))}
+          {clip ? <ClipThumb clip={clip} selected={showingClip} onSelect={() => setIndex(images.length)} large /> : null}
         </ul>
       ) : null}
     </div>
+  );
+}
+
+/** The clip's thumbnail: its poster, marked "Clip" on a lime band. Lazy, unlike the first photo. */
+function ClipThumb({ clip, selected, onSelect, large = false }: { clip: ProductClip; selected: boolean; onSelect: () => void; large?: boolean }) {
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-label="Clip del prodotto"
+        aria-current={selected}
+        className={cn(
+          "relative size-16 overflow-hidden border-2 bg-surface transition-colors",
+          large && "sm:size-20",
+          selected ? "border-lime" : "border-white/10 hover:border-white/30",
+        )}
+      >
+        <Image src={clip.poster} alt="" aria-hidden="true" fill sizes="80px" className="object-cover" />
+        <span className="gd-mono absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-lime py-0.5 text-[0.5625rem] font-bold uppercase text-void">
+          <Play className="size-2.5 fill-current" aria-hidden="true" />
+          Clip
+        </span>
+      </button>
+    </li>
   );
 }
 
@@ -157,8 +214,8 @@ function GalleryArrow({ direction, onClick }: { direction: "prev" | "next"; onCl
       onClick={onClick}
       aria-label={direction === "prev" ? "Immagine precedente" : "Immagine successiva"}
       className={cn(
-        "absolute top-1/2 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full",
-        "gd-glass-compact text-graphite transition-colors hover:border-violet hover:text-violet-soft",
+        "absolute top-1/2 inline-flex size-11 -translate-y-1/2 items-center justify-center",
+        "border border-white/15 bg-void/65 text-graphite transition-colors hover:border-lime hover:text-lime",
         direction === "prev" ? "left-3" : "right-3",
       )}
     >

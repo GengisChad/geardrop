@@ -22,7 +22,7 @@ import { storefrontOrganizationId } from "@/lib/org/storefront";
 import { getCommerceProvider, resolveCommerceProviderName } from "@/lib/commerce/provider";
 import type { CartQuote, Money } from "@/lib/commerce/types";
 import { createStripeCheckout, openQuoteForStripe, stripeCheckoutEnabled, STRIPE_UNAVAILABLE_MESSAGE } from "@/lib/payments/stripe-checkout";
-import { EXPRESS_CHECKOUT_LOCKED_MESSAGE } from "@/lib/payments/express-checkout";
+import { EXPRESS_CHECKOUT_LOCKED_MESSAGE, EXPRESS_CODE_NEEDS_EMAIL_MESSAGE, EXPRESS_LOCKER_MISSING_MESSAGE } from "@/lib/payments/express-checkout";
 import { authRedirectUrl, PRODUCTION_ORIGIN } from "@/lib/site-url";
 import { createSupabasePublicClient } from "@/lib/supabase/public";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -90,9 +90,13 @@ export async function submitOrder(input: PlaceOrderInput): Promise<PlaceOrderRes
         await provider.quoteCart({
           lines: toQuoteLines(parsed.data.lines),
           shippingCode: parsed.data.contact.shippingMethod,
+          ...(parsed.data.couponCode ? { couponCode: parsed.data.couponCode } : {}),
+          buyerEmail: parsed.data.contact.email,
         }),
       );
       if (!quote.orderable) return { ok: false, message: quote.notice ?? CHECKOUT_FALLBACK_MESSAGE };
+      const refusedCode = codeRefused(parsed.data.couponCode, quote);
+      if (refusedCode) return { ok: false, message: refusedCode };
 
       // The quote may have overridden a stale submitted code: re-validate the pickup point
       // against what the quote actually selected (not what the browser sent).
@@ -145,6 +149,15 @@ async function orderIntakeBlock(options: { readonly acceptOrders: boolean }): Pr
       "Non riusciamo a verificare lo stato del negozio. Riprova tra qualche minuto."
     );
   }
+}
+
+/**
+ * A buyer who typed a code must not be charged full price without being told: when the quote
+ * did not take the code, the payment waits and the buyer reads why.
+ */
+function codeRefused(couponCode: string | undefined, quote: CartQuote): string | null {
+  if (!couponCode || quote.couponCode) return null;
+  return quote.couponError ?? "Il codice non è più valido: rimuovilo dal carrello per procedere.";
 }
 
 function toQuoteLines(lines: readonly { readonly slug: string; readonly quantity: number }[]) {
@@ -207,8 +220,9 @@ export type ExpressCheckoutResult =
  * the webhook via collected_information.shipping_details (or shipping_details on older
  * API versions) rather than payment_intent.shipping.
  *
- * Express is available only for Hasbro-only carts: Takara-only and mixed carts have
- * locked shipping plans that do not include the Poste home ("standard") method.
+ * Express is available only for carts that leave from the shop's own shelf: a cart holding the
+ * partner's consignment pieces ships partly from his warehouse. Since 2026-10-23 it ships to the InPost Locker the buyer picked in the
+ * cart (Stripe cannot ask for one), or, for a cart with a stadium box, to the door with Poste.
  */
 export async function startExpressCheckout(input: ExpressCheckoutInput): Promise<ExpressCheckoutResult> {
   const parsed = expressCheckoutSchema.safeParse(input);
@@ -227,29 +241,40 @@ export async function startExpressCheckout(input: ExpressCheckoutInput): Promise
 
   try {
     const provider = await getCommerceProvider();
-    // Force shippingCode="standard" (Poste home): that is the only method express supports.
-    // If the plan does not offer it (Takara-only or mixed carts), the provider falls back to
-    // its first method and shippingCode will differ — caught below.
+    // The plan's own method: the InPost Locker, or Poste to the door for a stadium box.
     const rawQuote = await provider.quoteCart({
       lines: toQuoteLines(parsed.data.lines),
-      shippingCode: "standard",
+      ...(parsed.data.couponCode ? { couponCode: parsed.data.couponCode } : {}),
     });
     const quote = openQuoteForStripe(rawQuote);
 
     if (!quote.orderable) {
       return { ok: false, message: quote.notice ?? CHECKOUT_FALLBACK_MESSAGE };
     }
+    const refusedCode = codeRefused(parsed.data.couponCode, quote);
+    if (refusedCode) return { ok: false, message: refusedCode };
+    if (quote.couponBuyerNote) return { ok: false, message: EXPRESS_CODE_NEEDS_EMAIL_MESSAGE };
 
-    // The plan must have accepted "standard"; locked plans (Takara-only, mixed) keep their own
-    // first method instead and shippingCode will not equal "standard".
-    if (quote.shippingCode !== "standard") {
+    // Consignment pieces leave from the partner's warehouse: those carts go through the normal checkout.
+    const method = shippingMethodByCode(quote.shippingCode);
+    const partner = quote.shippingOptions.some((option) => option.lockReasons?.some((reason) => reason === "partner" || reason === "mixed"));
+    if (!method || partner) {
       return { ok: false, message: EXPRESS_CHECKOUT_LOCKED_MESSAGE };
+    }
+    if (method.pickupPoint && (parsed.data.pickupPoint ?? "").trim().length < 3) {
+      return { ok: false, message: EXPRESS_LOCKER_MISSING_MESSAGE };
     }
 
     const checkout = await createStripeCheckout(
       {
         quote,
-        order: { idempotencyKey: parsed.data.idempotencyKey, lines: parsed.data.lines, attribution: parsed.data.attribution },
+        order: {
+          idempotencyKey: parsed.data.idempotencyKey,
+          lines: parsed.data.lines,
+          attribution: parsed.data.attribution,
+          pickupPoint: method.pickupPoint ? parsed.data.pickupPoint : undefined,
+          pickupPointId: method.pickupPoint ? parsed.data.pickupPointId : undefined,
+        },
         origin: await checkoutOrigin(),
         express: true,
       },

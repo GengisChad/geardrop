@@ -3,8 +3,8 @@ import type { AppHref } from "@/lib/routes";
 import { cn } from "@/lib/cn";
 
 /**
- * Holo Drop buttons. Lime is "buy" and carries the periodic sweep, violet is the secondary
- * emphasis, outlines cover everything else. Solid variants are chamfered like the HUD.
+ * X-Rail buttons. Lime is "buy", violet is "on its way" (pre-orders) and the secondary
+ * emphasis, outlines cover everything else. Filled variants lean like the logo's "//".
  */
 export type ButtonVariant =
   | "primary"
@@ -18,21 +18,21 @@ export type ButtonVariant =
 export type ButtonSize = "sm" | "md" | "lg";
 
 const BASE =
-  "gd-display inline-flex items-center justify-center gap-2 font-bold tracking-[0.08em] " +
+  "gd-display inline-flex items-center justify-center gap-2 font-extrabold tracking-[0.05em] " +
   "transition-[background-color,color,border-color,box-shadow,opacity] duration-200 " +
   "disabled:cursor-not-allowed";
 
 const VARIANTS: Record<ButtonVariant, string> = {
   // One primary action per view. (audit §7.3)
-  primary: "gd-chamfer-lg gd-btn-sheen bg-lime text-void hover:bg-[#d8ff4d] disabled:bg-grey-300 disabled:text-grey-600",
+  primary: "gd-chamfer-lg bg-lime text-void hover:bg-[#e2ff7a] disabled:bg-grey-300 disabled:text-grey-600",
   secondary: "gd-chamfer-lg bg-violet text-white hover:bg-[#8d58ff] disabled:bg-grey-300 disabled:text-grey-600",
-  glass: "border border-white/20 bg-white/[0.03] text-graphite hover:border-lime hover:text-lime disabled:text-grey-400",
+  glass: "gd-chamfer-lg bg-white/[0.09] text-graphite hover:bg-lime hover:text-void disabled:text-grey-400",
   tertiary:
     "border border-white/15 bg-transparent text-graphite hover:border-violet-soft hover:text-violet-soft disabled:text-grey-400",
   text: "text-violet-soft hover:text-white disabled:text-grey-400",
-  card: "gd-chamfer bg-white/[0.09] text-graphite hover:bg-lime hover:text-void disabled:bg-grey-200 disabled:text-grey-400",
-  "card-preorder": "gd-chamfer bg-white/[0.09] text-graphite hover:bg-lime hover:text-void",
-  "card-notify": "gd-chamfer border border-white/15 text-grey-600 hover:border-violet-soft hover:text-violet-soft",
+  card: "gd-chamfer bg-surface-2 text-lime hover:bg-lime hover:text-void disabled:bg-grey-200 disabled:text-grey-400",
+  "card-preorder": "gd-chamfer bg-violet text-white hover:bg-[#9566ff]",
+  "card-notify": "border border-white/15 text-grey-600 hover:border-violet-soft hover:text-violet-soft",
 };
 
 const SIZES: Record<ButtonSize, string> = {

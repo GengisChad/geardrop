@@ -40,6 +40,7 @@
     "beta:rehearse": "tsx scripts/rehearse-production-upgrade.ts",
     "beta:fees": "tsx scripts/backfill-payment-fees.ts",
     "yt:seo": "tsx scripts/youtube-seo.ts",
+    "clips": "tsx scripts/clips/render-clips.ts",
     "seo:indexnow": "tsx scripts/indexnow.ts",
     "shots": "playwright test --config playwright.shots.config.ts",
     "assets": "python scripts/build-assets.py",
@@ -67,6 +68,9 @@
     "zustand": "5.0.14"
   },
   "devDependencies": {
+    "@fontsource-variable/anybody": "5.3.0",
+    "@fontsource/chakra-petch": "5.3.0",
+    "@fontsource/jetbrains-mono": "5.3.0",
     "@playwright/test": "1.61.1",
     "@tailwindcss/postcss": "4.3.2",
     "@types/node": "24.10.1",

@@ -1,4 +1,4 @@
-import { CONSIGNMENT_PARTNER, partnerLines } from "@/data/catalog";
+import { CONSIGNMENT_PARTNER, partnerLines, shippingMethodByCode } from "@/data/catalog";
 import { SHOP_EMAIL } from "@/lib/email/resend";
 import { escapeHtml, emailShell } from "./order-email";
 import type { PaidCheckout } from "./stripe-order";
@@ -20,9 +20,11 @@ export function partnerOrderEmail(checkout: PaidCheckout, orderRef: string) {
 
   const subject = `Ordine ${orderRef} da spedire · GEAR//DROP`;
 
-  // Delivery block: pickup point (InPost or Poste Locker) or street address.
+  // Delivery block: the Punto Poste the buyer named on a Takara-only order, or the street address.
+  // On a mixed cart the buyer's point is the shop's InPost Locker, which the partner cannot send
+  // to: his parcel goes to the address instead (owner, 2026-10-23).
   const deliveryLines: string[] = [shipping.name];
-  if (shipping.pickupPoint) {
+  if (shipping.pickupPoint && shippingMethodByCode(shipping.method)?.carrier !== "inpost") {
     deliveryLines.push(`Punto di ritiro: ${shipping.pickupPoint}`);
   } else {
     const place = [shipping.postalCode, shipping.city, shipping.province ? `(${shipping.province})` : ""].filter(Boolean).join(" ");

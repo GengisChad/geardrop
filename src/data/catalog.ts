@@ -3,13 +3,13 @@
  * Packs on 2026-09-15, five pre-order pieces on 2026-09-21 and, the same day, the deck case in
  * seven colours. Prices and allocations are reviewed inputs; no product or review data is invented.
  *
- * The order here is the order the shop shows: the newest drop leads, the Infinity Starters
- * follow, then the rest of the catalogue.
+ * The order here is the order the shop shows: what the owner has in the foreground leads (the
+ * Takara Tomy arrivals of 2026-11-06), then the Infinity Starters, then the rest of the catalogue.
  */
 
 import { productImages } from "@/data/assets";
 import { VARIANT_FAMILIES, type VariantColour } from "@/data/variant-families";
-import type { Brand, BrandSlug, Bundle, Category, Product, ShippingOption } from "@/lib/commerce/types";
+import type { Brand, BrandSlug, Bundle, Category, Product, ShippingLockReason, ShippingOption } from "@/lib/commerce/types";
 
 /**
  * The one consignment partner we work with: NerdPoint holds Takara Tomy stock and ships it
@@ -53,9 +53,17 @@ export function partnerLines(
 const eur = (amount: number) => ({ amount, currency: "EUR" }) as const;
 
 /**
- * One colour of the deck case: printed in 3D, not a Hasbro product, €24,50 in every colour (the
- * owner raised it from €20 the day it launched), with no stock limit (no count on a product in stock). Owner's words: it also takes the Expanded
- * and Infinity tops. The colours live in variant-families.ts.
+ * What a deck case costs on its own, in every colour and both families (owner, 2026-10-24: €18,
+ * down from €24,50; the shop pays €6 a case), and what it costs next to a kit: one case per
+ * bundle in the cart is charged DECK_CASE_WITH_KIT (see deckDealUnits in mock-provider.ts).
+ */
+export const DECK_CASE_PRICE = 1800;
+export const DECK_CASE_WITH_KIT = 1500;
+
+/**
+ * One colour of the deck case: printed in 3D, not a Hasbro product, the same price in every
+ * colour, with no stock limit (no count on a product in stock). Owner's words: it also takes the
+ * Expanded and Infinity tops. The colours live in variant-families.ts.
  */
 const DECK_CASE = VARIANT_FAMILIES["porta-deck"]!;
 
@@ -63,7 +71,7 @@ function deckCase({ slug, label, swatch }: VariantColour): Product {
   return {
     slug, name: `${DECK_CASE.name} ${label}`, tagline: "Tre trottole al sicuro. Anche Expanded e Infinity.",
     description: "Il porta deck tiene un deck completo di Beyblade X: tre scomparti, uno per trottola, ognuno con la sua chiusura a clip. Entrano anche i bey Expanded e Infinity. Stampato in 3D. Accessorio non ufficiale: non è prodotto né certificato da Hasbro.",
-    price: eur(2450), category: "accessori", stock: "disponibile", tags: [], rating: 0, reviewCount: 0,
+    price: eur(DECK_CASE_PRICE), category: "accessori", stock: "disponibile", tags: [], rating: 0, reviewCount: 0,
     images: productImages[slug],
     specs: [{ label: "Tipo", value: "Porta deck" }, { label: "Produttore", value: "Non ufficiale, non prodotto da Hasbro" }, { label: "Compatibilità", value: "Beyblade X, compresi Expanded e Infinity" }, { label: "Scomparti", value: "3, uno per trottola" }, { label: "Colore", value: label }, { label: "Materiale", value: "Plastica stampata in 3D" }, { label: "Nota", value: "Trottole non incluse" }],
     features: [{ title: "Un deck completo", description: "Tre scomparti, uno per ogni trottola" }, { title: "Anche Expanded e Infinity", description: "Compatibile con i bey Expanded e Infinity" }, { title: "Chiusura a clip", description: "Ogni scomparto si chiude con la sua clip" }, { title: "Sette colori", description: "Giallo, verde lime, azzurro, blu, rosa, fucsia e bianco" }],
@@ -75,9 +83,43 @@ function deckCase({ slug, label, swatch }: VariantColour): Product {
 }
 
 /**
- * Brand descriptors for the two lines we sell. Hasbro is the Western Beyblade X line
- * (the products we stock and ship ourselves). Takara Tomy is the original Japanese line,
- * sold on consignment: our partner holds and ships those pieces from his warehouse.
+ * The two-colour deck cases (owner, 2026-10-24; seven more 2026-11-03): the same three-slot case,
+ * printed in two colours, one photo per colour. Their lids carry a printed logo the shop holds no
+ * licence for, so they stay off Google (KEPT_OFF_GOOGLE): no Merchant Center row, no product markup.
+ */
+const DECK_CASE_BICOLORE = VARIANT_FAMILIES["porta-deck-bicolore"]!;
+
+function deckCaseBicolore({ slug, label, swatch }: VariantColour): Product {
+  return {
+    slug, name: `${DECK_CASE_BICOLORE.name} ${label}`, tagline: "Tre trottole al sicuro, in due colori.",
+    description: `Il porta deck bicolore tiene un deck completo di Beyblade X: tre scomparti, uno per trottola, ognuno con la sua chiusura a clip. Entrano anche i bey Expanded e Infinity. Questo è ${label.toLowerCase()}: corpo, scritta e clip in due colori. Stampato in 3D. Accessorio non ufficiale: non è prodotto né certificato da Hasbro o Takara Tomy.`,
+    price: eur(DECK_CASE_PRICE), category: "accessori", stock: "disponibile", tags: [], rating: 0, reviewCount: 0,
+    images: productImages[slug],
+    specs: [{ label: "Tipo", value: "Porta deck" }, { label: "Produttore", value: "Non ufficiale, non prodotto da Hasbro o Takara Tomy" }, { label: "Compatibilità", value: "Beyblade X, compresi Expanded e Infinity" }, { label: "Scomparti", value: "3, uno per trottola" }, { label: "Colore", value: label }, { label: "Materiale", value: "Plastica stampata in 3D" }, { label: "Nota", value: "Trottole non incluse" }],
+    features: [{ title: "Un deck completo", description: "Tre scomparti, uno per ogni trottola" }, { title: "Anche Expanded e Infinity", description: "Compatibile con i bey Expanded e Infinity" }, { title: "Chiusura a clip", description: "Ogni scomparto si chiude con la sua clip" }, { title: "Quattordici combinazioni", description: "Dal nero e blu all'arancione e nero, ognuna con la sua foto" }],
+    boxContents: [`1 × ${DECK_CASE_BICOLORE.name} ${label} (trottole non incluse)`],
+    relatedSlugs: ["porta-deck-giallo", "hurricane-enlil-is-7-55t", "cobalt-drake-4-60f"],
+    variant: { family: "porta-deck-bicolore", familyName: DECK_CASE_BICOLORE.name, label, swatch },
+    unofficial: true,
+  };
+}
+
+/** Every deck case colour, of both families: what a kit in the cart makes €15. */
+export const DECK_CASE_SLUGS: ReadonlySet<string> = new Set(
+  [...DECK_CASE.colours, ...DECK_CASE_BICOLORE.colours].map((colour) => colour.slug),
+);
+
+/**
+ * Sold on the site only: kept out of the Merchant Center feed and of the product page's structured
+ * data, because their print is a logo the shop holds no licence for (owner, 2026-10-24).
+ */
+export const KEPT_OFF_GOOGLE: ReadonlySet<string> = new Set(DECK_CASE_BICOLORE.colours.map((colour) => colour.slug));
+
+/**
+ * Brand descriptors for the two lines we sell. Hasbro is the Western Beyblade X line. Takara Tomy
+ * is the original Japanese line: boosters, launchers and grips the shop bought itself and ships
+ * like Hasbro (owner, 2026-11-06), plus limited editions on consignment, which our partner holds
+ * and ships from his warehouse.
  */
 export const BRANDS: readonly Brand[] = [
   {
@@ -90,13 +132,22 @@ export const BRANDS: readonly Brand[] = [
     slug: "takara-tomy",
     name: "Takara Tomy",
     tagline: "L'originale giapponese. Dal Giappone al tuo stadio.",
-    description: "La linea originale giapponese di Beyblade X, l'inizio di tutto. I pezzi Takara Tomy sono venduti in consignment: il nostro partner li spedisce direttamente dal suo magazzino, in un pacco separato.",
+    description: "La linea originale giapponese di Beyblade X, l'inizio di tutto. Random Booster, lanciatori e grip partono dal nostro magazzino. Le edizioni limitate in conto vendita le spedisce il nostro partner, in un pacco separato.",
   },
 ];
 
 /** Returns the brand a product belongs to. Absent means Hasbro. */
 export function brandOf(product: Pick<Product, "brand">): BrandSlug {
   return product.brand ?? "hasbro";
+}
+
+/**
+ * The side of shippingPlanFor an item falls on, which is about warehouses, not makers: consignment
+ * pieces leave from the partner's, everything else from the shop's. That includes the Takara Tomy
+ * pieces the shop bought itself (owner, 2026-11-06), and it is why this can differ from brandOf.
+ */
+export function shippingBrandOf(product: Pick<Product, "consignment" | "unofficial">): BrandSlug {
+  return product.consignment && !product.unofficial ? "takara-tomy" : "hasbro";
 }
 
 export const CATEGORIES: readonly Category[] = [
@@ -107,6 +158,92 @@ export const CATEGORIES: readonly Category[] = [
 ];
 
 export const PRODUCTS: readonly Product[] = [
+  // The owner, 2026-11-13: two red Phoenix without the launcher, only the top with its ratchet and
+  // bit (like Hover Wyvern and Impact Drake), at 12,99, two on the shelf for now, as a promotion. It
+  // leads the catalogue and the homepage (SPOTLIGHT_SLUGS) while it lasts, under the "Offerta" tag.
+  // No compare-at price: the starter it is measured against is a different product, with a launcher.
+  {
+    slug: "soar-phoenix-9-60gf-solo-trottola", name: "Soar Phoenix 9-60GF solo trottola", tagline: "La Phoenix rossa, senza lanciatore.",
+    description: "Soar Phoenix 9-60GF è la trottola d'attacco rossa dello starter Hasbro, qui venduta da sola: tre lame che salgono verso l'alto per un Upper Attack capace di sollevare l'avversario, una delle blade più pesanti della serie, con Ratchet 9-60 e Bit GF (Gear Flat). Solo la trottola con ratchet e bit montati: il lanciatore non è incluso. Arriva in busta, senza scatola. Richiede lanciatore e Beystadium Beyblade X (venduti separatamente).",
+    price: eur(1299), category: "beyblade-x", bladeType: "attacco", stock: "disponibile", availableQuantity: 2, tags: ["offerta"], rating: 0, reviewCount: 0,
+    images: productImages["soar-phoenix-9-60gf-solo-trottola"],
+    specs: [{ label: "Tipo", value: "Attacco" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codice", value: "9-60GF" }, { label: "Componenti", value: "1 trottola: blade, Ratchet 9-60 e Bit GF" }, { label: "Rotazione", value: "Destra" }, { label: "Confezione", value: "In busta, senza scatola" }, { label: "Nota", value: "Richiede lanciatore e Beystadium (venduti a parte)" }],
+    features: [{ title: "Upper Attack", description: "Le tre lame sollevano l'avversario da terra" }, { title: "Ratchet 9-60", description: "Assetto basso a 6,0 mm, nove punti di contatto" }, { title: "Solo la trottola", description: "Blade, ratchet e bit: il lanciatore non è incluso" }, { title: "Da sapere prima di comprare", description: "Arriva in busta, senza scatola e senza lanciatore" }],
+    boxContents: ["1 × Trottola Soar Phoenix 9-60GF in busta (blade, ratchet e bit)"],
+    relatedSlugs: ["soar-phoenix-9-60gf", "impact-drake-9-60lr", "hover-wyvern-3-85n"],
+  },
+  // Takara Tomy pieces the shop bought itself (owner, 2026-11-06): they sit on its own shelf and ship
+  // like Hasbro, so no `consignment`. Parts, variants and spin come from Takara Tomy's product pages.
+  // They lead the catalogue, and with it the shop, because the owner wants them in the foreground.
+  {
+    slug: "bx-48-random-booster-vol-9", name: "BX-48 Random Booster Vol. 9", tagline: "Cinque Metal Coat tornate dalle esclusive. Una a sorpresa.",
+    description: "BX-48 è la Random Booster Vol. 9 di Takara Tomy, la Limited Revival: cinque trottole nate come esclusive di eventi, app e B4 Store, tornate in versione Metal Coat con un assetto rivisto. In ogni scatola ce n'è una sola, a caso e sigillata: non si sceglie. Sono Cobalt Dragoon 9-80F nera, Shark Edge 4-70E blu, Mammoth Tusk 7-60S nera, Hells Scythe 3-85GB oro e Dran Buster 2-80Q rossa. Cobalt Dragoon gira a sinistra e chiede un lanciatore L. Il lanciatore non è incluso. Richiede lanciatore e Beystadium Beyblade X (venduti a parte). Prodotto originale giapponese, confezione in giapponese.",
+    price: eur(3699), category: "beyblade-x", brand: "takara-tomy", stock: "disponibile", availableQuantity: 6, tags: ["novita"], rating: 0, reviewCount: 0,
+    images: productImages["bx-48-random-booster-vol-9"],
+    specs: [{ label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codice prodotto", value: "BX-48" }, { label: "Contenuto", value: "1 trottola a caso tra 5, non si sceglie" }, { label: "Varianti", value: "Cobalt Dragoon 9-80F nera · Shark Edge 4-70E blu · Mammoth Tusk 7-60S nera · Hells Scythe 3-85GB oro · Dran Buster 2-80Q rossa" }, { label: "Rotazione", value: "Destra. Cobalt Dragoon gira a sinistra" }, { label: "Confezione", value: "Sigillata, in giapponese" }, { label: "Età", value: "Dai 6 anni (indicazione della confezione)" }, { label: "Nota", value: "Richiede lanciatore e Beystadium (venduti a parte)" }],
+    features: [{ title: "Una su cinque", description: "Una trottola a caso per scatola: non si sceglie" }, { title: "Limited Revival", description: "Esclusive di eventi, app e B4 Store, tornate con un assetto rivisto" }, { title: "Metal Coat", description: "Nera, blu, oro o rossa. La vernice può consumarsi con l'uso" }, { title: "Da sapere prima di comprare", description: "Cobalt Dragoon gira a sinistra e chiede un lanciatore L. Il lanciatore non è incluso" }],
+    boxContents: ["1 × Trottola a caso tra le cinque varianti", "Istruzioni in giapponese"],
+    relatedSlugs: ["cx-18-random-booster-brachio-whip", "string-launcher-takara-tomy", "winder-launcher-takara-tomy"],
+  },
+  // The owner, 2026-11-15: Brachio Whip down to 28,00 and on promotion. The struck-through 30,00 is
+  // the only price it has had since it was listed on 2026-11-06, so it is the lowest of the previous
+  // 30 days, as Italian law asks of an announced reduction. "offerta" comes first: the card shows
+  // the first tag, and the piece is still a new release.
+  {
+    slug: "cx-18-random-booster-brachio-whip", name: "CX-18 Random Booster Brachio Whip Select", tagline: "Uno di tre colori, a sorpresa.",
+    description: "CX-18 è la Random Booster di Takara Tomy dedicata a Brachio Whip OW5-70Nr, trottola della Custom Line con Expand Blade che Takara Tomy classifica stamina: blade spessa e rotonda con il peso verso l'esterno, e Bit Nr (Narrow) per perdere meno rotazione. In ogni scatola ce n'è una sola, sigillata: la trottola è sempre questa, a caso è solo il colore (viola, oro o nera), che non si sceglie. Rotazione destra. Il lanciatore non è incluso. Richiede lanciatore e Beystadium Beyblade X (venduti a parte). Prodotto originale giapponese, confezione in giapponese con etichetta in cinese.",
+    price: eur(2800), compareAtPrice: eur(3000), category: "beyblade-x", brand: "takara-tomy", stock: "disponibile", availableQuantity: 20, tags: ["offerta", "novita"], rating: 0, reviewCount: 0,
+    images: productImages["cx-18-random-booster-brachio-whip"],
+    specs: [{ label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "CX (Expand Blade)" }, { label: "Codice", value: "OW5-70Nr" }, { label: "Contenuto", value: "1 trottola, a caso solo il colore: viola, oro o nera" }, { label: "Componenti", value: "Lock Chip Brachio, Over Blade Outer, Metal Blade Whip, Assist Blade Wheel, Ratchet 5-70, Bit Narrow" }, { label: "Rotazione", value: "Destra" }, { label: "Confezione", value: "Sigillata, in giapponese, con etichetta in cinese" }, { label: "Età", value: "Dai 6 anni (indicazione della confezione)" }, { label: "Nota", value: "Richiede lanciatore e Beystadium (venduti a parte)" }],
+    features: [{ title: "Uno di tre colori", description: "Stessa trottola, a caso solo il colore: viola, oro o nera" }, { title: "Peso verso l'esterno", description: "Blade spessa e rotonda, pensata per durare" }, { title: "Bit Narrow", description: "Punta sottile e tonda, perde poca rotazione" }, { title: "Da sapere prima di comprare", description: "Solo la trottola: il lanciatore non è incluso" }],
+    boxContents: ["1 × Trottola Brachio Whip OW5-70Nr, in un colore a caso", "Istruzioni in giapponese"],
+    relatedSlugs: ["bx-48-random-booster-vol-9", "winder-launcher-takara-tomy", "custom-grip-takara-tomy"],
+  },
+  {
+    // Three editions out of one mixed lot, not counted per edition (owner, 2026-11-06): one price and
+    // one shelf of 15, and the buyer asks for a colour. The words on the grip come from Takara Tomy's
+    // product pages; right- and left-handed mounting from the instruction sheet in the bag.
+    slug: "custom-grip-takara-tomy", name: "Custom Grip Takara Tomy", tagline: "Si monta sul lanciatore. Tre colori, stesso prezzo.",
+    description: "La Custom Grip è l'impugnatura originale Takara Tomy che si monta sul lanciatore (venduto a parte): più comoda da tenere, per un lancio più stabile, e si monta sia per destri sia per mancini. Tre versioni, stesso prezzo: BX-30 rossa con i pannelli intercambiabili, BX-41 gunmetal e BX-42 blu in gomma, con quattro tipi di pannelli in gomma per regolare la presa. Vuoi un colore preciso? Scrivilo nelle note dell'ordine o via email dopo l'acquisto: se è rimasto è tuo, altrimenti ti scriviamo prima di spedire. Senza indicazioni spediamo quello che c'è. Lanciatore, trottola e Beystadium non inclusi. Prodotto originale giapponese, confezione in giapponese con etichetta in cinese.",
+    price: eur(2599), category: "accessori", brand: "takara-tomy", stock: "disponibile", availableQuantity: 15, tags: ["novita"], rating: 0, reviewCount: 0,
+    images: productImages["custom-grip-takara-tomy"],
+    specs: [{ label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Tipo", value: "Impugnatura per lanciatore" }, { label: "Versioni", value: "BX-30 rossa · BX-41 gunmetal · BX-42 blu" }, { label: "Colore", value: "Scrivilo nelle note dell'ordine: se è rimasto è tuo" }, { label: "Pannelli", value: "BX-30 intercambiabili. BX-41 e BX-42 quattro tipi, in gomma" }, { label: "Confezione", value: "In giapponese, con etichetta in cinese" }, { label: "Età", value: "Dai 6 anni (indicazione della confezione)" }, { label: "Nota", value: "Lanciatore non incluso" }],
+    features: [{ title: "Lancio più stabile", description: "La forma è più comoda da impugnare" }, { title: "Tre colori, stesso prezzo", description: "BX-30 rossa, BX-41 gunmetal e BX-42 blu" }, { title: "Per destri e mancini", description: "Si monta in tutti e due i versi" }, { title: "Da sapere prima di comprare", description: "Scrivi nelle note dell'ordine il colore che vuoi: vediamo se è rimasto. Il lanciatore non è incluso" }],
+    boxContents: ["1 × Custom Grip Takara Tomy", "Pannelli per regolare la presa", "Istruzioni in giapponese"],
+    relatedSlugs: ["winder-launcher-takara-tomy", "string-launcher-takara-tomy", "long-winder-launcher-takara-tomy"],
+  },
+  {
+    slug: "long-winder-launcher-takara-tomy", name: "Long Winder Launcher Takara Tomy", tagline: "La winder lunga. Anche con la stampa Evangelion.",
+    description: "Il lanciatore Takara Tomy con la Long Winder, più lunga della winder classica: la infili, la tiri e la trottola parte. Ci sono due versioni, secondo disponibilità e non a scelta: la stampa speciale con il logo NERV dell'Evangelion Deck Set (CX-00), nera con la winder rossa, oppure in colore normale, come il verde in foto. Arriva in busta, senza scatola. Per trottole a rotazione destra. Trottola e Beystadium non inclusi.",
+    price: eur(2000), category: "lanciatori", brand: "takara-tomy", stock: "disponibile", availableQuantity: 6, tags: ["novita"], rating: 0, reviewCount: 0,
+    images: productImages["long-winder-launcher-takara-tomy"],
+    specs: [{ label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Tipo", value: "Lanciatore a winder" }, { label: "Winder", value: "Long Winder" }, { label: "Versione", value: "Stampa Evangelion o colore normale, non si sceglie" }, { label: "Rotazione", value: "Destra" }, { label: "Confezione", value: "In busta, senza scatola" }, { label: "Età", value: "Dai 6 anni (indicazione della confezione)" }, { label: "Nota", value: "Trottola e Beystadium non inclusi" }],
+    features: [{ title: "Long Winder", description: "Più lunga della winder classica" }, { title: "Stampa Evangelion", description: "Il logo NERV dell'Evangelion Deck Set, finché ce n'è" }, { title: "Originale Takara Tomy", description: "Lo stesso lanciatore degli starter giapponesi" }, { title: "Da sapere prima di comprare", description: "La versione non si sceglie: arriva in busta, senza scatola" }],
+    boxContents: ["1 × Lanciatore Takara Tomy", "1 × Long Winder"],
+    relatedSlugs: ["custom-grip-takara-tomy", "winder-launcher-takara-tomy", "string-launcher-takara-tomy"],
+  },
+  {
+    // Only the left-spin ones are left (owner, 2026-11-13: "leva gli string right, sono rimasti solo
+    // left"), so there is nothing to choose and the order notes ask for nothing.
+    slug: "string-launcher-takara-tomy", name: "String Launcher L Takara Tomy", tagline: "Solo sinistro (L), per le trottole left-spin.",
+    description: "Lo String Launcher L è il lanciatore a corda lunga di Takara Tomy per le trottole a rotazione sinistra (left-spin), come Cobalt Dragoon: si tira la corda e la trottola parte. Sono rimasti solo i sinistri (L), come l'azzurro di BX-34 in foto: le trottole a rotazione destra non le lancia. Il colore è assortito e non si sceglie. Viene dagli starter giapponesi e arriva in busta, senza scatola. Trottola e Beystadium non inclusi.",
+    price: eur(1699), category: "lanciatori", brand: "takara-tomy", stock: "disponibile", availableQuantity: 9, tags: ["novita"], rating: 0, reviewCount: 0,
+    images: productImages["string-launcher-takara-tomy"],
+    specs: [{ label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Tipo", value: "Lanciatore a corda" }, { label: "Rotazione", value: "Sinistra (L): solo trottole left-spin" }, { label: "Colore", value: "Assortito, non si sceglie" }, { label: "Confezione", value: "In busta, senza scatola" }, { label: "Età", value: "Dai 6 anni (indicazione della confezione)" }, { label: "Nota", value: "Trottola e Beystadium non inclusi" }],
+    features: [{ title: "Per le left-spin", description: "Lancia le trottole a rotazione sinistra, come Cobalt Dragoon" }, { title: "Corda lunga", description: "Si tira la corda e la trottola parte" }, { title: "Originale Takara Tomy", description: "Lo stesso lanciatore degli starter giapponesi" }, { title: "Da sapere prima di comprare", description: "Solo sinistro (L): non lancia le trottole a rotazione destra" }],
+    boxContents: ["1 × String Launcher L Takara Tomy"],
+    relatedSlugs: ["cobalt-dragoon-2-60c", "bx-48-random-booster-vol-9", "custom-grip-takara-tomy"],
+  },
+  {
+    slug: "winder-launcher-takara-tomy", name: "Winder Launcher Takara Tomy", tagline: "Il lanciatore degli starter giapponesi. Colore assortito.",
+    description: "Il Winder Launcher è il lanciatore degli starter Takara Tomy: infili la winder, la striscia dentata, e la tiri per far partire la trottola. Winder di lunghezza classica. Ci sono sia destri (right) sia sinistri (L), che lanciano solo le trottole a rotazione sinistra: scrivi quale vuoi nelle note dell'ordine o via email dopo l'acquisto. Se non è rimasto ti scriviamo prima di spedire; senza indicazioni spediamo il destro. Il colore è assortito e non si sceglie: ne abbiamo di diversi (in foto alcuni) e spediamo quello che c'è. Arriva in busta, senza scatola. Trottola e Beystadium non inclusi.",
+    price: eur(1299), category: "lanciatori", brand: "takara-tomy", stock: "disponibile", availableQuantity: 33, tags: ["novita"], rating: 0, reviewCount: 0,
+    images: productImages["winder-launcher-takara-tomy"],
+    specs: [{ label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Tipo", value: "Lanciatore a winder" }, { label: "Winder", value: "Lunghezza classica" }, { label: "Colore", value: "Assortito, non si sceglie" }, { label: "Rotazione", value: "Destra (right) o sinistra (L): scrivilo nelle note dell'ordine" }, { label: "Confezione", value: "In busta, senza scatola" }, { label: "Età", value: "Dai 6 anni (indicazione della confezione)" }, { label: "Nota", value: "Trottola e Beystadium non inclusi" }],
+    features: [{ title: "Winder classica", description: "La striscia dentata che tiri per lanciare" }, { title: "Originale Takara Tomy", description: "Lo stesso lanciatore degli starter giapponesi" }, { title: "Colore assortito", description: "Ne abbiamo di diversi: il colore non si sceglie" }, { title: "Da sapere prima di comprare", description: "Scrivi nelle note dell'ordine se lo vuoi destro (right) o sinistro (L). Senza indicazioni spediamo il destro" }],
+    boxContents: ["1 × Winder Launcher Takara Tomy", "1 × Winder"],
+    relatedSlugs: ["custom-grip-takara-tomy", "string-launcher-takara-tomy", "long-winder-launcher-takara-tomy"],
+  },
   {
     slug: "glory-valkerion-lf", name: "Glory Valkerion LF", tagline: "Attacco UX. Blade e ratchet in un pezzo.",
     description: "Glory Valkerion LF è una trottola d'attacco a rotazione destra della linea UX: la blade integra il ratchet in un unico pezzo e il Bit Low Flat (LF), a punta piatta e bassa, la spinge in movimenti rapidi e aggressivi per agganciare l'Xtreme Line e scatenare l'Xtreme Dash. Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).",
@@ -249,6 +386,7 @@ export const PRODUCTS: readonly Product[] = [
   },
   // One card in the shop, seven colours on the product page; the first colour leads the family.
   ...DECK_CASE.colours.map(deckCase),
+  ...DECK_CASE_BICOLORE.colours.map(deckCaseBicolore),
   {
     slug: "cobalt-drake-4-60f", name: "Cobalt Drake 4-60F", tagline: "Attacco BX. Lame di cristallo.",
     description: "Cobalt Drake 4-60F è una trottola d'attacco della linea BX: la blade trasparente dal profilo affilato concentra il peso sulle punte, il Ratchet 4-60 tiene l'assetto basso e il Bit F (Flat) la lancia in traiettorie rapide e aggressive lungo il bordo dello stadio. Richiede lanciatore e Beystadium Beyblade X (venduti separatamente).",
@@ -353,10 +491,10 @@ export const BUNDLES: readonly Product[] = [
   {
     slug: "kit-doppio-starter-deck", name: "Kit Doppio Starter", tagline: "Due starter e il porta deck. Pronti a sfidarsi.",
     description: "Due starter Beyblade X completi di lanciatore, Shadow Shinobi 1-80MN e Hammer Incendio 3-70H, con il porta deck giallo per portarli in giro. Shadow Shinobi devia il colpo con tre lame lisce e il Bit MN la tiene in piedi; Hammer Incendio porta il peso sul bordo e colpisce dall'alto con tre lame rialzate: due modi opposti di stare in arena. Il porta deck tiene tre trottole, una per scomparto. Richiede un Beystadium Beyblade X (venduto separatamente).",
-    price: eur(3990), compareAtPrice: eur(4648), category: "beyblade-x", stock: "disponibile", tags: ["offerta"], rating: 0, reviewCount: 0,
+    price: eur(3690), compareAtPrice: eur(3998), category: "beyblade-x", stock: "disponibile", tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["kit-doppio-starter-deck"],
     specs: [{ label: "Contenuto", value: "2 starter, 2 lanciatori, 1 porta deck" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Trottole incluse", value: "Shadow Shinobi 1-80MN, Hammer Incendio 3-70H" }, { label: "Porta deck", value: "Giallo, 3 scomparti, non ufficiale" }, { label: "Nota", value: "Richiede un Beystadium (venduto a parte)" }],
-    features: [{ title: "Due starter completi", description: "Ogni trottola ha il suo lanciatore con ripcord" }, { title: "Due assetti opposti", description: "Una corre sul bordo, l'altra tiene il centro" }, { title: "Porta deck incluso", description: "Tre scomparti, uno per trottola" }, { title: "Risparmi €6,58", description: "€39,90 invece di €46,48 comprandoli separati" }],
+    features: [{ title: "Due starter completi", description: "Ogni trottola ha il suo lanciatore con ripcord" }, { title: "Due assetti opposti", description: "Una corre sul bordo, l'altra tiene il centro" }, { title: "Porta deck incluso", description: "Tre scomparti, uno per trottola" }, { title: "Risparmi €3,08", description: "€36,90 invece di €39,98 comprandoli separati" }],
     boxContents: ["1 × Starter Shadow Shinobi 1-80MN (trottola e lanciatore)", "1 × Starter Hammer Incendio 3-70H (trottola e lanciatore)", "1 × Porta Deck giallo", "Manuali"],
     relatedSlugs: ["kit-arena-drop-completo", "shadow-shinobi-1-80mn", "hammer-incendio-3-70h"],
     bundleOf: [{ slug: "shadow-shinobi-1-80mn", quantity: 1 }, { slug: "hammer-incendio-3-70h", quantity: 1 }, { slug: "porta-deck-giallo", quantity: 1 }],
@@ -364,10 +502,10 @@ export const BUNDLES: readonly Product[] = [
   {
     slug: "kit-arena-drop-completo", name: "Kit Arena Drop Attack", tagline: "Arena, quattro trottole e porta deck. Tutto in una volta.",
     description: "Tutto per cominciare e non comprare altro: il Drop Attack Battle Set — il Beystadium con l'X-Celerator Rail rialzato che porta le trottole in alto per farle piombare sull'avversario, due trottole e due lanciatori — più due starter completi, Shadow Shinobi 1-80MN e Hammer Incendio 3-70H, e il porta deck giallo. In tutto quattro trottole e quattro lanciatori, con lo stadio per farle scontrare e la custodia per portarle in giro.",
-    price: eur(7490), compareAtPrice: eur(8638), category: "beyblade-x", stock: "disponibile", tags: ["offerta"], rating: 0, reviewCount: 0,
+    price: eur(7190), compareAtPrice: eur(7988), category: "beyblade-x", stock: "disponibile", tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["kit-arena-drop-completo"],
     specs: [{ label: "Contenuto", value: "1 stadio, 4 trottole, 4 lanciatori, 1 porta deck" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Stadio", value: "Drop Attack Battle Set" }, { label: "Starter inclusi", value: "Shadow Shinobi 1-80MN, Hammer Incendio 3-70H" }, { label: "Porta deck", value: "Giallo, 3 scomparti, non ufficiale" }],
-    features: [{ title: "Si gioca subito", description: "Stadio, trottole e lanciatori in una sola scatola" }, { title: "Quattro trottole", description: "Le due del set più i due starter" }, { title: "Porta deck incluso", description: "Tre scomparti, uno per trottola" }, { title: "Risparmi €11,48", description: "€74,90 invece di €86,38 comprandoli separati" }],
+    features: [{ title: "Si gioca subito", description: "Stadio, trottole e lanciatori in una sola scatola" }, { title: "Quattro trottole", description: "Le due del set più i due starter" }, { title: "Porta deck incluso", description: "Tre scomparti, uno per trottola" }, { title: "Risparmi €7,98", description: "€71,90 invece di €79,88 comprandoli separati" }],
     boxContents: ["1 × Drop Attack Battle Set (stadio, 2 trottole, 2 lanciatori)", "1 × Starter Shadow Shinobi 1-80MN", "1 × Starter Hammer Incendio 3-70H", "1 × Porta Deck giallo", "Manuali"],
     relatedSlugs: ["kit-doppio-starter-deck", "drop-attack-battle-set", "shadow-shinobi-1-80mn"],
     bundleOf: [{ slug: "drop-attack-battle-set", quantity: 1 }, { slug: "shadow-shinobi-1-80mn", quantity: 1 }, { slug: "hammer-incendio-3-70h", quantity: 1 }, { slug: "porta-deck-giallo", quantity: 1 }],
@@ -375,10 +513,10 @@ export const BUNDLES: readonly Product[] = [
   {
     slug: "kit-arena-sneak-completo", name: "Kit Arena Sneak Attack", tagline: "Arena, quattro trottole e porta deck. Tutto in una volta.",
     description: "Tutto per cominciare e non comprare altro: il Sneak Attack Battle Set — il Beystadium verde con il rail a scomparsa che devia le trottole in una nuova direzione, due trottole e due lanciatori — più due starter completi, Shadow Shinobi 1-80MN e Hammer Incendio 3-70H, e il porta deck giallo. In tutto quattro trottole e quattro lanciatori, con lo stadio per farle scontrare e la custodia per portarle in giro.",
-    price: eur(7990), compareAtPrice: eur(9138), category: "beyblade-x", stock: "disponibile", tags: ["offerta"], rating: 0, reviewCount: 0,
+    price: eur(7690), compareAtPrice: eur(8488), category: "beyblade-x", stock: "disponibile", tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["kit-arena-sneak-completo"],
     specs: [{ label: "Contenuto", value: "1 stadio, 4 trottole, 4 lanciatori, 1 porta deck" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Stadio", value: "Sneak Attack Battle Set" }, { label: "Starter inclusi", value: "Shadow Shinobi 1-80MN, Hammer Incendio 3-70H" }, { label: "Porta deck", value: "Giallo, 3 scomparti, non ufficiale" }],
-    features: [{ title: "Si gioca subito", description: "Stadio, trottole e lanciatori in una sola scatola" }, { title: "Quattro trottole", description: "Le due del set più i due starter" }, { title: "Porta deck incluso", description: "Tre scomparti, uno per trottola" }, { title: "Risparmi €11,48", description: "€79,90 invece di €91,38 comprandoli separati" }],
+    features: [{ title: "Si gioca subito", description: "Stadio, trottole e lanciatori in una sola scatola" }, { title: "Quattro trottole", description: "Le due del set più i due starter" }, { title: "Porta deck incluso", description: "Tre scomparti, uno per trottola" }, { title: "Risparmi €7,98", description: "€76,90 invece di €84,88 comprandoli separati" }],
     boxContents: ["1 × Sneak Attack Battle Set (stadio, 2 trottole, 2 lanciatori)", "1 × Starter Shadow Shinobi 1-80MN", "1 × Starter Hammer Incendio 3-70H", "1 × Porta Deck giallo", "Manuali"],
     relatedSlugs: ["kit-doppio-starter-deck", "sneak-attack-battle-set", "shadow-shinobi-1-80mn"],
     bundleOf: [{ slug: "sneak-attack-battle-set", quantity: 1 }, { slug: "shadow-shinobi-1-80mn", quantity: 1 }, { slug: "hammer-incendio-3-70h", quantity: 1 }, { slug: "porta-deck-giallo", quantity: 1 }],
@@ -477,18 +615,38 @@ export type ShippingMethodDefinition = {
  *   2026-10-13 — InPost Locker 4,90 added as the cheapest and default method.
  *   2026-10-14 — InPost punto di ritiro replaced by Poste Italiane punto di ritiro at the same
  *                5,65; mixed Hasbro+Takara carts locked to poste-point instead of inpost-point.
+ *   2026-10-23 — InPost only: the shop ships every parcel through its InPost merchant account
+ *                (labels and tracking from the API). Poste punto di ritiro is retired; Poste to the
+ *                door stays only for the stadium boxes, which no Locker takes (BULKY_SHIPPING_METHOD).
  *
- * Note: the old €4,90 Poste rate "non esiste" (owner, 2026-10-07); this €4,90 is a real
- * InPost Locker rate added 2026-10-13.
  * The first entry is the cheapest and the one a cart is priced with until the buyer chooses.
- * Free shipping from FREE_SHIPPING_THRESHOLD applies to every method. BRT, DHL and others
- * will join this list.
+ * Free shipping from FREE_SHIPPING_THRESHOLD applies to every method.
  */
 export const SHIPPING_METHODS: readonly ShippingMethodDefinition[] = [
   { code: "inpost-locker", carrier: "inpost", label: "InPost · Locker", priceCents: 490, pickupPoint: true },
-  { code: "poste-point", carrier: "poste", label: "Poste Italiane · punto di ritiro", priceCents: 565, pickupPoint: true },
-  { code: "standard", carrier: "poste", label: "Poste Italiane · consegna a casa", priceCents: 665, pickupPoint: false },
 ];
+
+/**
+ * The stadium box (45×45×15 cm) does not fit the largest InPost Locker compartment (41×38×64 cm),
+ * and the shop's InPost contract has no delivery to the door. A cart holding one ships to the
+ * buyer's door with Poste Italiane instead, whatever else is in it (owner, 2026-10-23).
+ */
+export const BULKY_SHIPPING_METHOD: ShippingMethodDefinition = {
+  code: "standard",
+  carrier: "poste",
+  label: "Poste Italiane · consegna a casa",
+  priceCents: 665,
+  pickupPoint: false,
+};
+
+/** Items whose box no InPost Locker takes. A bundle holding one is too big as well (fitsLocker). */
+export const LOCKER_TOO_BIG: ReadonlySet<string> = new Set(["drop-attack-battle-set", "sneak-attack-battle-set"]);
+
+/** False for a stadium box, or a bundle that holds one. */
+export function fitsLocker(product: Pick<Product, "slug" | "bundleOf">): boolean {
+  if (LOCKER_TOO_BIG.has(product.slug)) return false;
+  return !(product.bundleOf ?? []).some((component) => LOCKER_TOO_BIG.has(component.slug));
+}
 
 /**
  * Retired shipping methods: no longer offered for new orders but still resolvable for display
@@ -499,6 +657,8 @@ export const SHIPPING_METHODS: readonly ShippingMethodDefinition[] = [
 const RETIRED_SHIPPING_METHODS: readonly ShippingMethodDefinition[] = [
   // 2026-10-07–2026-10-13: InPost punto di ritiro replaced by poste-point on 2026-10-14.
   { code: "inpost-point", carrier: "inpost", label: "InPost · punto di ritiro", priceCents: 565, pickupPoint: true },
+  // 2026-10-14–2026-10-22: Poste Italiane punto di ritiro, retired when the shop moved to InPost only.
+  { code: "poste-point", carrier: "poste", label: "Poste Italiane · punto di ritiro", priceCents: 565, pickupPoint: true },
 ];
 
 /**
@@ -509,10 +669,17 @@ const RETIRED_SHIPPING_METHODS: readonly ShippingMethodDefinition[] = [
 export const SHIPPING_FLAT_RATE = Math.min(...SHIPPING_METHODS.map((m) => m.priceCents));
 
 /**
- * Pieces sold out of an opened Battle Set: a sealed bag with no retail box, so no barcode of their
- * own. Merchant Center is told so; every boxed Hasbro item does have an EAN, recorded when known.
+ * Pieces sold out of an opened Battle Set or starter: a sealed bag with no retail box, so no barcode
+ * of their own. Merchant Center is told so; every boxed Hasbro item does have an EAN, recorded when known.
  */
-export const SOLD_WITHOUT_BARCODE: ReadonlySet<string> = new Set(["impact-drake-9-60lr", "hover-wyvern-3-85n"]);
+export const SOLD_WITHOUT_BARCODE: ReadonlySet<string> = new Set([
+  "soar-phoenix-9-60gf-solo-trottola",
+  "impact-drake-9-60lr",
+  "hover-wyvern-3-85n",
+  "winder-launcher-takara-tomy",
+  "string-launcher-takara-tomy",
+  "long-winder-launcher-takara-tomy",
+]);
 
 /** Where the buyer finds the InPost point or Locker nearest to them. */
 export const INPOST_POINT_FINDER_URL = "https://inpost.it/trova-un-locker";
@@ -523,7 +690,8 @@ export const POSTE_POINT_FINDER_URL = "https://www.poste.it/cerca/index.html";
 /**
  * The delivery method used for Takara Tomy consignment orders: our partner ships via Poste
  * Italiane to a Punto Poste or Locker. The price is €5,00 — lower than our Poste door-delivery
- * because it goes to a collection point, not straight to the buyer's address.
+ * because it goes to a collection point, not straight to the buyer's address. The partner keeps
+ * his own Poste account: the move to InPost (2026-10-23) is the shop's, not his.
  */
 export const PARTNER_SHIPPING_METHOD: ShippingMethodDefinition = {
   code: "poste-point-partner",
@@ -537,10 +705,26 @@ export const PARTNER_SHIPPING_METHOD: ShippingMethodDefinition = {
  * All methods the shop can use, including the partner route for Takara Tomy consignment and
  * retired codes kept for historical order display. Retired codes are never offered at checkout.
  */
-const ALL_METHODS: readonly ShippingMethodDefinition[] = [...SHIPPING_METHODS, PARTNER_SHIPPING_METHOD, ...RETIRED_SHIPPING_METHODS];
+const ALL_METHODS: readonly ShippingMethodDefinition[] = [
+  ...SHIPPING_METHODS,
+  BULKY_SHIPPING_METHOD,
+  PARTNER_SHIPPING_METHOD,
+  ...RETIRED_SHIPPING_METHODS,
+];
 
 export function shippingMethodByCode(code: string | null | undefined): ShippingMethodDefinition | undefined {
   return ALL_METHODS.find((method) => method.code === code);
+}
+
+/**
+ * The methods a single item ships with on its own: what its product page, the Merchant Center feed
+ * and its structured data quote.
+ */
+export function shippingMethodsFor(
+  product: Pick<Product, "slug" | "bundleOf" | "consignment" | "unofficial">,
+): readonly ShippingMethodDefinition[] {
+  if (shippingBrandOf(product) === "takara-tomy") return [PARTNER_SHIPPING_METHOD];
+  return fitsLocker(product) ? SHIPPING_METHODS : [BULKY_SHIPPING_METHOD];
 }
 
 export type ShippingPlan = {
@@ -550,41 +734,55 @@ export type ShippingPlan = {
   readonly locked: boolean;
   /** Human-readable description of the composition that triggered this plan. */
   readonly composition: "hasbro-only" | "takara-only" | "mixed" | "empty";
+  /** Set on a locked plan: what forced it, so the checkout can say so. */
+  readonly lockReasons?: readonly ShippingLockReason[];
 };
 
 /**
- * Derives the shipping plan for a cart based on the brands it contains.
+ * Derives the shipping plan for a cart based on whose warehouses its pieces leave from
+ * (shippingBrandOf: "takara-tomy" stands for the partner's, "hasbro" for the shop's, whoever made
+ * the piece) and whether one of its boxes is too big for a Locker.
  *
- * - Hasbro-only (or empty): all SHIPPING_METHODS, buyer chooses.
- * - Takara-only: only the partner's Poste Punto-Poste route, locked.
- * - Mixed: Poste punto di ritiro only, locked (owner, 2026-10-14 — one shipment, two warehouses,
- *   two packs; was inpost-point from 2026-10-07 until 2026-10-14).
+ * - Shop's pieces only (or empty): SHIPPING_METHODS (the InPost Locker).
+ * - A stadium box in the cart: Poste to the door only, locked (owner, 2026-10-23).
+ * - Partner's pieces only: only the partner's Poste Punto-Poste route, locked.
+ * - Mixed: InPost Locker for the shop's parcel, locked; the partner sends his to the buyer's
+ *   address with Poste (owner, 2026-10-23 — one charge, two warehouses, two parcels; was
+ *   poste-point from 2026-10-14 and inpost-point before).
  *
  * FREE_SHIPPING_THRESHOLD applies to every plan at the quoting layer.
  */
-export function shippingPlanFor(brands: ReadonlySet<BrandSlug>): ShippingPlan {
+export function shippingPlanFor(brands: ReadonlySet<BrandSlug>, bulky = false): ShippingPlan {
   const hasHasbro = brands.has("hasbro");
   const hasTakara = brands.has("takara-tomy");
+  const composition = hasTakara && hasHasbro ? "mixed" : hasTakara ? "takara-only" : brands.size === 0 ? "empty" : "hasbro-only";
 
-  if (hasTakara && hasHasbro) {
-    const postePoint = SHIPPING_METHODS.find((m) => m.code === "poste-point");
-    if (!postePoint) throw new Error("poste-point method missing from SHIPPING_METHODS");
-    return { methods: [postePoint], locked: true, composition: "mixed" };
+  if (composition === "takara-only") {
+    return { methods: [PARTNER_SHIPPING_METHOD], locked: true, composition, lockReasons: ["partner"] };
   }
-  if (hasTakara) {
-    return { methods: [PARTNER_SHIPPING_METHOD], locked: true, composition: "takara-only" };
+  if (bulky) {
+    return {
+      methods: [BULKY_SHIPPING_METHOD],
+      locked: true,
+      composition,
+      lockReasons: composition === "mixed" ? ["bulky", "mixed"] : ["bulky"],
+    };
   }
-  return { methods: SHIPPING_METHODS, locked: false, composition: brands.size === 0 ? "empty" : "hasbro-only" };
+  if (composition === "mixed") {
+    return { methods: SHIPPING_METHODS.slice(0, 1), locked: true, composition, lockReasons: ["mixed"] };
+  }
+  return { methods: SHIPPING_METHODS, locked: false, composition };
 }
 
 /**
  * Converts a ShippingMethodDefinition to a ShippingOption for the quote.
- * Pass `locked` to mark the option as non-switchable.
+ * Pass `locked` to mark the option as non-switchable, and `lockReasons` to say why.
  */
 export function toShippingOption(
   method: ShippingMethodDefinition,
   hint: string | null,
   locked?: boolean,
+  lockReasons?: readonly ShippingLockReason[],
 ): ShippingOption {
   return {
     code: method.code,
@@ -592,5 +790,6 @@ export function toShippingOption(
     hint,
     price: { amount: method.priceCents, currency: "EUR" },
     ...(locked ? { locked: true } : {}),
+    ...(locked && lockReasons?.length ? { lockReasons } : {}),
   };
 }

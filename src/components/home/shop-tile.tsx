@@ -1,13 +1,12 @@
 import type { Route } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { Emblem } from "@/components/layout/logo";
 import { cn } from "@/lib/cn";
 
 /**
- * The dashed "see everything" tile that closes a row of product cards. It first closed the
- * arsenal; it also fills the empty slots of a short row (the hero's best sellers, a one-card
- * "Appena arrivati"), so a row never ends in a dead gap (critique, 2026-10-11).
+ * The "see everything" tile that closes a row of product cards, with lime speed lines in its
+ * corner like the pack artwork. It first closed the arsenal; it also fills the empty slots of
+ * a short row (the hero's best sellers), so a row never ends in a dead gap (critique, 2026-10-11).
  */
 export function ShopTile({
   href,
@@ -24,18 +23,17 @@ export function ShopTile({
     <Link
       href={href}
       className={cn(
-        "group relative flex h-full min-h-72 flex-col justify-end gap-3 overflow-hidden border border-dashed border-lime/40 bg-[radial-gradient(circle_at_70%_25%,rgba(122,60,255,0.28),transparent_60%)] p-4 transition-colors hover:border-lime sm:p-6",
+        "gd-speedlines group @container flex h-full min-h-72 flex-col justify-end gap-3 border border-white/10 bg-surface p-4 transition-colors hover:border-lime sm:p-7",
         className,
       )}
     >
-      <Emblem
-        size={260}
-        className="pointer-events-none absolute -right-12 -top-10 w-40 opacity-35 animate-[gd-spin_20s_linear_infinite] motion-reduce:animate-none sm:w-64"
-      />
-      <span className="gd-mono relative text-[0.625rem] uppercase tracking-[0.12em] text-lime sm:text-[0.6875rem]">{kicker}</span>
-      <span className="gd-display-wide relative text-[1.45rem] font-bold leading-[0.95] sm:text-[2.1rem]">{title}</span>
-      <span className="gd-chamfer relative grid size-12 place-items-center bg-lime text-void transition-transform duration-200 group-hover:translate-x-1">
-        <ArrowRight className="size-5" aria-hidden="true" />
+      <span className="gd-mono relative text-[0.625rem] text-grey-600 sm:text-[0.75rem]">{kicker}</span>
+      {/* Sized by the tile's own width: one slot beside four cards, or two slots on a short row. */}
+      <span className="gd-display-wide relative text-[clamp(1.25rem,11cqi,2.6rem)] font-extrabold leading-[0.95]">
+        {title} <span className="text-lime">{"//"}</span>
+      </span>
+      <span className="gd-chamfer relative grid h-11 w-14 place-items-center bg-lime text-void transition-transform duration-200 group-hover:translate-x-1">
+        <ArrowRight className="size-5" strokeWidth={2.5} aria-hidden="true" />
       </span>
     </Link>
   );

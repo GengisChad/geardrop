@@ -1742,6 +1742,42 @@ export type Database = {
           },
         ]
       }
+      newsletter_subscribers: {
+        Row: {
+          confirmation_sent_at: string | null
+          confirmed_at: string | null
+          consent_text: string
+          created_at: string
+          email: string
+          id: number
+          source: string
+          token: string
+          unsubscribed_at: string | null
+        }
+        Insert: {
+          confirmation_sent_at?: string | null
+          confirmed_at?: string | null
+          consent_text: string
+          created_at?: string
+          email: string
+          id?: never
+          source?: string
+          token?: string
+          unsubscribed_at?: string | null
+        }
+        Update: {
+          confirmation_sent_at?: string | null
+          confirmed_at?: string | null
+          consent_text?: string
+          created_at?: string
+          email?: string
+          id?: never
+          source?: string
+          token?: string
+          unsubscribed_at?: string | null
+        }
+        Relationships: []
+      }
       order_enablement_checks: {
         Row: {
           evidence: string | null
@@ -3596,6 +3632,7 @@ export type Database = {
             }
             Returns: undefined
           }
+      claim_customer_orders: { Args: never; Returns: number }
       complete_media_delete: {
         Args: { p_media_asset_id: number }
         Returns: undefined
@@ -3761,6 +3798,12 @@ export type Database = {
         Args: { p_request_ids: number[] }
         Returns: undefined
       }
+      newsletter_confirm: { Args: { p_token: string }; Returns: string }
+      newsletter_signup: {
+        Args: { p_consent: string; p_email: string; p_source: string }
+        Returns: string
+      }
+      newsletter_unsubscribe: { Args: { p_token: string }; Returns: string }
       prepare_order_refund: {
         Args: { p_amount_cents: number; p_order_id: number; p_reason: string }
         Returns: undefined
@@ -3840,6 +3883,19 @@ export type Database = {
             Returns: undefined
           }
       record_staff_login: { Args: never; Returns: undefined }
+      record_stripe_charge_refund: {
+        Args: {
+          p_amount_refunded_cents: number
+          p_charge_id: string
+          p_payment_intent_id: string
+        }
+        Returns: {
+          order_id: number
+          order_number: string
+          recorded: boolean
+          refunded_cents: number
+        }[]
+      }
       record_stripe_checkout_order: {
         Args: {
           p_coupon_code?: string

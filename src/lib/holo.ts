@@ -20,6 +20,7 @@ const BY_SLUG: Readonly<Record<string, HoloPalette>> = {
   "shatter-horus-9-65gb": palette("#ffd3db", "#ff5470", "#7a3cff", "#e8ecf5", "rgba(255, 84, 112, 0.4)"),
   "cobalt-dragoon-2-60c": palette("#d6f0ff", "#4db8ff", "#3a5bff", "#c6ff00", "rgba(77, 184, 255, 0.3)"),
   "soar-phoenix-9-60gf": palette("#ffe2c4", "#ff7a3d", "#ff2d55", "#ffd36b", "rgba(255, 122, 61, 0.3)"),
+  "soar-phoenix-9-60gf-solo-trottola": palette("#ffe2c4", "#ff7a3d", "#ff2d55", "#ffd36b", "rgba(255, 122, 61, 0.3)"),
   "saber-samurai-2-70l": palette("#eadcff", "#b07cff", "#7a3cff", "#ff7a3d", "rgba(176, 124, 255, 0.3)"),
   "blast-pegasus-a-tr": palette("#f1ffc4", "#c6ff00", "#1fd1a5", "#3cf0ff", "rgba(198, 255, 0, 0.3)"),
   "drop-attack-battle-set": palette("#d6e2ff", "#6b8cff", "#7a3cff", "#3cf0ff", "rgba(107, 140, 255, 0.3)"),
@@ -32,6 +33,27 @@ const BY_SLUG: Readonly<Record<string, HoloPalette>> = {
   "porta-deck-rosa": palette("#ffe3ee", "#eab3c6", "#b07cff", "#ffd3db", "rgba(234, 179, 198, 0.35)"),
   "porta-deck-fucsia": palette("#ffd3db", "#eb4f78", "#7a3cff", "#ffd36b", "rgba(235, 79, 120, 0.35)"),
   "porta-deck-bianco": palette("#ffffff", "#e8ecf5", "#9d6bff", "#c6ff00", "rgba(232, 236, 245, 0.3)"),
+  // The two-colour cases shimmer in their print colour, the one that tells the black ones apart.
+  "porta-deck-nero-blu": palette("#d6e2ff", "#3a6fe0", "#1a33a3", "#3cf0ff", "rgba(58, 111, 224, 0.35)"),
+  "porta-deck-nero-rosso": palette("#ffd3db", "#e03535", "#7a3cff", "#ffd36b", "rgba(224, 53, 53, 0.35)"),
+  "porta-deck-nero-oro": palette("#fff3c4", "#e6b422", "#ff7a3d", "#c6ff00", "rgba(230, 180, 34, 0.35)"),
+  "porta-deck-giallo-nero": palette("#fff6c4", "#f2e21c", "#7a3cff", "#c6ff00", "rgba(242, 226, 28, 0.35)"),
+  "porta-deck-rosso-oro": palette("#ffe2c4", "#e5384a", "#e6b422", "#ffd36b", "rgba(229, 56, 74, 0.35)"),
+  "porta-deck-viola-verde": palette("#eadcff", "#6f5ad8", "#2fcf63", "#c6ff00", "rgba(111, 90, 216, 0.35)"),
+  "porta-deck-viola-argento": palette("#eadcff", "#6450d2", "#b9bcc4", "#e8ecf5", "rgba(100, 80, 210, 0.35)"),
+  "porta-deck-viola-menta": palette("#eadcff", "#4a3cc0", "#8de8d4", "#c9fbff", "rgba(74, 60, 192, 0.35)"),
+  "porta-deck-argento-nero": palette("#ffffff", "#b9bcc4", "#1b1b1f", "#e8ecf5", "rgba(185, 188, 196, 0.35)"),
+  "porta-deck-verde-nero": palette("#d9fff3", "#12d6a4", "#1fae5b", "#c6ff00", "rgba(18, 214, 164, 0.35)"),
+  "porta-deck-verde-rosso": palette("#d9fff3", "#0f9c7c", "#d8343f", "#ffd36b", "rgba(15, 156, 124, 0.35)"),
+  "porta-deck-blu-bianco": palette("#d6e2ff", "#1240d0", "#3a5bff", "#ffffff", "rgba(18, 64, 208, 0.35)"),
+  "porta-deck-bianco-blu": palette("#ffffff", "#e8ecf5", "#1a3fc0", "#3cf0ff", "rgba(26, 63, 192, 0.3)"),
+  "porta-deck-arancione-nero": palette("#ffe2c4", "#e8833f", "#ff7a3d", "#ffd36b", "rgba(232, 131, 63, 0.35)"),
+  "winder-launcher-takara-tomy": palette("#d6e2ff", "#3a5bff", "#e5384a", "#c6ff00", "rgba(58, 91, 255, 0.35)"),
+  "string-launcher-takara-tomy": palette("#d9efff", "#2f8fd8", "#62a6d8", "#e6f4ff", "rgba(47, 143, 216, 0.35)"),
+  "long-winder-launcher-takara-tomy": palette("#ffd3db", "#e5384a", "#12d6a4", "#c6ff00", "rgba(229, 56, 74, 0.35)"),
+  "custom-grip-takara-tomy": palette("#ffd3db", "#e0202c", "#1d5fd0", "#e8ecf5", "rgba(224, 32, 44, 0.35)"),
+  "cx-18-random-booster-brachio-whip": palette("#eadcff", "#9d6bff", "#12d6a4", "#ffd36b", "rgba(157, 107, 255, 0.35)"),
+  "bx-48-random-booster-vol-9": palette("#ffe2c4", "#e5384a", "#e6b422", "#ffd36b", "rgba(229, 56, 74, 0.35)"),
 };
 
 const BY_TYPE: Readonly<Record<BladeType, HoloPalette>> = {
@@ -47,7 +69,7 @@ export function holoPalette(product: Pick<Product, "slug" | "bladeType">): HoloP
   return BY_SLUG[product.slug] ?? (product.bladeType ? BY_TYPE[product.bladeType] : DEFAULT_PALETTE);
 }
 
-/** The palette as the CSS custom properties `.gd-holo` reads. */
+/** The palette as CSS custom properties. The product plate and the bundle panels read `--f2`. */
 export function holoStyle(product: Pick<Product, "slug" | "bladeType">): CSSProperties {
   const { f1, f2, f3, f4, glow } = holoPalette(product);
   return { "--f1": f1, "--f2": f2, "--f3": f3, "--f4": f4, "--glow": glow } as CSSProperties;
@@ -92,6 +114,33 @@ export function availabilityLine(product: Pick<Product, "stock" | "availableQuan
  */
 export function displayName(name: string): string {
   return name.replaceAll("-", "-⁠");
+}
+
+/**
+ * The part code from the specs ("9-60GF", "IS 7-55T"), stamped on cards beside the name.
+ * Bundles list several codes and get none.
+ */
+export function partCode(product: Pick<Product, "specs" | "bundleOf">): string | null {
+  if (product.bundleOf) return null;
+  const value = product.specs.find((spec) => spec.label === "Codice")?.value.trim();
+  return value && !value.includes("·") ? value : null;
+}
+
+/** The name without the code words it ends with: "Tread Croc TQ 5-50GN" → "Tread Croc". */
+export function bladeName(name: string, code: string | null): string {
+  if (!code) return name;
+  const codeWords = new Set(code.split(/\s+/));
+  const words = name.split(" ");
+  while (words.length > 1 && codeWords.has(words.at(-1) ?? "")) words.pop();
+  return words.join(" ");
+}
+
+/** The number printed behind a product like a jersey number: the ratchet ("9-60"), or a short bit ("LF"). */
+export function partMark(code: string | null): string | null {
+  if (!code) return null;
+  const ratchet = /\d+-\d+/.exec(code)?.[0];
+  if (ratchet) return ratchet;
+  return code.length <= 3 ? code : null;
 }
 
 /** A name without its trailing part code, for tight labels: "Glory Valkerion LF" → "Glory Valkerion". */

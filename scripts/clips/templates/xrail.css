@@ -1,0 +1,81 @@
+/* GEAR//DROP X-Rail motion primitives for the clip templates.
+   Every animation starts at t=0 and carries absolute delays: the renderer pauses all of them
+   and seeks frame by frame, so the output is deterministic. Transforms, opacity and clip-path only. */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root { --ease: cubic-bezier(0.16, 1, 0.3, 1); --lime: #c6ff00; --void: #0b0a0f; --ink: #f3f2f7; --tint: #7a3cff; }
+html, body { background: var(--void); }
+body { color: var(--ink); font-family: "Anybody Variable", "Anybody", sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; }
+img { display: block; }
+.stage { position: relative; overflow: hidden; background: var(--void); }
+
+/* Product plate as on the site (gd-product-plate), tinted with the product's own colour. */
+.plate { position: absolute; inset: 0; background: radial-gradient(90% 80% at var(--px, 55%) var(--py, 46%), color-mix(in oklab, var(--tint) 34%, #131218) 0%, #0d0c11 82%); }
+.plate::before { content: ""; position: absolute; inset: 0; background-image: repeating-linear-gradient(-72deg, rgba(255,255,255,0.05) 0 5px, transparent 5px 40px); -webkit-mask-image: linear-gradient(180deg, #000, transparent 75%); mask-image: linear-gradient(180deg, #000, transparent 75%); }
+
+/* Toothed X-line rail: the teeth light one by one (steps), then stay lit. */
+.rail { position: absolute; height: 14px; background-image: repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0 14px, transparent 14px 30px); }
+.rail.lit { background-image: repeating-linear-gradient(90deg, var(--lime) 0 14px, transparent 14px 30px); clip-path: inset(0 100% 0 0); animation-name: rail-fill; animation-fill-mode: both; }
+@keyframes rail-fill { to { clip-path: inset(0 0 0 0); } }
+
+/* Outlined part number behind the product (gd-watermark), sliding in along the slash. */
+.watermark { position: absolute; font-style: italic; font-weight: 900; font-stretch: 130%; line-height: 1; letter-spacing: -0.02em; white-space: nowrap; color: transparent; -webkit-text-stroke: 4px rgba(255,255,255,0.24); animation: wm-in 0.8s var(--ease) both; }
+@keyframes wm-in { from { opacity: 0; transform: translate(-68px, 209px); } to { opacity: 1; transform: none; } }
+
+/* Speed streaks at the slash angle: one pass, nothing left behind. */
+.streak { position: absolute; top: -10%; height: 120%; left: 0; opacity: 0; animation: streak 0.55s cubic-bezier(0.45, 0, 0.25, 1) both; }
+@keyframes streak { 0% { opacity: 0; transform: translateX(-260px) skewX(-18deg); } 12% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; transform: translateX(1400px) skewX(-18deg); } }
+
+/* The launch: the packshot spins into place and settles. */
+.product { position: absolute; max-width: none; filter: drop-shadow(0 60px 70px rgba(0,0,0,0.55)); animation: launch 1.05s linear both; }
+@keyframes launch {
+  0% { opacity: 0; transform: translateY(80px) rotate(-14deg) scale(0.8); animation-timing-function: cubic-bezier(0.2, 0.8, 0.3, 1); }
+  18% { opacity: 1; }
+  58% { opacity: 1; transform: translateY(-8px) rotate(1.6deg) scale(1.02); animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+  100% { opacity: 1; transform: none; }
+}
+
+/* Camera push while the callouts speak. */
+.zoom { position: absolute; inset: 0; }
+@keyframes push { 0% { transform: scale(1); animation-timing-function: var(--ease); } 37% { transform: scale(1.05); } 74% { transform: scale(1.05); animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1); } 100% { transform: scale(1); } }
+
+/* Callouts: a diamond anchor on the product, a drawn leader line, a label that wipes in. */
+.co { position: absolute; inset: 0; animation: co-out 0.25s ease-in both; }
+@keyframes co-out { from { opacity: 1; } to { opacity: 0; } }
+.co .dot { position: absolute; width: 22px; height: 22px; margin: -11px 0 0 -11px; background: var(--lime); box-shadow: 0 0 0 6px rgba(11,10,15,0.8); animation: dot-in 0.3s var(--ease) both; }
+@keyframes dot-in { from { transform: rotate(45deg) scale(0); } to { transform: rotate(45deg) scale(1); } }
+.co .line { position: absolute; width: 4px; margin-left: -2px; background: var(--lime); animation: grow 0.3s var(--ease) both; }
+@keyframes grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.co .label { position: absolute; padding: 13px 22px 11px 20px; background: var(--void); border-left: 8px solid var(--lime); font-weight: 800; font-stretch: 112%; font-size: 38px; line-height: 1; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; animation: wipe 0.35s var(--ease) both; }
+
+@keyframes wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+/* Starts well below its mask so accents above the cap height (À, È, Ù) never peek out early. */
+@keyframes rise { from { transform: translateY(150%); } to { transform: translateY(0); } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slash-in { from { clip-path: polygon(0 0, 0 0, -9% 100%, -9% 100%); } to { clip-path: polygon(0 0, 109% 0, 100% 100%, -9% 100%); } }
+@keyframes sheen { from { transform: translateX(-130%); } to { transform: translateX(130%); } }
+.slash-in { animation: slash-in 0.45s var(--ease) both; }
+
+/* Identity: condensed name rising letter by letter, the part code stamped, the type slid in. */
+.block { position: absolute; display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
+.name { font-weight: 800; font-stretch: 74%; line-height: 0.92; text-transform: uppercase; letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; padding: 0.16em 10px 2px 4px; margin: -0.16em 0 0 -2px; }
+.name span { display: inline-block; animation: rise 0.5s var(--ease) both; }
+.name .sp { width: 0.24em; }
+.row { display: flex; align-items: center; gap: 30px; padding-left: 6px; }
+.chip { font-family: "JetBrains Mono", monospace; font-weight: 500; line-height: 1; letter-spacing: 0.02em; border: 3px solid rgba(255,255,255,0.22); background: rgba(11,10,15,0.55); padding: 10px 16px 8px; animation: stamp 0.45s linear both; }
+@keyframes stamp {
+  0% { opacity: 0; transform: scale(1.55) rotate(-8deg); animation-timing-function: cubic-bezier(0.3, 0, 0.8, 0.15); }
+  55% { opacity: 1; transform: scale(0.95) rotate(1deg); animation-timing-function: var(--ease); }
+  100% { opacity: 1; transform: none; }
+}
+.type { display: inline-flex; align-items: center; gap: 14px; font-weight: 800; font-stretch: 112%; line-height: 1; text-transform: uppercase; letter-spacing: 0.06em; color: var(--lime); animation: slide-in 0.4s var(--ease) both; }
+.type .mark { display: inline-block; flex: none; width: 0.55em; height: 0.55em; background: currentColor; transform: skewX(-18deg); }
+@keyframes slide-in { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
+
+/* Owner-approved dark wordmark (logo.tsx, 2026-09-15): typeset beside the real emblem image. */
+.wm { font-family: "Chakra Petch", sans-serif; font-style: italic; font-weight: 700; text-transform: uppercase; letter-spacing: -0.01em; line-height: 1; white-space: nowrap; color: #f3f2f7; }
+.wm .sl { color: #c6ff00; }
+.wm .dr { color: #bba6ff; }
+
+/* One cut of light across a lime surface, once. */
+.sheen-host { position: relative; overflow: hidden; }
+.sheen-host::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,0.85) 50%, transparent 70%); animation: sheen 0.6s var(--ease) both; animation-delay: var(--sheen, 0s); }

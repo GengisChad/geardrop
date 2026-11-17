@@ -15,29 +15,35 @@ Italian Beyblade X players and the parents who buy for them.
 
 ## Product Purpose
 
-GEAR//DROP (geardropshop.it) sells original Hasbro Beyblade X online, plus Takara Tomy pieces on consignment.
+GEAR//DROP (geardropshop.it) sells original Hasbro Beyblade X online, plus Takara Tomy pieces: boosters, launchers and grips from its own shelf (since 2026-11-06), limited editions on consignment.
 - Online only: InPost point 5,65 €, Poste home 6,65 €, free shipping from 100 €.
 - Release pre-orders are sold apart from pieces in stock. A sold-out product offers "Avvisami".
 - Success means more completed orders from mobile visitors: a clear price, an honest availability, the shipping cost and an obvious next step on every product.
 
 ## Brand Personality
 
-Tech, energetic, honest. "Holo Drop": a dark arena, holographic product cards, lime and violet on near-black, Chakra Petch display italic and JetBrains Mono, the feel of a collector's drop. Energy comes from the products and the type, never from motion that slows the page. The copy is short, direct Italian and never promises what the shop cannot keep.
+Tech, energetic, honest. "X-Rail" (owner, 2026-10-23), built on the 2026-09-15 "Holo Drop" dark arena: lime and violet on near-black, Anybody in three widths (expanded italic display and prices, condensed product names, normal body) with JetBrains Mono for part codes, and a vocabulary taken from the logo and the toy:
+- slanted "//" buttons and a lime highlight slab;
+- die-cut stickers with the logo's white keyline, holographic foil on new releases only;
+- the part code split from the name, its ratchet number printed behind the packshot;
+- the stadium's toothed X-line rail for dividers and the free-shipping meter.
+
+Lime means "ships now / buy", violet means "on its way" (pre-orders). Energy comes from the products and the type, never from motion that slows the page. The copy is short, direct Italian and never promises what the shop cannot keep.
 
 ## Anti-references
 
 - A generic Shopify or marketplace template (white grid, stock badges, "Best seller" ribbons everywhere).
 - Motion-heavy sections like the old "battle" animation, which the owner removed on 2026-09-21.
 - Fake urgency or invented numbers (counters, reviews, "X people are watching").
-- Changing the owner's home order: best sellers, then new arrivals and pre-orders, then ready to ship, then the rest.
+- Changing the owner's home order: best sellers, then new arrivals and pre-orders, then ready to ship, then the rest. A spotlight the owner asks for (`SPOTLIGHT_SLUGS`, since 2026-11-06) goes before them, and only while the owner wants it.
 
 ## Design Principles
 
 1. **Sell on the phone first.** Price, availability and the add-to-cart action must sit in reach of the thumb and be readable at a glance.
 2. **Honest by default.** Every number shown is real: stock, savings against the packs, delivery times. A promise the shop cannot keep is a bug.
-3. **The product is the hero.** The owner's own packshots carry the page; type and colour frame them, they do not compete with them.
-4. **Refine Holo Drop, don't replace it.** Keep the dark arena, holo cards and lime/violet identity; improve hierarchy, legibility and rhythm.
-5. **Fast and calm.** No heavy animation; motion only for state and feedback.
+3. **The product is the hero.** The owner's own packshots carry the page; type and colour frame them, they do not compete with them. When a photo is too small, the manufacturer's official packshot may replace it if it is faithful to the edition sold and carries no watermark (owner, 2026-10-29); each one's source is in `docs/product-photo-sources.md`.
+4. **Keep the X-Rail vocabulary.** Dark arena, lime/violet with their meanings, the slash, the sticker, the part code and the rail; no ambient glows, gradient text, frosted glass or a kicker above every section.
+5. **Fast and calm.** No heavy animation; motion only for state and feedback. The X-Rail motion set (owner, 2026-10-29: the toothed free-shipping rail, product clips in the gallery, the cut of light on add, landing stickers, the sliding ratchet number, the card-to-product photo) follows it: each animation runs once and settles, nothing delays the first paint, and reduced motion stops it all.
 
 ## Accessibility & Inclusion
 

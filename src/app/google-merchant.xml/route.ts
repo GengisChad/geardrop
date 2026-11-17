@@ -1,4 +1,4 @@
-import { BUNDLES, FREE_SHIPPING_THRESHOLD, PARTNER_SHIPPING_METHOD, PRODUCTS, SHIPPING_METHODS, SOLD_WITHOUT_BARCODE, brandOf } from "@/data/catalog";
+import { BUNDLES, FREE_SHIPPING_THRESHOLD, KEPT_OFF_GOOGLE, PRODUCTS, SOLD_WITHOUT_BARCODE, brandOf, shippingMethodsFor } from "@/data/catalog";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import type { CategorySlug, Product } from "@/lib/commerce/types";
 import { CATEGORY_LABEL } from "@/lib/labels";
@@ -90,12 +90,10 @@ function offer(product: Product): string {
     rows.push(`<g:color>${escape(product.variant.label)}</g:color>`);
   }
 
-  // One row per carrier the checkout offers for this product's brand.
-  // Takara Tomy items only ship via the partner's Poste Punto Poste route.
-  // Hasbro (and unofficial) items use the regular InPost + Poste methods.
+  // One row per carrier the checkout offers for this product on its own: the partner's Poste route
+  // for consignment pieces, Poste to the door for a stadium box, the InPost Locker for everything else.
   const free = product.price.amount >= FREE_SHIPPING_THRESHOLD;
-  const shippingMethods = brandOf(product) === "takara-tomy" && !product.unofficial ? [PARTNER_SHIPPING_METHOD] : SHIPPING_METHODS;
-  for (const method of shippingMethods) {
+  for (const method of shippingMethodsFor(product)) {
     rows.push(
       `<g:shipping><g:country>IT</g:country><g:service>${escape(method.label)}</g:service><g:price>${euro(free ? 0 : method.priceCents)}</g:price></g:shipping>`,
     );
@@ -106,7 +104,8 @@ function offer(product: Product): string {
 
 export async function GET(): Promise<Response> {
   const commerce = await getCommerceProvider();
-  const slugs = [...BUNDLES, ...PRODUCTS].map((product) => product.slug);
+  // The two-colour deck cases are sold on the site only (KEPT_OFF_GOOGLE, owner 2026-10-24).
+  const slugs = [...BUNDLES, ...PRODUCTS].map((product) => product.slug).filter((slug) => !KEPT_OFF_GOOGLE.has(slug));
   const products = await commerce.getProductsBySlugs(slugs);
 
   const body = `<?xml version="1.0" encoding="UTF-8"?>

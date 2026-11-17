@@ -34,7 +34,7 @@ export function ProductDetails({ product }: { product: Product }) {
         <ul className="flex flex-col gap-2">
           {product.boxContents.map((item) => (
             <li key={item} className="flex items-center gap-2.5 text-small">
-              <span className="size-1.5 shrink-0 rounded-full bg-lime" aria-hidden="true" />
+              <span className="gd-dot size-1.5 text-lime" aria-hidden="true" />
               {item}
             </li>
           ))}
@@ -131,7 +131,7 @@ function AccordionItem({ label, content, initialOpen = false }: { label: string;
       >
         <span className="gd-display text-small font-bold tracking-wider text-graphite">{label}</span>
         <ChevronDown
-          className={cn("size-5 shrink-0 text-violet-soft transition-transform duration-300", open && "rotate-180")}
+          className={cn("size-5 shrink-0 text-lime transition-transform duration-300", open && "rotate-180")}
           aria-hidden="true"
         />
       </button>

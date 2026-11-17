@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { BUNDLE, BUNDLES, PRODUCTS, SHIPPING_FLAT_RATE } from "@/data/catalog";
 import { cutoutSrc, packBoxes, productImages } from "@/data/assets";
 import { bundlesContaining, piecesOf, resolveBundle, withBundles } from "@/lib/commerce/bundles";
+import { SPOTLIGHT_SLUGS } from "@/lib/home/product-selection";
 import { createMockProvider, STOREFRONT_CATALOGUE } from "@/lib/commerce/mock-provider";
 import type { Product } from "@/lib/commerce/types";
 import { availabilityLine } from "@/lib/holo";
@@ -72,8 +73,10 @@ describe("bundle stock", () => {
     expect(resolved.stock).toBe("esaurito");
   });
 
-  it("lists bundles first and keeps every product", () => {
-    expect(STOREFRONT_CATALOGUE.slice(0, BUNDLES.length).map((entry) => entry.slug)).toEqual(
+  it("lists the spotlight, then the bundles, and keeps every product", () => {
+    const spotlight = STOREFRONT_CATALOGUE.filter((entry) => SPOTLIGHT_SLUGS.includes(entry.slug)).length;
+    expect(STOREFRONT_CATALOGUE.slice(0, spotlight).map((entry) => entry.slug)).toEqual([...SPOTLIGHT_SLUGS]);
+    expect(STOREFRONT_CATALOGUE.slice(spotlight, spotlight + BUNDLES.length).map((entry) => entry.slug)).toEqual(
       BUNDLES.map((bundle) => bundle.slug),
     );
     expect(STOREFRONT_CATALOGUE).toHaveLength(PRODUCTS.length + BUNDLES.length);

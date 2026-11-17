@@ -62,7 +62,15 @@ select results_eq(
         -- The deck cases sell without a limit: the database keeps a counter the shop never shows.
         'porta-deck-giallo', 'porta-deck-verde-lime', 'porta-deck-azzurro', 'porta-deck-blu', 'porta-deck-rosa', 'porta-deck-fucsia', 'porta-deck-bianco',
         -- Takara Tomy on consignment from the partner, two of each (2026-10-07).
-        'cx-00-evangelion-deck-set', 'ux-00-glory-valkyrie-lf', 'cx-00-tigarage-ft3-60t')$$,
+        'cx-00-evangelion-deck-set', 'ux-00-glory-valkyrie-lf', 'cx-00-tigarage-ft3-60t',
+        -- The two-colour deck cases, no stock limit (2026-10-24).
+        'porta-deck-nero-blu', 'porta-deck-nero-rosso', 'porta-deck-nero-oro', 'porta-deck-giallo-nero', 'porta-deck-rosso-oro', 'porta-deck-viola-verde', 'porta-deck-viola-argento',
+        -- Seven more two-colour deck cases, no stock limit (2026-11-03).
+        'porta-deck-viola-menta', 'porta-deck-argento-nero', 'porta-deck-verde-nero', 'porta-deck-verde-rosso', 'porta-deck-blu-bianco', 'porta-deck-bianco-blu', 'porta-deck-arancione-nero',
+        -- Takara Tomy pieces on the shop's own shelf (2026-11-06).
+        'bx-48-random-booster-vol-9', 'cx-18-random-booster-brachio-whip', 'custom-grip-takara-tomy', 'long-winder-launcher-takara-tomy', 'string-launcher-takara-tomy', 'winder-launcher-takara-tomy',
+        -- Two red Phoenix without the launcher (2026-11-13).
+        'soar-phoenix-9-60gf-solo-trottola')$$,
   array[0::bigint],
   'only the owner-reviewed catalogue carries stock'
 );
@@ -135,8 +143,9 @@ select results_eq(
   $$select count(*)::bigint from pg_catalog.pg_policies where schemaname = 'public'$$,
   -- 90 before META ATTUALE; its three tables each carry a public read and a staff write (+6).
   -- +22 from the organization-scoping policies added in feat/gestionale-cloud.
-  array[118::bigint],
-  'exactly 118 public RLS policies exist'
+  -- +1 with the newsletter (2026-11-13): its list carries one staff read and nothing else.
+  array[119::bigint],
+  'exactly 119 public RLS policies exist'
 );
 select results_eq(
   $$select count(*)::bigint from public.categories$$,
@@ -145,13 +154,13 @@ select results_eq(
 );
 select results_eq(
   $$select count(*)::bigint from public.products$$,
-  array[30::bigint],
+  array[51::bigint],
   'double seed keeps the catalogue products'
 );
 select results_eq(
   $$select count(*)::bigint from public.product_images$$,
-  array[30::bigint],
-  'double seed keeps one image per catalogue product'
+  array[63::bigint],
+  'double seed keeps every catalogue image'
 );
 select results_eq(
   $$select count(*)::bigint from public.site_settings group by organization_id order by organization_id$$,

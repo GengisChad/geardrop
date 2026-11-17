@@ -68,20 +68,9 @@ SLUGS = (
 )
 
 # Measured in source pixels, one pixel inside the photographed edge so no background survives.
-OUTLINED = {
-    "glory-valkerion-lf": {
-        "source": "gloryValkerion.jpg",
-        # Box corners top-left, top-right, bottom-right, bottom-left: straightened to a rectangle.
-        "corners": ((122, 35), (467, 38), (463, 530), (125, 533)),
-        # The visible outline: the right side panel turns away at the bottom, so that corner is cut.
-        "outline": ((122, 35), (467, 38), (463, 506), (452, 512), (440, 522), (432, 530), (125, 533)),
-        # The hanger slot shows the wall behind the box; its light pixels become transparent.
-        "hole": (240, 55, 350, 95),
-        # The listing watermark overlaps the black bottom band: each column is repainted from a
-        # clean row above it.
-        "retouch": (((420, 495, 431, 524), 491),),
-    },
-}
+# Empty since 2026-10-29: Glory Valkerion, the last box photographed on a real background (with a
+# listing watermark painted out), now uses Hasbro's own packshot on white.
+OUTLINED: dict[str, dict] = {}
 
 # slug -> (centre x, centre y, radius) on the 1000 px tile, and what else cuts the top out: "alpha"
 # keeps only the product inside the circle; "dark" also drops the dark box artwork around a top
@@ -96,7 +85,8 @@ COMPOSITES = {
 }
 
 TOP_CROPS = {
-    "glory-valkerion-lf": (487, 526, 168, "dark"),
+    # Hasbro's packshot shows the loose top beside the box, like the Infinity Starters below.
+    "glory-valkerion-lf": (628, 442, 150, "alpha"),
     # The 2026-09-21 drop: two of the packs are photographed with the loose top beside the box.
     "cobalt-drake-4-60f": (704, 718, 202, "alpha"),
     "mirage-clock-9-65b": (726, 733, 187, "alpha"),

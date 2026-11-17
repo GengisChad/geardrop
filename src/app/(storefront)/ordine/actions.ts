@@ -1,6 +1,8 @@
 "use server";
 
 import { z } from "zod";
+import { withParcelEvents } from "@/lib/orders/customer-orders";
+import type { TrackingEvent } from "@/lib/shipping/inpost";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type OrderLookupResult =
@@ -14,6 +16,8 @@ export type OrderLookupResult =
         readonly tracking_carrier: string | null;
         readonly tracking_code: string | null;
         readonly tracking_url: string | null;
+        /** InPost's events for a parcel still travelling, oldest first; null when InPost was not asked or did not answer. */
+        readonly parcel_events: readonly TrackingEvent[] | null;
         readonly items: readonly {
           readonly product_name_snapshot: string;
           readonly quantity: number;
@@ -58,6 +62,10 @@ export async function lookupOrderAction(
     }
 
     const rawItems = Array.isArray(row.items) ? row.items : [];
+    const trackingCarrier = row.tracking_carrier ? String(row.tracking_carrier) : null;
+    const trackingCode = row.tracking_code ? String(row.tracking_code) : null;
+    // Only someone holding both the order number and its email gets this far.
+    const [tracked] = await withParcelEvents([{ status: String(row.status), trackingCarrier, trackingCode }]);
     return {
       ok: true,
       order: {
@@ -65,9 +73,10 @@ export async function lookupOrderAction(
         status: String(row.status),
         created_at: String(row.created_at),
         shipped_at: row.shipped_at ? String(row.shipped_at) : null,
-        tracking_carrier: row.tracking_carrier ? String(row.tracking_carrier) : null,
-        tracking_code: row.tracking_code ? String(row.tracking_code) : null,
+        tracking_carrier: trackingCarrier,
+        tracking_code: trackingCode,
         tracking_url: row.tracking_url ? String(row.tracking_url) : null,
+        parcel_events: tracked?.parcelEvents ?? null,
         items: rawItems.map((item) => {
           const row = (typeof item === "object" && item !== null && !Array.isArray(item)) ? item as Record<string, unknown> : {};
           return {

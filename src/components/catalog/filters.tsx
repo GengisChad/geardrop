@@ -224,7 +224,7 @@ function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }
       <button
         type="button"
         onClick={onRemove}
-        className="inline-flex items-center gap-1.5 rounded-full border border-violet/40 bg-violet-tint px-2.5 py-1 text-[0.6875rem] font-semibold text-violet-soft transition-colors hover:border-violet"
+        className="inline-flex items-center gap-1.5 border border-violet/40 bg-violet-tint px-2.5 py-1 text-[0.6875rem] font-semibold text-violet-soft transition-colors hover:border-violet"
       >
         {label}
         <X className="size-3" aria-hidden="true" />

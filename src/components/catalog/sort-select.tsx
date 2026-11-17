@@ -27,7 +27,7 @@ export function SortSelect() {
           const qs = next.toString();
           router.push(qs ? `?${qs}` : "?", { scroll: false });
         }}
-        className="gd-glass-compact h-11 rounded-full px-4 pr-8 text-small text-graphite max-sm:w-full transition-colors hover:border-violet focus:border-violet focus:outline-none"
+        className="gd-glass-compact h-11 px-4 pr-8 text-small text-graphite max-sm:w-full transition-colors hover:border-lime focus:border-lime focus:outline-none"
       >
         {SORT_KEYS.map((key) => (
           <option key={key} value={key}>

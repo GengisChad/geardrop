@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Hourglass, Lock, RotateCcw, Truck } from "lucide-react";
-import { PARTNER_SHIPPING_METHOD, SHIPPING_METHODS, FREE_SHIPPING_THRESHOLD } from "@/data/catalog";
+import { PARTNER_SHIPPING_METHOD, FREE_SHIPPING_THRESHOLD, fitsLocker, shippingMethodsFor } from "@/data/catalog";
 import { formatPrice } from "@/lib/format";
 import type { Product } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
@@ -41,10 +41,13 @@ export function DeliverySummary({ product }: DeliverySummaryProps) {
         stripe,
       ]
     : [
-        // All Hasbro methods in preference order (owner, 2026-10-13): Locker 4,90, punto di
-        // ritiro 5,65, Poste a casa 6,65. Prices come from SHIPPING_METHODS so they cannot drift.
+        // The InPost Locker 4,90 (owner, 2026-10-23: InPost only), or Poste to the door 6,65 for a
+        // stadium box no Locker takes. Prices come from the catalogue so they cannot drift.
         // A pre-order's wait is not repeated here: the status panel right above already says it.
-        ...SHIPPING_METHODS.map((m) => ({ key: m.code, icon: Truck, tone: "text-violet-soft", text: method(m.label, m.priceCents) })),
+        ...shippingMethodsFor(product).map((m) => ({ key: m.code, icon: Truck, tone: "text-violet-soft", text: method(m.label, m.priceCents) })),
+        ...(fitsLocker(product)
+          ? []
+          : [{ key: "bulky", icon: Truck, tone: "text-violet-soft", text: "La scatola dello stadio non entra nei Locker InPost: arriva a casa" }]),
         free,
         { key: "returns", icon: RotateCcw, tone: "text-violet-soft", text: "Reso gratuito entro 30 giorni" },
         stripe,

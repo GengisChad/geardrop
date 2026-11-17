@@ -32,20 +32,20 @@ test.describe("truthful preorder storefront", () => {
 
   test("omits fabricated home, footer, and zero-review presentation", async ({ page }) => {
     await page.goto("/");
-    // The homepage: the best sellers lead the hero, the pre-order drop follows, then what
-    // ships now, then the rest (owner, 2026-10-05).
+    // The homepage: the owner's spotlight (2026-11-06), the best sellers, the pre-order drop, then
+    // what ships now, then the rest (owner, 2026-10-05).
     await expect(page.getByRole("heading", { name: "I più venduti", exact: true })).toHaveCount(1);
     await expect(page.getByRole("heading", { name: "Pre-ordini aperti", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Pronti da spedire" })).toBeVisible();
     // A new release on the shelf has its own row (owner, 2026-10-08); "Tutto il resto" holds only
     // what no named row took, which in the reviewed catalogue is nothing.
-    await expect(page.getByRole("heading", { name: "Appena arrivati" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Appena arrivati", exact: true })).toBeVisible();
     await expect(page.getByTestId("product-carousel")).toHaveCount(0);
     // "I più venduti" is truthful only while it deals the sales record and nothing else: the
     // label was forbidden outright when the shop had no sales to back it.
-    const hero = await page.getByTestId("hero-products").getByTestId("product-card")
+    const best = await page.getByTestId("best-sellers").getByTestId("product-card")
       .evaluateAll((cards) => cards.map((card) => card.getAttribute("data-slug")));
-    expect(hero).toEqual(BESTSELLER_SLUGS);
+    expect(best).toEqual(BESTSELLER_SLUGS);
     await expect(page.locator("body")).not.toContainText("GEAR//DROP Club");
     await expect(page.locator("body")).not.toContainText("45.000");
     await expect(page.getByTestId("newsletter-email")).toHaveCount(0);

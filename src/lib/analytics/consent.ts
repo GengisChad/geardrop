@@ -18,6 +18,8 @@ export const CONSENT_VERSION = 2;
 export const CONSENT_MAX_AGE_MS = 180 * 24 * 60 * 60 * 1000;
 /** Fired on window when the footer asks to reopen the banner. */
 export const OPEN_CONSENT_EVENT = "gd:open-cookie-consent";
+/** Fired on window when this tab records a choice, so every reader (the newsletter banner too) re-reads it. */
+export const CONSENT_CHANGED_EVENT = "gd:cookie-consent-changed";
 
 export type ConsentChoice = {
   readonly analytics: boolean;

@@ -16,7 +16,7 @@ export default async function RicercaPage({ searchParams }: { searchParams: Prom
   const params = await searchParams;
   const query = parseProductQuery(params);
   const term = typeof params["q"] === "string" ? params["q"] : "";
-  const page = await commerce.listProducts({ ...query, perPage: 24 });
+  const page = await commerce.listProducts({ ...query, perPage: 48 });
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-10 sm:px-6">

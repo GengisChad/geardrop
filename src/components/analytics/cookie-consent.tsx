@@ -7,6 +7,7 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   analyticsCookieNames,
+  CONSENT_CHANGED_EVENT,
   type ConsentChoice,
   type ConsentPurposes,
   marketingCookieNames,
@@ -23,7 +24,7 @@ import {
 } from "@/lib/analytics/google";
 
 /** Fired when this tab records a choice, so every reader re-reads it. */
-const CHANGE_EVENT = "gd:cookie-consent-changed";
+const CHANGE_EVENT = CONSENT_CHANGED_EVENT;
 /** A choice made where storage is blocked still holds for the rest of the visit. */
 let visitChoice: ConsentChoice | null = null;
 

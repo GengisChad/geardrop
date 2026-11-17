@@ -9,10 +9,10 @@ const deck = PRODUCTS.filter((product) => product.variant?.family === "porta-dec
 const original = PRODUCTS.find((product) => product.slug === "cobalt-drake-4-60f")!;
 
 describe("deck case colours", () => {
-  it("sells every colour of the owner's photo at €24,50, as an unofficial accessory with no stock limit", () => {
+  it("sells every colour of the owner's photo at €18 (2026-10-24), as an unofficial accessory with no stock limit", () => {
     expect(deck.map((product) => product.variant?.label)).toEqual(["Giallo", "Verde lime", "Azzurro", "Blu", "Rosa", "Fucsia", "Bianco"]);
     for (const product of deck) {
-      expect(product).toMatchObject({ category: "accessori", price: { amount: 2450 }, stock: "disponibile", unofficial: true });
+      expect(product).toMatchObject({ category: "accessori", price: { amount: 1800 }, stock: "disponibile", unofficial: true });
       expect(product.availableQuantity).toBeUndefined();
       expect(product.name).toBe(`Porta Deck ${product.variant?.label}`);
       expect(product.description).toContain("non è prodotto né certificato da Hasbro");

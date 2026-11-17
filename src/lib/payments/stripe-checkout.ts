@@ -104,6 +104,9 @@ export type ExpressOrderRef = {
   readonly idempotencyKey: string;
   readonly lines: readonly { readonly slug: string; readonly quantity: number }[];
   readonly attribution?: VisitSource | undefined;
+  /** The Locker picked in the cart, for an InPost Locker express order (2026-10-23). */
+  readonly pickupPoint?: string | undefined;
+  readonly pickupPointId?: string | undefined;
 };
 
 export type CheckoutSessionInput =
@@ -154,6 +157,9 @@ export function buildCheckoutSessionFields(
   // The carrier the quote was priced with: the cheapest unless the buyer picked another.
   const method = shippingMethodByCode(quote.shippingCode) ?? SHIPPING_METHODS[0]!;
 
+  // A code in the cart: the lines it covers are charged at its price, and no promotion code stacks on it.
+  const clubCode = quote.couponCode;
+
   const fields: Record<string, string | number> = {
     mode: "payment",
     locale: "it",
@@ -167,7 +173,7 @@ export function buildCheckoutSessionFields(
     // recovery emails need that consent. Manual promotion codes are fine, except on a cart with
     // a partner's consignment piece: the partner is owed his price whatever the buyer paid, so a
     // code there would come entirely out of the shop's few euros of commission.
-    "allow_promotion_codes": quote.lines.some((line) => CONSIGNMENT_SLUGS.has(line.slug)) ? "false" : "true",
+    "allow_promotion_codes": clubCode || quote.lines.some((line) => CONSIGNMENT_SLUGS.has(line.slug)) ? "false" : "true",
     "metadata[order_ref]": reference,
     "metadata[lines]": truncate(quote.lines.map((line) => `${line.slug} x${line.quantity}`).join(", "), METADATA_LIMIT),
     "metadata[shipping_method]": method.code,
@@ -205,7 +211,14 @@ export function buildCheckoutSessionFields(
     if (notes) fields["metadata[notes]"] = truncate(notes, METADATA_LIMIT);
     const pickupPoint = method.pickupPoint ? contact.pickupPoint?.trim() : undefined;
     if (pickupPoint) fields["metadata[pickup_point]"] = truncate(pickupPoint, METADATA_LIMIT);
+    if (pickupPoint && method.carrier === "inpost" && contact.pickupPointId) fields["metadata[pickup_point_id]"] = contact.pickupPointId;
   } else {
+    // The Locker for an express InPost order was picked in the cart: Stripe cannot ask for one.
+    const { pickupPoint, pickupPointId } = input.order as ExpressOrderRef;
+    if (method.pickupPoint && pickupPoint?.trim()) {
+      fields["metadata[pickup_point]"] = truncate(pickupPoint.trim(), METADATA_LIMIT);
+      if (method.carrier === "inpost" && pickupPointId) fields["metadata[pickup_point_id]"] = pickupPointId;
+    }
     // Express checkout: Stripe collects the shipping address and phone on its hosted page.
     // The webhook reads them from collected_information.shipping_details (or shipping_details on
     // older API versions). customer_email comes back via customer_details.
@@ -218,10 +231,23 @@ export function buildCheckoutSessionFields(
     fields["cancel_url"] = `${origin}/carrello`;
   }
 
+  if (clubCode) fields["metadata[club]"] = clubCode;
+
   quote.lines.forEach((line, index) => {
     const priceId = priceIds.get(line.slug);
     if (!priceId) throw new Error(`Missing Stripe price for ${line.slug}`);
-    fields[`line_items[${index}][price]`] = priceId;
+    // A price from a code, or a deck case at the kit price: the catalogue's Stripe product at that amount.
+    const specialPrice = (clubCode ? line.clubUnitPrice : undefined) ?? line.kitUnitPrice;
+    if (specialPrice) {
+      // The webhook still reads the slug from the product id, and the price list in Stripe stays
+      // the one the shop shows everyone.
+      fields[`line_items[${index}][price_data][currency]`] = specialPrice.currency.toLowerCase();
+      fields[`line_items[${index}][price_data][product]`] = stripeProductId(line.slug);
+      fields[`line_items[${index}][price_data][unit_amount]`] = specialPrice.amount;
+      fields[`line_items[${index}][price_data][tax_behavior]`] = "inclusive";
+    } else {
+      fields[`line_items[${index}][price]`] = priceId;
+    }
     fields[`line_items[${index}][quantity]`] = line.quantity;
   });
 
@@ -233,11 +259,15 @@ export function buildCheckoutSessionFields(
   });
   if (preorders.length > 0) {
     fields["metadata[preorder]"] = truncate(preorders.map(({ line, units }) => `${line.slug} x${units}`).join(", "), METADATA_LIMIT);
-    fields["custom_text[submit][message]"] = truncate(
-      `In pre-ordine: ${preorders.map(({ line, units }) => `${units} × ${line.name}`).join(", ")}. ${preorderDelivery(preorders.some(({ line }) => line.releasePreorder))}.`,
-      CUSTOM_TEXT_LIMIT,
-    );
   }
+  const submitNotes = [
+    ...(clubCode && quote.lines.some((line) => line.clubUnitPrice) ? [`Sconto applicato (${clubCode}).`] : []),
+    ...(quote.lines.some((line) => line.kitUnitPrice) ? ["Porta deck a 15 € con il kit."] : []),
+    ...(preorders.length > 0
+      ? [`In pre-ordine: ${preorders.map(({ line, units }) => `${units} × ${line.name}`).join(", ")}. ${preorderDelivery(preorders.some(({ line }) => line.releasePreorder))}.`]
+      : []),
+  ];
+  if (submitNotes.length > 0) fields["custom_text[submit][message]"] = truncate(submitNotes.join(" "), CUSTOM_TEXT_LIMIT);
 
   return fields;
 }

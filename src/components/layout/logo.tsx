@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { EmblemLaunch } from "@/components/layout/emblem-launch";
 import { brand, brandSize } from "@/data/assets";
 import { cn } from "@/lib/cn";
 
@@ -8,6 +9,10 @@ import { cn } from "@/lib/cn";
  * graphite "GEAR" disappears on the Holo Drop ground, so the owner-approved design
  * (2026-09-15) sets the wordmark in the display face beside the supplied emblem. The emblem
  * itself is never redrawn or recoloured. (audit §7.1)
+ *
+ * The emblem is an oval whose arrows turn counter-clockwise, so a constant clockwise spin read
+ * as a wobble running backwards. It launches once on load instead and settles in its drawn pose,
+ * and launches again for every piece that goes into the cart (EmblemLaunch).
  */
 export function Wordmark({
   className,
@@ -18,19 +23,22 @@ export function Wordmark({
   priority?: boolean;
   spin?: boolean;
 }) {
+  const emblem = (
+    <Image
+      src={brand.emblem}
+      alt=""
+      aria-hidden="true"
+      width={brandSize.emblem.width}
+      height={brandSize.emblem.height}
+      priority={priority}
+      sizes="40px"
+      className={cn("h-7 w-auto min-[360px]:h-8 sm:h-9", spin && "animate-[gd-launch_1.6s_cubic-bezier(0.22,1,0.36,1)_0.2s_both]")}
+    />
+  );
   return (
     <span className={cn("inline-flex items-center gap-2 min-[360px]:gap-2.5", className)}>
-      <Image
-        src={brand.emblem}
-        alt=""
-        aria-hidden="true"
-        width={brandSize.emblem.width}
-        height={brandSize.emblem.height}
-        priority={priority}
-        sizes="40px"
-        className={cn("h-7 w-auto min-[360px]:h-8 sm:h-9", spin && "animate-[gd-spin_14s_linear_infinite]")}
-      />
-      <span className="gd-display-wide text-[1.05rem] font-bold leading-none text-graphite min-[360px]:text-[1.2rem] sm:text-[1.45rem] lg:text-[1.2rem] xl:text-[1.45rem]">
+      {spin ? <EmblemLaunch>{emblem}</EmblemLaunch> : emblem}
+      <span className="gd-wordmark whitespace-nowrap text-[1.05rem] font-bold leading-none text-graphite min-[360px]:text-[1.2rem] sm:text-[1.45rem] lg:text-[1.2rem] xl:text-[1.45rem]">
         Gear<span className="text-lime">{"//"}</span>
         <span className="text-violet-soft">Drop</span>
       </span>

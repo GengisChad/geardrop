@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { PRODUCTS, SHIPPING_FLAT_RATE, SHIPPING_METHODS } from "@/data/catalog";
+import { BULKY_SHIPPING_METHOD, FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_FLAT_RATE, SHIPPING_METHODS } from "@/data/catalog";
 import type { PlaceOrderInput } from "@/lib/checkout-schema";
 import { createMockProvider } from "@/lib/commerce/mock-provider";
 import type { CartQuote, CartQuoteRequest } from "@/lib/commerce/types";
@@ -40,6 +40,8 @@ const order: PlaceOrderInput = {
   lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }],
   idempotencyKey: "3f1a2b4c-5d6e-4f70-8a91-b2c3d4e5f607",
 };
+
+const DRAGOON = PRODUCTS.find((product) => product.slug === "cobalt-dragoon-2-60c")!.price.amount;
 
 const catalogPrices: StripePriceRow[] = PRODUCTS.map((product) => ({
   id: `price_${product.slug}`,
@@ -185,7 +187,18 @@ describe("stripe checkout session", () => {
     expect(fields["metadata[preorder]"]).toBe("cobalt-dragoon-2-60c x1");
   });
 
-  it("ships free above the threshold", async () => {
+  it("ships free above the threshold, naming the Locker", async () => {
+    // Enough packs to clear the threshold whatever the owner sets it to.
+    const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: Math.ceil(FREE_SHIPPING_THRESHOLD / DRAGOON) }]);
+    const fields = buildCheckoutSessionFields({ quote, order, origin: ORIGIN }, matchStripePrices(quote, catalogPrices)!);
+
+    expect(fields["shipping_options[0][shipping_rate_data][fixed_amount][amount]"]).toBe(0);
+    expect(fields["shipping_options[0][shipping_rate_data][display_name]"]).toBe(`Spedizione gratuita · ${SHIPPING_METHODS[0]!.label}`);
+    expect(fields["metadata[shipping_method]"]).toBe(SHIPPING_METHODS[0]!.code);
+  });
+
+  // Updated 2026-10-23: two arenas ride Poste to the door, whatever else is in the cart.
+  it("ships free above the threshold, naming Poste to the door when the cart holds a stadium", async () => {
     // Two arenas and two packs clear the threshold whatever the owner sets it to.
     const quote = await quoteFor([
       { slug: "drop-attack-battle-set", quantity: 2 },
@@ -194,8 +207,45 @@ describe("stripe checkout session", () => {
     const fields = buildCheckoutSessionFields({ quote, order, origin: ORIGIN }, matchStripePrices(quote, catalogPrices)!);
 
     expect(fields["shipping_options[0][shipping_rate_data][fixed_amount][amount]"]).toBe(0);
-    expect(fields["shipping_options[0][shipping_rate_data][display_name]"]).toBe(`Spedizione gratuita · ${SHIPPING_METHODS[0]!.label}`);
+    expect(fields["shipping_options[0][shipping_rate_data][display_name]"]).toBe(`Spedizione gratuita · ${BULKY_SHIPPING_METHOD.label}`);
+    expect(fields["metadata[shipping_method]"]).toBe(BULKY_SHIPPING_METHOD.code);
     expect(fields["line_items[1][price]"]).toBe("price_cobalt-dragoon-2-60c");
+  });
+
+  // Added 2026-10-23: the Locker the buyer picked travels with the session, with InPost id.
+  it("carries the Locker the buyer picked, with its InPost id", async () => {
+    const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }]);
+    const withLocker: PlaceOrderInput = {
+      ...order,
+      contact: { ...order.contact, shippingMethod: "inpost-locker", pickupPoint: "  Locker Roma Termini  ", pickupPointId: "IT_ITROM44128M" },
+    };
+    const fields = buildCheckoutSessionFields({ quote, order: withLocker, origin: ORIGIN }, matchStripePrices(quote, catalogPrices)!);
+
+    expect(fields["metadata[shipping_method]"]).toBe("inpost-locker");
+    expect(fields["metadata[pickup_point]"]).toBe("Locker Roma Termini");
+    expect(fields["metadata[pickup_point_id]"]).toBe("IT_ITROM44128M");
+  });
+
+  it("writes no InPost id when the buyer typed the Locker by hand", async () => {
+    const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }]);
+    const typed: PlaceOrderInput = { ...order, contact: { ...order.contact, shippingMethod: "inpost-locker", pickupPoint: "Locker Roma Termini" } };
+    const fields = buildCheckoutSessionFields({ quote, order: typed, origin: ORIGIN }, matchStripePrices(quote, catalogPrices)!);
+
+    expect(fields["metadata[pickup_point]"]).toBe("Locker Roma Termini");
+    expect(fields["metadata[pickup_point_id]"]).toBeUndefined();
+  });
+
+  it("writes no Locker and no InPost id for a door delivery, even if the form still held one", async () => {
+    const quote = await quoteFor([{ slug: "sneak-attack-battle-set", quantity: 1 }]);
+    const stale: PlaceOrderInput = {
+      ...order,
+      contact: { ...order.contact, shippingMethod: "standard", pickupPoint: "Locker Roma Termini", pickupPointId: "IT_ITROM44128M" },
+    };
+    const fields = buildCheckoutSessionFields({ quote, order: stale, origin: ORIGIN }, matchStripePrices(quote, catalogPrices)!);
+
+    expect(fields["metadata[shipping_method]"]).toBe("standard");
+    expect(fields["metadata[pickup_point]"]).toBeUndefined();
+    expect(fields["metadata[pickup_point_id]"]).toBeUndefined();
   });
 
   it("creates the session from Stripe prices with a replay-safe idempotency key", async () => {
@@ -291,9 +341,18 @@ const expressOrderRef: ExpressOrderRef = {
   lines: [{ slug: "cobalt-dragoon-2-60c", quantity: 1 }],
 };
 
+// Updated 2026-10-23: express no longer implies Poste home. The session is priced with the method of
+// the cart itself (the InPost Locker, or Poste to the door for a stadium box) and the Locker is
+// picked in the cart, because Stripe cannot ask for one.
+const expressLockerRef: ExpressOrderRef = {
+  ...expressOrderRef,
+  pickupPoint: "Locker Roma Termini",
+  pickupPointId: "IT_ITROM44128M",
+};
+
 describe("express checkout session fields", () => {
   it("omits customer_email and all payment_intent_data.shipping fields", async () => {
-    const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }], "standard");
+    const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }], "inpost-locker");
     const fields = buildCheckoutSessionFields(
       { quote, order: expressOrderRef, origin: ORIGIN, express: true },
       matchStripePrices(quote, catalogPrices)!,
@@ -304,7 +363,7 @@ describe("express checkout session fields", () => {
   });
 
   it("enables shipping address collection (Italy only) and phone collection", async () => {
-    const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }], "standard");
+    const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }], "inpost-locker");
     const fields = buildCheckoutSessionFields(
       { quote, order: expressOrderRef, origin: ORIGIN, express: true },
       matchStripePrices(quote, catalogPrices)!,
@@ -315,25 +374,75 @@ describe("express checkout session fields", () => {
     expect(fields["metadata[express]"]).toBe("true");
   });
 
-  it("sets shipping_method=standard and uses the Poste home method label and price", async () => {
-    const poste = SHIPPING_METHODS.find((m) => m.code === "standard")!;
-    const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }], "standard");
+  it("sets shipping_method=inpost-locker and uses the Locker label and price, with the Locker picked in the cart", async () => {
+    const locker = SHIPPING_METHODS.find((m) => m.code === "inpost-locker")!;
+    const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }]);
+    const fields = buildCheckoutSessionFields(
+      { quote, order: expressLockerRef, origin: ORIGIN, express: true },
+      matchStripePrices(quote, catalogPrices)!,
+    );
+
+    expect(fields["metadata[shipping_method]"]).toBe("inpost-locker");
+    expect(fields["shipping_options[0][shipping_rate_data][display_name]"]).toBe(locker.label);
+    expect(fields["shipping_options[0][shipping_rate_data][fixed_amount][amount]"]).toBe(locker.priceCents);
+    // Stripe cannot ask for a Locker, so the pick rides in the metadata, with InPost id for the label.
+    expect(fields["metadata[pickup_point]"]).toBe("Locker Roma Termini");
+    expect(fields["metadata[pickup_point_id]"]).toBe("IT_ITROM44128M");
+  });
+
+  it("writes the Locker name but no InPost id when the cart only has a name", async () => {
+    const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }]);
+    const fields = buildCheckoutSessionFields(
+      { quote, order: { ...expressOrderRef, pickupPoint: "  Locker Roma Termini  " }, origin: ORIGIN, express: true },
+      matchStripePrices(quote, catalogPrices)!,
+    );
+
+    expect(fields["metadata[pickup_point]"]).toBe("Locker Roma Termini");
+    expect(fields["metadata[pickup_point_id]"]).toBeUndefined();
+  });
+
+  it("writes no pickup metadata when the cart picked no Locker", async () => {
+    const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }]);
     const fields = buildCheckoutSessionFields(
       { quote, order: expressOrderRef, origin: ORIGIN, express: true },
       matchStripePrices(quote, catalogPrices)!,
     );
 
+    expect(fields["metadata[pickup_point]"]).toBeUndefined();
+    expect(fields["metadata[pickup_point_id]"]).toBeUndefined();
+  });
+
+  it("sends a stadium box by Poste to the door: label, price, and no Locker metadata", async () => {
+    const quote = await quoteFor([{ slug: "drop-attack-battle-set", quantity: 1 }]);
+    const fields = buildCheckoutSessionFields(
+      { quote, order: { ...expressLockerRef, lines: quote.lines }, origin: ORIGIN, express: true },
+      matchStripePrices(quote, catalogPrices)!,
+    );
+
     expect(fields["metadata[shipping_method]"]).toBe("standard");
-    expect(fields["shipping_options[0][shipping_rate_data][display_name]"]).toBe(poste.label);
-    expect(fields["shipping_options[0][shipping_rate_data][fixed_amount][amount]"]).toBe(poste.priceCents);
+    expect(fields["shipping_options[0][shipping_rate_data][display_name]"]).toBe(BULKY_SHIPPING_METHOD.label);
+    expect(fields["shipping_options[0][shipping_rate_data][fixed_amount][amount]"]).toBe(BULKY_SHIPPING_METHOD.priceCents);
+    // A door delivery has no Locker, even if the cart still held one from before the stadium went in.
+    expect(fields["metadata[pickup_point]"]).toBeUndefined();
+    expect(fields["metadata[pickup_point_id]"]).toBeUndefined();
   });
 
   it("shows free shipping label above the threshold in express mode", async () => {
-    const poste = SHIPPING_METHODS.find((m) => m.code === "standard")!;
-    const quote = await quoteFor(
-      [{ slug: "drop-attack-battle-set", quantity: 2 }, { slug: "cobalt-dragoon-2-60c", quantity: 2 }],
-      "standard",
+    const locker = SHIPPING_METHODS.find((m) => m.code === "inpost-locker")!;
+    const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: Math.ceil(FREE_SHIPPING_THRESHOLD / DRAGOON) }]);
+    const fields = buildCheckoutSessionFields(
+      { quote, order: { ...expressLockerRef, lines: quote.lines }, origin: ORIGIN, express: true },
+      matchStripePrices(quote, catalogPrices)!,
     );
+
+    expect(fields["shipping_options[0][shipping_rate_data][fixed_amount][amount]"]).toBe(0);
+    expect(fields["shipping_options[0][shipping_rate_data][display_name]"]).toBe(
+      `Spedizione gratuita · ${locker.label}`,
+    );
+  });
+
+  it("shows free shipping label above the threshold in express mode for a stadium cart", async () => {
+    const quote = await quoteFor([{ slug: "drop-attack-battle-set", quantity: 2 }, { slug: "cobalt-dragoon-2-60c", quantity: 2 }]);
     const fields = buildCheckoutSessionFields(
       { quote, order: { ...expressOrderRef, lines: quote.lines }, origin: ORIGIN, express: true },
       matchStripePrices(quote, catalogPrices)!,
@@ -341,14 +450,14 @@ describe("express checkout session fields", () => {
 
     expect(fields["shipping_options[0][shipping_rate_data][fixed_amount][amount]"]).toBe(0);
     expect(fields["shipping_options[0][shipping_rate_data][display_name]"]).toBe(
-      `Spedizione gratuita · ${poste.label}`,
+      `Spedizione gratuita · ${BULKY_SHIPPING_METHOD.label}`,
     );
   });
 
   it("keeps the consignment promo-code rule: off when the cart holds a partner's piece", async () => {
     // Takara piece: consignment rule applies; the test checks the field value only — the
     // startExpressCheckout action refuses Takara carts before reaching the builder.
-    const quote = await quoteFor([{ slug: "ux-00-glory-valkyrie-lf", quantity: 1 }], "standard");
+    const quote = await quoteFor([{ slug: "ux-00-glory-valkyrie-lf", quantity: 1 }]);
     const fields = buildCheckoutSessionFields(
       { quote, order: { idempotencyKey: expressKey, lines: [{ slug: "ux-00-glory-valkyrie-lf", quantity: 1 }] }, origin: ORIGIN, express: true },
       matchStripePrices(quote, catalogPrices)!,
@@ -358,7 +467,7 @@ describe("express checkout session fields", () => {
   });
 
   it("carries pre-order metadata and custom text in express mode just as in standard mode", async () => {
-    const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }], "standard");
+    const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }], "inpost-locker");
     const preorderQuote: CartQuote = {
       ...quote,
       lines: quote.lines.map((line) => ({ ...line, stock: "pre-ordine" as const })),
@@ -373,7 +482,7 @@ describe("express checkout session fields", () => {
   });
 
   it("keeps all common fields: mode, locale, reference, line_items, success/cancel URLs", async () => {
-    const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }], "standard");
+    const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }], "inpost-locker");
     const fields = buildCheckoutSessionFields(
       { quote, order: expressOrderRef, origin: ORIGIN, express: true },
       matchStripePrices(quote, catalogPrices)!,
@@ -385,7 +494,7 @@ describe("express checkout session fields", () => {
       locale: "it",
       client_reference_id: reference,
       "metadata[order_ref]": reference,
-      "metadata[shipping_method]": "standard",
+      "metadata[shipping_method]": "inpost-locker",
       "payment_intent_data[description]": `Ordine ${reference} · GEAR//DROP`,
       "payment_intent_data[metadata][order_ref]": reference,
       success_url: `${ORIGIN}/checkout/successo?session_id={CHECKOUT_SESSION_ID}`,

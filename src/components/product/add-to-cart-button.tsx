@@ -6,7 +6,8 @@ import { Bell, Check, ShoppingCart } from "lucide-react";
 import { Button, type ButtonSize } from "@/components/ui/button";
 import { useCart } from "@/lib/store/cart";
 import { useToast } from "@/components/ui/toast";
-import { FREE_SHIPPING_FROM_LABEL, STOCK_CTA, isPurchasable } from "@/lib/labels";
+import { ToastFreeShipping } from "@/components/cart/toast-free-shipping";
+import { STOCK_CTA, isPurchasable } from "@/lib/labels";
 import type { StockStatus } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
 import { trackEvent } from "@/lib/funnel";
@@ -32,7 +33,8 @@ type AddToCartButtonProps = {
   compact?: boolean;
 };
 
-const COMPACT = "gd-chamfer inline-flex size-11 shrink-0 items-center justify-center transition-colors duration-200";
+/** The card's slanted cart button: lime icon on carbon, filled lime on hover. */
+const COMPACT = "gd-chamfer inline-flex h-11 w-12 shrink-0 items-center justify-center transition-colors duration-200";
 
 export function AddToCartButton({
   slug,
@@ -64,7 +66,7 @@ export function AddToCartButton({
           href={notice}
           data-testid="notify-me"
           aria-label={`${text}: ${name}`}
-          className={cn(COMPACT, "border border-white/15 text-grey-600 hover:border-violet-soft hover:text-violet-soft")}
+          className={cn(COMPACT, "bg-surface-2 text-grey-600 hover:bg-violet hover:text-white")}
         >
           <Bell className="size-4" aria-hidden="true" />
         </Link>
@@ -88,11 +90,13 @@ export function AddToCartButton({
     setJustAdded(true);
     clearTimeout(timer.current);
     timer.current = setTimeout(() => setJustAdded(false), 1400);
-    // The next step is one tap away, and the free-shipping line nudges a second piece.
+    // The next step is one tap away, and the free-shipping line (from the server's quote of
+    // the new cart) nudges a second piece with what is really missing.
     toast.push({
       tone: "success",
       message: "Aggiunto al carrello",
-      detail: `${name} · spedizione gratis da ${FREE_SHIPPING_FROM_LABEL}`,
+      detail: name,
+      footer: <ToastFreeShipping />,
       action: { label: "Vai al carrello", href: "/carrello" },
     });
   };
@@ -104,9 +108,21 @@ export function AddToCartButton({
         onClick={onAdd}
         data-testid="add-to-cart"
         aria-label={justAdded ? `${name} aggiunto al carrello` : `${text}: ${name}`}
-        className={cn(COMPACT, justAdded ? "bg-lime text-void" : "bg-white/[0.09] text-graphite hover:bg-lime hover:text-void")}
+        className={cn(
+          COMPACT,
+          justAdded && "gd-cut",
+          justAdded
+            ? "bg-lime text-void"
+            : stock === "pre-ordine"
+              ? "bg-violet text-white hover:bg-[#9566ff]"
+              : "bg-surface-2 text-lime hover:bg-lime hover:text-void",
+        )}
       >
-        {justAdded ? <Check className="size-4" aria-hidden="true" /> : <ShoppingCart className="size-4" aria-hidden="true" />}
+        {justAdded ? (
+          <Check className="size-[1.125rem] animate-[gd-kick_0.4s_ease-out]" strokeWidth={2.5} aria-hidden="true" />
+        ) : (
+          <ShoppingCart className="size-[1.125rem]" strokeWidth={2.25} aria-hidden="true" />
+        )}
       </button>
     );
   }
@@ -114,7 +130,7 @@ export function AddToCartButton({
   const variant = emphasis === "primary" ? "primary" : stock === "pre-ordine" ? "card-preorder" : "card";
 
   return (
-    <Button variant={variant} size={size} fullWidth={fullWidth} data-testid="add-to-cart" onClick={onAdd}>
+    <Button variant={variant} size={size} fullWidth={fullWidth} data-testid="add-to-cart" onClick={onAdd} className={justAdded ? "gd-cut" : undefined}>
       {justAdded ? <Check className="size-4" aria-hidden="true" /> : <ShoppingCart className="size-4" aria-hidden="true" />}
       {justAdded ? "Aggiunto" : text}
     </Button>

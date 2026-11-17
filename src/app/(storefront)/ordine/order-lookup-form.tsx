@@ -2,28 +2,13 @@
 
 import { useActionState } from "react";
 import { CheckCircle2, Package, PackageCheck, Truck, XCircle } from "lucide-react";
+import { ParcelUpdates } from "@/components/orders/parcel-updates";
 import { Button } from "@/components/ui/button";
 import { inputClass } from "@/components/ui/field";
 import { PREORDER_DELIVERY, deliveryClause } from "@/lib/labels";
 import { trackingLink } from "@/lib/orders/carriers";
+import { ORDER_STATUS_LABEL, ORDER_STEPS, orderProgress, parcelDeliveredAt } from "@/lib/orders/customer-order-status";
 import { lookupOrderAction, type OrderLookupResult } from "./actions";
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: "In attesa",
-  confirmed: "Confermato",
-  processing: "In lavorazione",
-  shipped: "Spedito",
-  completed: "Completato",
-  cancelled: "Annullato",
-};
-
-const STATUS_STEPS = ["confirmed", "processing", "shipped", "completed"] as const;
-type ActiveStep = (typeof STATUS_STEPS)[number];
-
-function stepIndex(status: string): number {
-  const idx = STATUS_STEPS.indexOf(status as ActiveStep);
-  return idx === -1 ? -1 : idx;
-}
 
 const dateFormat = new Intl.DateTimeFormat("it-IT", {
   dateStyle: "medium",
@@ -95,13 +80,14 @@ export function OrderLookupForm() {
   );
 }
 
-function OrderResult({
+export function OrderResult({
   order,
 }: {
   readonly order: Extract<OrderLookupResult, { ok: true }>["order"];
 }) {
   const link = trackingLink(order.tracking_carrier, order.tracking_code, order.tracking_url);
-  const current = stepIndex(order.status);
+  const current = orderProgress(order.status, order.parcel_events);
+  const deliveredAt = parcelDeliveredAt(order.parcel_events);
   const cancelled = order.status === "cancelled";
   const hasPreorder = order.items.some((item) => item.preorder_quantity > 0);
 
@@ -127,7 +113,7 @@ function OrderResult({
           </div>
         ) : (
           <ol className="flex flex-col gap-3">
-            {STATUS_STEPS.map((step, index) => {
+            {ORDER_STEPS.map((step, index) => {
               const reached = current >= index;
               const active = current === index;
               return (
@@ -159,9 +145,12 @@ function OrderResult({
                   <span
                     className={`text-small ${reached ? "font-medium text-graphite" : "text-grey-600"}`}
                   >
-                    {STATUS_LABELS[step] ?? step}
+                    {ORDER_STATUS_LABEL[step] ?? step}
                     {step === "shipped" && order.shipped_at
                       ? ` · ${dateFormat.format(new Date(order.shipped_at))}`
+                      : ""}
+                    {step === "completed" && deliveredAt
+                      ? ` · ${dateFormat.format(new Date(deliveredAt))}`
                       : ""}
                   </span>
                 </li>
@@ -180,22 +169,25 @@ function OrderResult({
 
       {/* Tracking link */}
       {link ? (
-        <div className="gd-glass-panel flex items-center gap-4 p-5">
-          <Package className="size-6 shrink-0 text-lime" aria-hidden="true" />
-          <div className="flex-1">
-            <p className="text-small font-medium text-graphite">
-              {order.tracking_carrier ?? "Corriere"}
-              {order.tracking_code ? ` · ${order.tracking_code}` : ""}
-            </p>
+        <div className="gd-glass-panel p-5" data-testid="order-parcel">
+          <div className="flex items-center gap-4">
+            <Package className="size-6 shrink-0 text-lime" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <p className="break-words text-small font-medium text-graphite">
+                {order.tracking_carrier ?? "Corriere"}
+                {order.tracking_code ? ` · ${order.tracking_code}` : ""}
+              </p>
+            </div>
+            <a
+              href={link}
+              rel="noopener noreferrer"
+              target="_blank"
+              className="gd-display shrink-0 text-[0.6875rem] font-bold tracking-[0.08em] text-lime underline-offset-2 hover:underline"
+            >
+              Segui il pacco
+            </a>
           </div>
-          <a
-            href={link}
-            rel="noopener noreferrer"
-            target="_blank"
-            className="gd-display text-[0.6875rem] font-bold tracking-[0.08em] text-lime underline-offset-2 hover:underline"
-          >
-            Segui il pacco
-          </a>
+          <ParcelUpdates events={order.parcel_events} />
         </div>
       ) : null}
 

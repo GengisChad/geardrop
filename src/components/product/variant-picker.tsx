@@ -35,7 +35,7 @@ export function VariantPicker({ current, colours }: { current: Product; colours:
                 <span
                   aria-hidden="true"
                   className={cn("size-7 rounded-full ring-1 ring-inset ring-black/20", colour.stock === "esaurito" && "opacity-35")}
-                  style={{ backgroundColor: colour.variant?.swatch }}
+                  style={{ background: colour.variant?.swatch }}
                 />
               </Link>
             </li>

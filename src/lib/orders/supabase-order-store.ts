@@ -4,6 +4,7 @@ import { storefrontOrganizationId } from "@/lib/org/storefront";
 import { createPrivilegedSupabaseClient } from "@/lib/supabase/admin";
 import type { LowStockProduct, OrderStore, StoredOrder } from "./process-paid-checkout";
 import type { PaidCheckout } from "./stripe-order";
+import type { RefundStore } from "./stripe-refund";
 
 /** The order lines as the database function reads them; a bundle carries the packs it ships. */
 export function stripeOrderLines(checkout: PaidCheckout) {
@@ -125,6 +126,22 @@ export function createSupabaseOrderStore(
           stockQuantity: p.stock_quantity,
           stockStatus: p.stock_status as string,
         }));
+    },
+  };
+}
+
+/** Refunds reported by the Stripe webhook; the database function is granted to the secret key alone. */
+export function createSupabaseRefundStore(client = createPrivilegedSupabaseClient()): RefundStore {
+  return {
+    async record(refund) {
+      const result = await client.rpc("record_stripe_charge_refund", {
+        p_payment_intent_id: refund.paymentIntentId,
+        p_amount_refunded_cents: refund.amountRefundedCents,
+        p_charge_id: refund.chargeId,
+      });
+      if (result.error) throw new Error(`record_stripe_charge_refund: ${result.error.message}`);
+      const row = result.data?.[0];
+      return row ? { orderId: row.order_id, orderNumber: row.order_number, refundedCents: row.refunded_cents, recorded: row.recorded } : null;
     },
   };
 }

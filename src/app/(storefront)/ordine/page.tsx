@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { OrderLookupForm } from "./order-lookup-form";
 
 export const metadata: Metadata = {
@@ -16,6 +17,13 @@ export default function OrdineTracciamentPage() {
         </h1>
         <p className="mt-2 text-small text-grey-600">
           Inserisci il numero ordine (es. GD-XXXXXXXX) e l&rsquo;email con cui hai acquistato.
+        </p>
+        <p className="mt-1 text-small text-grey-600">
+          Hai un account con quell&rsquo;email? Trovi tutti i tuoi ordini nel{" "}
+          <Link href="/account" className="font-bold text-violet-soft underline-offset-2 hover:underline">
+            tuo account
+          </Link>
+          , senza numero ordine.
         </p>
       </div>
       <div className="mt-8">

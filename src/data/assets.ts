@@ -56,9 +56,19 @@ const DECK_IMAGE = {
   alt: "Porta deck Beyblade X giallo a tre scomparti, disponibile in giallo, verde lime, azzurro, blu, rosa, fucsia e bianco",
 } as const;
 
+/** A two-colour deck case's own photo: white tile and cut-out share the slug. */
+function deckBicoloreImage(slug: string, colours: string) {
+  return { src: `/products/${slug}.webp`, width: 1000, height: 1000, alt: `Porta deck a tre scomparti stampato in 3D, ${colours}` };
+}
+
+/** A photo of a Takara Tomy piece the shop bought itself: tile and cut-out from scripts/cutout_takara.py. */
+function takaraImage(name: string, alt: string) {
+  return { src: `/products/${name}.webp`, width: 1000, height: 1000, alt };
+}
+
 /**
- * Owner-supplied packshots, normalised to square WebP tiles. Every deck case colour shows the
- * same picture, which offers them all.
+ * Owner-supplied packshots, normalised to square WebP tiles. Every single-colour deck case shows
+ * the same picture, which offers them all; each two-colour case has its own.
  */
 export const productImages = {
   "cobalt-drake-4-60f": [
@@ -298,6 +308,19 @@ export const productImages = {
       alt: "Trottola Beyblade X Hover Wyvern 3-85N argento con la blade verde trasparente e il gear chip del wyvern",
     },
   ],
+  /**
+   * The red Phoenix sold without its launcher (owner, 2026-11-13). Hasbro's own render of the starter's
+   * contents (F9324, Amazon B0D1YLNVB4) shows the top beside the launcher; `pnpm assets:tops` keeps the
+   * top alone, because the launcher is not in the bag.
+   */
+  "soar-phoenix-9-60gf-solo-trottola": [
+    {
+      src: "/products/soar-phoenix-9-60gf-solo-trottola.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Trottola Beyblade X Soar Phoenix 9-60GF rossa e giallo-verde trasparente con il gear chip della fenice",
+    },
+  ],
   "deck-completo-meta": [
     {
       src: "/products/deck-completo-meta.webp",
@@ -321,6 +344,22 @@ export const productImages = {
   "porta-deck-rosa": [DECK_IMAGE],
   "porta-deck-fucsia": [DECK_IMAGE],
   "porta-deck-bianco": [DECK_IMAGE],
+  // The two-colour cases: one photo each (scripts/cutout_deck_bicolore.py, owner's photos 2026-10-24).
+  "porta-deck-nero-blu": [deckBicoloreImage("porta-deck-nero-blu", "nero con scritta e clip blu")],
+  "porta-deck-nero-rosso": [deckBicoloreImage("porta-deck-nero-rosso", "nero con scritta e clip rosse")],
+  "porta-deck-nero-oro": [deckBicoloreImage("porta-deck-nero-oro", "nero con scritta e clip oro")],
+  "porta-deck-giallo-nero": [deckBicoloreImage("porta-deck-giallo-nero", "giallo con scritta nera e clip grigie")],
+  "porta-deck-rosso-oro": [deckBicoloreImage("porta-deck-rosso-oro", "rosso con scritta e clip oro")],
+  "porta-deck-viola-verde": [deckBicoloreImage("porta-deck-viola-verde", "viola con scritta e clip verdi")],
+  "porta-deck-viola-argento": [deckBicoloreImage("porta-deck-viola-argento", "viola con scritta e clip argento")],
+  // Seven more (owner's photos 2026-11-03).
+  "porta-deck-viola-menta": [deckBicoloreImage("porta-deck-viola-menta", "viola con scritta verde menta e clip bianche")],
+  "porta-deck-argento-nero": [deckBicoloreImage("porta-deck-argento-nero", "argento con scritta e clip nere")],
+  "porta-deck-verde-nero": [deckBicoloreImage("porta-deck-verde-nero", "verde con scritta e clip nere")],
+  "porta-deck-verde-rosso": [deckBicoloreImage("porta-deck-verde-rosso", "verde con scritta e clip rosse")],
+  "porta-deck-blu-bianco": [deckBicoloreImage("porta-deck-blu-bianco", "blu con scritta e clip bianche")],
+  "porta-deck-bianco-blu": [deckBicoloreImage("porta-deck-bianco-blu", "bianco con scritta e clip blu")],
+  "porta-deck-arancione-nero": [deckBicoloreImage("porta-deck-arancione-nero", "arancione con scritta nera e clip bianche")],
   "cx-00-evangelion-deck-set": [
     {
       src: "/products/cx-00-evangelion-deck-set.webp",
@@ -345,6 +384,38 @@ export const productImages = {
       alt: "Confezione Takara Tomy Beyblade X CX-00 Tigarage FT3-60T B4 Limited con Ultraman Tiga",
     },
   ],
+  // The Takara Tomy pieces the shop bought itself (owner, 2026-11-06): the maker's own renders and,
+  // for the two boxes, the owner's photo. Sources in docs/product-photo-sources.md.
+  "winder-launcher-takara-tomy": [
+    takaraImage("winder-launcher-takara-tomy", "Tre Winder Launcher Takara Tomy Beyblade X in colori diversi: bianco e blu, rosso, nero e verde"),
+  ],
+  "string-launcher-takara-tomy": [
+    takaraImage("string-launcher-takara-tomy", "String Launcher L Takara Tomy Beyblade X azzurro, per trottole a rotazione sinistra"),
+  ],
+  "long-winder-launcher-takara-tomy": [
+    takaraImage("long-winder-launcher-takara-tomy", "Due lanciatori Takara Tomy Beyblade X con Long Winder: verde acqua, e nero con il logo NERV di Evangelion e la winder rossa"),
+  ],
+  "custom-grip-takara-tomy": [
+    takaraImage("custom-grip-takara-tomy", "Tre Custom Grip Takara Tomy Beyblade X: BX-41 gunmetal, BX-42 blu e BX-30 rossa"),
+    takaraImage("custom-grip-takara-tomy-bx30", "Custom Grip BX-30 rossa e nera"),
+    takaraImage("custom-grip-takara-tomy-bx42", "Rubber Custom Grip BX-42 blu con pannelli trasparenti"),
+    takaraImage("custom-grip-takara-tomy-bx41", "Rubber Custom Grip BX-41 gunmetal con pannelli rossi"),
+    takaraImage("custom-grip-takara-tomy-bx41_01", "La Rubber Custom Grip BX-41 con i suoi pannelli smontati"),
+  ],
+  "cx-18-random-booster-brachio-whip": [
+    takaraImage("cx-18-random-booster-brachio-whip", "Confezione Takara Tomy Beyblade X CX-18 Random Booster Brachio Whip Select con le tre trottole: viola, oro e nera"),
+    takaraImage("cx-18-random-booster-brachio-whip-cx18_01", "Brachio Whip OW5-70Nr viola, vista di lato"),
+    takaraImage("cx-18-random-booster-brachio-whip-cx18_03", "Brachio Whip OW5-70Nr oro"),
+    takaraImage("cx-18-random-booster-brachio-whip-cx18_04", "Brachio Whip OW5-70Nr nera"),
+  ],
+  "bx-48-random-booster-vol-9": [
+    takaraImage("bx-48-random-booster-vol-9", "Confezione Takara Tomy Beyblade X BX-48 Random Booster Vol. 9 con le cinque trottole Metal Coat"),
+    takaraImage("bx-48-random-booster-vol-9-bx48_02", "Cobalt Dragoon 9-80F Metal Coat nera"),
+    takaraImage("bx-48-random-booster-vol-9-bx48_04", "Shark Edge 4-70E Metal Coat blu"),
+    takaraImage("bx-48-random-booster-vol-9-bx48_03", "Mammoth Tusk 7-60S Metal Coat nera"),
+    takaraImage("bx-48-random-booster-vol-9-bx48_05", "Hells Scythe 3-85GB Metal Coat oro"),
+    takaraImage("bx-48-random-booster-vol-9-bx48_06", "Dran Buster 2-80Q Metal Coat rossa"),
+  ],
 } as const satisfies Record<string, readonly ProductImage[]>;
 
 export type ProductSlug = keyof typeof productImages;
@@ -356,12 +427,44 @@ export type ProductSlug = keyof typeof productImages;
 const PRODUCT_CUTOUTS: Readonly<Record<string, string>> = Object.fromEntries([
   ...Object.keys(productImages).map((slug) => [`/products/${slug}.webp`, `/products/cutout/${slug}.webp`]),
   [DECK_IMAGE.src, "/products/cutout/porta-deck.webp"],
+  // A gallery's further photos have a cut-out of their own too.
+  ...(Object.values(productImages) as readonly (readonly ProductImage[])[])
+    .flatMap((images) => images.slice(1))
+    .map((image) => [image.src, image.src.replace("/products/", "/products/cutout/")]),
 ]);
 
 /** The cut-out for a packshot path, or null when that image has none. */
 export function cutoutSrc(src: string): string | null {
   return PRODUCT_CUTOUTS[src] ?? null;
 }
+
+/** A motion-designed clip of a product (scripts/clips), shown as the last item of its gallery. */
+export type ProductClip = {
+  readonly src: string;
+  readonly poster: string;
+  readonly width: number;
+  readonly height: number;
+};
+
+const clip = (slug: string): ProductClip => ({
+  src: `/video/products/${slug}.mp4`,
+  poster: `/video/products/${slug}.jpg`,
+  width: 1080,
+  height: 1080,
+});
+
+/**
+ * The products that have a clip: the owner's best sellers and the release that just landed. A clip
+ * shows no price, no availability and no "Novità", because a video cannot change when the
+ * catalogue does; the page around it carries that live state. `pnpm clips` renders them.
+ */
+export const productClips: Readonly<Partial<Record<string, ProductClip>>> = {
+  "glory-valkerion-lf": clip("glory-valkerion-lf"),
+  "wand-wizard-1-60r": clip("wand-wizard-1-60r"),
+  "impact-drake-9-60lr": clip("impact-drake-9-60lr"),
+  "hover-wyvern-3-85n": clip("hover-wyvern-3-85n"),
+  "soar-phoenix-9-60gf": clip("soar-phoenix-9-60gf"),
+};
 
 /** The loose spinning top cropped from each Infinity Starter tile, launched in the homepage Arena. */
 export const productTops: Readonly<Partial<Record<string, string>>> = {

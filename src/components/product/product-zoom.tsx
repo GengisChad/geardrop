@@ -124,7 +124,7 @@ export function ProductZoom({ images, index, name, open, onClose, onIndexChange 
             onClick={() => dialog.current?.close()}
             aria-label="Chiudi"
             data-testid="product-zoom-close"
-            className="gd-glass-compact inline-flex size-11 shrink-0 items-center justify-center rounded-full transition-colors hover:text-violet-soft"
+            className="gd-glass-compact inline-flex size-11 shrink-0 items-center justify-center transition-colors hover:text-lime"
           >
             <X className="size-5" aria-hidden="true" />
           </button>
@@ -161,7 +161,7 @@ export function ProductZoom({ images, index, name, open, onClose, onIndexChange 
               type="button"
               onClick={() => show(index - 1)}
               aria-label="Foto precedente"
-              className="gd-glass-compact inline-flex size-11 items-center justify-center rounded-full transition-colors hover:text-violet-soft"
+              className="gd-glass-compact inline-flex size-11 items-center justify-center transition-colors hover:text-lime"
             >
               <ChevronLeft className="size-5" aria-hidden="true" />
             </button>
@@ -175,7 +175,7 @@ export function ProductZoom({ images, index, name, open, onClose, onIndexChange 
               type="button"
               onClick={() => show(index + 1)}
               aria-label="Foto successiva"
-              className="gd-glass-compact inline-flex size-11 items-center justify-center rounded-full transition-colors hover:text-violet-soft"
+              className="gd-glass-compact inline-flex size-11 items-center justify-center transition-colors hover:text-lime"
             >
               <ChevronRight className="size-5" aria-hidden="true" />
             </button>

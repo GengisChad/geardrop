@@ -38,7 +38,11 @@ insert into expected_tiers (table_name, tier) values
   -- meta tier-list tables added by 20261005090000_meta_attuale_tier_lists.sql (main branch)
   -- and scoped by 20261009091014_scope_the_meta_tables.sql
   ('meta_snapshots', 'A'), ('meta_videos', 'A'),
-  ('meta_rankings', 'C');
+  ('meta_rankings', 'C'),
+  -- The newsletter list of 20261114090000 (main branch) belongs to the Gear Drop storefront and
+  -- carries no organization yet: only the service role writes it. Scope it before a second
+  -- storefront collects addresses.
+  ('newsletter_subscribers', 'G');
 
 select set_eq(
   $$select c.relname::text from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind = 'r'$$,

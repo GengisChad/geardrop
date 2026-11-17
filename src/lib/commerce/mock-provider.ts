@@ -6,9 +6,10 @@
  * contract for the whole UI to keep working.
  */
 
-import { BUNDLE, BUNDLES, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS, brandOf, shippingMethodByCode, shippingPlanFor, toShippingOption } from "@/data/catalog";
+import { BUNDLE, BUNDLES, CATEGORIES, DECK_CASE_SLUGS, DECK_CASE_WITH_KIT, FREE_SHIPPING_THRESHOLD, PRODUCTS, brandOf, fitsLocker, shippingBrandOf, shippingMethodByCode, shippingPlanFor, toShippingOption } from "@/data/catalog";
 import { STANDARD_DELIVERY } from "@/lib/labels";
 import { piecesOf, withBundles } from "./bundles";
+import { codeMinimumMessage, resolveCartCode, type FindSiteCoupon } from "./cart-code";
 import { oneCardPerFamily } from "./variants";
 import type {
   BladeType,
@@ -31,10 +32,11 @@ import type {
 import { separatePreorders } from "./separate-preorders";
 
 // The catalogue is small: one page holds it all, so nobody lands on a page with two cards.
-const DEFAULT_PER_PAGE = 24;
+// 48 since 2026-10-24: the two-colour deck cases made 25 cards, one past the old 24.
+const DEFAULT_PER_PAGE = 48;
 
-// No module-level shipping constants: shipping options are derived per-cart from the
-// brands present (shippingPlanFor), so the plan is computed inside quoteCart.
+// No module-level shipping constants: shipping options are derived per-cart from whose
+// warehouse the pieces leave (shippingPlanFor), so the plan is computed inside quoteCart.
 
 /** Popularity is not a stored field; the mockups rank by review volume. */
 const byPopularity = (a: Product, b: Product) => b.reviewCount - a.reviewCount;
@@ -113,7 +115,11 @@ function countBy<T extends string>(products: readonly Product[], pick: (p: Produ
 /** The reviewed catalogue with its bundles, priced on the catalogue's own stock. */
 export const STOREFRONT_CATALOGUE: readonly Product[] = withBundles(PRODUCTS, BUNDLES);
 
-export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CATALOGUE): CommerceProvider {
+export function createMockProvider(
+  catalogue: readonly Product[] = STOREFRONT_CATALOGUE,
+  // Coupons live in the database: only the server, which can read them, passes this in.
+  findCoupon: FindSiteCoupon = async () => ({ status: "unknown" }),
+): CommerceProvider {
   const bySlug = new Map(catalogue.map((product) => [product.slug as string, product]));
 
   // Lists show an item sold in several colours once (see variants.ts); its product page still
@@ -265,20 +271,75 @@ export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CA
         });
       }
 
-      const lines = separatePreorders(quoteLines);
-      const sellable = lines.filter((line) => line.issue === null);
-      const subtotal = sellable.reduce((sum, line) => sum + line.lineTotal.amount, 0);
-      const isEmpty = subtotal === 0;
-      const qualifies = subtotal >= FREE_SHIPPING_THRESHOLD;
+      const separated = separatePreorders(quoteLines);
+      const subtotal = separated.filter((line) => line.issue === null).reduce((sum, line) => sum + line.lineTotal.amount, 0);
 
-      // Derive the shipping plan from the brands actually in the sellable lines.
+      // One deck case per kit in the cart costs DECK_CASE_WITH_KIT (owner, 2026-10-24). A case line
+      // takes that price whole or not at all: Stripe charges one price per line, and the order
+      // files one row per product, so a line is never split between two prices.
+      let kitDeckSlots = separated
+        .filter((line) => line.issue === null && bySlug.get(line.slug)?.bundleOf)
+        .reduce((sum, line) => sum + line.quantity, 0);
+      const kitLines = separated.map((line) => {
+        if (line.issue !== null || !DECK_CASE_SLUGS.has(line.slug) || line.quantity > kitDeckSlots) return line;
+        if (line.unitPrice.amount <= DECK_CASE_WITH_KIT) return line;
+        kitDeckSlots -= line.quantity;
+        return { ...line, kitUnitPrice: { amount: DECK_CASE_WITH_KIT, currency: line.unitPrice.currency } };
+      });
+
+      // A code in the cart prices the lines it covers, from its minimum cart at full price. A deck
+      // case already at the kit price takes the code on that price.
+      const cartCode = await resolveCartCode(request.couponCode, findCoupon, request.buyerEmail);
+      const pricing = cartCode && "pricing" in cartCode ? cartCode.pricing : null;
+      const shortfall = pricing ? Math.max(0, pricing.minimumCents - subtotal) : 0;
+      const codeApplies = pricing !== null && shortfall === 0;
+      const couponError =
+        cartCode && "refused" in cartCode ? cartCode.refused : pricing && !codeApplies ? codeMinimumMessage(pricing.minimumCents, shortfall) : null;
+      const codePrices = codeApplies
+        ? pricing.unitPrices(
+            kitLines
+              .filter((line) => line.issue === null)
+              .map((line) => {
+                const product = bySlug.get(line.slug);
+                return {
+                  slug: line.slug,
+                  quantity: line.quantity,
+                  price: line.kitUnitPrice ?? line.unitPrice,
+                  category: product?.category,
+                  consignment: Boolean(product?.consignment),
+                };
+              }),
+          )
+        : null;
+      const lines = kitLines.map((line) => {
+        const codePrice = codePrices?.get(line.slug);
+        return codePrice && codePrice.amount < (line.kitUnitPrice ?? line.unitPrice).amount ? { ...line, clubUnitPrice: codePrice } : line;
+      });
+
+      const sellable = lines.filter((line) => line.issue === null);
+      const discount = sellable.reduce((sum, line) => {
+        const lower = line.clubUnitPrice ?? line.kitUnitPrice;
+        return sum + (lower ? (line.unitPrice.amount - lower.amount) * line.quantity : 0);
+      }, 0);
+      const isEmpty = subtotal === 0;
+      // Measured before the code: a code never takes free shipping away from a cart that had it.
+      const beforeCode = sellable.reduce((sum, line) => sum + (line.kitUnitPrice ?? line.unitPrice).amount * line.quantity, 0);
+      const qualifies = beforeCode >= FREE_SHIPPING_THRESHOLD || (codeApplies && pricing.freeShipping);
+
+      // Derive the shipping plan from the warehouses the sellable lines leave from: the partner's
+      // for his consignment pieces, the shop's for everything else, Takara Tomy pieces it owns included.
       const cartBrands = new Set<BrandSlug>(
         sellable.map((line) => {
           const product = bySlug.get(line.slug);
-          return product ? brandOf(product) : "hasbro";
+          return product ? shippingBrandOf(product) : "hasbro";
         }),
       );
-      const plan = shippingPlanFor(cartBrands);
+      // A stadium box goes to the door with Poste: no InPost Locker takes it.
+      const bulky = sellable.some((line) => {
+        const product = bySlug.get(line.slug);
+        return product ? !fitsLocker(product) : false;
+      });
+      const plan = shippingPlanFor(cartBrands, bulky);
 
       // The buyer's choice when it is in the plan, otherwise the plan's first (cheapest) method.
       const requested = shippingMethodByCode(request.shippingCode);
@@ -289,7 +350,7 @@ export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CA
 
       const shipping = isEmpty || qualifies ? 0 : method.priceCents;
       const shippingOptions: readonly ShippingOption[] = plan.methods.map((m) =>
-        toShippingOption(m, STANDARD_DELIVERY, plan.locked || undefined),
+        toShippingOption(m, STANDARD_DELIVERY, plan.locked || undefined, plan.lockReasons),
       );
 
       return {
@@ -299,23 +360,22 @@ export function createMockProvider(catalogue: readonly Product[] = STOREFRONT_CA
         shippingCode: method.code,
         totals: {
           subtotal: { amount: subtotal, currency: "EUR" },
-          discount: { amount: 0, currency: "EUR" },
+          discount: { amount: discount, currency: "EUR" },
           shipping: { amount: shipping, currency: "EUR" },
-          total: { amount: subtotal + shipping, currency: "EUR" },
-          freeShippingRemaining: isEmpty || qualifies ? 0 : FREE_SHIPPING_THRESHOLD - subtotal,
+          total: { amount: subtotal - discount + shipping, currency: "EUR" },
+          freeShippingRemaining: isEmpty || qualifies ? 0 : FREE_SHIPPING_THRESHOLD - beforeCode,
         },
         freeShippingThreshold: FREE_SHIPPING_THRESHOLD,
-        // The local catalogue has no coupon engine; a code is neither honoured nor
-        // silently swallowed.
-        couponCode: null,
-        couponError: request.couponCode
-          ? "I codici sconto non sono disponibili in questa modalità."
-          : null,
+        // A coupon made on the site; anything else is refused aloud, never silently swallowed.
+        couponCode: codeApplies ? pricing.code : null,
+        couponError,
+        ...(codeApplies && pricing.buyerNote ? { couponBuyerNote: pricing.buyerNote } : {}),
         // There is no order backend behind the local catalogue, and pretending
         // otherwise is exactly the bug this replaces.
         orderIntake: "unconfigured",
         orderable: false,
         notice: "Gli ordini non sono ancora attivi su questo sito.",
+        ...(kitDeckSlots > 0 ? { kitDeckSlots } : {}),
       };
     },
   };
