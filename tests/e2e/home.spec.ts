@@ -121,6 +121,15 @@ test.describe("public homepage", () => {
     await expect(banner).toBeVisible();
     await expect(banner.getByRole("heading", { level: 2 })).toContainText("Questo è solo il primo drop,");
     await expect(banner.getByRole("heading", { level: 2 })).toContainText("iscriviti per le novità.");
+    // On a phone it opens as a strip, about a tenth of the screen, so the promotions stay in sight:
+    // the form waits behind its "Iscriviti", and opening it puts the cursor in the email field.
+    const open = page.getByTestId("newsletter-open");
+    if (await open.isVisible()) {
+      expect((await banner.boundingBox())?.height ?? Number.POSITIVE_INFINITY).toBeLessThan(130);
+      await expect(banner.getByTestId("newsletter-form")).toBeHidden();
+      await open.click();
+      await expect(banner.getByLabel("La tua email")).toBeFocused();
+    }
     await expect(banner.getByLabel("La tua email")).toHaveAttribute("type", "email");
     await expect(banner.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/legale/privacy");
 

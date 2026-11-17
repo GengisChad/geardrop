@@ -65,15 +65,22 @@ export function StickyBuyBar({ product }: { product: Product }) {
               />
             ) : null}
 
+            {/* On a phone the price sits under the name, beside the stock: three columns left the name ~95 px,
+                cut it to "SOAR PHOEN…" and pushed the stock label under the price. */}
             <div className="min-w-0 flex-1">
               <p className="gd-display truncate text-small font-bold text-graphite">{product.name}</p>
-              <p className="flex items-center gap-2 text-[0.6875rem] text-grey-600">
-                {product.bladeType ? <span>{BLADE_TYPE_LABEL[product.bladeType]}</span> : null}
-                <StockBadge status={product.stock} label={stockLabel(product)} />
-              </p>
+              <div className="mt-1 flex min-w-0 items-center gap-2.5 sm:mt-0">
+                <p className="tabular gd-display-wide shrink-0 text-[1.0625rem] font-extrabold leading-none text-graphite [font-stretch:118%] sm:hidden">
+                  {formatPrice(product.price)}
+                </p>
+                <p className="flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-[0.6875rem] text-grey-600">
+                  {product.bladeType ? <span className="hidden sm:inline">{BLADE_TYPE_LABEL[product.bladeType]}</span> : null}
+                  <StockBadge status={product.stock} label={stockLabel(product)} />
+                </p>
+              </div>
             </div>
 
-            <p className="tabular gd-display-wide shrink-0 text-[1.25rem] font-extrabold leading-none text-graphite [font-stretch:118%]">
+            <p className="tabular gd-display-wide hidden shrink-0 text-[1.25rem] font-extrabold leading-none text-graphite [font-stretch:118%] sm:block">
               {formatPrice(product.price)}
             </p>
 
