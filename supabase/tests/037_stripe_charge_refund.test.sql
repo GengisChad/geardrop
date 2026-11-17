@@ -65,6 +65,9 @@ select results_eq(
 insert into auth.users(instance_id,id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at,is_sso_user,is_anonymous) values
 ('00000000-0000-0000-0000-000000000000','00000000-0000-0000-0000-000000003711','authenticated','authenticated','refund-owner@example.com','',now(),'{}','{}',now(),now(),false,false);
 insert into public.staff_profiles(user_id,role,display_name) values ('00000000-0000-0000-0000-000000003711','owner','Refund Owner');
+-- Since companies exist, an owner manages the orders of the company they are a member of.
+insert into public.organization_members(organization_id,user_id,role)
+select id, '00000000-0000-0000-0000-000000003711'::uuid, 'owner'::public.staff_role from public.organizations where slug = 'geardrop';
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000003711","role":"authenticated"}', true);
 select public.record_order_refund((select id from public.orders where order_number = 'GD-REFUND-OWNER'), 2064, 'Annullamento', 'dashboard-test');
 select results_eq(
