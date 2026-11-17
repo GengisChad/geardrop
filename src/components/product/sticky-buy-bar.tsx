@@ -90,7 +90,7 @@ export function StickyBuyBar({ product }: { product: Product }) {
               {formatPrice(product.price)}
             </p>
 
-            <div className="w-36 shrink-0 sm:w-52 [&_button]:whitespace-nowrap [&_button]:px-2 sm:[&_button]:px-5">
+            <div className="w-[9.75rem] shrink-0 sm:w-52 [&_button]:whitespace-nowrap [&_button]:px-2 sm:[&_button]:px-5">
               {product.stock === "esaurito" ? (
                 <button
                   type="button"
