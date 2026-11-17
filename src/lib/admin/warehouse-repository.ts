@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
+import type { PriceListSource } from "./price-list";
 import type { WarehouseSummary } from "@geardrop/data-contract";
 import { loadWarehouseSummary as _loadWarehouseSummaryNeutral } from "@geardrop/data-contract";
 
@@ -256,4 +257,32 @@ export async function loadCostDefaults(client: Client, organizationId: number) {
     .eq("id", organizationId).single();
   if (error) throw new Error("Impossibile caricare le impostazioni dei costi");
   return { vatRateBp: data.default_vat_rate_bp, packagingCostCents: data.packaging_cost_cents };
+}
+
+/**
+ * Every product still in the catalogue, published or draft, with its price, shelf and cost, for
+ * the price list page: a draft can hold pieces too. The view says how many pieces count for
+ * value: a product sold to order has no shelf to value.
+ */
+export async function loadPriceListSources(client: Client, organizationId: number): Promise<readonly PriceListSource[]> {
+  const [products, valuation] = await Promise.all([
+    client.from("products").select("id,name,sku,price_cents")
+      .eq("organization_id", organizationId).neq("publication_status", "archived").order("name").limit(1000),
+    client.from("inventory_valuation").select("product_id,valued_quantity,unlimited_stock,average_cost_cents")
+      .eq("organization_id", organizationId).limit(2000),
+  ]);
+  if (products.error || valuation.error) throw new Error("Impossibile caricare il listino");
+  const valued = new Map((valuation.data ?? []).flatMap((row) => row.product_id === null ? [] : [[row.product_id, row] as const]));
+  return (products.data ?? []).map((product) => {
+    const row = valued.get(product.id);
+    return {
+      productId: product.id,
+      name: product.name,
+      sku: product.sku,
+      priceCents: product.price_cents,
+      quantity: row?.valued_quantity ?? 0,
+      unlimitedStock: row?.unlimited_stock ?? false,
+      averageCostCents: row?.average_cost_cents ?? null,
+    };
+  });
 }

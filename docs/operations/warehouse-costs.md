@@ -21,9 +21,15 @@ Costi, carichi, fornitori e profitto sono visibili solo a owner e admin (RLS, no
    scaffale incollare `SKU;costo`, una riga per prodotto. La giacenza non cambia; le vendite passate
    di quel prodotto senza costo lo ricevono, così anche gli ordini già fatti mostrano il profitto.
    Un costo che non si conosce **non si inserisce**: il prodotto resta "costo mancante".
-5. **Scheda prodotto**: costo medio, ultimo costo, margine sul prezzo netto IVA e ultimi carichi.
+5. **Listino e margini** (`/admin/listino`): per ogni prodotto a catalogo pezzi, costo medio, prezzo
+   di listino, prezzo netto IVA, margine per pezzo e in percentuale; e per lo scaffale valore a
+   costo, incasso a listino e margine se tutto si vende a prezzo pieno. In alto i totali e il
+   venduto degli ultimi 30 giorni. È una stima prima di corriere, commissioni e imballo; un prodotto
+   senza costo resta fuori dal margine e la pagina dice quanti pezzi lascia scoperti. Gli owner
+   trovano qui lo stesso riquadro dei costi di apertura.
+6. **Scheda prodotto**: costo medio, ultimo costo, margine sul prezzo netto IVA e ultimi carichi.
    Salvare un prezzo netto sotto il costo medio richiede la spunta di conferma.
-6. **Ordini**: colonna Profitto (o "incompleto" con le voci mancanti); nel dettaglio il conto
+7. **Ordini**: colonna Profitto (o "incompleto" con le voci mancanti); nel dettaglio il conto
    economico e i campi costo corriere, imballo e commissione per quell'ordine.
 
 ## Come si calcola il profitto
