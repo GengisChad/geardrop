@@ -24,7 +24,7 @@ export function CatalogHero({ title, tagline, description, crumbs }: CatalogHero
       <div className="relative mx-auto max-w-[1400px] px-5 py-8 sm:px-8 lg:py-12">
         <div>
           <Breadcrumbs items={crumbs} className="mb-4" />
-          <h1 className="gd-display-wide text-[2rem] font-extrabold leading-[0.98] text-graphite sm:text-[2.75rem]">
+          <h1 className="gd-display-wide gd-split text-[2rem] font-extrabold leading-[0.98] text-graphite sm:text-[2.75rem]">
             {title}
           </h1>
           {tagline ? (

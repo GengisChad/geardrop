@@ -140,7 +140,7 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
           </p>
 
           {/* The name, its part code read with it by screen readers and stamped as a chip below. */}
-          <h1 className="gd-display-wide mt-3 text-[2.4rem] font-extrabold leading-[0.92] text-graphite sm:text-[3.4rem]">
+          <h1 className="gd-display-wide gd-split mt-3 text-[2.4rem] font-extrabold leading-[0.92] text-graphite sm:text-[3.4rem]">
             {displayName(bladeName(product.name, code))}
             {code && bladeName(product.name, code) !== product.name ? <span className="sr-only"> {code}</span> : null}
           </h1>
@@ -198,7 +198,7 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
           <div aria-hidden="true" className="gd-rail mt-5" />
           <p className="mt-5 flex flex-wrap items-baseline gap-x-3 gap-y-2">
             <span
-              className="tabular gd-display-wide text-[2.6rem] font-extrabold leading-none text-graphite [font-stretch:120%] sm:text-[3.2rem]"
+              className="tabular gd-display-wide gd-price-split text-[2.6rem] font-extrabold leading-none [font-stretch:120%] sm:text-[3.2rem]"
               data-testid="pdp-price"
             >
               {formatPrice(product.price)}

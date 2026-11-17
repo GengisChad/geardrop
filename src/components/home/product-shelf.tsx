@@ -42,6 +42,10 @@ export function ShelfHeading({
       <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
         <div className="flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1">
           <h2 id={id} className={cn("gd-display-wide text-[1.85rem] font-extrabold leading-[0.95] sm:text-[2.9rem]", onViolet && "text-white")}>
+            {/* The prompt of a terminal before each shelf (Glitch 2077); the title itself is unchanged. */}
+            <span aria-hidden="true" className={cn("gd-mono mr-2 not-italic", onViolet ? "text-white/80" : "text-cyan")}>
+              {">"}
+            </span>
             {title}{" "}
             <span aria-hidden="true" className="text-lime">
               {"//"}
