@@ -119,7 +119,7 @@ export function CookieConsent({ enabled }: { readonly enabled: boolean }) {
       aria-modal="false"
       aria-labelledby="cookie-consent-title"
       data-testid="cookie-consent"
-      className="on-dark fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-50 mx-auto max-h-[calc(100dvh-7rem)] max-w-xl overflow-y-auto border border-white/15 bg-void/95 p-5 shadow-2xl backdrop-blur-md sm:inset-x-6 lg:bottom-6"
+      className="on-dark fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-50 mx-auto max-h-[calc(100dvh-7rem)] max-w-xl overflow-y-auto border border-white/15 bg-void/95 p-4 shadow-2xl backdrop-blur-md sm:inset-x-6 sm:p-5 lg:bottom-6"
     >
       <button
         type="button"
@@ -132,7 +132,7 @@ export function CookieConsent({ enabled }: { readonly enabled: boolean }) {
       <h2 id="cookie-consent-title" className="gd-display pr-10 text-[0.9375rem] font-bold tracking-[0.06em] text-graphite">
         Cookie, statistiche e marketing
       </h2>
-      <p className="mt-2 text-small leading-relaxed text-grey-600">
+      <p className="mt-1.5 text-[0.8125rem] leading-snug text-grey-600 sm:mt-2 sm:text-small sm:leading-relaxed">
         Usiamo cookie tecnici necessari al sito. Con il tuo consenso usiamo anche Google Analytics per contare le visite
         e, se accetti il marketing, Google Ads per misurare e mostrare le nostre pubblicità su Google. Dettagli in{" "}
         <Link href="/legale/privacy" className="text-lime underline-offset-4 hover:underline">
