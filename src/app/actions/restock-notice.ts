@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { storefrontOrganizationId } from "@/lib/org/storefront";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type RestockNoticeState = {
@@ -50,6 +51,7 @@ export async function requestRestockNoticeAction(
   try {
     const client = await createSupabaseServerClient();
     const { error } = await client.rpc("request_restock_notice", {
+      p_organization_id: await storefrontOrganizationId(),
       p_slug: parsed.data.slug,
       p_email: parsed.data.email,
     });

@@ -1,6 +1,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email/resend";
+import { stripePaymentFee } from "@/lib/orders/payment-fee";
 import { processPaidCheckout } from "@/lib/orders/process-paid-checkout";
 import { loadPaidCheckout } from "@/lib/orders/stripe-order";
 import { CHARGE_REFUNDED_EVENT, processChargeRefund } from "@/lib/orders/stripe-refund";
@@ -70,6 +71,7 @@ export async function POST(request: Request) {
     loadCheckout: (sessionId) => loadPaidCheckout(sessionId, stripe),
     store: createSupabaseOrderStore(),
     sendEmail: (message) => sendEmail(message),
+    paymentFee: (checkout) => (checkout.paymentIntentId ? stripePaymentFee(stripe, checkout.paymentIntentId) : Promise.resolve(null)),
   });
 
   if (result.status === "failed") {

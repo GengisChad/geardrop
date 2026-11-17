@@ -20,6 +20,7 @@ import {
 } from "@/app/admin/actions/products";
 import type { AdminCategory, AdminProductEditorData, ProductDeletionImpact } from "@/lib/admin/product-repository";
 import type { StaffRole } from "@/lib/auth/roles";
+import { formatEuro, marginPercent, netOfVat } from "@/lib/admin/warehouse";
 import styles from "./products.module.css";
 
 const initialState = { ok: false, message: "" };
@@ -34,9 +35,11 @@ type Props = {
   readonly categories: readonly AdminCategory[];
   readonly deletionImpact: ProductDeletionImpact | null;
   readonly role: StaffRole;
+  /** Owners and admins: the average cost, to show the margin while the price is typed. */
+  readonly costGuard?: { readonly averageCostCents: number | null; readonly vatRateBp: number } | null;
 };
 
-export function ProductEditorForm({ data, categories, deletionImpact, role }: Props) {
+export function ProductEditorForm({ data, categories, deletionImpact, role, costGuard = null }: Props) {
   const [state, action, pending] = useActionState(saveProductAction, initialState);
   const formRef = useRef<HTMLFormElement>(null);
   const product = data?.product;
@@ -44,6 +47,10 @@ export function ProductEditorForm({ data, categories, deletionImpact, role }: Pr
   const deletionBlocked = deletionImpact !== null
     && (deletionImpact.orders > 0 || deletionImpact.bundles > 0 || deletionImpact.inventoryMovements > 0);
   const [imageOrder, setImageOrder] = useState<readonly number[]>(() => data?.images.map((image) => image.id) ?? []);
+  const [priceInput, setPriceInput] = useState(String(product?.price_cents ?? 0));
+  const typedPrice = Number(priceInput);
+  const netPrice = costGuard && Number.isFinite(typedPrice) ? netOfVat(typedPrice, costGuard.vatRateBp) : null;
+  const typedMargin = netPrice === null || !costGuard ? null : marginPercent(netPrice, costGuard.averageCostCents);
   const orderedImages = imageOrder
     .map((id) => data?.images.find((image) => image.id === id))
     .filter((image): image is NonNullable<typeof image> => image !== undefined);
@@ -91,10 +98,18 @@ export function ProductEditorForm({ data, categories, deletionImpact, role }: Pr
       </EditorSection>
 
       <EditorSection id="prezzi" title="Prezzi" subtitle={canEditCommerce ? "Valori in centesimi, validati sul server." : "Sola lettura per il ruolo editor."}>
-        <Field label="Prezzo (centesimi)"><input defaultValue={product?.price_cents ?? 0} disabled={!canEditCommerce} min={0} name="priceCents" required type="number" />{!canEditCommerce ? <input name="priceCents" type="hidden" value={product?.price_cents ?? 0} /> : null}</Field>
+        <Field label="Prezzo (centesimi)"><input disabled={!canEditCommerce} min={0} name="priceCents" onChange={(event) => setPriceInput(event.target.value)} required type="number" value={priceInput} />{!canEditCommerce ? <input name="priceCents" type="hidden" value={product?.price_cents ?? 0} /> : null}</Field>
         <Field label="Prezzo barrato"><input defaultValue={product?.compare_at_price_cents ?? ""} disabled={!canEditCommerce} min={1} name="compareAtPriceCents" type="number" />{!canEditCommerce ? <input name="compareAtPriceCents" type="hidden" value={product?.compare_at_price_cents ?? ""} /> : null}</Field>
         <Field label="Valuta"><input disabled value={product?.currency ?? "EUR"} /></Field>
         <Field label="Rating / recensioni"><input disabled value={`${product?.rating ?? 0} / 5 · ${product?.review_count ?? 0}`} /></Field>
+        {costGuard && costGuard.averageCostCents !== null && netPrice !== null ? (
+          <p className={styles.marginHint} data-below-cost={typedMargin !== null && typedMargin < 0 ? "true" : undefined} data-testid="price-margin">
+            Netto IVA {formatEuro(netPrice)} · costo medio {formatEuro(costGuard.averageCostCents)} · margine {typedMargin === null ? "—" : `${typedMargin.toLocaleString("it-IT")}%`}
+          </p>
+        ) : null}
+        {costGuard && costGuard.averageCostCents !== null && canEditCommerce ? (
+          <CheckField disabled={false} label="Confermo un prezzo sotto il costo medio" name="belowCostConfirmed" checked={false} />
+        ) : null}
       </EditorSection>
 
       <EditorSection id="inventario" title="Inventario" subtitle="Lo stock reale è immutabile qui: ogni variazione passa dalla funzione transazionale.">

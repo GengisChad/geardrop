@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { sendEmail, SHOP_EMAIL } from "@/lib/email/resend";
 import { createInpostClient, inpostConfig, type InpostClient, type ParcelTracking } from "@/lib/shipping/inpost";
 import { eventLabel, parcelOutcome, type ParcelOutcome } from "@/lib/shipping/inpost-tracking";
+import { storefrontOrganizationId } from "@/lib/org/storefront";
 import type { Database } from "@/lib/supabase/database.types";
 import { createPrivilegedSupabaseClient } from "@/lib/supabase/admin";
 import { deliveryConfirmationEmail } from "./delivery-email";
@@ -16,7 +17,8 @@ import { emailShell, escapeHtml } from "./order-email";
  * "è arrivato" email. A parcel on its way back to the shop is flagged to the owner instead.
  *
  * Runs from the daily cron (/api/cron/inpost-tracking) and from InPost's webhook once InPost
- * turns it on for the account; both paths are idempotent.
+ * turns it on for the account; both paths are idempotent. Both use the secret key, which row
+ * level security does not bind: every query names the shop's company, whose InPost account this is.
  */
 
 /** The InPost carrier label ship_order stores on the order (CARRIERS in carriers.ts). */
@@ -49,11 +51,12 @@ export function outcomesFor(
 }
 
 /** Marks a shipped order delivered and emails the buyer. False when it was no longer shipped. */
-export async function recordInpostDelivery(client: Client, orderId: number, at: string, code: string): Promise<boolean> {
+export async function recordInpostDelivery(client: Client, organizationId: number, orderId: number, at: string, code: string): Promise<boolean> {
   const updated = await client
     .from("orders")
     .update({ status: "completed", delivered_at: at })
     .eq("id", orderId)
+    .eq("organization_id", organizationId)
     .eq("status", "shipped")
     .select("id")
     .maybeSingle();
@@ -63,13 +66,14 @@ export async function recordInpostDelivery(client: Client, orderId: number, at: 
   const note = `InPost: ${eventLabel(code)}`;
   await client.from("order_status_events").insert({ order_id: orderId, from_status: "shipped", to_status: "completed", note });
   await client.from("audit_events").insert({
+    organization_id: organizationId,
     action: "order.delivered",
     entity_type: "orders",
     entity_id: String(orderId),
     before_state: { status: "shipped" },
     after_state: { status: "completed", source: "inpost", event: code },
   });
-  await sendDeliveryEmail(client, orderId);
+  await sendDeliveryEmail(client, organizationId, orderId);
   return true;
 }
 
@@ -78,7 +82,7 @@ export async function recordInpostDelivery(client: Client, orderId: number, at: 
  * closures written by this module: an order the owner completed with "Conferma consegna" and the
  * email box unticked stays silent.
  */
-async function retryDeliveryEmails(client: Client, since: string): Promise<number> {
+async function retryDeliveryEmails(client: Client, organizationId: number, since: string): Promise<number> {
   const closed = await client
     .from("order_status_events")
     .select("order_id")
@@ -88,23 +92,24 @@ async function retryDeliveryEmails(client: Client, since: string): Promise<numbe
     .limit(200);
   const ids = [...new Set((closed.data ?? []).map((row) => row.order_id))];
   if (closed.error || ids.length === 0) return 0;
-  const pending = await client.from("orders").select("id").in("id", ids).eq("status", "completed").is("delivery_notified_at", null);
+  const pending = await client.from("orders").select("id").eq("organization_id", organizationId).in("id", ids).eq("status", "completed").is("delivery_notified_at", null);
   let sent = 0;
   for (const row of pending.data ?? []) {
-    if (await sendDeliveryEmail(client, row.id)) sent += 1;
+    if (await sendDeliveryEmail(client, organizationId, row.id)) sent += 1;
   }
   return sent;
 }
 
 /** True once the buyer has the email (now or before). */
-async function sendDeliveryEmail(client: Client, orderId: number): Promise<boolean> {
+async function sendDeliveryEmail(client: Client, organizationId: number, orderId: number): Promise<boolean> {
   const [order, items] = await Promise.all([
     client
       .from("orders")
       .select("order_number,email,tracking_carrier,tracking_code,tracking_url,shipping_address_snapshot,delivery_notified_at")
       .eq("id", orderId)
+      .eq("organization_id", organizationId)
       .single(),
-    client.from("order_items").select("product_name_snapshot,quantity").eq("order_id", orderId).order("id"),
+    client.from("order_items").select("product_name_snapshot,quantity").eq("order_id", orderId).eq("organization_id", organizationId).order("id"),
   ]);
   if (order.error || items.error) return false;
   if (order.data.delivery_notified_at) return true;
@@ -125,7 +130,7 @@ async function sendDeliveryEmail(client: Client, orderId: number): Promise<boole
     console.error("[inpost-delivery] delivery email", orderId, sent.reason, sent.detail ?? "");
     return false;
   }
-  await client.from("orders").update({ delivery_notified_at: new Date().toISOString() }).eq("id", orderId);
+  await client.from("orders").update({ delivery_notified_at: new Date().toISOString() }).eq("id", orderId).eq("organization_id", organizationId);
   return true;
 }
 
@@ -166,9 +171,11 @@ export async function syncInpostDeliveries(
 
   // InPost keeps tracking for 121 days; a parcel still open after 60 is for the owner to look at.
   const since = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+  const organizationId = await storefrontOrganizationId();
   const shipped = await client
     .from("orders")
     .select("id,order_number,tracking_code")
+    .eq("organization_id", organizationId)
     .eq("status", "shipped")
     .eq("tracking_carrier", INPOST_CARRIER_LABEL)
     .not("tracking_code", "is", null)
@@ -189,13 +196,13 @@ export async function syncInpostDeliveries(
   const failed: string[] = [];
   for (const { order, outcome } of outcomesFor(orders, parcels)) {
     if (outcome.kind === "delivered") {
-      if (await recordInpostDelivery(client, order.id, outcome.at, outcome.code)) delivered.push(order.orderNumber);
+      if (await recordInpostDelivery(client, organizationId, order.id, outcome.at, outcome.code)) delivered.push(order.orderNumber);
     } else if (outcome.kind === "failed") {
       await alertOwner(client, order, outcome.code);
       failed.push(order.orderNumber);
     }
   }
-  const emailRetried = await retryDeliveryEmails(client, since);
+  const emailRetried = await retryDeliveryEmails(client, organizationId, since);
   return { checked: orders.length, delivered, failed, emailRetried };
 }
 
@@ -204,9 +211,11 @@ export async function applyInpostEvent(
   event: { readonly trackingNumber: string; readonly eventCode: string; readonly timestamp: string },
   client: Client = createPrivilegedSupabaseClient(),
 ): Promise<"delivered" | "flagged" | "ignored"> {
+  const organizationId = await storefrontOrganizationId();
   const found = await client
     .from("orders")
     .select("id,order_number,tracking_code,status")
+    .eq("organization_id", organizationId)
     .eq("tracking_carrier", INPOST_CARRIER_LABEL)
     .eq("tracking_code", event.trackingNumber)
     .maybeSingle();
@@ -214,7 +223,7 @@ export async function applyInpostEvent(
   const order = { id: found.data.id, orderNumber: found.data.order_number, trackingCode: event.trackingNumber };
   const outcome = parcelOutcome([{ code: event.eventCode, at: event.timestamp, place: null }]);
   if (outcome.kind === "delivered") {
-    return (await recordInpostDelivery(client, order.id, outcome.at, event.eventCode)) ? "delivered" : "ignored";
+    return (await recordInpostDelivery(client, organizationId, order.id, outcome.at, event.eventCode)) ? "delivered" : "ignored";
   }
   if (outcome.kind === "failed") {
     await alertOwner(client, order, outcome.code);

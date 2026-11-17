@@ -15,7 +15,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const principal = await requireAdminAccess(client);
   if (principal.role === "editor") return new Response("Non autorizzato", { status: 403 });
 
-  const order = await client.from("orders").select("order_number,tracking_carrier,tracking_code").eq("id", id).single();
+  const order = await client.from("orders").select("order_number,tracking_carrier,tracking_code").eq("id", id).eq("organization_id", principal.organization.id).single();
   if (order.error || order.data.tracking_carrier !== INPOST_CARRIER_LABEL || !order.data.tracking_code) {
     return new Response("Nessuna spedizione InPost su questo ordine", { status: 404 });
   }

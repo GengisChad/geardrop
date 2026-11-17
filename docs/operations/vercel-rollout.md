@@ -14,6 +14,7 @@ Configurare separatamente Preview e Production, senza copiare valori da altri pr
 | `SUPABASE_SECRET_KEY` | solo server | secret key GearDrop |
 | `COMMERCE_PROVIDER` | solo server | `mock` |
 | `CONTENT_PROVIDER` | solo server | `mock` |
+| `NEXT_PUBLIC_STOREFRONT_ORGANIZATION` | client/server | `geardrop` (azienda del negozio; deve avere `storefront_public = true`) |
 
 Non configurare project ref, access token CLI o credenziali IBNApp nell'applicazione. Non esporre
 `SUPABASE_SECRET_KEY` con prefisso `NEXT_PUBLIC_`.

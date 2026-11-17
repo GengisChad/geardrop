@@ -1,5 +1,5 @@
-import { execFileSync } from "node:child_process";
 import { expect, test, type Page } from "@playwright/test";
+import { localPsql } from "../support/local-psql";
 
 /**
  * The real order path, against the ephemeral Supabase stack.
@@ -18,19 +18,9 @@ const run = process.env.STOREFRONT_E2E_RUN ?? "";
 const slug = `checkout-product-${run}`;
 
 function sql(statement: string): string {
-  return execFileSync(
-    "psql",
-    [
-      "postgresql://postgres:postgres@127.0.0.1:54322/postgres",
-      "--set",
-      "ON_ERROR_STOP=1",
-      "--tuples-only",
-      "--no-align",
-      "--command",
-      statement,
-    ],
-    { encoding: "utf8" },
-  ).trim();
+  return localPsql(["--set", "ON_ERROR_STOP=1", "--tuples-only", "--no-align", "--command", statement], {
+    encoding: "utf8",
+  }).trim();
 }
 
 /**
@@ -118,7 +108,7 @@ test.describe("storefront order intake", () => {
   });
 
   test("a closed shop refuses the order and keeps the cart", async ({ page }) => {
-    sql("update public.site_settings set accept_orders = false where singleton");
+    sql("update public.site_settings set accept_orders = false where organization_id = (select id from public.organizations where slug = 'geardrop')");
     try {
       await seedCart(page, 1);
       await page.goto("/checkout");
@@ -134,7 +124,7 @@ test.describe("storefront order intake", () => {
       const orders = sql(`select count(*) from public.orders where email = 'closed-${run}@example.com'`);
       expect(Number(orders)).toBe(0);
     } finally {
-      sql("update public.site_settings set accept_orders = true where singleton");
+      sql("update public.site_settings set accept_orders = true where organization_id = (select id from public.organizations where slug = 'geardrop')");
     }
   });
 

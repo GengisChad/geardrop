@@ -86,6 +86,7 @@ export async function saveBundleAction(
       const existing = await client.from("bundles")
         .select("price_cents,compare_at_price_cents,availability_override")
         .eq("id", parsedId.data)
+        .eq("organization_id", principal.organization.id)
         .single();
       if (existing.error) return { ok: false, message: "Bundle non trovato." };
       commerce = {
@@ -97,6 +98,7 @@ export async function saveBundleAction(
   }
   const input = parsed.data;
   const { data, error } = await client.rpc("save_bundle_with_items", {
+    p_organization_id: principal.organization.id,
     p_bundle: {
       id: parsedId?.data ?? null,
       slug: input.slug,

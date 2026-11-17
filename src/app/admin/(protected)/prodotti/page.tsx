@@ -13,8 +13,8 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
   const params = await searchParams;
   const query = normalizeAdminProductQuery(params);
   const client = await createSupabaseServerClient();
-  await requireAdminAccess(client);
-  const page = await listAdminProducts(client, query);
+  const principal = await requireAdminAccess(client);
+  const page = await listAdminProducts(client, principal.organization.id, query);
   const hrefFor = (nextPage: number) => ({ pathname: "/admin/prodotti", query: { ...params, page: String(nextPage) } });
 
   return <div className={styles.productsPage}>

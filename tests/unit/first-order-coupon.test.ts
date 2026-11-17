@@ -11,6 +11,7 @@ import { ClubCodeField } from "@/components/cart/club-code";
 import { readSiteCoupon, type BuyerHistory, type SiteCouponLookup } from "@/lib/commerce/cart-code";
 import type { CartQuote } from "@/lib/commerce/types";
 import type * as StripeCheckoutModule from "@/lib/payments/stripe-checkout";
+import type * as WriteGuardModule from "@/lib/commerce/write-guard";
 
 const createStripeCheckoutMock = vi.hoisted(() => vi.fn());
 const history = vi.hoisted(() => ({ value: new Map<string, { orders: number; ordersWithCode: number }>() }));
@@ -55,6 +56,13 @@ vi.mock("@/lib/payments/stripe-checkout", async (importOriginal) => ({
 vi.mock("next/headers", () => ({ headers: async () => new Headers({ origin: "http://localhost:3000" }) }));
 vi.mock("@/lib/commerce/order-intake", () => ({ placeOrder: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: vi.fn() }));
+// The shop is open: its switches have their own tests (checkout-stripe-actions, commerce-write-guard).
+vi.mock("@/lib/supabase/public", () => ({ createSupabasePublicClient: vi.fn() }));
+vi.mock("@/lib/org/storefront", () => ({ storefrontOrganizationId: async () => 1 }));
+vi.mock("@/lib/commerce/write-guard", async (importOriginal) => ({
+  ...(await importOriginal<typeof WriteGuardModule>()),
+  assertCheckoutIntakeOpen: vi.fn(async () => undefined),
+}));
 
 const { requestCartQuote, startExpressCheckout, submitOrder } = await import("@/app/(storefront)/checkout/actions");
 const { EXPRESS_CODE_NEEDS_EMAIL_MESSAGE } = await import("@/lib/payments/express-checkout");

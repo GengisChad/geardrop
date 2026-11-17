@@ -97,3 +97,6 @@
 @media (max-width:700px) { .heading { align-items: start; flex-direction: column; } .fieldGrid { grid-template-columns: 1fr; } .wideField { grid-column: auto; } .resourceRow { grid-template-columns: 50px 1fr; } .stickyActions { bottom: 84px; } .impactGrid { grid-template-columns: repeat(2,minmax(0,1fr)); } .dangerZone form { align-items: stretch; flex-direction: column; } }
 @media (min-width:1024px) { .stickyActions { bottom: 20px; } }
 @media (prefers-reduced-motion:reduce) { .editorTabs { scroll-behavior: auto; } }
+
+.marginHint { grid-column: 1 / -1; margin: 0; border-radius: 10px; padding: 10px 12px; background: #f1f7ff; color: #27456b; font-size: 11px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.marginHint[data-below-cost] { background: #ffe4e7; color: #a1283e; }

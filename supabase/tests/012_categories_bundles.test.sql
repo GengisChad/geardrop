@@ -1,11 +1,41 @@
 begin;
+-- Organization compatibility for fixtures written before organizations existed (see
+-- supabase/tests/044). Inside this rolled-back transaction every organization-scoped table
+-- defaults to Gear Drop, and every staff profile is mirrored as a Gear Drop member with the
+-- same role and state. Company isolation itself is tested without these shortcuts in 041-044.
+do $legacy_organization$
+declare
+  geardrop bigint := (select id from public.organizations where slug = 'geardrop');
+  target text;
+begin
+  for target in
+    select c.table_name
+    from information_schema.columns as c
+    join information_schema.tables as t on t.table_schema = c.table_schema and t.table_name = c.table_name
+    where c.table_schema = 'public' and c.column_name = 'organization_id'
+      and t.table_type = 'BASE TABLE' and c.table_name <> 'organization_members'
+  loop
+    execute format('alter table public.%I alter column organization_id set default %s', target, geardrop);
+  end loop;
+end
+$legacy_organization$;
+create function private.legacy_mirror_staff_membership() returns trigger language plpgsql set search_path = '' as $legacy_mirror$
+begin
+  insert into public.organization_members (organization_id, user_id, role, active)
+  values ((select id from public.organizations where slug = 'geardrop'), new.user_id, new.role, new.active)
+  on conflict (organization_id, user_id) do update set role = excluded.role, active = excluded.active;
+  return new;
+end
+$legacy_mirror$;
+create trigger legacy_mirror_staff_membership after insert or update of role, active on public.staff_profiles
+  for each row execute function private.legacy_mirror_staff_membership();
 select plan(29);
 
 select has_column('public', 'categories', 'media_asset_id', 'categories support managed media');
 select col_type_is('public', 'categories', 'publication_status', 'publication_status', 'category publication is typed');
 select col_type_is('public', 'bundles', 'availability_override', 'availability_override', 'bundle availability is typed');
 select has_column('public', 'bundles', 'starts_at', 'bundles support publication windows');
-select has_function('public', 'save_bundle_with_items', array['jsonb', 'jsonb'], 'atomic bundle save exists');
+select has_function('public', 'save_bundle_with_items', array['bigint', 'jsonb', 'jsonb'], 'atomic bundle save exists');
 select has_function('public', 'reorder_categories', array['bigint[]'], 'collision-free category reorder exists');
 
 insert into auth.users (
@@ -95,7 +125,7 @@ select results_eq(
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000801', true);
 set local role authenticated;
 select lives_ok(
-  $$select public.save_bundle_with_items(
+  $$select public.save_bundle_with_items((select id from public.organizations where slug = 'geardrop'), 
     jsonb_build_object(
       'slug', 'task10-bundle', 'eyebrow', 'Bundle', 'title_line_one', 'Atomic',
       'title_line_two', 'Bundle', 'description', 'Saved atomically',
@@ -135,7 +165,7 @@ select throws_ok(
   'pending media cannot replace bundle media'
 );
 select throws_ok(
-  $$select public.save_bundle_with_items(
+  $$select public.save_bundle_with_items((select id from public.organizations where slug = 'geardrop'), 
     jsonb_build_object(
       'id', (select id from public.bundles where slug = 'task10-bundle'),
       'slug', 'task10-bundle', 'eyebrow', 'Bundle', 'title_line_one', 'Atomic',
@@ -193,7 +223,7 @@ select throws_ok(
   'editor cannot mutate bundle commerce fields directly'
 );
 select throws_ok(
-  $$select public.save_bundle_with_items(
+  $$select public.save_bundle_with_items((select id from public.organizations where slug = 'geardrop'), 
     jsonb_build_object(
       'id', (select id from public.bundles where slug = 'task10-bundle'),
       'slug', 'task10-bundle', 'eyebrow', 'Bundle', 'title_line_one', 'Atomic',

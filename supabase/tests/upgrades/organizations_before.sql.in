@@ -1,0 +1,135 @@
+-- Populates the schema as it stood before organizations (migration 20261009090000) with a
+-- little of every kind of row: staff with every role and state, catalogue, bundle, coupon,
+-- promotion, a paid order with its history, stock movements, CMS, funnel counters, media and
+-- audit events. scripts/test-supabase-upgrades.ts loads it, applies the organization
+-- migrations and runs organizations_after.sql.in against the result. Never run it elsewhere.
+begin;
+
+insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token, email_change,
+  email_change_token_new, recovery_token)
+select '00000000-0000-0000-0000-000000000000', id, 'authenticated', 'authenticated', email, '', now(),
+  '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', ''
+from (values
+  ('00000000-0000-0000-0000-00000000a001'::uuid, 'owner-one@example.com'),
+  ('00000000-0000-0000-0000-00000000a002'::uuid, 'owner-two@example.com'),
+  ('00000000-0000-0000-0000-00000000a003'::uuid, 'admin@example.com'),
+  ('00000000-0000-0000-0000-00000000a004'::uuid, 'editor@example.com'),
+  ('00000000-0000-0000-0000-00000000a005'::uuid, 'former-owner@example.com'),
+  ('00000000-0000-0000-0000-00000000a006'::uuid, 'customer@example.com')
+) as people(id, email);
+
+insert into public.staff_profiles (user_id, role, display_name, active) values
+  ('00000000-0000-0000-0000-00000000a001', 'owner', 'Owner One', true),
+  ('00000000-0000-0000-0000-00000000a002', 'owner', 'Owner Two', true),
+  ('00000000-0000-0000-0000-00000000a003', 'admin', 'Admin', true),
+  ('00000000-0000-0000-0000-00000000a004', 'editor', 'Editor', true),
+  ('00000000-0000-0000-0000-00000000a005', 'owner', 'Former owner', false);
+
+update public.site_settings
+set store_name = 'GEAR//DROP', legal_name = 'GearDrop Srl', support_email = 'info@example.com'
+where singleton;
+
+insert into public.categories (slug, name, tagline, description, active, publication_status, published_at)
+values ('upgrade-category', 'Upgrade', 'Tagline', 'Description', true, 'published', now());
+
+insert into public.products (category_id, slug, sku, name, tagline, description, price_cents,
+  publication_status, active, stock_quantity)
+select category.id, product.slug, product.slug, product.name, 'Tagline', 'Description', product.price,
+  'published', true, 5
+from public.categories as category
+cross join (values ('upgrade-top', 'Upgrade Top', 1450), ('upgrade-deck', 'Upgrade Deck', 2450)) as product(slug, name, price)
+where category.slug = 'upgrade-category';
+
+insert into public.product_specs (product_id, label, value)
+select id, 'Tipo', 'Attacco' from public.products where slug = 'upgrade-top';
+insert into public.product_tags (product_id, tag)
+select id, 'novita' from public.products where slug = 'upgrade-top';
+insert into public.product_images (product_id, src, width, height, alt, published, is_primary)
+select id, '/products/' || slug || '.webp', 800, 800, name, true, true from public.products;
+insert into public.product_relations (product_id, related_product_id, relation_type)
+select top.id, deck.id, 'related'
+from public.products as top, public.products as deck
+where top.slug = 'upgrade-top' and deck.slug = 'upgrade-deck';
+
+insert into public.bundles (slug, eyebrow, title_line_one, title_line_two, description, price_cents,
+  compare_at_price_cents, hero_product_id, active)
+select 'upgrade-bundle', 'Bundle', 'Upgrade', 'Duo', 'Description', 3500, 3900, id, true
+from public.products where slug = 'upgrade-top';
+insert into public.bundle_items (bundle_id, product_id, quantity, sort_order)
+select bundle.id, product.id, 1, row_number() over (order by product.id) - 1
+from public.bundles as bundle cross join public.products as product
+where bundle.slug = 'upgrade-bundle';
+
+insert into public.shipping_methods (code, name, price_cents, active)
+values ('upgrade-standard', 'Standard', 400, true);
+
+insert into public.coupons (code, discount_kind, discount_value) values ('UPGRADE10', 'percentage', 10);
+insert into public.coupon_products (coupon_id, product_id)
+select coupon.id, product.id from public.coupons as coupon, public.products as product
+where coupon.code = 'UPGRADE10' and product.slug = 'upgrade-top';
+
+insert into public.promotions (name, discount_kind, discount_value) values ('Upgrade promo', 'percentage', 5);
+insert into public.promotion_categories (promotion_id, category_id)
+select promotion.id, category.id from public.promotions as promotion, public.categories as category
+where promotion.name = 'Upgrade promo' and category.slug = 'upgrade-category';
+
+insert into public.customer_profiles (user_id, display_name)
+values ('00000000-0000-0000-0000-00000000a006', 'Customer');
+insert into public.customer_addresses (customer_id, label, recipient_name, line_one, city, province, postal_code)
+values ('00000000-0000-0000-0000-00000000a006', 'Casa', 'Customer', 'Via Roma 1', 'Milano', 'MI', '20121');
+
+insert into public.orders (order_number, customer_id, email, status, payment_status, subtotal_cents,
+  shipping_cents, total_cents, shipping_method_code, shipping_address_snapshot, billing_address_snapshot,
+  idempotency_key)
+values ('GD-UPGRADE-1', '00000000-0000-0000-0000-00000000a006', 'customer@example.com', 'confirmed', 'paid',
+  1450, 400, 1850, 'upgrade-standard', '{}', '{}', '00000000-0000-4000-8000-00000000a101');
+insert into public.order_items (order_id, product_id, quantity, unit_price_cents, line_total_cents,
+  product_name_snapshot, sku_snapshot, image_src_snapshot)
+select orders.id, product.id, 1, 1450, 1450, product.name, product.sku, ''
+from public.orders, public.products as product
+where orders.order_number = 'GD-UPGRADE-1' and product.slug = 'upgrade-top';
+insert into public.order_notes (order_id, note)
+select id, 'Consegna al mattino' from public.orders where order_number = 'GD-UPGRADE-1';
+insert into public.order_status_events (order_id, to_status)
+select id, 'confirmed' from public.orders where order_number = 'GD-UPGRADE-1';
+insert into public.inventory_movements (product_id, delta, stock_after, reason, order_id)
+select product.id, -1, 4, 'order_reserved', orders.id
+from public.products as product, public.orders
+where product.slug = 'upgrade-top' and orders.order_number = 'GD-UPGRADE-1';
+insert into public.coupon_redemptions (coupon_id, order_id, customer_id, email_normalized, discount_cents)
+select coupon.id, orders.id, orders.customer_id, orders.email, 145
+from public.coupons as coupon, public.orders
+where coupon.code = 'UPGRADE10' and orders.order_number = 'GD-UPGRADE-1';
+
+insert into public.restock_requests (product_slug, email) values ('upgrade-deck', 'waiting@example.com');
+
+insert into public.homepage_sections (section_key, section_type, title, sort_order, publication_status, active)
+values ('upgrade-featured', 'featured_products', 'In evidenza', 90, 'draft', false);
+insert into public.homepage_section_products (section_id, product_id, sort_order)
+select section.id, product.id, 0
+from public.homepage_sections as section, public.products as product
+where section.section_key = 'upgrade-featured' and product.slug = 'upgrade-top';
+
+insert into public.navigation_menus (menu_key, label) values ('upgrade-menu', 'Menu');
+insert into public.navigation_items (menu_id, label, href, sort_order)
+select id, 'Negozio', '/negozio', 0 from public.navigation_menus where menu_key = 'upgrade-menu';
+insert into public.footer_columns (column_key, title, sort_order) values ('upgrade-column', 'Aiuto', 90);
+insert into public.footer_items (column_id, label, href, sort_order)
+select id, 'Contatti', '/assistenza/contatti', 0 from public.footer_columns where column_key = 'upgrade-column';
+insert into public.social_links (platform_key, label, href, sort_order)
+values ('upgrade-instagram', 'Instagram', 'https://instagram.com/geardrop', 90);
+insert into public.content_pages (slug, title, markdown_source) values ('upgrade-page', 'Pagina', '# Ciao');
+
+insert into public.storefront_daily_events (day, event, count) values (current_date, 'product_view', 3);
+
+insert into public.media_assets (object_path, original_filename, mime_type, byte_size, width, height, alt_text, uploaded_by)
+values ('upgrade/one.webp', 'one.webp', 'image/webp', 100, 10, 10, 'Immagine', '00000000-0000-0000-0000-00000000a001');
+
+insert into public.audit_events (actor_user_id, action, entity_type, entity_id)
+select '00000000-0000-0000-0000-00000000a001', 'order.note_added', 'orders', id::text
+from public.orders where order_number = 'GD-UPGRADE-1';
+insert into public.audit_events (actor_user_id, action, entity_type, entity_id)
+values ('00000000-0000-0000-0000-00000000a001', 'staff.invited', 'staff_profiles', '00000000-0000-0000-0000-00000000a003');
+
+commit;

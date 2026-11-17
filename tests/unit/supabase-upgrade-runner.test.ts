@@ -1,29 +1,25 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { renderSupabaseUpgradeFixture } from "../../scripts/render-supabase-upgrade-fixture";
+
+const root = process.cwd();
+const read = (path: string) => readFileSync(join(root, path), "utf8");
 
 describe("Supabase populated-upgrade runner", () => {
-  it("preserves the exact migration body and dollar quotes in every replay", () => {
-    const root = process.cwd();
-    const migration = readFileSync(
-      join(root, "supabase/migrations/20260904143000_publish_preorder_catalog.sql"),
-      "utf8",
-    ).replaceAll("\r\n", "\n");
-    const body = migration.replace(/^begin;\s*/, "").replace(/commit;\s*$/, "");
-    const fixture = readFileSync(
-      join(root, "supabase/tests/upgrades/preorder_catalog.sql.in"),
-      "utf8",
-    );
+  it("starts from the last migration before organizations existed", () => {
+    const migrations = readdirSync(join(root, "supabase/migrations")).filter((name) => name.endsWith(".sql")).sort();
+    const first = migrations.findIndex((name) => name.endsWith("_add_organizations.sql"));
+    const previous = migrations[first - 1]?.slice(0, 14);
 
-    const rendered = renderSupabaseUpgradeFixture(fixture, body);
-    const replayBodies = Array.from(
-      rendered.matchAll(/\$catalog_migration\$([\s\S]*?)\$catalog_migration\$/g),
-      (match) => match[1],
-    );
+    expect(first).toBeGreaterThan(0);
+    // A migration slipped in before the organizations would be skipped by the replay.
+    expect(read("scripts/test-supabase-upgrades.ts")).toContain(`const LAST_MIGRATION_BEFORE_ORGANIZATIONS = "${previous}";`);
+  });
 
-    expect(replayBodies).toEqual([body, body, body]);
-    expect(rendered).not.toContain("-- @run-preorder-migration");
-    expect(body).toContain("do $$");
+  it("loads the populated fixture and proves the upgrade with pgTAP", () => {
+    expect(existsSync(join(root, "supabase/tests/upgrades/organizations_before.sql.in"))).toBe(true);
+    const after = read("supabase/tests/upgrades/organizations_after.sql.in");
+    expect(after).toMatch(/select plan\(\d+\);/);
+    expect(after).toContain("select * from finish();");
   });
 });

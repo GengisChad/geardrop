@@ -42,17 +42,19 @@ describe("full reviewed storefront seed", () => {
 
   it("uses stable natural keys and produces deterministic SQL for a second run", () => {
     expect(generateSupabaseSeed()).toBe(sql);
-    expect(normalized).toContain("on conflict (section_key) do update");
-    expect(normalized).toContain("on conflict (slug) do update");
-    expect(normalized).toContain("on conflict (menu_key) do update");
-    expect(normalized).toContain("on conflict (column_key) do update");
+    // Natural keys are unique inside a company: the seed fills Gear Drop's rows only.
+    expect(normalized).toContain("on conflict (organization_id, section_key) do update");
+    expect(normalized).toContain("on conflict (organization_id, slug) do update");
+    expect(normalized).toContain("on conflict (organization_id, menu_key) do update");
+    expect(normalized).toContain("on conflict (organization_id, column_key) do update");
   });
 
   it("preserves operational state and stocks only new catalogue rows", () => {
     expect(normalized).toContain("gd_seed_operated_database");
     expect(normalized).toContain("exists(select 1 from public.audit_events)");
     expect(normalized).toContain("seed.stock_quantity,");
-    expect(normalized).toContain("values (true, false)");
+    expect(normalized).toContain("select id, false from public.organizations where slug = 'geardrop'");
+    expect(normalized).toContain("on conflict (organization_id) do nothing");
     expect(normalized).not.toContain("stock_quantity = excluded.stock_quantity");
     expect(normalized).not.toContain("accept_orders = excluded.accept_orders");
     expect(normalized).not.toContain("availability_override = excluded.availability_override");

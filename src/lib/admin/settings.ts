@@ -6,7 +6,7 @@ const id=z.coerce.number().int().positive();
 
 export const shippingMethodSchema=z.object({
   id:id.optional(),name:z.string().trim().min(1).max(160),code:z.string().trim().min(2).max(80).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),description:nullable(1000),
-  priceCents:z.coerce.number().int().nonnegative(),freeFromCents:z.coerce.number().int().positive().nullable(),
+  priceCents:z.coerce.number().int().nonnegative(),freeFromCents:z.coerce.number().int().positive().nullable(),courierCostCents:z.number().int().nonnegative().max(1_000_000).nullable().default(null),
   countryCodes:z.array(z.string().trim().toUpperCase().regex(/^[A-Z]{2}$/)).min(1).max(50).refine(value=>new Set(value).size===value.length,"Aree duplicate"),
   estimateMinDays:z.coerce.number().int().min(0).max(365),estimateMaxDays:z.coerce.number().int().min(0).max(365),active:z.boolean(),sortOrder:z.coerce.number().int().min(-100000).max(100000),
 }).refine(value=>value.estimateMinDays<=value.estimateMaxDays,{path:["estimateMaxDays"],message:"Stima massima non valida"});

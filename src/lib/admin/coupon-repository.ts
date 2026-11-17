@@ -11,10 +11,10 @@ export type CouponEditorData = { readonly coupon: Coupon; readonly productIds: r
  * A Stripe order only names its code, so the ledger stays empty for it: the live orders that carry
  * the code are the real count, the same one the cart holds a usage limit to.
  */
-export async function listCoupons(client: SupabaseClient<Database>) {
+export async function listCoupons(client: SupabaseClient<Database>, organizationId: number) {
   const [result, orders] = await Promise.all([
-    client.from("coupons").select("*, coupon_redemptions(count)").order("created_at", { ascending: false }),
-    client.from("orders").select("coupon_code").not("coupon_code", "is", null).neq("status", "cancelled"),
+    client.from("coupons").select("*, coupon_redemptions(count)").eq("organization_id", organizationId).order("created_at", { ascending: false }),
+    client.from("orders").select("coupon_code").eq("organization_id", organizationId).not("coupon_code", "is", null).neq("status", "cancelled"),
   ]);
   if (result.error || orders.error) throw new Error("Impossibile caricare i coupon");
   const uses = new Map<string, number>();
@@ -27,18 +27,18 @@ export async function listCoupons(client: SupabaseClient<Database>) {
   }));
 }
 
-export async function loadCouponEditor(client: SupabaseClient<Database>, id: number): Promise<CouponEditorData | null> {
+export async function loadCouponEditor(client: SupabaseClient<Database>, organizationId: number, id: number): Promise<CouponEditorData | null> {
   const [coupon, products, categories, bundles, redemptions, productRows] = await Promise.all([
-    client.from("coupons").select("*").eq("id", id).maybeSingle(),
-    client.from("coupon_products").select("product_id").eq("coupon_id", id),
-    client.from("coupon_categories").select("category_id").eq("coupon_id", id),
-    client.from("coupon_bundles").select("bundle_id").eq("coupon_id", id),
-    client.from("coupon_redemptions").select("id", { count: "exact", head: true }).eq("coupon_id", id),
-    client.from("products").select("id,name,sku").order("name").limit(500),
+    client.from("coupons").select("*").eq("id", id).eq("organization_id", organizationId).maybeSingle(),
+    client.from("coupon_products").select("product_id").eq("coupon_id", id).eq("organization_id", organizationId),
+    client.from("coupon_categories").select("category_id").eq("coupon_id", id).eq("organization_id", organizationId),
+    client.from("coupon_bundles").select("bundle_id").eq("coupon_id", id).eq("organization_id", organizationId),
+    client.from("coupon_redemptions").select("id", { count: "exact", head: true }).eq("coupon_id", id).eq("organization_id", organizationId),
+    client.from("products").select("id,name,sku").eq("organization_id", organizationId).order("name").limit(500),
   ]);
   if (coupon.error || products.error || categories.error || bundles.error || redemptions.error || productRows.error) throw new Error("Impossibile caricare il coupon");
   if (!coupon.data) return null;
-  const orders = await client.from("orders").select("id", { count: "exact", head: true }).eq("coupon_code", coupon.data.code).neq("status", "cancelled");
+  const orders = await client.from("orders").select("id", { count: "exact", head: true }).eq("organization_id", organizationId).eq("coupon_code", coupon.data.code).neq("status", "cancelled");
   if (orders.error) throw new Error("Impossibile caricare il coupon");
   const productIds = products.data?.map((item) => item.product_id) ?? [];
   return { coupon: coupon.data, productIds, categoryIds: categories.data?.map((item) => item.category_id) ?? [], bundleIds: bundles.data?.map((item) => item.bundle_id) ?? [], affectedProducts: (productRows.data ?? []).filter((item) => productIds.includes(item.id)).map((item) => ({ id: item.id, label: item.name, meta: item.sku })), redemptionCount: Math.max(redemptions.count ?? 0, orders.count ?? 0) };

@@ -3,6 +3,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createInpostClient, inpostConfig, type TrackingEvent } from "@/lib/shipping/inpost";
+import { storefrontOrganizationId } from "@/lib/org/storefront";
 import type { Database } from "@/lib/supabase/database.types";
 import { liveTrackingCodes, type TrackableOrder } from "./customer-order-status";
 
@@ -48,6 +49,7 @@ export async function loadCustomerOrders(client: SupabaseClient<Database>, limit
   const { data, error } = await client
     .from("orders")
     .select(ORDER_COLUMNS)
+    .eq("organization_id", await storefrontOrganizationId())
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) {

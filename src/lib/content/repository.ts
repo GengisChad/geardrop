@@ -28,17 +28,18 @@ function publicScope<T extends { eq(column: string, value: unknown): T }>(query:
 
 export async function listHomepageSections(
   client: SupabaseClient<Database>,
+  organizationId: number,
   { includeDrafts = false }: ContentReadOptions = {},
 ): Promise<readonly HomepageSection[]> {
-  const query = client.from("homepage_sections").select("*").order("sort_order").order("id");
+  const query = client.from("homepage_sections").select("*").eq("organization_id", organizationId).order("sort_order").order("id");
   const sections = await publicScope(query, includeDrafts);
   if (sections.error) throw new Error("Impossibile caricare le sezioni homepage");
   if (!sections.data?.length) return [];
   const ids = sections.data.map((section) => section.id);
   const [products, categories, bundles] = await Promise.all([
-    client.from("homepage_section_products").select("section_id,product_id,sort_order").in("section_id", ids).order("sort_order"),
-    client.from("homepage_section_categories").select("section_id,category_id,sort_order").in("section_id", ids).order("sort_order"),
-    client.from("homepage_section_bundles").select("section_id,bundle_id,sort_order").in("section_id", ids).order("sort_order"),
+    client.from("homepage_section_products").select("section_id,product_id,sort_order").in("section_id", ids).eq("organization_id", organizationId).order("sort_order"),
+    client.from("homepage_section_categories").select("section_id,category_id,sort_order").in("section_id", ids).eq("organization_id", organizationId).order("sort_order"),
+    client.from("homepage_section_bundles").select("section_id,bundle_id,sort_order").in("section_id", ids).eq("organization_id", organizationId).order("sort_order"),
   ]);
   if (products.error || categories.error || bundles.error) throw new Error("Impossibile caricare i target homepage");
   return sections.data.map((section) => ({
@@ -51,10 +52,11 @@ export async function listHomepageSections(
 
 export async function getContentPage(
   client: SupabaseClient<Database>,
+  organizationId: number,
   slug: string,
   { includeDrafts = false }: ContentReadOptions = {},
 ): Promise<ContentPage | null> {
-  let query = client.from("content_pages").select("*").eq("slug", slug);
+  let query = client.from("content_pages").select("*").eq("organization_id", organizationId).eq("slug", slug);
   query = publicScope(query, includeDrafts);
   const { data, error } = await query.maybeSingle();
   if (error) throw new Error("Impossibile caricare la pagina");
@@ -63,9 +65,10 @@ export async function getContentPage(
 
 export async function listContentPages(
   client: SupabaseClient<Database>,
+  organizationId: number,
   { includeDrafts = false }: ContentReadOptions = {},
 ): Promise<readonly ContentPage[]> {
-  let query = client.from("content_pages").select("*").order("sort_order").order("id");
+  let query = client.from("content_pages").select("*").eq("organization_id", organizationId).order("sort_order").order("id");
   query = publicScope(query, includeDrafts);
   const result = await query;
   if (result.error) throw new Error("Impossibile caricare le pagine");
@@ -81,10 +84,11 @@ function buildNavigationTree(rows: readonly NavigationItemRow[], parentId: numbe
 
 export async function getNavigation(
   client: SupabaseClient<Database>,
+  organizationId: number,
   menuKey: string,
   { includeDrafts = false }: ContentReadOptions = {},
 ): Promise<Navigation | null> {
-  let menuQuery = client.from("navigation_menus").select("*").eq("menu_key", menuKey);
+  let menuQuery = client.from("navigation_menus").select("*").eq("organization_id", organizationId).eq("menu_key", menuKey);
   menuQuery = publicScope(menuQuery, includeDrafts);
   const menu = await menuQuery.maybeSingle();
   if (menu.error) throw new Error("Impossibile caricare il menu");
@@ -98,10 +102,11 @@ export async function getNavigation(
 
 export async function getFooter(
   client: SupabaseClient<Database>,
+  organizationId: number,
   { includeDrafts = false }: ContentReadOptions = {},
 ): Promise<Footer> {
-  let columnQuery = client.from("footer_columns").select("*").order("sort_order").order("id");
-  let socialQuery = client.from("social_links").select("*").order("sort_order").order("id");
+  let columnQuery = client.from("footer_columns").select("*").eq("organization_id", organizationId).order("sort_order").order("id");
+  let socialQuery = client.from("social_links").select("*").eq("organization_id", organizationId).order("sort_order").order("id");
   columnQuery = publicScope(columnQuery, includeDrafts);
   socialQuery = publicScope(socialQuery, includeDrafts);
   const [columns, socialLinks] = await Promise.all([columnQuery, socialQuery]);
@@ -123,12 +128,13 @@ export async function getFooter(
 
 export async function loadHomepageEditorResources(
   client: SupabaseClient<Database>,
+  organizationId: number,
 ): Promise<HomepageEditorResources> {
   const [media, products, categories, bundles] = await Promise.all([
-    client.from("media_assets").select("id,object_path,original_filename,alt_text").eq("status", "ready").order("created_at", { ascending: false }).limit(300),
-    client.from("products").select("id,name,sku,publication_status").order("name").limit(500),
-    client.from("categories").select("id,name,slug,publication_status").order("sort_order").limit(200),
-    client.from("bundles").select("id,title_line_one,title_line_two,slug").order("sort_order").limit(200),
+    client.from("media_assets").select("id,object_path,original_filename,alt_text").eq("organization_id", organizationId).eq("status", "ready").order("created_at", { ascending: false }).limit(300),
+    client.from("products").select("id,name,sku,publication_status").eq("organization_id", organizationId).order("name").limit(500),
+    client.from("categories").select("id,name,slug,publication_status").eq("organization_id", organizationId).order("sort_order").limit(200),
+    client.from("bundles").select("id,title_line_one,title_line_two,slug").eq("organization_id", organizationId).order("sort_order").limit(200),
   ]);
   if (media.error || products.error || categories.error || bundles.error) {
     throw new Error("Impossibile caricare le risorse homepage");

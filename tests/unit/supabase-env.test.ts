@@ -22,6 +22,26 @@ describe("Supabase environment", () => {
     );
   });
 
+  it("refuses management clients from the storefront environment reader", () => {
+    const source = {
+      NEXT_PUBLIC_APP_SURFACE: "management",
+      MANAGEMENT_ORIGIN: "https://management.example",
+      NEXT_PUBLIC_EXPECTED_SUPABASE_PROJECT_REF: "project-abc",
+      NEXT_PUBLIC_SUPABASE_URL: "https://other.supabase.co?token=never-print-this",
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_never-print-this",
+      NODE_ENV: "production",
+    };
+    expect(() => readPublicSupabaseEnv(source)).toThrow(/^GD_ROOT_MANAGEMENT_BUILD_UNSUPPORTED$/);
+  });
+
+  it("keeps a mock storefront free of Supabase deployment requirements", () => {
+    expect(readPublicSupabaseEnv({
+      NEXT_PUBLIC_APP_SURFACE: "storefront",
+      NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_test",
+    })).toEqual({ url: "https://example.supabase.co", publishableKey: "sb_publishable_test" });
+  });
+
   it("keeps the secret reader in a server-only module", () => {
     const publicSource = readFileSync(join(process.cwd(), "src/lib/supabase/env.ts"), "utf8");
     const secretSource = readFileSync(join(process.cwd(), "src/lib/supabase/env.server.ts"), "utf8");

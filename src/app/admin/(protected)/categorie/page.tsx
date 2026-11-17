@@ -10,8 +10,8 @@ export const fetchCache = "force-no-store";
 
 export default async function AdminCategoriesPage() {
   const client = await createSupabaseServerClient();
-  await requireAdminAccess(client);
-  const page = await listAdminCategories(client);
+  const principal = await requireAdminAccess(client);
+  const page = await listAdminCategories(client, principal.organization.id);
   return <div className={styles.page}><header className={styles.heading}><div><p>Catalogo / Tassonomia</p><h1>Categorie</h1><span>{page.total} righe reali · ordine numerico PostgreSQL</span></div><Link href="/admin/categorie/nuova">Nuova categoria</Link></header><CategoryOrderList items={page.items} /></div>;
 }
 
