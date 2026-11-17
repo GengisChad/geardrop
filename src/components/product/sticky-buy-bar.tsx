@@ -13,8 +13,14 @@ import type { Product } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
 
 /**
- * Sticky buy bar from mockup-pdp-cobalt-mobile. Appears once the main CTA has scrolled up
- * out of view, so it never duplicates a visible button nor covers the price on arrival.
+ * Sticky buy bar from mockup-pdp-cobalt-mobile. It shows whenever the main CTA is out of sight, so
+ * it never duplicates a visible button.
+ *
+ * That includes the arrival (2026-11-17): on a phone the photo fills the first screen and the price
+ * and the button used to wait a scroll below it. A buyer who lands from Instagram now has the name,
+ * the price, the availability and "Aggiungi" under the thumb at once; the bar leaves as the real
+ * panel comes into view and returns once it has scrolled away. On a desktop the panel is beside the
+ * photo, in sight, so nothing shows until it scrolls off.
  */
 export function StickyBuyBar({ product }: { product: Product }) {
   const [visible, setVisible] = useState(false);
@@ -33,7 +39,7 @@ export function StickyBuyBar({ product }: { product: Product }) {
     const anchor = document.getElementById("buy-panel");
     if (!anchor) return;
     const observer = new IntersectionObserver(
-      ([entry]) => setVisible(!!entry && !entry.isIntersecting && entry.boundingClientRect.top < 0),
+      ([entry]) => setVisible(!!entry && !entry.isIntersecting),
       { threshold: 0 },
     );
     observer.observe(anchor);
@@ -84,7 +90,7 @@ export function StickyBuyBar({ product }: { product: Product }) {
               {formatPrice(product.price)}
             </p>
 
-            <div className="w-36 shrink-0 sm:w-52">
+            <div className="w-36 shrink-0 sm:w-52 [&_button]:whitespace-nowrap [&_button]:px-2 sm:[&_button]:px-5">
               {product.stock === "esaurito" ? (
                 <button
                   type="button"

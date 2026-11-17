@@ -99,11 +99,11 @@ export function Hero({
         <span className="absolute inset-[21%] rotate-[20deg] rounded-full border-2 border-transparent border-r-violet/50 border-t-lime/45" />
       </div>
 
-      <div className="mx-auto max-w-[1400px] px-4 pb-10 pt-7 sm:px-6 lg:px-10 lg:pb-16 lg:pt-12">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between lg:gap-12">
+      <div className="mx-auto max-w-[1400px] px-4 pb-10 pt-5 sm:px-6 sm:pt-7 lg:px-10 lg:pb-16 lg:pt-12">
+        <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-end lg:justify-between lg:gap-12">
           <div className="min-w-0">
             <p className="gd-sticker bg-lime px-2.5 py-1 text-[0.6875rem] text-void sm:text-[0.75rem]">{eyebrow}</p>
-            <h1 className="gd-display-wide mt-6 text-[2.5rem] font-extrabold leading-[0.92] [font-stretch:125%] sm:text-[3.6rem] sm:[font-stretch:132%] xl:text-[5rem]">
+            <h1 className="gd-display-wide mt-4 text-[2.125rem] font-extrabold leading-[0.92] [font-stretch:125%] sm:mt-6 sm:text-[3.6rem] sm:[font-stretch:132%] xl:text-[5rem]">
               {lines.map((line, index) => (
                 <Fragment key={`${index}-${line}`}>
                   {/* The space between spans is real text, so the heading still reads as a sentence. */}
@@ -117,13 +117,18 @@ export function Hero({
           <div className="lg:max-w-[25rem] lg:pb-2">
             {/* Phones skip the list of names: the cards right below carry them, and come up a screen sooner. */}
             <p className="hidden text-[1.0625rem] leading-relaxed text-grey-700 sm:block sm:text-[1.1875rem]">{description}</p>
-            <Button as={Link} href={secondaryHref} variant="primary" size="lg" className="w-full sm:mt-6 sm:w-auto">
-              {secondaryLabel}
-              <ArrowRight className="size-4" strokeWidth={2.5} aria-hidden="true" />
-            </Button>
-            <ul className="mt-4 flex flex-wrap justify-center gap-x-3 gap-y-1 sm:mt-7 sm:flex-col sm:justify-start sm:gap-3">
+            {/* Phones skip this button too (2026-11-17): it stood between the pitch and the products, and pushed the
+                first cards' prices under the fold. The shop is one tap away in the tab bar and in the tile that ends
+                the cards. The wrapper hides it: the button's own display class would win over `hidden`. */}
+            <div className="hidden sm:mt-6 sm:block">
+              <Button as={Link} href={secondaryHref} variant="primary" size="lg" className="w-auto">
+                {secondaryLabel}
+                <ArrowRight className="size-4" strokeWidth={2.5} aria-hidden="true" />
+              </Button>
+            </div>
+            <ul className="flex flex-wrap gap-x-3 gap-y-1 sm:mt-7 sm:flex-col sm:gap-3">
               {HERO_FACTS.map(({ Icon, strong, rest }) => (
-                <li key={strong} className="flex items-center gap-2 text-[0.75rem] text-grey-600 sm:gap-3 sm:text-[0.9375rem] sm:text-grey-700">
+                <li key={strong} className="flex items-center gap-2 whitespace-nowrap text-[0.6875rem] text-grey-600 sm:gap-3 sm:whitespace-normal sm:text-[0.9375rem] sm:text-grey-700">
                   <Icon className="hidden size-5 shrink-0 text-lime sm:block" strokeWidth={2} aria-hidden="true" />
                   <span>
                     <b className="font-semibold text-graphite">{strong}</b>
@@ -136,7 +141,7 @@ export function Hero({
         </div>
 
         <h2 className="sr-only">{heading ?? (isNewRelease ? "Nuove uscite" : "In evidenza")}</h2>
-        <ul data-testid="hero-products" className="mt-8 grid grid-cols-2 gap-2.5 sm:mt-12 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
+        <ul data-testid="hero-products" className="mt-5 grid grid-cols-2 gap-2.5 sm:mt-12 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
           {shown.map((product, index) => (
             <li key={product.slug}>
               <ProductCard product={product} showTagline priority={index < 2} />

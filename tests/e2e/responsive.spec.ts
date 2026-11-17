@@ -61,8 +61,12 @@ test.describe("mobile", () => {
     await expect(page.getByTestId("filters-sheet")).toBeHidden();
   });
 
-  test("the sticky buy bar appears once the main CTA scrolls away", async ({ page }) => {
+  test("the sticky buy bar shows whenever the main CTA is out of sight, arrival included", async ({ page }) => {
     await page.goto("/prodotto/cobalt-dragoon-2-60c");
+    // On a phone the photo fills the first screen: the price and "Aggiungi" are in the bar at once.
+    await expect(page.getByTestId("sticky-buy-bar")).toBeVisible();
+    await expect(page.getByTestId("sticky-buy-bar").getByTestId("add-to-cart")).toBeVisible();
+
     await page.locator("#buy-panel").scrollIntoViewIfNeeded();
     await expect(page.getByTestId("sticky-buy-bar")).toBeHidden();
 
