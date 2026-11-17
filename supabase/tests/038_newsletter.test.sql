@@ -83,6 +83,7 @@ select is(
 reset role;
 
 -- Only the owners and admins of the company that runs the shop read its list --------------------
+-- auth.uid() reads request.jwt.claim.sub first, the setting the shopper above used: each reader sets it again.
 insert into auth.users(instance_id,id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at,is_sso_user,is_anonymous) values
 ('00000000-0000-0000-0000-000000000000','00000000-0000-0000-0000-000000003801','authenticated','authenticated','newsletter-geardrop@example.com','',now(),'{}','{}',now(),now(),false,false),
 ('00000000-0000-0000-0000-000000000000','00000000-0000-0000-0000-000000003802','authenticated','authenticated','newsletter-oryvenne@example.com','',now(),'{}','{}',now(),now(),false,false);
@@ -97,14 +98,14 @@ from (values
 ) as member(slug, user_id)
 join public.organizations as organization on organization.slug = member.slug;
 
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000003801","role":"authenticated"}', true);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000003801', true);
 set local role authenticated;
 select ok(
   (select count(*) > 0 from public.newsletter_subscribers),
   'an owner of the company that runs the shop reads its subscribers');
 reset role;
 
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000003802","role":"authenticated"}', true);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000003802', true);
 set local role authenticated;
 select is(
   (select count(*)::int from public.newsletter_subscribers),
