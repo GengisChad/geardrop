@@ -1,5 +1,5 @@
 begin;
-select plan(27);
+select plan(29);
 
 -- Nobody but the server's own key touches the list or the functions -------------------------------
 select ok(not has_table_privilege('anon', 'public.newsletter_subscribers', 'SELECT'), 'anon cannot read the newsletter list');
@@ -80,6 +80,37 @@ select is(
   (select count(*)::int from public.newsletter_subscribers),
   0,
   'a signed-in shopper without a staff role sees no subscriber');
+reset role;
+
+-- Only the owners and admins of the company that runs the shop read its list --------------------
+-- auth.uid() reads request.jwt.claim.sub first, the setting the shopper above used: each reader sets it again.
+insert into auth.users(instance_id,id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at,is_sso_user,is_anonymous) values
+('00000000-0000-0000-0000-000000000000','00000000-0000-0000-0000-000000003801','authenticated','authenticated','newsletter-geardrop@example.com','',now(),'{}','{}',now(),now(),false,false),
+('00000000-0000-0000-0000-000000000000','00000000-0000-0000-0000-000000003802','authenticated','authenticated','newsletter-oryvenne@example.com','',now(),'{}','{}',now(),now(),false,false);
+insert into public.staff_profiles(user_id,role,display_name) values
+('00000000-0000-0000-0000-000000003801','owner','Newsletter Gear Drop'),
+('00000000-0000-0000-0000-000000003802','owner','Newsletter Oryvenne');
+insert into public.organization_members(organization_id,user_id,role)
+select organization.id, member.user_id, 'owner'::public.staff_role
+from (values
+  ('geardrop', '00000000-0000-0000-0000-000000003801'::uuid),
+  ('oryvenne', '00000000-0000-0000-0000-000000003802'::uuid)
+) as member(slug, user_id)
+join public.organizations as organization on organization.slug = member.slug;
+
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000003801', true);
+set local role authenticated;
+select ok(
+  (select count(*) > 0 from public.newsletter_subscribers),
+  'an owner of the company that runs the shop reads its subscribers');
+reset role;
+
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000003802', true);
+set local role authenticated;
+select is(
+  (select count(*)::int from public.newsletter_subscribers),
+  0,
+  'an owner who only works for the other company sees no subscriber');
 reset role;
 
 select * from finish();

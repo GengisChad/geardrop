@@ -20,7 +20,7 @@ export default async function AdminMediaPage({
   const client = await createSupabaseServerClient();
   const principal = await requireAdminAccess(client);
   const [page, config] = await Promise.all([
-    listAdminMedia(client, query),
+    listAdminMedia(client, principal.organization.id, query),
     Promise.resolve(readMediaUploadConfig(process.env)),
   ]);
   const hrefFor = (nextPage: number) => ({ pathname: "/admin/media", query: { ...params, page: String(nextPage) } });

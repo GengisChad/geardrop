@@ -10,6 +10,13 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { label: "Categorie", href: "/admin/categorie", disabled: false },
   { label: "Bundle", href: "/admin/bundle", disabled: false },
   { label: "Inventario", href: "/admin/inventario", disabled: false },
+  // Owner, 2026-11-17: cost, list price and what the shelf can earn, product by product.
+  { label: "Listino e margini", href: "/admin/listino", disabled: false },
+  { label: "Carichi merce", href: "/admin/carichi", disabled: false },
+  { label: "Fornitori", href: "/admin/fornitori", disabled: false },
+  { label: "Previsioni", href: "/admin/previsioni", disabled: false },
+  { label: "Prezzi IA", href: "/admin/prezzi", disabled: false },
+  { label: "Assistente", href: "/admin/assistente", disabled: false },
   { label: "Media", href: "/admin/media", disabled: false },
   { label: "Homepage", href: "/admin/homepage", disabled: false },
   { label: "Pagine", href: "/admin/pagine", disabled: false },
@@ -23,6 +30,7 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { label: "Ordini", href: "/admin/ordini", disabled: false },
   // Owner, 2026-10-11: who paid for a pre-order and whether it has shipped.
   { label: "Pre-ordini", href: "/admin/ordini/pre-ordini", disabled: false },
+  { label: "Da spedire", href: "/admin/magazzino", disabled: false },
   { label: "Spedizioni", href: "/admin/spedizioni", disabled: false },
   { label: "Impostazioni", href: "/admin/impostazioni", disabled: false },
   { label: "Team", href: "/admin/team", disabled: false },

@@ -13,7 +13,7 @@ export default async function AdminPageEditorPage({ params }: { readonly params:
   const { slug } = await params;
   if (!isManagedPageSlug(slug)) notFound();
   const client = await createSupabaseServerClient();
-  await requireAdminAccess(client);
-  const page = await getContentPage(client, slug, { includeDrafts: true });
+  const principal = await requireAdminAccess(client);
+  const page = await getContentPage(client, principal.organization.id, slug, { includeDrafts: true });
   return <div className={styles.page}><header className={styles.heading}><div><p>CMS / Pagina</p><h1>{MANAGED_PAGE_LABELS[slug]}</h1><span>{page ? "Contenuto reale caricato" : "Database vuoto per questo slug"}</span></div></header><PageEditor page={page} slug={slug} /></div>;
 }

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { requireStaffRole, requireUser } from "@/lib/auth/guards";
 import { STAFF_ROLES } from "@/lib/auth/roles";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { isGestionaleOnly } from "@/lib/app-mode";
 import { LoginForm } from "./login-form";
 import styles from "@/components/admin/admin.module.css";
 
@@ -30,16 +31,21 @@ export default async function AdminLoginPage() {
   if (authenticatedStaff) {
     redirect("/admin");
   }
+  const gestionale = isGestionaleOnly();
 
   return (
     <main className={styles.loginCanvas} id="contenuto">
       <section className={styles.loginPanel} aria-labelledby="admin-login-title">
-        <div className={styles.loginBrand}>GEAR//DROP <span>ADMIN</span></div>
+        {gestionale
+          ? <div className={styles.loginBrand}>GESTIONALE <span>GEAR DROP · ORYVENNE</span></div>
+          : <div className={styles.loginBrand}>GEAR//DROP <span>ADMIN</span></div>}
         <p className={styles.eyebrow}>Console operativa protetta</p>
         <h1 id="admin-login-title">Accesso staff</h1>
-        <p>Gestisci catalogo, inventario e media con il tuo account autorizzato.</p>
+        <p>{gestionale
+          ? "Magazzino, ordini, costi, previsioni e prezzi di Gear Drop e Oryvenne, condivisi tra i soci."
+          : "Gestisci catalogo, inventario e media con il tuo account autorizzato."}</p>
         <LoginForm />
-        <Link className={styles.backLink} href="/">← Torna al negozio</Link>
+        {gestionale ? null : <Link className={styles.backLink} href="/">← Torna al negozio</Link>}
       </section>
     </main>
   );

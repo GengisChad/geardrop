@@ -38,9 +38,11 @@ describe("admin product repository", () => {
       from: vi.fn((table: string) => table === "products" ? products.builder : categories.builder),
     };
 
-    const result = await listAdminProducts(client as never, { ...baseQuery, page: 2, pageSize: 10 });
+    const result = await listAdminProducts(client as never, 3, { ...baseQuery, page: 2, pageSize: 10 });
 
     expect(products.calls).toContainEqual({ method: "select", args: [expect.any(String), { count: "exact" }] });
+    expect(products.calls).toContainEqual({ method: "eq", args: ["organization_id", 3] });
+    expect(categories.calls).toContainEqual({ method: "eq", args: ["organization_id", 3] });
     expect(products.calls).toContainEqual({ method: "range", args: [10, 19] });
     expect(result).toMatchObject({ items: [], total: 0, pageCount: 1 });
   });
@@ -52,7 +54,7 @@ describe("admin product repository", () => {
       from: vi.fn((table: string) => table === "products" ? products.builder : categories.builder),
     };
 
-    await listAdminProducts(client as never, {
+    await listAdminProducts(client as never, 1, {
       ...baseQuery,
       q: "dran",
       publication: "draft",

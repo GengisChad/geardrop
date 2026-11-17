@@ -30,7 +30,13 @@ vi.mock("@/lib/supabase/admin", () => {
   const builder = (table: string) => {
     const filters = new Map<string, unknown>();
     const result = () => {
-      if (table === "coupons") return supabase.coupon;
+      if (table === "coupons") {
+        // The query names the shop's company: a row of another company is not found at all.
+        const row = supabase.coupon.data as { organization_id?: number } | null;
+        const asked = filters.get("organization_id");
+        if (row?.organization_id !== undefined && asked !== undefined && row.organization_id !== asked) return { data: null, error: null };
+        return supabase.coupon;
+      }
       if (!filters.has("email")) return supabase.orders;
       supabase.emails.push(String(filters.get("email")));
       return filters.has("coupon_code") ? supabase.buyerOrdersWithCode : supabase.buyerOrders;
@@ -50,6 +56,7 @@ vi.mock("@/lib/supabase/admin", () => {
   };
   return { createPrivilegedSupabaseClient: () => ({ from: builder }) };
 });
+vi.mock("@/lib/org/storefront", () => ({ storefrontOrganizationId: async () => 1 }));
 
 const flat15: SiteCoupon = {
   code: "CLUBTEST15",

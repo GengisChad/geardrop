@@ -5,7 +5,7 @@ describe("Supabase catalogue seed", () => {
   const sql = generateSupabaseSeed().toLowerCase();
 
   it("is idempotent and creates new products with the reviewed stock", () => {
-    expect(sql).toContain("on conflict (slug) do update");
+    expect(sql).toContain("on conflict (organization_id, slug) do update");
     expect(sql).toContain("seed.stock_quantity,");
     // A pre-order sells from its allocation: both travel with the row.
     expect(sql).toContain("seed.availability_override,");
@@ -38,7 +38,7 @@ describe("Supabase catalogue seed", () => {
   });
 
   it("never overwrites order intake or availability overrides", () => {
-    expect(sql).toContain("on conflict (singleton) do nothing");
+    expect(sql).toContain("on conflict (organization_id) do nothing");
     expect(sql).not.toContain("accept_orders = excluded.accept_orders");
     expect(sql).not.toContain("availability_override = excluded.availability_override");
     expect(sql).not.toContain("preorder_allocation = excluded.preorder_allocation");

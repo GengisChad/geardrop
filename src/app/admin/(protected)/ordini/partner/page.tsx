@@ -19,7 +19,7 @@ export default async function AdminPartnerOrdersPage() {
   // Managers only: same PII gate as the rest of the orders section.
   if (principal.role === "editor") redirect("/admin");
 
-  const groups = await listPartnerOrders(client, CONSIGNMENT_SLUGS);
+  const groups = await listPartnerOrders(client, principal.organization.id, CONSIGNMENT_SLUGS);
 
   // Compute totals per order from the live catalogue.
   const rows = groups.map(({ order, items }) => {

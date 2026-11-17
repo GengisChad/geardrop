@@ -1,13 +1,24 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type * as InpostModule from "@/lib/shipping/inpost";
+import type * as WriteGuardModule from "@/lib/commerce/write-guard";
 
 const createLockerShipment = vi.fn();
 const sendEmail = vi.fn(async () => ({ ok: true as const, id: "email-1" }));
 let client: ReturnType<typeof fakeClient>;
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn() }));
-vi.mock("@/lib/auth/guards", () => ({ requireUser: vi.fn(async () => ({ id: "owner" })), requireStaffRole: vi.fn(async () => "owner") }));
+// The signed-in owner works for one company; the action reads its id off the principal.
+const geardrop = vi.hoisted(() => ({ id: 1, slug: "geardrop", name: "Gear Drop", storefrontPublic: true, role: "owner" as const }));
+vi.mock("@/lib/auth/guards", () => ({
+  requireUser: vi.fn(async () => ({ id: "owner" })),
+  requireStaffRole: vi.fn(async () => ({ userId: "owner", role: "owner", active: true, organization: geardrop, organizations: [geardrop] })),
+}));
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: async () => client }));
+// The shop is not under maintenance: that freeze has its own test (admin-order-write-guard).
+vi.mock("@/lib/commerce/write-guard", async (importOriginal) => ({
+  ...(await importOriginal<typeof WriteGuardModule>()),
+  assertCommerceMaintenanceOpen: vi.fn(async () => undefined),
+}));
 vi.mock("@/lib/email/resend", () => ({ sendEmail, SHOP_EMAIL: "infogeardrop@gmail.com" }));
 vi.mock("@/lib/shipping/inpost", async (importOriginal) => {
   const actual = await importOriginal<typeof InpostModule>();

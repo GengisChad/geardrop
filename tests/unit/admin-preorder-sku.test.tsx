@@ -6,20 +6,23 @@ import { adjustInventoryAction } from "@/app/admin/actions/inventory";
 import type { AdminProductEditorData } from "@/lib/admin/product-repository";
 
 const boundary = vi.hoisted(() => ({
-  update: vi.fn(), eq: vi.fn(), rpc: vi.fn(), from: vi.fn(),
+  update: vi.fn(), eq: vi.fn(), rpc: vi.fn(), from: vi.fn(), select: vi.fn(),
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn() }));
 // CSS presentation is outside this form-validation test; avoid invoking PostCSS in Node.
 vi.mock("@/components/admin/products/products.module.css", () => ({ default: {} }));
+const geardrop = vi.hoisted(() => ({ id: 1, slug: "geardrop", name: "Gear Drop", storefrontPublic: true, role: "owner" as const }));
 vi.mock("@/lib/auth/guards", () => ({
   requireUser: vi.fn().mockResolvedValue({ id: "owner" }),
-  requireStaffRole: vi.fn().mockResolvedValue({ role: "owner", userId: "owner" }),
+  requireStaffRole: vi.fn().mockResolvedValue({
+    role: "owner", userId: "owner", active: true, organization: geardrop, organizations: [geardrop],
+  }),
 }));
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: async () => boundary }));
 
 const data: AdminProductEditorData = {
   product: {
-    id: 1, category_id: 1, slug: "cobalt-dragoon-2-60c", sku: "COBALT-DRAGOON-2-60C",
+    id: 1, organization_id: 1, category_id: 1, slug: "cobalt-dragoon-2-60c", sku: "COBALT-DRAGOON-2-60C",
     name: "Cobalt Dragoon 2-60C", short_name: null, tagline: "Attacco left-spin.",
     description: "Starter con lanciatore a corda.", price_cents: 2550, compare_at_price_cents: null,
     currency: "EUR", publication_status: "published", active: true, blade_type: "attacco",
@@ -51,7 +54,16 @@ describe("seeded uppercase SKU admin operations", () => {
     vi.clearAllMocks();
     boundary.from.mockReturnValue(boundary);
     boundary.update.mockReturnValue(boundary);
-    boundary.eq.mockResolvedValue({ error: null });
+    // Filters chain (`.eq("id").eq("organization_id")`) and the last one is awaited.
+    const filtered = {
+      eq: boundary.eq,
+      // No cost is known for the fixture product: the below-cost guard lets the save through.
+      maybeSingle: async () => ({ data: null, error: null }),
+      single: async () => ({ data: { default_vat_rate_bp: 2200 }, error: null }),
+      then: (resolve: (value: unknown) => unknown) => Promise.resolve({ error: null }).then(resolve),
+    };
+    boundary.eq.mockReturnValue(filtered);
+    boundary.select.mockReturnValue(filtered);
     boundary.rpc.mockResolvedValue({ data: 5, error: null });
   });
 
@@ -74,13 +86,14 @@ describe("seeded uppercase SKU admin operations", () => {
     expect(boundary.from).toHaveBeenCalledWith("products");
     expect(boundary.update).toHaveBeenCalledWith(expect.objectContaining({ sku: "COBALT-DRAGOON-2-60C", name: "Cobalt Dragoon aggiornato" }));
     expect(boundary.eq).toHaveBeenCalledWith("id", 1);
+    expect(boundary.eq).toHaveBeenCalledWith("organization_id", 1);
   });
 
   it("submits an inventory adjustment with the displayed SKU unchanged", async () => {
     const form = new FormData();
     for (const [key, value] of Object.entries({ sku: "COBALT-DRAGOON-2-60C", delta: "5", reason: "manual_adjustment", note: "Conteggio scaffale" })) form.set(key, value);
     expect(await adjustInventoryAction({ ok: false, message: "" }, form)).toEqual({ ok: true, message: "Movimento registrato. Stock attuale: 5.", newStock: 5 });
-    expect(boundary.rpc).toHaveBeenCalledWith("adjust_inventory", { p_sku: "COBALT-DRAGOON-2-60C", p_delta: 5, p_reason: "manual_adjustment", p_note: "Conteggio scaffale" });
+    expect(boundary.rpc).toHaveBeenCalledWith("adjust_inventory", { p_organization_id: 1, p_sku: "COBALT-DRAGOON-2-60C", p_delta: 5, p_reason: "manual_adjustment", p_note: "Conteggio scaffale" });
   });
 
   it("still rejects uppercase public slugs before a database write", async () => {

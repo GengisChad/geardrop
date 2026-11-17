@@ -24,8 +24,8 @@ function checked(formData: FormData, key: string): boolean {
 async function verifiedStaff() {
   const client = await createSupabaseServerClient();
   await requireUser(client);
-  await requireStaffRole(client, STAFF_ROLES);
-  return client;
+  const principal = await requireStaffRole(client, STAFF_ROLES);
+  return { client, organizationId: principal.organization.id };
 }
 
 /** The public page caches on the `meta` tag; the month keeps its own path. */
@@ -51,7 +51,7 @@ export async function saveMetaSnapshotAction(_state: MetaActionState, formData: 
   if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Dati non validi" };
 
   const input = parsed.data;
-  const client = await verifiedStaff();
+  const { client, organizationId } = await verifiedStaff();
   const row = {
     month: input.month,
     title: input.title,
@@ -66,13 +66,13 @@ export async function saveMetaSnapshotAction(_state: MetaActionState, formData: 
   };
 
   if (input.id) {
-    const result = await client.from("meta_snapshots").update(row).eq("id", input.id);
+    const result = await client.from("meta_snapshots").update(row).eq("id", input.id).eq("organization_id", organizationId);
     if (result.error) return { ok: false, message: "Non è stato possibile salvare il mese" };
     refreshMeta(input.month);
     return { ok: true, message: "Mese salvato", id: input.id };
   }
 
-  const result = await client.from("meta_snapshots").insert(row).select("id").single();
+  const result = await client.from("meta_snapshots").insert({ ...row, organization_id: organizationId }).select("id").single();
   if (result.error) {
     const duplicate = result.error.code === "23505";
     return { ok: false, message: duplicate ? "Esiste già un mese con questa data" : "Non è stato possibile creare il mese" };
@@ -104,7 +104,7 @@ export async function saveMetaRankingsAction(_state: MetaActionState, formData: 
   if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Dati non validi" };
 
   const { snapshotId, tierType, entries } = parsed.data;
-  const client = await verifiedStaff();
+  const { client, organizationId } = await verifiedStaff();
 
   const cleared = await client.from("meta_rankings").delete().eq("snapshot_id", snapshotId).eq("tier_type", tierType);
   if (cleared.error) return { ok: false, message: "Non è stato possibile aggiornare la classifica" };
@@ -125,7 +125,7 @@ export async function saveMetaRankingsAction(_state: MetaActionState, formData: 
     if (inserted.error) return { ok: false, message: "Non è stato possibile salvare le voci" };
   }
 
-  const month = await client.from("meta_snapshots").select("month").eq("id", snapshotId).single();
+  const month = await client.from("meta_snapshots").select("month").eq("id", snapshotId).eq("organization_id", organizationId).single();
   refreshMeta(month.data?.month);
   return { ok: true, message: `Classifica salvata: ${entries.length} voci` };
 }
@@ -141,12 +141,13 @@ export async function saveMetaVideosAction(_state: MetaActionState, formData: Fo
   const parsed = metaVideosSchema.safeParse({ videos: payload });
   if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Dati non validi" };
 
-  const client = await verifiedStaff();
-  const cleared = await client.from("meta_videos").delete().gt("id", 0);
+  const { client, organizationId } = await verifiedStaff();
+  const cleared = await client.from("meta_videos").delete().eq("organization_id", organizationId).gt("id", 0);
   if (cleared.error) return { ok: false, message: "Non è stato possibile aggiornare i video" };
 
   if (parsed.data.videos.length > 0) {
     const rows = parsed.data.videos.map((video, index) => ({
+      organization_id: organizationId,
       youtube_url: video.youtubeUrl,
       title: video.title,
       description: video.description,
@@ -166,9 +167,9 @@ export async function deleteMetaSnapshotAction(_state: MetaActionState, formData
   if (!parsed.success) return { ok: false, message: "Mese non valido" };
   if (!checked(formData, "confirmed")) return { ok: false, message: "Conferma l'eliminazione" };
 
-  const client = await verifiedStaff();
+  const { client, organizationId } = await verifiedStaff();
   // The rankings go with it: the cascade is declared on the foreign key.
-  const result = await client.from("meta_snapshots").delete().eq("id", parsed.data);
+  const result = await client.from("meta_snapshots").delete().eq("id", parsed.data).eq("organization_id", organizationId);
   if (result.error) return { ok: false, message: "Non è stato possibile eliminare il mese" };
   refreshMeta();
   return { ok: true, message: "Mese eliminato" };

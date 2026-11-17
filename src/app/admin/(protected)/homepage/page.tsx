@@ -10,10 +10,10 @@ export const fetchCache = "force-no-store";
 
 export default async function AdminHomepagePage() {
   const client = await createSupabaseServerClient();
-  await requireAdminAccess(client);
+  const principal = await requireAdminAccess(client);
   const [sections, resources] = await Promise.all([
-    listHomepageSections(client, { includeDrafts: true }),
-    loadHomepageEditorResources(client),
+    listHomepageSections(client, principal.organization.id, { includeDrafts: true }),
+    loadHomepageEditorResources(client, principal.organization.id),
   ]);
 
   return <div className={styles.page}>

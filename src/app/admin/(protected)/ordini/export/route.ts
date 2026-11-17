@@ -11,10 +11,10 @@ export async function GET(request: Request) {
   const client = await createSupabaseServerClient(); const principal = await requireAdminAccess(client);
   if (!orderPiiVisibility(principal.role).export) return new Response("Esportazione non autorizzata", { status: 403 });
   const params = Object.fromEntries(new URL(request.url).searchParams.entries()); const query = normalizeAdminOrderQuery(params);
-  const rows = await listAdminOrdersForCsv(client, query);
+  const rows = await listAdminOrdersForCsv(client, principal.organization.id, query);
   // Fetch items for all exported orders to compute partner_owed_cents per order.
   const orderIds = rows.map((r) => r.id);
-  const allItems = await listOrderItemsByOrderIds(client, orderIds);
+  const allItems = await listOrderItemsByOrderIds(client, principal.organization.id, orderIds);
   const itemsByOrder = new Map<number, typeof allItems>();
   for (const item of allItems) {
     const list = itemsByOrder.get(item.order_id) ?? [];
