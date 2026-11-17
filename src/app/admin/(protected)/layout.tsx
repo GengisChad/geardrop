@@ -10,22 +10,18 @@ export default async function ProtectedAdminLayout({ children }: { children: Rea
 
   const principal = await requireAdminAccess(client);
 
-  const [profileResult, settingsResult] = await Promise.all([
-    client
-      .from("staff_profiles")
-      .select("display_name")
-      .eq("user_id", principal.userId)
-      .single(),
-    client.from("site_settings").select("accept_orders").eq("organization_id", principal.organization.id).maybeSingle(),
-  ]);
+  const profileResult = await client
+    .from("staff_profiles")
+    .select("display_name")
+    .eq("user_id", principal.userId)
+    .single();
 
-  if (profileResult.error || settingsResult.error) {
+  if (profileResult.error) {
     throw new Error("Impossibile caricare il contesto amministrativo");
   }
 
   return (
     <AdminShell
-      acceptOrders={settingsResult.data?.accept_orders ?? false}
       displayName={profileResult.data.display_name}
       organization={principal.organization}
       organizations={principal.organizations}

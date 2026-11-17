@@ -72,6 +72,7 @@ function refreshWarehouse(): void {
   revalidatePath("/admin");
   revalidatePath("/admin/carichi");
   revalidatePath("/admin/inventario");
+  revalidatePath("/admin/listino");
   revalidatePath("/admin/prodotti");
 }
 

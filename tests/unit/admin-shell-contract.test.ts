@@ -71,14 +71,13 @@ describe("admin authentication boundary", () => {
 });
 
 describe("admin shell state", () => {
-  it("keeps the order lock exact, persistent, and accessible", () => {
-    const banner = source("src/components/admin/order-lock-banner.tsx");
+  it("shows no order banner: the launch placeholder is gone", () => {
+    // Owner, 2026-11-17: "leva il banner verde placeholder che sta lì sopra da quando abbiamo aperto". It said
+    // "Gli ordini sono disabilitati" over a shop that has been selling through Stripe since its first day.
+    const shell = source("src/components/admin/admin-shell.tsx");
 
-    expect(banner).toContain('role="alert"');
-    expect(banner).toContain(
-      "Gli ordini sono disabilitati. Completa configurazione, stock e pagamenti prima dell’attivazione.",
-    );
-    expect(banner).not.toMatch(/dismiss|close|chiudi/i);
+    expect(shell).not.toMatch(/OrderLockBanner|acceptOrders/);
+    expect(shell).not.toContain("ordini sono disabilitati");
   });
 
   it("enables every implemented destination and locks future modules", () => {

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CostImportForm } from "@/components/admin/warehouse/cost-import-form";
+import { ListCostCell } from "@/components/admin/warehouse/list-cost-cell";
 import styles from "@/components/admin/warehouse/warehouse.module.css";
 import { requireAdminAccess } from "@/lib/admin/access";
 import { priceListRows, priceListTotals } from "@/lib/admin/price-list";
@@ -22,6 +23,8 @@ export default async function PriceListPage() {
   const principal = await requireAdminAccess(client);
   if (principal.role === "editor") redirect("/admin");
   const organizationId = principal.organization.id;
+  // Setting a cost is the owners' action in the database too (set_product_cost).
+  const canSetCost = principal.role === "owner";
 
   const [sources, defaults, summary] = await Promise.all([
     loadPriceListSources(client, organizationId),
@@ -100,7 +103,7 @@ export default async function PriceListPage() {
           <div>
             <p>Prodotto per prodotto</p>
             <h2>Costo, prezzo e scaffale</h2>
-            <span>Dal più pesante sull&apos;incasso. Il costo si imposta dalla scheda del prodotto o con il riquadro qui sotto.</span>
+            <span>Dal più pesante sull&apos;incasso. Scrivi il costo netto IVA nella casella e salva: riga, scaffale e totali si ricalcolano da soli.</span>
           </div>
         </header>
         {rows.length === 0 ? (
@@ -135,13 +138,14 @@ export default async function PriceListPage() {
                     </td>
                     <td className={styles.numeric}>{row.unlimitedStock ? <small>su ordinazione</small> : row.quantity}</td>
                     <td className={styles.numeric}>
-                      {row.averageCostCents === null ? (
-                        <Link className={styles.missing} data-testid="list-cost-missing" href={`/admin/prodotti/${row.productId}`}>
-                          costo mancante
-                        </Link>
+                      {canSetCost ? (
+                        <ListCostCell costCents={row.averageCostCents} productId={row.productId} sku={row.sku} />
+                      ) : row.averageCostCents === null ? (
+                        <span className={styles.missing}>costo mancante</span>
                       ) : (
                         formatEuro(row.averageCostCents)
                       )}
+                      {row.averageCostCents === null ? <small className={styles.missing} data-testid="list-cost-missing">costo mancante</small> : null}
                     </td>
                     <td className={styles.numeric}>{formatEuro(row.priceCents)}</td>
                     <td className={styles.numeric}>{formatEuro(row.netPriceCents)}</td>
@@ -157,7 +161,7 @@ export default async function PriceListPage() {
           </div>
         )}
         <p className={styles.hint}>
-          È una stima a prezzo pieno: sconti, kit, codici club e pezzi invenduti la abbassano. Il profitto vero di ogni vendita è
+          Il prezzo di listino si cambia dalla scheda del prodotto. È una stima a prezzo pieno: sconti, kit, codici club e pezzi invenduti la abbassano. Il profitto vero di ogni vendita è
           nella colonna Profitto degli ordini.
         </p>
       </section>

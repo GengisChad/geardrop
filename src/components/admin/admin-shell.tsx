@@ -5,7 +5,6 @@ import { isGestionaleOnly } from "@/lib/app-mode";
 import { organizationBrand, type OrganizationMembership } from "@/lib/org/organization";
 import { PRODUCTION_ORIGIN } from "@/lib/site-url";
 import { AdminMobileDock, AdminNavigation } from "./admin-navigation";
-import { OrderLockBanner } from "./order-lock-banner";
 import { OrganizationSwitcher } from "./organization-switcher";
 import styles from "./admin.module.css";
 
@@ -16,7 +15,6 @@ const ROLE_LABELS: Record<StaffRole, string> = {
 };
 
 type AdminShellProps = {
-  readonly acceptOrders: boolean;
   readonly children: React.ReactNode;
   readonly displayName: string;
   readonly role: StaffRole;
@@ -26,7 +24,7 @@ type AdminShellProps = {
 
 /** Gear Drop keeps its wordmark; any other company is named as it is. */
 
-export function AdminShell({ acceptOrders, children, displayName, role, organization, organizations }: AdminShellProps) {
+export function AdminShell({ children, displayName, role, organization, organizations }: AdminShellProps) {
   return (
     <div className={styles.adminCanvas}>
       <aside className={styles.sidebar}>
@@ -39,7 +37,6 @@ export function AdminShell({ acceptOrders, children, displayName, role, organiza
       </aside>
 
       <div className={styles.workspace}>
-        <OrderLockBanner acceptOrders={acceptOrders} />
         <header className={styles.topbar}>
           <Link className={styles.staffIdentity} href="/admin/account" aria-label={`${displayName}, il mio account`}>
             <strong>{displayName}</strong>

@@ -68,6 +68,15 @@
 .breakdown dd { margin: 0; font-weight: 750; }
 .breakdown .result { border-bottom: 0; font-size: 14px; }
 .missing { color: #805c0d; font-weight: 800; }
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.costCell { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; min-width: 150px; }
+.costCell label { position: relative; display: block; }
+.costCell input:not([type="hidden"]) { width: 84px; min-height: 36px; border: 1px solid #d3d6dc; border-radius: 9px; padding: 0 9px; background: #fff; color: #16191d; font: 13px var(--font-inter),sans-serif; font-variant-numeric: tabular-nums; text-align: right; }
+.costCell input[data-missing="true"] { border-color: #e0b84a; background: #fffbef; }
+.costCell button { min-height: 36px; border: 0; border-radius: 9px; padding: 0 11px; background: #7a3cff; color: #fff; cursor: pointer; font-size: 10px; font-weight: 850; }
+.costCell button:disabled { cursor: wait; opacity: .65; }
+.costSaved, .costRefused { flex-basis: 100%; margin: 0 !important; color: #1d6b33 !important; font-size: 10px !important; font-weight: 750; text-align: right; }
+.costRefused { color: #a1283e !important; }
 .page :focus-visible { outline: 3px solid #7a3cff; outline-offset: 2px; }
 
 @media (max-width: 900px) {

@@ -112,36 +112,8 @@
   min-width: 0;
 }
 
-.orderRail {
-  position: sticky;
-  top: 0;
-  z-index: 25;
-  display: flex;
-  min-height: 48px;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 10px 20px;
-  background:
-    linear-gradient(105deg, transparent 0 9%, rgba(18, 20, 23, 0.18) 9% 11%, transparent 11% 18%) 0 0 / 92px 100%,
-    linear-gradient(90deg, var(--admin-lime), #d7ff47 52%, #a77aff);
-  color: #121417;
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1.35;
-  text-align: center;
-}
 
-.orderRailEnabled {
-  background: var(--admin-lime);
-}
 
-.orderStateDot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #17783b;
-}
 
 .topbar {
   display: flex;
