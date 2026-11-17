@@ -28,7 +28,13 @@ Tech, energetic, honest. "X-Rail" (owner, 2026-10-23), built on the 2026-09-15 "
 - the part code split from the name, its ratchet number printed behind the packshot;
 - the stadium's toothed X-line rail for dividers and the free-shipping meter.
 
-Lime means "ships now / buy", violet means "on its way" (pre-orders). Energy comes from the products and the type, never from motion that slows the page. The copy is short, direct Italian and never promises what the shop cannot keep.
+Over it, "Glitch 2077" (owner, 2026-11-17, picked from three looks shown on the real pages): the look of his own carousels, standing still on the shop.
+- the headline split out of register, cyan to the left and magenta to the right, its slab cut in steps;
+- scanlines on the ground instead of the slash hatch, a measuring grid behind each packshot;
+- HUD corners on the product cards, cyan part codes and rails, a terminal prompt before each shelf title;
+- product names in JetBrains Mono capitals, prices in lime with one magenta ghost.
+
+Lime means "ships now / buy", violet means "on its way" (pre-orders); cyan and magenta are seconds and never carry a meaning of their own. Energy comes from the products and the type, never from motion that slows the page: the glitch never flickers. The copy is short, direct Italian and never promises what the shop cannot keep.
 
 ## Anti-references
 
@@ -42,7 +48,7 @@ Lime means "ships now / buy", violet means "on its way" (pre-orders). Energy com
 1. **Sell on the phone first.** Price, availability and the add-to-cart action must sit in reach of the thumb and be readable at a glance.
 2. **Honest by default.** Every number shown is real: stock, savings against the packs, delivery times. A promise the shop cannot keep is a bug.
 3. **The product is the hero.** The owner's own packshots carry the page; type and colour frame them, they do not compete with them. When a photo is too small, the manufacturer's official packshot may replace it if it is faithful to the edition sold and carries no watermark (owner, 2026-10-29); each one's source is in `docs/product-photo-sources.md`.
-4. **Keep the X-Rail vocabulary.** Dark arena, lime/violet with their meanings, the slash, the sticker, the part code and the rail; no ambient glows, gradient text, frosted glass or a kicker above every section.
+4. **Keep the X-Rail vocabulary, in its Glitch 2077 dress.** Dark arena, lime/violet with their meanings, the slash, the sticker, the part code and the rail, with the split headline, the scanlines and the HUD corners over them; no ambient glows, gradient text, frosted glass or a kicker above every section. Cart, checkout and account stay plain: no split on their titles.
 5. **Fast and calm.** No heavy animation; motion only for state and feedback. The X-Rail motion set (owner, 2026-10-29: the toothed free-shipping rail, product clips in the gallery, the cut of light on add, landing stickers, the sliding ratchet number, the card-to-product photo) follows it: each animation runs once and settles, nothing delays the first paint, and reduced motion stops it all.
 
 ## Accessibility & Inclusion

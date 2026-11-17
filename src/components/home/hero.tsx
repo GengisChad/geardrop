@@ -103,7 +103,7 @@ export function Hero({
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between lg:gap-12">
           <div className="min-w-0">
             <p className="gd-sticker bg-lime px-2.5 py-1 text-[0.6875rem] text-void sm:text-[0.75rem]">{eyebrow}</p>
-            <h1 className="gd-display-wide mt-6 text-[2.5rem] font-extrabold leading-[0.92] [font-stretch:125%] sm:text-[3.6rem] sm:[font-stretch:132%] xl:text-[5rem]">
+            <h1 className="gd-display-wide gd-split mt-6 text-[2.5rem] font-extrabold leading-[0.92] [font-stretch:125%] sm:text-[3.6rem] sm:[font-stretch:132%] xl:text-[5rem]">
               {lines.map((line, index) => (
                 <Fragment key={`${index}-${line}`}>
                   {/* The space between spans is real text, so the heading still reads as a sentence. */}

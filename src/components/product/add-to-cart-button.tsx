@@ -115,7 +115,7 @@ export function AddToCartButton({
             ? "bg-lime text-void"
             : stock === "pre-ordine"
               ? "bg-violet text-white hover:bg-[#9566ff]"
-              : "bg-surface-2 text-lime hover:bg-lime hover:text-void",
+              : "bg-lime/[0.14] text-lime hover:bg-lime hover:text-void",
         )}
       >
         {justAdded ? (

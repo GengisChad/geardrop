@@ -72,7 +72,7 @@ export function ProductCard({
       data-slug={product.slug}
       style={holoStyle(product)}
       className={cn(
-        "gd-card-scope group relative flex h-full flex-col border border-white/10 bg-surface transition-colors duration-200 hover:border-lime",
+        "gd-card-scope gd-hud-corners group relative flex h-full flex-col border border-cyan/20 bg-surface transition-colors duration-200 hover:border-lime",
         className,
       )}
     >
@@ -125,7 +125,7 @@ export function ProductCard({
           </p>
         ) : null}
 
-        <h3 className="gd-name text-[1rem] font-bold leading-[1.02] sm:text-[1.2rem]">
+        <h3 className="gd-name text-[0.8125rem] font-bold leading-[1.15] sm:text-[0.9375rem]">
           {/* Stretched link: the whole card is the hit target, but the buttons stay on top. */}
           <Link href={`/prodotto/${product.slug}`} className="after:absolute after:inset-0 after:z-10 after:content-['']">
             {displayName(name)}
@@ -165,7 +165,7 @@ export function ProductCard({
         {/* The price never shrinks: at 375px a two-column card is ~170px wide. */}
         <div className="mt-auto flex items-center justify-between gap-2 pt-1.5">
           <p
-            className="gd-display-wide tabular shrink-0 whitespace-nowrap text-[1.2rem] font-extrabold leading-none [font-stretch:118%] sm:text-[1.5rem]"
+            className="gd-display-wide gd-price-split tabular shrink-0 whitespace-nowrap text-[1.2rem] font-extrabold leading-none [font-stretch:118%] sm:text-[1.5rem]"
             data-testid="card-price"
           >
             {formatPrice(product.price)}

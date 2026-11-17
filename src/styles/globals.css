@@ -20,13 +20,14 @@
   /* -- Brand --------------------------------------------------------------- */
   --color-lime: #c6ff00;
   --color-violet: #7a3cff;
-  --color-cyan: #3cf0ff;
-  --color-magenta: #ff5ccf;
+  /* Glitch 2077 (owner, 2026-11-17): the split of his carousels. Seconds only: lime still means buy, violet still means on its way. */
+  --color-cyan: #25d4ff;
+  --color-magenta: #ff2d8a;
 
   /* -- Ground and surfaces ------------------------------------------------ */
   /* Ink, carbon and raised carbon: the page, the cards and what sits on a card. */
-  --color-void: #0b0a0f;
-  --color-surface: #131218;
+  --color-void: #07070c;
+  --color-surface: #0e0e15;
   --color-surface-2: #1c1b22;
 
   /* -- Neutral scale on the dark ground ----------------------------------- */
@@ -135,14 +136,14 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Ground texture: a faint hatch at the angle of the logo's slashes. Fixed, painted once. */
+  /* Ground texture: the scanlines of a monitor (Glitch 2077). Fixed, painted once, never moving. */
   body::before {
     content: "";
     position: fixed;
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    background: repeating-linear-gradient(-72deg, rgba(255, 255, 255, 0.022) 0 1px, transparent 1px 7px);
+    background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.028) 0 1px, transparent 1px 3px);
   }
 
   /* Titles are expanded italic uppercase display; body copy never is. */
@@ -198,13 +199,13 @@
   letter-spacing: -0.01em;
 }
 
-/* Condensed upright cut for product names: "Suppress Superion" fits a phone card on one line. */
+/* Product names as a readout (Glitch 2077): mono capitals. Mono runs wide, so the card sets them smaller than it set the condensed cut. */
 @utility gd-name {
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   font-style: normal;
-  font-stretch: 74%;
+  font-stretch: 100%;
   text-transform: uppercase;
-  letter-spacing: 0.01em;
+  letter-spacing: 0;
 }
 
 /* The typeset wordmark beside the emblem, unchanged since the owner approved it on 2026-09-15. */
@@ -304,15 +305,15 @@
   font-weight: 500;
   line-height: 1;
   white-space: nowrap;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  color: var(--color-graphite);
+  border: 1px solid var(--color-cyan);
+  color: var(--color-cyan);
   letter-spacing: 0.02em;
 }
 
 /* The stadium's toothed X-line rail: section dividers and the header's lower edge. */
 @utility gd-rail {
   height: 5px;
-  background-image: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.16) 0 5px, transparent 5px 11px);
+  background-image: repeating-linear-gradient(90deg, rgba(37, 212, 255, 0.5) 0 5px, transparent 5px 11px);
 }
 
 /* Status mark: a small slanted block in the current colour, next to the status word. */
@@ -337,7 +338,38 @@
   letter-spacing: -0.02em;
   white-space: nowrap;
   color: transparent;
-  -webkit-text-stroke: 1.3px rgba(255, 255, 255, 0.2);
+  -webkit-text-stroke: 1.2px rgba(37, 212, 255, 0.38);
+}
+
+/*
+ * The split headline of Glitch 2077: the same letters a hair to the left in cyan and to the right in
+ * magenta, as on a screen out of register. Still: it never flickers. The slab inside it stays clean and
+ * takes a stepped cut instead of the slash.
+ */
+@utility gd-split {
+  text-shadow:
+    calc(-0.03em - 1px) 0 0 var(--color-cyan),
+    calc(0.03em + 1px) 0 0 var(--color-magenta);
+  & .gd-slab {
+    text-shadow: none;
+    clip-path: polygon(0 0, 62% 0, 62% 12%, 100% 12%, 100% 100%, 38% 100%, 38% 88%, 0 88%);
+  }
+}
+
+/* A price as a readout: lime, the colour of buying, with one magenta ghost. */
+@utility gd-price-split {
+  color: var(--color-lime);
+  text-shadow: 2px 0 0 rgba(255, 45, 138, 0.75);
+}
+
+/* HUD corners: a card framed like a target on a display, cyan at one corner and magenta at the other. */
+@utility gd-hud-corners {
+  background-image:
+    linear-gradient(var(--color-cyan), var(--color-cyan)), linear-gradient(var(--color-cyan), var(--color-cyan)),
+    linear-gradient(var(--color-magenta), var(--color-magenta)), linear-gradient(var(--color-magenta), var(--color-magenta));
+  background-size: 16px 2px, 2px 16px, 16px 2px, 2px 16px;
+  background-position: left top, left top, right bottom, right bottom;
+  background-repeat: no-repeat;
 }
 
 @utility gd-notch {
@@ -413,12 +445,12 @@
    ========================================================================== */
 
 @utility gd-glass {
-  --gd-material-fallback: #131218;
+  --gd-material-fallback: #0e0e15;
   --gd-material-border: rgba(255, 255, 255, 0.1);
 }
 
 @utility gd-glass-card {
-  --gd-material-fallback: #131218;
+  --gd-material-fallback: #0e0e15;
   --gd-material-border: rgba(255, 255, 255, 0.1);
 }
 
@@ -439,7 +471,7 @@
 }
 
 @utility gd-glass-dark {
-  --gd-material-fallback: #0b0a0f;
+  --gd-material-fallback: #07070c;
   --gd-material-border: rgba(255, 255, 255, 0.1);
 }
 
@@ -484,15 +516,14 @@
  */
 @utility gd-product-plate {
   position: relative;
-  background: radial-gradient(90% 80% at 55% 52%, color-mix(in oklab, var(--f2, #7a3cff) 34%, #131218) 0%, #0d0c11 82%);
+  background: linear-gradient(160deg, rgba(37, 212, 255, 0.1), rgba(255, 45, 138, 0.1) 90%), #0a0a10;
   &::before {
     content: "";
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background-image: repeating-linear-gradient(-72deg, rgba(255, 255, 255, 0.05) 0 2px, transparent 2px 16px);
-    -webkit-mask-image: linear-gradient(180deg, #000, transparent 75%);
-    mask-image: linear-gradient(180deg, #000, transparent 75%);
+    background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 22px 22px;
   }
 }
 

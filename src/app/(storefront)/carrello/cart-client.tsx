@@ -180,7 +180,7 @@ export function CartClient({ shelfProducts }: CartClientProps) {
                   <div className="flex min-w-0 flex-1 flex-col gap-2">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <h2 className="gd-name line-clamp-2 text-[1.0625rem] font-bold leading-tight text-graphite">
+                        <h2 className="gd-name line-clamp-2 text-[0.9375rem] font-bold leading-tight text-graphite">
                           <Link href={`/prodotto/${line.slug}`} className="hover:text-lime">
                             {line.name}
                           </Link>
