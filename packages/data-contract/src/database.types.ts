@@ -2678,6 +2678,7 @@ export type Database = {
           created_at: string
           currency: string
           description: string
+          gtin: string | null
           id: number
           is_low_stock: boolean
           is_purchasable: boolean | null
@@ -2714,6 +2715,7 @@ export type Database = {
           created_at?: string
           currency?: string
           description: string
+          gtin?: string | null
           id?: never
           is_low_stock?: boolean
           is_purchasable?: boolean | null
@@ -2750,6 +2752,7 @@ export type Database = {
           created_at?: string
           currency?: string
           description?: string
+          gtin?: string | null
           id?: never
           is_low_stock?: boolean
           is_purchasable?: boolean | null
