@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CostImportForm } from "@/components/admin/warehouse/cost-import-form";
 import { ListCostCell } from "@/components/admin/warehouse/list-cost-cell";
+import { ListPriceCell } from "@/components/admin/warehouse/list-price-cell";
 import styles from "@/components/admin/warehouse/warehouse.module.css";
 import { requireAdminAccess } from "@/lib/admin/access";
 import { priceListRows, priceListTotals } from "@/lib/admin/price-list";
@@ -25,6 +26,8 @@ export default async function PriceListPage() {
   const organizationId = principal.organization.id;
   // Setting a cost is the owners' action in the database too (set_product_cost).
   const canSetCost = principal.role === "owner";
+  // The selling price follows the product page: owners and admins.
+  const canSetPrice = principal.role === "owner" || principal.role === "admin";
 
   const [sources, defaults, summary] = await Promise.all([
     loadPriceListSources(client, organizationId),
@@ -147,7 +150,9 @@ export default async function PriceListPage() {
                       )}
                       {row.averageCostCents === null ? <small className={styles.missing} data-testid="list-cost-missing">costo mancante</small> : null}
                     </td>
-                    <td className={styles.numeric}>{formatEuro(row.priceCents)}</td>
+                    <td className={styles.numeric}>
+                      {canSetPrice ? <ListPriceCell priceCents={row.priceCents} productId={row.productId} sku={row.sku} /> : formatEuro(row.priceCents)}
+                    </td>
                     <td className={styles.numeric}>{formatEuro(row.netPriceCents)}</td>
                     <td className={styles.numeric}>{formatEuro(row.unitMarginCents)}</td>
                     <td className={styles.numeric}>{percent(row.marginPercent)}</td>
@@ -161,7 +166,7 @@ export default async function PriceListPage() {
           </div>
         )}
         <p className={styles.hint}>
-          Il prezzo di listino si cambia dalla scheda del prodotto. È una stima a prezzo pieno: sconti, kit, codici club e pezzi invenduti la abbassano. Il profitto vero di ogni vendita è
+          Il prezzo si cambia qui o dalla scheda del prodotto; un prezzo in offerta (con prezzo barrato) si cambia dalla scheda. È una stima a prezzo pieno: sconti, kit, codici club e pezzi invenduti la abbassano. Il profitto vero di ogni vendita è
           nella colonna Profitto degli ordini.
         </p>
       </section>
