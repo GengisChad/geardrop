@@ -10,6 +10,8 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { label: "Categorie", href: "/admin/categorie", disabled: false },
   { label: "Bundle", href: "/admin/bundle", disabled: false },
   { label: "Inventario", href: "/admin/inventario", disabled: false },
+  // Owner, 2026-11-18: the physical count, applied from the panel.
+  { label: "Conteggio inventario", href: "/admin/inventario/conteggio", disabled: false },
   // Owner, 2026-11-17: cost, list price and what the shelf can earn, product by product.
   { label: "Listino e margini", href: "/admin/listino", disabled: false },
   { label: "Carichi merce", href: "/admin/carichi", disabled: false },
