@@ -54,6 +54,19 @@ test("the owner types a cost into the price list and the row shows its margin", 
   await cost.getByRole("button", { name: "Salva" }).click();
   await expect(row.locator("td").nth(5)).toHaveText("€5,30");
 
+  // The selling price is typed in the same row (18/11: the partner could not change it here).
+  // 20,00 is 16,39 net of VAT: with the 7,00 cost the piece leaves 9,39.
+  const price = row.getByTestId(`list-price-form-${sku}`);
+  await price.getByRole("textbox").fill("20,00");
+  await price.getByRole("button", { name: "Salva" }).click();
+  await expect(price.getByRole("status")).toContainText("Prezzo salvato");
+  await expect(row.locator("td").nth(5)).toHaveText("€9,39");
+  // Under the cost it asks first and saves nothing.
+  await price.getByRole("textbox").fill("5,00");
+  await price.getByRole("button", { name: "Salva" }).click();
+  await expect(price.getByRole("status")).toContainText("sotto il costo medio");
+  expect(sql(`select price_cents from public.products where slug = '${sku}'`)).toBe("2000");
+
   // The opening-cost box under the table takes many products at once.
   const importer = page.getByTestId("cost-import");
   await importer.getByLabel("SKU;costo").fill(`${sku};6,50`);

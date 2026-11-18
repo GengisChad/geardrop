@@ -15,7 +15,7 @@ import {
   relationTypeSchema,
 } from "@/lib/admin/products";
 import { associateMediaSchema } from "@/lib/admin/media";
-import { formatEuro, netOfVat } from "@/lib/admin/warehouse";
+import { formatEuro, netOfVat, parseEuroCents } from "@/lib/admin/warehouse";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Database, Json } from "@/lib/supabase/database.types";
 
@@ -553,4 +553,56 @@ export async function removeProductImageLinkAction(formData: FormData): Promise<
   if (error) redirect(`/admin/prodotti/${input.productId}?error=image`);
   refreshProductCache();
   redirect(`/admin/prodotti/${input.productId}#immagini`);
+}
+
+export type ListPriceState = ProductActionState & { readonly needsConfirm?: boolean };
+
+/**
+ * The selling price typed straight into "Listino e margini" (owner's partner, 2026-11-18: "non
+ * riesce a cambiare i prezzi"). Owners and admins, as on the product page, with the same checks:
+ * a struck-through price must stay above the new one, and a price under the average cost (net of
+ * VAT) needs an explicit confirmation.
+ */
+export async function setListPriceAction(_previous: ListPriceState, formData: FormData): Promise<ListPriceState> {
+  const productId = Number(text(formData, "productId"));
+  const priceCents = parseEuroCents(text(formData, "price"));
+  if (!Number.isSafeInteger(productId) || productId <= 0) return { ok: false, message: "Prodotto non valido." };
+  if (priceCents === null || priceCents <= 0) return { ok: false, message: "Scrivi il prezzo in euro, es. 12,99." };
+  try {
+    const client = await createSupabaseServerClient();
+    const principal = await verifiedStaff(client, ["owner", "admin"]);
+    const organizationId = principal.organization.id;
+    const product = await client
+      .from("products")
+      .select("slug,price_cents,compare_at_price_cents")
+      .eq("id", productId)
+      .eq("organization_id", organizationId)
+      .maybeSingle();
+    if (product.error || !product.data) return { ok: false, message: "Prodotto non trovato." };
+    if (product.data.price_cents === priceCents) return { ok: true, message: "Prezzo invariato." };
+    const compareAt = product.data.compare_at_price_cents;
+    if (compareAt !== null && compareAt <= priceCents) {
+      return {
+        ok: false,
+        message: `È in offerta con prezzo barrato ${formatEuro(compareAt)}: il nuovo prezzo deve stare sotto, oppure cambia l'offerta dalla scheda del prodotto.`,
+      };
+    }
+    if (formData.get("belowCostConfirmed") !== "on") {
+      const belowCost = await priceBelowAverageCost(client, organizationId, productId, priceCents);
+      if (belowCost) {
+        return {
+          ok: false,
+          needsConfirm: true,
+          message: `Netto IVA ${formatEuro(belowCost.netCents)}, sotto il costo medio ${formatEuro(belowCost.averageCostCents)}. Spunta «Vendi sotto costo» e salva di nuovo.`,
+        };
+      }
+    }
+    const { error } = await client.from("products").update({ price_cents: priceCents }).eq("id", productId).eq("organization_id", organizationId);
+    if (error) return safeFailure(error);
+    refreshProductCache(product.data.slug);
+    revalidatePath("/admin/listino");
+    return { ok: true, message: `Prezzo salvato: ${formatEuro(priceCents)}.` };
+  } catch (error) {
+    return safeFailure(error);
+  }
 }
