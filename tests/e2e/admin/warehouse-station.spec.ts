@@ -51,6 +51,12 @@ test("a paid order goes from the station to a printed label and a costed shipmen
   await expect(label).toContainText(orderNumber);
   await expect(page.getByRole("table")).toContainText(productSlug);
 
+  // The InPost batch lists the order but leaves a home delivery to its own page.
+  await page.goto(`/admin/magazzino/spedizioni?ordini=${orderId}`);
+  const batchRow = page.getByTestId("bulk-row").filter({ hasText: orderNumber });
+  await expect(batchRow).toContainText("Non va con InPost");
+  await expect(page.getByRole("button", { name: /Crea \d+ spedizioni InPost/ })).toHaveCount(0);
+
   await page.goto(`/admin/ordini/${orderId}`);
   await page.getByLabel("Codice di tracciamento").fill("018207900244");
   await page.getByLabel("Costo corriere per noi (€, facoltativo)").fill("4,00");
