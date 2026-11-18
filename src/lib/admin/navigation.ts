@@ -30,6 +30,9 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   // Owner, 2026-11-13: who signed up from the home banner for news on arrivals.
   { label: "Newsletter", href: "/admin/newsletter", disabled: false },
   { label: "Ordini", href: "/admin/ordini", disabled: false },
+  // Owner, 2026-11-18: buyers from the paid orders, and what went wrong on the way.
+  { label: "Clienti", href: "/admin/clienti", disabled: false },
+  { label: "Controllo", href: "/admin/controllo", disabled: false },
   // Owner, 2026-10-11: who paid for a pre-order and whether it has shipped.
   { label: "Pre-ordini", href: "/admin/ordini/pre-ordini", disabled: false },
   { label: "Da spedire", href: "/admin/magazzino", disabled: false },
