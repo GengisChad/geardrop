@@ -23,6 +23,8 @@ export type ControlOrder = {
   readonly refundPreparedAt: string | null;
   readonly refundAmountCents: number | null;
   readonly trackingCode: string | null;
+  /** "InPost" closes itself when the parcel is collected; other carriers stay "shipped" until marked by hand. */
+  readonly trackingCarrier: string | null;
 };
 
 const HOUR = 3_600_000;
@@ -104,8 +106,10 @@ export function orderAnomalies(orders: readonly ControlOrder[], now: Date): read
     if (order.paymentStatus === "paid" && (order.status === "confirmed" || order.status === "processing") && age(order.createdAt) > 3 * DAY) {
       anomalies.push({ ...base, kind: "stuck", since: order.createdAt, message: "Pagato da più di 3 giorni e non ancora spedito." });
     }
-    if (order.status === "shipped" && order.shippedAt && age(order.shippedAt) > 10 * DAY) {
-      anomalies.push({ ...base, kind: "in-transit", since: order.shippedAt, message: "In viaggio da più di 10 giorni: controlla il tracking." });
+    // Only InPost parcels close themselves on collection (daily tracking cron); a Poste parcel stays
+    // "shipped" until marked by hand, so a long one says nothing about the parcel.
+    if (order.status === "shipped" && order.trackingCarrier === "InPost" && order.shippedAt && age(order.shippedAt) > 10 * DAY) {
+      anomalies.push({ ...base, kind: "in-transit", since: order.shippedAt, message: "InPost: in viaggio da più di 10 giorni e mai ritirato. Controlla il tracking." });
     }
     if (order.refundPreparedAt && order.refundAmountCents !== null && order.refundedCents < order.refundAmountCents) {
       anomalies.push({ ...base, kind: "refund", since: order.refundPreparedAt, message: "Rimborso preparato ma non ancora arrivato da Stripe." });
