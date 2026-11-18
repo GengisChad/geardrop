@@ -17,7 +17,7 @@ import { GaEvent } from "@/components/analytics/ga-event";
 import { TrackPageView } from "@/components/funnel/track-page-view";
 import { gaItem } from "@/lib/analytics/google";
 import { productClips } from "@/data/assets";
-import { BRANDS, BUNDLES, DECK_CASE_PRICE, DECK_CASE_WITH_KIT, KEPT_OFF_GOOGLE, PRODUCTS, brandOf } from "@/data/catalog";
+import { BUNDLES, DECK_CASE_PRICE, DECK_CASE_WITH_KIT, KEPT_OFF_GOOGLE, PRODUCTS, brandLabel } from "@/data/catalog";
 import { bundlesContaining } from "@/lib/commerce/bundles";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { familyColours, familyLead } from "@/lib/commerce/variants";
@@ -130,7 +130,7 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
           <p className="gd-display flex flex-wrap items-center gap-x-2 text-[0.75rem] font-bold tracking-[0.08em] text-grey-600">
             {/* Brand first, so the buyer knows which manufacturer's line it is. */}
             {!product.unofficial ? (
-              <span data-testid="product-brand">{BRANDS.find((b) => b.slug === brandOf(product))?.name ?? "Hasbro"}</span>
+              <span data-testid="product-brand">{brandLabel(product)}</span>
             ) : null}
             {!product.unofficial ? <span aria-hidden="true">·</span> : null}
             {/* A compatible accessory is not a Beyblade X product, and says so before its name. */}

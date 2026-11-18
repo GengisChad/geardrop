@@ -45,6 +45,10 @@ export const BESTSELLER_SLUGS: readonly string[] = [
  * hand: empty the list to give the first screen back to the best sellers.
  */
 export const SPOTLIGHT_SLUGS: readonly string[] = [
+  // The arrival of 2026-11-18 goes first.
+  "bx-52-luster-dragoon-6-60lc",
+  "ux-08-silver-wolf-3-80fb",
+  "bx-53-all-in-one-set",
   "bx-48-random-booster-vol-9",
   "cx-18-random-booster-brachio-whip",
   "custom-grip-takara-tomy",

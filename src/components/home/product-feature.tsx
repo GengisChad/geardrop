@@ -3,7 +3,7 @@ import Link from "next/link";
 import { AddToCartButton } from "@/components/product/add-to-cart-button";
 import { WishlistButton } from "@/components/product/wishlist-button";
 import { PromoBadge } from "@/components/ui/badge";
-import { BRANDS, brandOf } from "@/data/catalog";
+import { brandLabel } from "@/data/catalog";
 import { cutoutSrc } from "@/data/assets";
 import { formatPrice } from "@/lib/format";
 import { availabilityLine, bladeName, displayName, holoStyle, partCode, partMark } from "@/lib/holo";
@@ -25,7 +25,7 @@ export function ProductFeature({ product }: { readonly product: Product }) {
   const promo = product.tags[0];
   const code = partCode(product);
   const mark = partMark(code);
-  const brand = BRANDS.find((entry) => entry.slug === brandOf(product))?.name;
+  const brand = brandLabel(product);
   const kind = product.bladeType ? BLADE_TYPE_LABEL[product.bladeType] : null;
   const specs = FEATURE_SPECS.flatMap((label) => {
     const spec = product.specs.find((entry) => entry.label === label);

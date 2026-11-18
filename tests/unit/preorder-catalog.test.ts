@@ -18,7 +18,10 @@ describe("reviewed catalogue", () => {
       // actually send — nine pieces, second only to the sold-out Suppress Superion.
       // The promotion of 2026-11-13: two red Phoenix without the launcher, leading the shop.
       { slug: "soar-phoenix-9-60gf-solo-trottola", price: 1299, stock: "disponibile", availableQuantity: 2, rating: 0, reviewCount: 0 },
-      // Takara Tomy pieces on the shop's own shelf (owner, 2026-11-06).
+      // Takara Tomy pieces on the shop's own shelf: the arrival of 2026-11-18, then that of 2026-11-06.
+      { slug: "bx-52-luster-dragoon-6-60lc", price: 3999, stock: "disponibile", availableQuantity: 6, rating: 0, reviewCount: 0 },
+      { slug: "ux-08-silver-wolf-3-80fb", price: 3499, stock: "disponibile", availableQuantity: 2, rating: 0, reviewCount: 0 },
+      { slug: "bx-53-all-in-one-set", price: 15990, stock: "disponibile", availableQuantity: 1, rating: 0, reviewCount: 0 },
       { slug: "bx-48-random-booster-vol-9", price: 3699, stock: "disponibile", availableQuantity: 6, rating: 0, reviewCount: 0 },
       // On promotion at 28,00 since 2026-11-15 (was 30,00).
       { slug: "cx-18-random-booster-brachio-whip", price: 2800, stock: "disponibile", availableQuantity: 20, rating: 0, reviewCount: 0 },

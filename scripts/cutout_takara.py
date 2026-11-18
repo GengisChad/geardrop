@@ -66,6 +66,11 @@ STAGED: dict[str, tuple[tuple[str, int, int, int], ...]] = {
     "custom-grip-takara-tomy": (("BX41", 292, 520, 620), ("BX42", 500, 500, 620), ("BX30", 708, 480, 620)),
     "cx-18-random-booster-brachio-whip": (("CX18", 722, 500, 500), ("box-cx-18", 245, 500, 900)),
     "bx-48-random-booster-vol-9": (("BX48", 722, 500, 740), ("box-bx-48", 245, 500, 900)),
+    # Owner, 2026-11-18: the two starters and the All-in-One Set, each shown by Takara Tomy's own
+    # render of what is in the box (no box shot: Takara Tomy Mall still fails its certificate).
+    "bx-52-luster-dragoon-6-60lc": (("BX52", 500, 500, 900),),
+    "ux-08-silver-wolf-3-80fb": (("UX08", 500, 500, 900),),
+    "bx-53-all-in-one-set": (("BX53", 500, 500, 920),),
 }
 
 #: Further photos of the gallery, one render each, written as <slug>-<render in lower case>.webp.
@@ -73,6 +78,9 @@ GALLERY: dict[str, tuple[str, ...]] = {
     "custom-grip-takara-tomy": ("BX30", "BX42", "BX41", "BX41_01"),
     "cx-18-random-booster-brachio-whip": ("CX18_01", "CX18_03", "CX18_04"),
     "bx-48-random-booster-vol-9": ("BX48_02", "BX48_03", "BX48_04", "BX48_05", "BX48_06"),
+    "bx-52-luster-dragoon-6-60lc": ("BX52_01", "BX52_02", "BX52_05"),
+    "ux-08-silver-wolf-3-80fb": ("UX08_01", "UX08_02", "UX08_05"),
+    "bx-53-all-in-one-set": ("BX53_01", "BX53_02", "BX53_03", "BX53_18", "BX53_16", "BX53_17"),
 }
 
 

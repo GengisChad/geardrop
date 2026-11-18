@@ -137,8 +137,11 @@ test.describe("catalogue", () => {
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Stadi");
     const cards = page.getByTestId("product-card");
     await expect(cards.first()).toBeVisible();
+    // The two Hasbro arenas and, since 2026-11-18, the Takara Tomy BX-53 All-in-One Set.
+    const stadiums = PRODUCTS.filter((product) => product.category === "stadi").map((product) => product.slug);
+    expect(stadiums).toEqual(["bx-53-all-in-one-set", "drop-attack-battle-set", "sneak-attack-battle-set"]);
     for (const slug of await cards.evaluateAll((els) => els.map((e) => e.getAttribute("data-slug")))) {
-      expect(["drop-attack-battle-set", "sneak-attack-battle-set"]).toContain(slug);
+      expect(stadiums).toContain(slug);
     }
   });
 
@@ -215,11 +218,12 @@ test.describe("search", () => {
   test("finds a product by name", async ({ page }) => {
     // Two Cobalts in the catalogue since the 2026-09-21 drop, since 2026-10-05 the Deck Completo
     // that contains one, since 2026-11-06 the BX-48 booster that can hold one, and since 2026-11-13
-    // the left-only String Launcher L, which names Cobalt Dragoon as a top it launches. The search
-    // finds all five; the two actually named Cobalt rank above the ones that only mention it.
+    // the left-only String Launcher L, which names Cobalt Dragoon as a top it launches, and since
+    // 2026-11-18 the Pack Meta Phoenix and the Pack Meta Silver Wolf, which hold one. The search finds
+    // all seven; the two actually named Cobalt rank above the ones that only mention it.
     await page.goto("/ricerca?q=cobalt");
     await expect(page.getByTestId("search-results")).toBeVisible();
-    await expect(page.getByTestId("product-card")).toHaveCount(5);
+    await expect(page.getByTestId("product-card")).toHaveCount(7);
     await expect(page.getByTestId("product-card").nth(0)).toContainText("Cobalt");
     await expect(page.getByTestId("product-card").nth(1)).toContainText("Cobalt");
     await expect(page.getByTestId("search-results")).toContainText("Cobalt Dragoon");

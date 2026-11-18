@@ -64,6 +64,34 @@ BUNDLES: dict[str, tuple[tuple[str, float], ...]] = {
         ("glory-valkerion-lf", 1.0),
         ("buster-dran-5-70db", 0.85),
     ),
+    # Owner, 2026-11-18: the packs that reach the free shipping with the meta pieces and the Enlil.
+    "duo-luster-enlil": (
+        ("bx-52-luster-dragoon-6-60lc", 1.0),
+        ("hurricane-enlil-is-7-55t", 1.0),
+    ),
+    "pack-meta-luster": (
+        # Takara Tomy's render has no box around it: a little larger, or it reads as the small piece.
+        ("bx-52-luster-dragoon-6-60lc", 1.35),
+        ("soar-phoenix-9-60gf", 1.0),
+        ("glory-valkerion-lf", 1.0),
+        ("hover-wyvern-3-85n", 0.8),
+        ("hurricane-enlil-is-7-55t", 1.0),
+    ),
+    "pack-meta-silver-wolf": (
+        ("ux-08-silver-wolf-3-80fb", 1.35),
+        ("soar-phoenix-9-60gf", 1.0),
+        ("glory-valkerion-lf", 1.0),
+        ("cobalt-dragoon-2-60c", 1.0),
+        ("hurricane-enlil-is-7-55t", 1.0),
+    ),
+    "pack-meta-phoenix": (
+        ("soar-phoenix-9-60gf", 1.0),
+        ("glory-valkerion-lf", 1.0),
+        ("cobalt-dragoon-2-60c", 1.0),
+        ("cx-18-random-booster-brachio-whip", 1.0),
+        ("shatter-horus-9-65gb", 1.0),
+        ("hurricane-enlil-is-7-55t", 1.0),
+    ),
 }
 
 
@@ -93,7 +121,7 @@ def trimmed(slug: str) -> Image.Image:
 def rows_for(count: int) -> list[int]:
     """How many pieces go on each row. Three or more break into two rows: a single row of three
     in a square canvas leaves each piece a third of the width, which is too small to read."""
-    return {1: [1], 2: [2], 3: [2, 1], 4: [2, 2]}.get(count, [count])
+    return {1: [1], 2: [2], 3: [2, 1], 4: [2, 2], 5: [3, 2], 6: [3, 3]}.get(count, [count])
 
 
 def place(pieces: list[Image.Image], slots: list[int]) -> Image.Image:

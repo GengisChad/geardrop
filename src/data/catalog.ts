@@ -53,6 +53,15 @@ export function partnerLines(
 const eur = (amount: number) => ({ amount, currency: "EUR" }) as const;
 
 /**
+ * BX-53 All-in-One Set (owner, 2026-11-18: "trova tu il prezzo migliore", against the other shops).
+ * Seen that day: Japan's list price 7.480 yen; EU and US shops that hold it in a warehouse at about
+ * 165-192 €, all sold out; one Italian shop at 159,90; Japanese export shops near 76 € plus shipping
+ * from Japan, import VAT and the wait. 159,90 is the price of the only Italian offer and the lowest
+ * that covers what the shop paid, with its share of freight and commission.
+ */
+const BX53_PRICE = 15990;
+
+/**
  * What a deck case costs on its own, in every colour and both families (owner, 2026-10-24: €18,
  * down from €24,50; the shop pays €6 a case), and what it costs next to a kit: one case per
  * bundle in the cart is charged DECK_CASE_WITH_KIT (see deckDealUnits in mock-provider.ts).
@@ -142,6 +151,18 @@ export function brandOf(product: Pick<Product, "brand">): BrandSlug {
 }
 
 /**
+ * The maker named above a product's title. A pack that mixes the two lines names both, in the
+ * order its pieces come (2026-11-18: Luster Dragoon with Hasbro starters), so a Takara Tomy piece
+ * never sits under a plain "Hasbro".
+ */
+export function brandLabel(product: Pick<Product, "brand" | "bundleOf">): string {
+  const name = (slug: BrandSlug) => BRANDS.find((entry) => entry.slug === slug)?.name ?? "Hasbro";
+  if (!product.bundleOf?.length) return name(brandOf(product));
+  const makers = new Set(product.bundleOf.map((part) => brandOf(PRODUCTS.find((piece) => piece.slug === part.slug) ?? {})));
+  return [...makers].map(name).join(" e ");
+}
+
+/**
  * The side of shippingPlanFor an item falls on, which is about warehouses, not makers: consignment
  * pieces leave from the partner's, everything else from the shop's. That includes the Takara Tomy
  * pieces the shop bought itself (owner, 2026-11-06), and it is why this can differ from brandOf.
@@ -175,6 +196,41 @@ export const PRODUCTS: readonly Product[] = [
   // Takara Tomy pieces the shop bought itself (owner, 2026-11-06): they sit on its own shelf and ship
   // like Hasbro, so no `consignment`. Parts, variants and spin come from Takara Tomy's product pages.
   // They lead the catalogue, and with it the shop, because the owner wants them in the foreground.
+  //
+  // The arrival of 2026-11-18 (owner): six Luster Dragoon at 39,99, two Silver Wolf at 34,99 and one
+  // BX-53 All-in-One Set. Names, parts, spin and box contents are read off Takara Tomy's own sheets
+  // (lineup/bx52.html, ux08.html, bx53.html); the stadium in BX-53 is not named there, so it is not
+  // named here either.
+  {
+    slug: "bx-52-luster-dragoon-6-60lc", name: "BX-52 Luster Dragoon 6-60LC", tagline: "Attacco left-spin pesante. Lanciatore L incluso.",
+    description: "BX-52 è lo starter Takara Tomy di Luster Dragoon 6-60LC, trottola d'attacco a rotazione sinistra (left-spin) della linea BX, con Expand Blade. Il metallo arriva fino al centro della blade, che resta rigida e colpisce forte anche dal basso; il peso è spostato da un lato, come vuole Takara Tomy, e le due lame grandi sollevano l'avversario e lo spingono via. Ratchet 6-60, basso, con sei denti di due tipi alternati, e Bit LC (Low Cyclone), 1 mm più basso del Bit Cyclone per far presa sullo stadio quando gira a sinistra. Nella scatola c'è il Winder Launcher L viola con la Long Winder, più lunga della winder normale: si lancia subito. Richiede un Beystadium Beyblade X (venduto a parte). Prodotto originale giapponese, confezione in giapponese.",
+    price: eur(3999), category: "beyblade-x", bladeType: "attacco", brand: "takara-tomy", stock: "disponibile", availableQuantity: 6, tags: ["novita"], rating: 0, reviewCount: 0,
+    images: productImages["bx-52-luster-dragoon-6-60lc"],
+    specs: [{ label: "Tipo", value: "Attacco" }, { label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "BX (Expand Blade)" }, { label: "Codice", value: "6-60LC" }, { label: "Componenti", value: "Blade Luster Dragoon, Ratchet 6-60, Bit LC (Low Cyclone)" }, { label: "Rotazione", value: "Sinistra (left-spin)" }, { label: "Lanciatore", value: "Winder Launcher L viola con Long Winder, incluso" }, { label: "Confezione", value: "In giapponese" }, { label: "Nota", value: "Richiede un Beystadium (venduto a parte)" }],
+    features: [{ title: "Left-spin pesante", description: "Attacco a rotazione sinistra con tanti punti d'impatto" }, { title: "Peso decentrato", description: "Le due lame grandi sollevano l'avversario e lo spingono via" }, { title: "Bit Low Cyclone", description: "1 mm più basso del Cyclone, fa presa girando a sinistra" }, { title: "Da sapere prima di comprare", description: "Gira a sinistra: si lancia solo con un lanciatore L, come quello incluso" }],
+    boxContents: ["1 × Trottola Luster Dragoon 6-60LC", "1 × Winder Launcher L viola", "1 × Long Winder", "Istruzioni in giapponese"],
+    relatedSlugs: ["cobalt-dragoon-2-60c", "string-launcher-takara-tomy", "ux-08-silver-wolf-3-80fb"],
+  },
+  {
+    slug: "ux-08-silver-wolf-3-80fb", name: "UX-08 Silver Wolf 3-80FB", tagline: "Stamina UX con anello libero e Free Ball.",
+    description: "UX-08 è lo starter Takara Tomy di Silver Wolf 3-80FB, trottola stamina a rotazione destra della linea UX (Unique Line). Sotto la blade c'è un anello libero che gira per conto suo: lascia scorrere il colpo dell'avversario e la trottola perde meno rotazione. Ratchet 3-80, alto, con tre denti, e Bit FB (Free Ball): la punta a sfera, sottile, gira libera rispetto al ratchet e consuma poco. Nella scatola c'è il Winder Launcher nero e argento: si lancia subito. In occidente Hasbro la vende come Sterling Wolf. Richiede un Beystadium Beyblade X (venduto a parte). Prodotto originale giapponese, confezione in giapponese.",
+    price: eur(3499), category: "beyblade-x", bladeType: "stamina", brand: "takara-tomy", stock: "disponibile", availableQuantity: 2, tags: ["novita"], rating: 0, reviewCount: 0,
+    images: productImages["ux-08-silver-wolf-3-80fb"],
+    specs: [{ label: "Tipo", value: "Stamina" }, { label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "UX (Unique Line)" }, { label: "Codice", value: "3-80FB" }, { label: "Componenti", value: "Blade Silver Wolf, Ratchet 3-80, Bit FB (Free Ball)" }, { label: "Rotazione", value: "Destra" }, { label: "Lanciatore", value: "Winder Launcher nero e argento, incluso" }, { label: "Confezione", value: "In giapponese" }, { label: "Nota", value: "Richiede un Beystadium (venduto a parte)" }],
+    features: [{ title: "Anello libero", description: "Gira per conto suo e lascia scorrere il colpo" }, { title: "Bit Free Ball", description: "Punta a sfera che gira libera e consuma poco" }, { title: "Lanciatore incluso", description: "Winder Launcher nero e argento" }, { title: "Originale Takara Tomy", description: "La stessa trottola che Hasbro vende come Sterling Wolf" }],
+    boxContents: ["1 × Trottola Silver Wolf 3-80FB", "1 × Winder Launcher nero e argento", "1 × Winder", "Istruzioni in giapponese"],
+    relatedSlugs: ["bx-52-luster-dragoon-6-60lc", "cx-18-random-booster-brachio-whip", "custom-grip-takara-tomy"],
+  },
+  {
+    slug: "bx-53-all-in-one-set", name: "BX-53 All-in-One Set", tagline: "Stadio, tre trottole e due lanciatori. Si gioca subito.",
+    description: "BX-53 è l'All-in-One Set di Takara Tomy: tutto per cominciare, in una scatola. Dentro ci sono un Beystadium con l'Xtreme Line e la cupola trasparente, tre trottole di tipo diverso e due lanciatori. Aero Pegasus 3-70A in Double Metal Coat blu e ciano (UX, attacco), con tre lame grandi e il Bit A (Accel) per l'Xtreme Dash; Wizard Arrow 4-80B versione 2.0 (BX, stamina), con due grandi lame circolari e il peso verso l'esterno; Knight Shield 3-80N versione 2.0 (BX, difesa), con sei lame che assorbono l'urto e il Bit N (Needle). Le due versioni 2.0 sono quelle aggiornate da Takara Tomy. Tutte e tre girano a destra. I lanciatori sono un Winder Launcher blu e ciano e uno String Launcher giallo. La vernice Metal Coat può consumarsi con l'uso. Prodotto originale giapponese, confezione in giapponese.",
+    price: eur(BX53_PRICE), category: "stadi", brand: "takara-tomy", stock: "disponibile", availableQuantity: 1, tags: ["novita"], rating: 0, reviewCount: 0,
+    images: productImages["bx-53-all-in-one-set"],
+    specs: [{ label: "Tipo", value: "Set completo con stadio" }, { label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codice prodotto", value: "BX-53" }, { label: "Componenti", value: "1 stadio, 3 trottole, 2 lanciatori" }, { label: "Trottole incluse", value: "Aero Pegasus 3-70A Double Metal Coat blu e ciano · Wizard Arrow 4-80B ver. 2.0 · Knight Shield 3-80N ver. 2.0" }, { label: "Lanciatori", value: "Winder Launcher blu e ciano, String Launcher giallo" }, { label: "Rotazione", value: "Destra, tutte e tre" }, { label: "Confezione", value: "In giapponese" }, { label: "Spedizione", value: "Scatola grande: va a casa con Poste Italiane" }],
+    features: [{ title: "Si gioca subito", description: "Stadio, tre trottole e due lanciatori in una scatola" }, { title: "Tre tipi diversi", description: "Attacco, stamina e difesa" }, { title: "Aero Pegasus Double Metal Coat", description: "Blu e ciano, la vernice può consumarsi con l'uso" }, { title: "Versioni 2.0", description: "Wizard Arrow e Knight Shield nella versione aggiornata da Takara Tomy" }],
+    boxContents: ["1 × Beystadium con cupola trasparente", "1 × Aero Pegasus 3-70A Double Metal Coat blu e ciano", "1 × Wizard Arrow 4-80B versione 2.0", "1 × Knight Shield 3-80N versione 2.0", "1 × Winder Launcher blu e ciano", "1 × String Launcher giallo", "Istruzioni in giapponese"],
+    relatedSlugs: ["bx-52-luster-dragoon-6-60lc", "drop-attack-battle-set", "custom-grip-takara-tomy"],
+  },
   {
     slug: "bx-48-random-booster-vol-9", name: "BX-48 Random Booster Vol. 9", tagline: "Cinque Metal Coat tornate dalle esclusive. Una a sorpresa.",
     description: "BX-48 è la Random Booster Vol. 9 di Takara Tomy, la Limited Revival: cinque trottole nate come esclusive di eventi, app e B4 Store, tornate in versione Metal Coat con un assetto rivisto. In ogni scatola ce n'è una sola, a caso e sigillata: non si sceglie. Sono Cobalt Dragoon 9-80F nera, Shark Edge 4-70E blu, Mammoth Tusk 7-60S nera, Hells Scythe 3-85GB oro e Dran Buster 2-80Q rossa. Cobalt Dragoon gira a sinistra e chiede un lanciatore L. Il lanciatore non è incluso. Richiede lanciatore e Beystadium Beyblade X (venduti a parte). Prodotto originale giapponese, confezione in giapponese.",
@@ -488,6 +544,62 @@ export const PRODUCTS: readonly Product[] = [
  * only the fallback when live stock cannot be read.
  */
 export const BUNDLES: readonly Product[] = [
+  // Owner, 2026-11-18: packs that reach the free shipping on their own, with the meta pieces (Phoenix,
+  // Luster, Glory Valkerion), and that move the Enlil nobody picks alone; "magari 42 euro luster +
+  // enlil". The two Luster packs share its six pieces; the Phoenix pack stops at the Brachio's shelf.
+  // Listed first: the newest offer leads the promotions row.
+  {
+    // Luster Dragoon 39,99 + Hurricane Enlil 9,99 = compareAt 49,98; saving 7,98.
+    slug: "duo-luster-enlil", name: "Duo Luster Dragoon + Hurricane Enlil", tagline: "Left-spin e bilanciata. Due starter, €7,98 in meno.",
+    description: "Due starter in un pacco: Luster Dragoon 6-60LC di Takara Tomy, attacco a rotazione sinistra con il peso spostato da un lato e il Winder Launcher L con la Long Winder, e Hurricane Enlil IS 7-55T di Hasbro, bilanciata CX con la blade Infinity scomponibile e il suo lanciatore. Due trottole che girano in versi opposti, ognuna col suo lanciatore. Richiede un Beystadium Beyblade X (venduto a parte).",
+    price: eur(4200), compareAtPrice: eur(4998), category: "beyblade-x", stock: "disponibile", availableQuantity: 6, tags: ["offerta"], rating: 0, reviewCount: 0,
+    images: productImages["duo-luster-enlil"],
+    specs: [{ label: "Tipo", value: "Attacco + Bilanciata" }, { label: "Produttore", value: "Takara Tomy e Hasbro (prodotti originali)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codici", value: "6-60LC · IS 7-55T" }, { label: "Componenti", value: "2 trottole, 2 lanciatori" }, { label: "Rotazione", value: "Luster Dragoon sinistra, Hurricane Enlil destra" }],
+    features: [{ title: "Due versi di rotazione", description: "Luster Dragoon gira a sinistra, Hurricane Enlil a destra" }, { title: "Lanciatore L incluso", description: "Nello starter di Luster Dragoon, con la Long Winder" }, { title: "Risparmi €7,98", description: "€42,00 invece di €49,98 comprandoli separati" }, { title: "Da sapere prima di comprare", description: "Luster Dragoon è giapponese: confezione e istruzioni in giapponese" }],
+    boxContents: ["1 × Starter Luster Dragoon 6-60LC (trottola, Winder Launcher L e Long Winder)", "1 × Starter Hurricane Enlil IS 7-55T (trottola e lanciatore)", "Istruzioni"],
+    relatedSlugs: ["bx-52-luster-dragoon-6-60lc", "pack-meta-luster", "hurricane-enlil-is-7-55t"],
+    bundleOf: [{ slug: "bx-52-luster-dragoon-6-60lc", quantity: 1 }, { slug: "hurricane-enlil-is-7-55t", quantity: 1 }],
+  },
+  {
+    // Luster 39,99 + Soar Phoenix 24,90 + Glory Valkerion 19,99 + Hover Wyvern 13,99 + Enlil 9,99 =
+    // compareAt 108,86; at 100,00 it clears FREE_SHIPPING_THRESHOLD alone. Saving 8,86.
+    slug: "pack-meta-luster", name: "Pack Meta Luster", tagline: "Cinque trottole a 100 €, spedizione gratuita.",
+    description: "Il pack che da solo arriva a 100 € e spedisce gratis: Luster Dragoon 6-60LC di Takara Tomy, attacco a rotazione sinistra con il Winder Launcher L; Soar Phoenix 9-60GF, Upper Attack con il lanciatore a corda; Glory Valkerion LF, attacco UX con il lanciatore; Hover Wyvern 3-85N, difesa, imbustata e senza lanciatore; Hurricane Enlil IS 7-55T, bilanciata CX con il lanciatore. Cinque trottole tra attacco, difesa e bilanciata, quattro lanciatori. Richiede un Beystadium Beyblade X (venduto a parte).",
+    price: eur(10000), compareAtPrice: eur(10886), category: "beyblade-x", stock: "disponibile", availableQuantity: 6, tags: ["offerta"], rating: 0, reviewCount: 0,
+    images: productImages["pack-meta-luster"],
+    specs: [{ label: "Contenuto", value: "5 trottole, 4 lanciatori" }, { label: "Produttore", value: "Takara Tomy e Hasbro (prodotti originali)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codici", value: "6-60LC · 9-60GF · LF · 3-85N · IS 7-55T" }, { label: "Spedizione", value: "Gratuita: il pack arriva già a 100 €" }, { label: "Nota", value: "Richiede un Beystadium (venduto a parte)" }],
+    features: [{ title: "Spedizione gratuita", description: "Da solo arriva a 100 €, la soglia della spedizione gratis" }, { title: "Lanciatore L incluso", description: "Luster Dragoon gira a sinistra e ha il suo lanciatore" }, { title: "Risparmi €8,86", description: "€100,00 invece di €108,86 comprandoli separati" }, { title: "Da sapere prima di comprare", description: "Hover Wyvern è imbustata, estratta dal Battle Set e senza lanciatore" }],
+    boxContents: ["1 × Starter Luster Dragoon 6-60LC (trottola, Winder Launcher L e Long Winder)", "1 × Starter Soar Phoenix 9-60GF (trottola e lanciatore a corda)", "1 × Starter Glory Valkerion LF (trottola e lanciatore)", "1 × Trottola Hover Wyvern 3-85N imbustata", "1 × Starter Hurricane Enlil IS 7-55T (trottola e lanciatore)"],
+    relatedSlugs: ["bx-52-luster-dragoon-6-60lc", "pack-meta-phoenix", "duo-luster-enlil"],
+    bundleOf: [{ slug: "bx-52-luster-dragoon-6-60lc", quantity: 1 }, { slug: "soar-phoenix-9-60gf", quantity: 1 }, { slug: "glory-valkerion-lf", quantity: 1 }, { slug: "hover-wyvern-3-85n", quantity: 1 }, { slug: "hurricane-enlil-is-7-55t", quantity: 1 }],
+  },
+  {
+    // Soar Phoenix 24,90 + Glory Valkerion 19,99 + Cobalt Dragoon 19,90 + Brachio Whip 28,00 + Shatter
+    // Horus 11,99 + Hurricane Enlil 9,99 = compareAt 114,77; at 100,00 it ships free. Saving 14,77.
+    slug: "pack-meta-phoenix", name: "Pack Meta Phoenix", tagline: "Sei trottole a 100 €, spedizione gratuita.",
+    description: "Sei trottole a 100 €, spedizione gratuita compresa: Soar Phoenix 9-60GF, Upper Attack; Glory Valkerion LF, attacco UX; Cobalt Dragoon 2-60C, attacco a rotazione sinistra con il suo lanciatore left-spin; Brachio Whip OW5-70Nr dalla Random Booster CX-18 di Takara Tomy, stamina con il Bit Narrow, in un colore a sorpresa; Shatter Horus 9-65GB, stamina BX; Hurricane Enlil IS 7-55T, bilanciata CX. I cinque starter Hasbro hanno ognuno il suo lanciatore; Brachio Whip è solo la trottola, nella sua scatola sigillata. Richiede un Beystadium Beyblade X (venduto a parte).",
+    price: eur(10000), compareAtPrice: eur(11477), category: "beyblade-x", stock: "disponibile", availableQuantity: 13, tags: ["offerta"], rating: 0, reviewCount: 0,
+    images: productImages["pack-meta-phoenix"],
+    specs: [{ label: "Contenuto", value: "6 trottole, 5 lanciatori" }, { label: "Produttore", value: "Hasbro e Takara Tomy (prodotti originali)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codici", value: "9-60GF · LF · 2-60C · OW5-70Nr · 9-65GB · IS 7-55T" }, { label: "Spedizione", value: "Gratuita: il pack arriva già a 100 €" }, { label: "Nota", value: "Richiede un Beystadium (venduto a parte)" }],
+    features: [{ title: "Spedizione gratuita", description: "Da solo arriva a 100 €, la soglia della spedizione gratis" }, { title: "Sei trottole, cinque lanciatori", description: "Attacco, left-spin, stamina e bilanciata nello stesso pacco" }, { title: "Risparmi €14,77", description: "€100,00 invece di €114,77 comprandoli separati" }, { title: "Da sapere prima di comprare", description: "Brachio Whip arriva in un colore a sorpresa e senza lanciatore" }],
+    boxContents: ["1 × Starter Soar Phoenix 9-60GF (trottola e lanciatore a corda)", "1 × Starter Glory Valkerion LF (trottola e lanciatore)", "1 × Starter Cobalt Dragoon 2-60C (trottola e lanciatore left-spin)", "1 × Random Booster CX-18 Brachio Whip (solo trottola, colore a sorpresa)", "1 × Starter Shatter Horus 9-65GB (trottola e lanciatore)", "1 × Starter Hurricane Enlil IS 7-55T (trottola e lanciatore)"],
+    relatedSlugs: ["pack-meta-luster", "soar-phoenix-9-60gf", "cx-18-random-booster-brachio-whip"],
+    bundleOf: [{ slug: "soar-phoenix-9-60gf", quantity: 1 }, { slug: "glory-valkerion-lf", quantity: 1 }, { slug: "cobalt-dragoon-2-60c", quantity: 1 }, { slug: "cx-18-random-booster-brachio-whip", quantity: 1 }, { slug: "shatter-horus-9-65gb", quantity: 1 }, { slug: "hurricane-enlil-is-7-55t", quantity: 1 }],
+  },
+  {
+    // Owner, 2026-11-18, asked the same day: a pack for the two Silver Wolf too. Silver Wolf 34,99 +
+    // Soar Phoenix 24,90 + Glory Valkerion 19,99 + Cobalt Dragoon 19,90 + Hurricane Enlil 9,99 =
+    // compareAt 109,77; at 100,00 it ships free. Saving 9,77. Two of them, like the Silver Wolf.
+    slug: "pack-meta-silver-wolf", name: "Pack Meta Silver Wolf", tagline: "Cinque starter a 100 €, spedizione gratuita.",
+    description: "Cinque starter a 100 €, spedizione gratuita compresa: Silver Wolf 3-80FB di Takara Tomy, stamina con l'anello libero e il Bit Free Ball; Soar Phoenix 9-60GF, Upper Attack; Glory Valkerion LF, attacco UX; Cobalt Dragoon 2-60C, attacco a rotazione sinistra con il suo lanciatore left-spin; Hurricane Enlil IS 7-55T, bilanciata CX. Ogni starter ha il suo lanciatore: cinque trottole, cinque lanciatori. Richiede un Beystadium Beyblade X (venduto a parte).",
+    price: eur(10000), compareAtPrice: eur(10977), category: "beyblade-x", stock: "disponibile", availableQuantity: 2, tags: ["offerta"], rating: 0, reviewCount: 0,
+    images: productImages["pack-meta-silver-wolf"],
+    specs: [{ label: "Contenuto", value: "5 trottole, 5 lanciatori" }, { label: "Produttore", value: "Takara Tomy e Hasbro (prodotti originali)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codici", value: "3-80FB · 9-60GF · LF · 2-60C · IS 7-55T" }, { label: "Spedizione", value: "Gratuita: il pack arriva già a 100 €" }, { label: "Nota", value: "Richiede un Beystadium (venduto a parte)" }],
+    features: [{ title: "Spedizione gratuita", description: "Da solo arriva a 100 €, la soglia della spedizione gratis" }, { title: "Cinque starter completi", description: "Ogni trottola ha il suo lanciatore" }, { title: "Risparmi €9,77", description: "€100,00 invece di €109,77 comprandoli separati" }, { title: "Da sapere prima di comprare", description: "Silver Wolf è giapponese: confezione e istruzioni in giapponese" }],
+    boxContents: ["1 × Starter Silver Wolf 3-80FB (trottola e Winder Launcher nero e argento)", "1 × Starter Soar Phoenix 9-60GF (trottola e lanciatore a corda)", "1 × Starter Glory Valkerion LF (trottola e lanciatore)", "1 × Starter Cobalt Dragoon 2-60C (trottola e lanciatore left-spin)", "1 × Starter Hurricane Enlil IS 7-55T (trottola e lanciatore)"],
+    relatedSlugs: ["ux-08-silver-wolf-3-80fb", "pack-meta-luster", "pack-meta-phoenix"],
+    bundleOf: [{ slug: "ux-08-silver-wolf-3-80fb", quantity: 1 }, { slug: "soar-phoenix-9-60gf", quantity: 1 }, { slug: "glory-valkerion-lf", quantity: 1 }, { slug: "cobalt-dragoon-2-60c", quantity: 1 }, { slug: "hurricane-enlil-is-7-55t", quantity: 1 }],
+  },
   {
     slug: "kit-doppio-starter-deck", name: "Kit Doppio Starter", tagline: "Due starter e il porta deck. Pronti a sfidarsi.",
     description: "Due starter Beyblade X completi di lanciatore, Shadow Shinobi 1-80MN e Hammer Incendio 3-70H, con il porta deck giallo per portarli in giro. Shadow Shinobi devia il colpo con tre lame lisce e il Bit MN la tiene in piedi; Hammer Incendio porta il peso sul bordo e colpisce dall'alto con tre lame rialzate: due modi opposti di stare in arena. Il porta deck tiene tre trottole, una per scomparto. Richiede un Beystadium Beyblade X (venduto separatamente).",
@@ -640,7 +752,7 @@ export const BULKY_SHIPPING_METHOD: ShippingMethodDefinition = {
 };
 
 /** Items whose box no InPost Locker takes. A bundle holding one is too big as well (fitsLocker). */
-export const LOCKER_TOO_BIG: ReadonlySet<string> = new Set(["drop-attack-battle-set", "sneak-attack-battle-set"]);
+export const LOCKER_TOO_BIG: ReadonlySet<string> = new Set(["drop-attack-battle-set", "sneak-attack-battle-set", "bx-53-all-in-one-set"]);
 
 /** False for a stadium box, or a bundle that holds one. */
 export function fitsLocker(product: Pick<Product, "slug" | "bundleOf">): boolean {

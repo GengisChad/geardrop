@@ -69,6 +69,29 @@ l'angolo della trottola, toglie lo sfondo bianco e scarta il pezzo di lanciatore
 Sono rimasti solo i sinistri (L): la card mostra solo `BX34_05`, l'azzurro L di BX-34. Si rifà con
 `python scripts/cutout_takara.py string-launcher-takara-tomy`.
 
+## Luster Dragoon, Silver Wolf e BX-53, 2026-11-18
+
+Regola del proprietario per questo arrivo: "prendi le foto originali takara dal web". Render ufficiali
+Takara Tomy, senza watermark, presi da
+`beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/<file>@2.png` (1172×1418, BX53_16-18 1170×1418) e
+salvati intatti in `assets-source/takara-tomy/` con lo stesso nome. Lo scontorno è di
+`python scripts/cutout_takara.py bx-52-luster-dragoon-6-60lc ux-08-silver-wolf-3-80fb bx-53-all-in-one-set`.
+
+| Prodotto | File | Pagina ufficiale | Fedeltà |
+| --- | --- | --- | --- |
+| BX-52 Luster Dragoon 6-60LC | `BX52` (card), `BX52_01`, `BX52_02`, `BX52_05` | `lineup/bx52.html` | Il contenuto dello starter: trottola e Winder Launcher L viola con Long Winder. |
+| UX-08 Silver Wolf 3-80FB | `UX08` (card), `UX08_01`, `UX08_02`, `UX08_05` | `lineup/ux08.html` | Il contenuto dello starter: trottola e Winder Launcher nero e argento. |
+| BX-53 All-in-One Set | `BX53` (card), `BX53_01`-`BX53_03`, `BX53_18`, `BX53_16`, `BX53_17` | `lineup/bx53.html` | Il contenuto del set: tre trottole, stadio con cupola, due lanciatori. |
+
+Nessuna foto della scatola: il packshot sarebbe su Takara Tomy Mall, che risponde ancora con un
+certificato revocato, quindi la card mostra il contenuto, come sul sito Takara Tomy. Nomi dei pezzi,
+rotazione e contenuto vengono dalle schede `_image/detail_BX52.png`, `detail_ux08.png` e
+`detail_BX53*.png` della stessa pagina. Lo stadio di BX-53 non ha un nome nella scheda: la pagina
+prodotto non gliene dà uno.
+
+I tre pack dello stesso giorno (`duo-luster-enlil`, `pack-meta-luster`, `pack-meta-phoenix`) sono
+montati dagli scontorni dei loro pezzi con `python scripts/compose_bundle_images.py`.
+
 ## Ancora da migliorare
 
 - **UX-00 Glory Valkyrie LF** (750 px, foto del partner): l'unica foto ufficiale della scatola

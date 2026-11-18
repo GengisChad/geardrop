@@ -322,7 +322,8 @@ describe("what Google is told about shipping", () => {
     expect(items.length).toBeGreaterThan(0);
     // Every offer lists exactly one carrier: the partner's route for consignment pieces, Poste a casa for a
     // stadium box or a kit holding one, the Locker for the rest.
-    const bulky = new Set(["drop-attack-battle-set", "sneak-attack-battle-set", "kit-arena-drop-completo", "kit-arena-sneak-completo"]);
+    // The Takara Tomy BX-53 All-in-One Set holds a stadium too (2026-11-18).
+    const bulky = new Set(["drop-attack-battle-set", "sneak-attack-battle-set", "kit-arena-drop-completo", "kit-arena-sneak-completo", "bx-53-all-in-one-set"]);
     for (const chunk of items) {
       const id = chunk.match(/<g:id>([^<]+)<\/g:id>/)?.[1] ?? "";
       const expected = PRODUCTS.find((product) => product.slug === id)?.consignment
