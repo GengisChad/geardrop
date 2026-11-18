@@ -337,6 +337,31 @@ export const productImages = {
       alt: "Gli starter Shatter Horus 9-65GB e Hurricane Enlil IS 7-55T con la trottola Hover Wyvern 3-85N",
     },
   ],
+  // The packs of 2026-11-18, assembled from their components' cut-outs (scripts/compose_bundle_images.py).
+  "duo-luster-enlil": [
+    {
+      src: "/products/duo-luster-enlil.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Luster Dragoon 6-60LC con il Winder Launcher L viola e lo starter Hurricane Enlil IS 7-55T",
+    },
+  ],
+  "pack-meta-luster": [
+    {
+      src: "/products/pack-meta-luster.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Luster Dragoon 6-60LC con il lanciatore L, gli starter Soar Phoenix 9-60GF, Glory Valkerion LF e Hurricane Enlil IS 7-55T e la trottola Hover Wyvern 3-85N",
+    },
+  ],
+  "pack-meta-phoenix": [
+    {
+      src: "/products/pack-meta-phoenix.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Gli starter Soar Phoenix 9-60GF, Glory Valkerion LF, Cobalt Dragoon 2-60C, Shatter Horus 9-65GB e Hurricane Enlil IS 7-55T con la Random Booster CX-18 Brachio Whip",
+    },
+  ],
   "porta-deck-giallo": [DECK_IMAGE],
   "porta-deck-verde-lime": [DECK_IMAGE],
   "porta-deck-azzurro": [DECK_IMAGE],
@@ -415,6 +440,28 @@ export const productImages = {
     takaraImage("bx-48-random-booster-vol-9-bx48_03", "Mammoth Tusk 7-60S Metal Coat nera"),
     takaraImage("bx-48-random-booster-vol-9-bx48_05", "Hells Scythe 3-85GB Metal Coat oro"),
     takaraImage("bx-48-random-booster-vol-9-bx48_06", "Dran Buster 2-80Q Metal Coat rossa"),
+  ],
+  // The arrival of 2026-11-18: Takara Tomy's own renders of what is in each box.
+  "bx-52-luster-dragoon-6-60lc": [
+    takaraImage("bx-52-luster-dragoon-6-60lc", "Trottola Takara Tomy Beyblade X Luster Dragoon 6-60LC argento e viola con il Winder Launcher L viola e la Long Winder"),
+    takaraImage("bx-52-luster-dragoon-6-60lc-bx52_01", "Luster Dragoon vista dall'alto, con il gear chip del drago"),
+    takaraImage("bx-52-luster-dragoon-6-60lc-bx52_02", "Luster Dragoon vista di tre quarti: le due lame grandi"),
+    takaraImage("bx-52-luster-dragoon-6-60lc-bx52_05", "Winder Launcher L viola con la Long Winder blu"),
+  ],
+  "ux-08-silver-wolf-3-80fb": [
+    takaraImage("ux-08-silver-wolf-3-80fb", "Trottola Takara Tomy Beyblade X Silver Wolf 3-80FB argento e verde acqua con il Winder Launcher nero"),
+    takaraImage("ux-08-silver-wolf-3-80fb-ux08_01", "Silver Wolf vista dall'alto, con il gear chip del lupo"),
+    takaraImage("ux-08-silver-wolf-3-80fb-ux08_02", "Silver Wolf vista di tre quarti"),
+    takaraImage("ux-08-silver-wolf-3-80fb-ux08_05", "Winder Launcher nero e argento"),
+  ],
+  "bx-53-all-in-one-set": [
+    takaraImage("bx-53-all-in-one-set", "Contenuto del Takara Tomy Beyblade X BX-53 All-in-One Set: stadio con cupola trasparente, tre trottole e due lanciatori"),
+    takaraImage("bx-53-all-in-one-set-bx53_01", "Aero Pegasus 3-70A Double Metal Coat blu e ciano"),
+    takaraImage("bx-53-all-in-one-set-bx53_02", "Wizard Arrow 4-80B versione 2.0, gialla e argento"),
+    takaraImage("bx-53-all-in-one-set-bx53_03", "Knight Shield 3-80N versione 2.0, verde e argento"),
+    takaraImage("bx-53-all-in-one-set-bx53_18", "Il Beystadium del set con l'Xtreme Line verde e la cupola trasparente"),
+    takaraImage("bx-53-all-in-one-set-bx53_16", "Winder Launcher blu e ciano"),
+    takaraImage("bx-53-all-in-one-set-bx53_17", "String Launcher giallo"),
   ],
 } as const satisfies Record<string, readonly ProductImage[]>;
 

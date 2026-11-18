@@ -54,6 +54,13 @@ const BY_SLUG: Readonly<Record<string, HoloPalette>> = {
   "custom-grip-takara-tomy": palette("#ffd3db", "#e0202c", "#1d5fd0", "#e8ecf5", "rgba(224, 32, 44, 0.35)"),
   "cx-18-random-booster-brachio-whip": palette("#eadcff", "#9d6bff", "#12d6a4", "#ffd36b", "rgba(157, 107, 255, 0.35)"),
   "bx-48-random-booster-vol-9": palette("#ffe2c4", "#e5384a", "#e6b422", "#ffd36b", "rgba(229, 56, 74, 0.35)"),
+  // 2026-11-18: Luster's violet and red chip, Silver Wolf's teal ring, BX-53's three tops.
+  "bx-52-luster-dragoon-6-60lc": palette("#eadcff", "#8a4dff", "#e5384a", "#e8ecf5", "rgba(138, 77, 255, 0.35)"),
+  "ux-08-silver-wolf-3-80fb": palette("#d9fff3", "#1fc8b4", "#b9bcc4", "#e8ecf5", "rgba(31, 200, 180, 0.35)"),
+  "bx-53-all-in-one-set": palette("#d6f0ff", "#2fb5ff", "#2fcf63", "#f2e21c", "rgba(47, 181, 255, 0.35)"),
+  "duo-luster-enlil": palette("#eadcff", "#8a4dff", "#3cf0ff", "#c9fbff", "rgba(138, 77, 255, 0.35)"),
+  "pack-meta-luster": palette("#eadcff", "#8a4dff", "#ff7a3d", "#c6ff00", "rgba(138, 77, 255, 0.35)"),
+  "pack-meta-phoenix": palette("#ffe2c4", "#ff7a3d", "#9d6bff", "#3cf0ff", "rgba(255, 122, 61, 0.3)"),
 };
 
 const BY_TYPE: Readonly<Record<BladeType, HoloPalette>> = {

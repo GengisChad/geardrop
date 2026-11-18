@@ -70,7 +70,9 @@ select results_eq(
         -- Takara Tomy pieces on the shop's own shelf (2026-11-06).
         'bx-48-random-booster-vol-9', 'cx-18-random-booster-brachio-whip', 'custom-grip-takara-tomy', 'long-winder-launcher-takara-tomy', 'string-launcher-takara-tomy', 'winder-launcher-takara-tomy',
         -- Two red Phoenix without the launcher (2026-11-13).
-        'soar-phoenix-9-60gf-solo-trottola')$$,
+        'soar-phoenix-9-60gf-solo-trottola',
+        -- Luster Dragoon, Silver Wolf and the BX-53 All-in-One Set (2026-11-18).
+        'bx-52-luster-dragoon-6-60lc', 'ux-08-silver-wolf-3-80fb', 'bx-53-all-in-one-set')$$,
   array[0::bigint],
   'only the owner-reviewed catalogue carries stock'
 );
@@ -154,12 +156,12 @@ select results_eq(
 );
 select results_eq(
   $$select count(*)::bigint from public.products$$,
-  array[51::bigint],
+  array[54::bigint],
   'double seed keeps the catalogue products'
 );
 select results_eq(
   $$select count(*)::bigint from public.product_images$$,
-  array[63::bigint],
+  array[78::bigint],
   'double seed keeps every catalogue image'
 );
 select results_eq(
