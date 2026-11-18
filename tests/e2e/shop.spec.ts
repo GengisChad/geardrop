@@ -137,8 +137,11 @@ test.describe("catalogue", () => {
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Stadi");
     const cards = page.getByTestId("product-card");
     await expect(cards.first()).toBeVisible();
+    // The two Hasbro arenas and, since 2026-11-18, the Takara Tomy BX-53 All-in-One Set.
+    const stadiums = PRODUCTS.filter((product) => product.category === "stadi").map((product) => product.slug);
+    expect(stadiums).toEqual(["bx-53-all-in-one-set", "drop-attack-battle-set", "sneak-attack-battle-set"]);
     for (const slug of await cards.evaluateAll((els) => els.map((e) => e.getAttribute("data-slug")))) {
-      expect(["drop-attack-battle-set", "sneak-attack-battle-set"]).toContain(slug);
+      expect(stadiums).toContain(slug);
     }
   });
 
