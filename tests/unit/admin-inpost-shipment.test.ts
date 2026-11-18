@@ -25,7 +25,7 @@ vi.mock("@/lib/shipping/inpost", async (importOriginal) => {
   return { ...actual, createInpostClient: () => ({ createLockerShipment }) };
 });
 
-const { createInpostShipmentAction } = await import("@/app/admin/actions/orders");
+const { createInpostShipmentAction, createInpostShipmentsAction } = await import("@/app/admin/actions/orders");
 const { InpostError } = await import("@/lib/shipping/inpost");
 
 type Order = {
@@ -173,5 +173,91 @@ describe("createInpostShipmentAction", () => {
     client = fakeClient(paidOrder({ status: "shipped" }));
     expect((await createInpostShipmentAction(initial, form({}))).ok).toBe(false);
     expect(createLockerShipment).not.toHaveBeenCalled();
+  });
+});
+
+describe("createInpostShipmentsAction (spedizioni in blocco)", () => {
+  /** Several fake orders behind one client: each query reads the order whose id it filtered on. */
+  function fakeBatch(orders: Order[]) {
+    const byId = new Map(orders.map((order) => [order.id, order]));
+    const rpc = vi.fn(async (name: string, args: Record<string, unknown>) => {
+      const order = byId.get(Number(args["p_order_id"]));
+      if (name === "ship_order" && order) Object.assign(order, { status: "shipped", tracking_carrier: args["p_carrier"], tracking_code: args["p_code"] ?? null });
+      if (name === "mark_order_shipping_notified" && order) order.shipping_notified_at = "2026-11-18T10:00:00Z";
+      return { error: null };
+    });
+    const from = vi.fn(() => {
+      let id = 0;
+      const chain = {
+        select: () => chain,
+        eq: (column: string, value: unknown) => {
+          if (column === "id" || column === "order_id") id = Number(value);
+          return chain;
+        },
+        order: async () => ({ data: [{ product_name_snapshot: "Glory Valkerion LF", quantity: 1 }], error: null }),
+        single: async () => (byId.has(id) ? { data: { ...byId.get(id)! }, error: null } : { data: null, error: { message: "not found" } }),
+      };
+      return chain;
+    });
+    return { rpc, from, order: orders[0]! };
+  }
+
+  function batchForm(rows: Record<number, { size: string; weight: string }>): FormData {
+    const data = new FormData();
+    for (const [id, row] of Object.entries(rows)) {
+      data.append("orderId", id);
+      data.set(`size-${id}`, row.size);
+      data.set(`weight-${id}`, row.weight);
+    }
+    return data;
+  }
+
+  const empty = { ok: false, message: "", results: [] };
+
+  it("ships every chosen order with its own size and weight, and one refusal does not stop the rest", async () => {
+    const first = paidOrder({ id: 7, order_number: "GD-TEST0007" });
+    const refused = paidOrder({ id: 8, order_number: "GD-TEST0008" });
+    const third = paidOrder({ id: 9, order_number: "GD-TEST0009" });
+    client = fakeBatch([first, refused, third]);
+    createLockerShipment
+      .mockResolvedValueOnce("600000000000000000000007")
+      .mockRejectedValueOnce(new InpostError("refused", 400, { "recipient.phone": ["invalid"] }))
+      .mockResolvedValueOnce("600000000000000000000009");
+
+    const state = await createInpostShipmentsAction(empty, batchForm({ 7: { size: "A", weight: "0,5" }, 8: { size: "A", weight: "1" }, 9: { size: "B", weight: "2" } }));
+
+    expect(createLockerShipment).toHaveBeenCalledTimes(3);
+    expect(createLockerShipment.mock.calls[0]![0]).toMatchObject({ orderNumber: "GD-TEST0007", size: "A", weightKg: 0.5 });
+    expect(createLockerShipment.mock.calls[2]![0]).toMatchObject({ orderNumber: "GD-TEST0009", size: "B", weightKg: 2 });
+    expect(state.results.map((result) => [result.orderNumber, result.ok, result.trackingNumber])).toEqual([
+      ["GD-TEST0007", true, "600000000000000000000007"],
+      ["GD-TEST0008", false, null],
+      ["GD-TEST0009", true, "600000000000000000000009"],
+    ]);
+    expect(state.results[1]!.message).toBe("InPost non accetta il telefono del cliente. Correggi e riprova.");
+    expect(sendEmail).toHaveBeenCalledTimes(2);
+    expect(first.status).toBe("shipped");
+    expect(refused.status).toBe("confirmed");
+    expect(state.ok).toBe(false);
+    expect(state.message).toBe("2 spedizioni create su 3: controlla le righe in rosso.");
+  });
+
+  it("skips orders that already have their shipment and refuses a batch over the limit", async () => {
+    client = fakeBatch([paidOrder({ id: 7, tracking_carrier: "InPost", tracking_code: "600" })]);
+    const state = await createInpostShipmentsAction(empty, batchForm({ 7: { size: "A", weight: "1" } }));
+    expect(createLockerShipment).not.toHaveBeenCalled();
+    expect(state.results[0]).toMatchObject({ ok: false, message: "Spedizione InPost già creata: 600." });
+
+    const many = Object.fromEntries(Array.from({ length: 21 }, (_, index) => [index + 1, { size: "A", weight: "1" }]));
+    expect((await createInpostShipmentsAction(empty, batchForm(many))).message).toBe("Al massimo 20 spedizioni per volta.");
+  });
+
+  it("checks the InPost setup once, before any order", async () => {
+    client = fakeBatch([paidOrder()]);
+    vi.stubEnv("INPOST_ORGANIZATION_ID", "");
+    const state = await createInpostShipmentsAction(empty, batchForm({ 7: { size: "A", weight: "1" } }));
+    expect(state.message).toContain("INPOST_ORGANIZATION_ID");
+    expect(state.results).toEqual([]);
+    expect(client.from).not.toHaveBeenCalled();
   });
 });

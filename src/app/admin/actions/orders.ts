@@ -19,6 +19,7 @@ import { siteRefundKey } from "@/lib/orders/stripe-refund";
 import { PREORDER_SHIPPED_NOTE } from "@/lib/admin/preorders";
 import type { Database } from "@/lib/supabase/database.types";
 import {
+  BULK_SHIPMENT_LIMIT,
   deliverOrderSchema,
   inpostShipmentSchema,
   messageCustomerSchema,
@@ -32,7 +33,7 @@ import {
   shipOrderSchema,
 } from "@/lib/admin/orders";
 import { INPOST_CARRIER_LABEL } from "@/lib/orders/inpost-delivery";
-import { createInpostClient, InpostError, inpostConfig } from "@/lib/shipping/inpost";
+import { createInpostClient, InpostError, inpostConfig, type InpostConfig } from "@/lib/shipping/inpost";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createStripeClient } from "@/lib/payments/stripe-api";
 
@@ -341,67 +342,184 @@ export async function createInpostShipmentAction(_previous: OrderActionState, fo
   });
   if (!parsed.success) return { ok: false, message: "Controlla Locker, misura (A, B o C) e peso (fino a 25 kg)." };
 
+  const setup = inpostSetup();
+  if (!setup.ok) return setup;
+  try {
+    const { client, organizationId } = await clientFor(MANAGERS);
+    const shipped = await shipWithInpost(client, organizationId, setup, parsed.data);
+    return { ok: shipped.ok, message: shipped.message };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
+type InpostSetup = { readonly ok: true; readonly config: InpostConfig; readonly senderPhone: string };
+
+/** The InPost account and the sender phone every shipment needs, or what is missing. */
+function inpostSetup(): InpostSetup | (OrderActionState & { readonly ok: false }) {
   const config = inpostConfig();
   if (!config?.organizationId) {
     return { ok: false, message: "InPost non è configurato: servono INPOST_CLIENT_ID, INPOST_CLIENT_SECRET e INPOST_ORGANIZATION_ID." };
   }
   const senderPhone = process.env["INPOST_SENDER_PHONE"]?.trim();
   if (!senderPhone) return { ok: false, message: "Manca INPOST_SENDER_PHONE: il telefono del mittente che InPost chiede su ogni spedizione." };
+  return { ok: true, config, senderPhone };
+}
 
+type InpostShipmentInput = {
+  readonly orderId: number;
+  readonly lockerId: string | null;
+  readonly lockerLabel: string | null;
+  readonly size: "A" | "B" | "C";
+  readonly weightKg: number;
+};
+
+type InpostShipmentOutcome = OrderActionState & { readonly orderNumber: string | null; readonly trackingNumber: string | null };
+
+/**
+ * One order: makes the InPost shipment on the shop's account, from "Gear Drop Shop" to the
+ * Locker the buyer picked, ships the order with its tracking number and emails the buyer exactly
+ * as "Spedisci e avvisa" does. Shared by the order page and the warehouse batch, so both check
+ * the same things. The label is printed from /admin/ordini/[id]/etichetta or, for a batch, from
+ * /admin/magazzino/etichette.
+ */
+async function shipWithInpost(
+  client: SupabaseClient<Database>,
+  organizationId: number,
+  setup: InpostSetup,
+  input: InpostShipmentInput,
+): Promise<InpostShipmentOutcome> {
+  const refused = (message: string, orderNumber: string | null = null): InpostShipmentOutcome => ({
+    ok: false,
+    message,
+    orderNumber,
+    trackingNumber: null,
+  });
+  const order = await client
+    .from("orders")
+    .select("id,order_number,email,phone,status,payment_status,tracking_carrier,tracking_code,shipping_address_snapshot")
+    .eq("id", input.orderId)
+    .eq("organization_id", organizationId)
+    .single();
+  if (order.error) return refused("Ordine non trovato.");
+  const orderNumber = order.data.order_number;
+  if (order.data.payment_status !== "paid") return refused("L'ordine non risulta pagato.", orderNumber);
+  if (!["confirmed", "processing"].includes(order.data.status)) {
+    return refused("La spedizione si crea solo per ordini confermati e non ancora spediti.", orderNumber);
+  }
+  if (order.data.tracking_carrier === INPOST_CARRIER_LABEL && order.data.tracking_code) {
+    return refused(`Spedizione InPost già creata: ${order.data.tracking_code}.`, orderNumber);
+  }
+
+  const snapshot = order.data.shipping_address_snapshot as Record<string, unknown> | null;
+  const choice = shipmentChoice(snapshot);
+  const lockerId = input.lockerId ?? choice.pickupPointId;
+  if (!lockerId) return refused("Scegli il Locker: il cliente l'ha scritto a mano, cercalo per CAP nella scheda dell'ordine.", orderNumber);
+  const name = recipientName(typeof snapshot?.["name"] === "string" ? snapshot["name"] : null);
+  const phone = order.data.phone ?? (typeof snapshot?.["phone"] === "string" ? snapshot["phone"] : "");
+  if (!name) return refused("Manca il nome del cliente sull'ordine.", orderNumber);
+  if (!phone.trim()) return refused("Manca il telefono del cliente: InPost gli manda lì il codice per aprire il Locker.", orderNumber);
+
+  let trackingNumber: string;
+  try {
+    trackingNumber = await createInpostClient(setup.config).createLockerShipment({
+      orderNumber,
+      recipient: { ...name, email: order.data.email, phone },
+      lockerId,
+      size: input.size,
+      weightKg: input.weightKg,
+      senderEmail: SHOP_EMAIL,
+      senderPhone: setup.senderPhone,
+    });
+  } catch (error) {
+    if (error instanceof InpostError) return refused(inpostRefusal(error), orderNumber);
+    throw error;
+  }
+
+  // A Locker the owner picked here, in place of the buyer's typed one, stays written on the order.
+  if (input.lockerId && input.lockerId !== choice.pickupPointId) {
+    await client.rpc("add_order_note", {
+      p_order_id: input.orderId,
+      p_note: `Spedizione InPost verso il Locker ${input.lockerLabel ?? input.lockerId}.`,
+    });
+  }
+
+  const shipped = await shipAndNotify(client, organizationId, input.orderId, INPOST_CARRIER_LABEL, trackingNumber, null);
+  return shipped.ok
+    ? {
+        ok: true,
+        orderNumber,
+        trackingNumber,
+        message: `Spedizione InPost ${trackingNumber} creata. ${shipped.message} Stampa l'etichetta e porta il pacco in un punto InPost.`,
+      }
+    : {
+        ok: false,
+        orderNumber,
+        trackingNumber,
+        message: `Spedizione InPost ${trackingNumber} creata, ma: ${shipped.message} Non crearla di nuovo: salva questo codice con "Spedisci e avvisa".`,
+      };
+}
+
+export type BulkShipmentResult = {
+  readonly orderId: number;
+  readonly orderNumber: string;
+  readonly ok: boolean;
+  readonly message: string;
+  readonly trackingNumber: string | null;
+};
+export type BulkShipmentState = OrderActionState & { readonly results: readonly BulkShipmentResult[] };
+
+/**
+ * "Spedizioni in blocco" (owner, 2026-11-18): the orders picked in "Da spedire" get their InPost
+ * shipments one after the other, each exactly as from its own page (tracking saved, buyer
+ * emailed). One order refused does not stop the others; each answer comes back on its row.
+ */
+export async function createInpostShipmentsAction(_previous: BulkShipmentState, formData: FormData): Promise<BulkShipmentState> {
+  const ids = [...new Set(formData.getAll("orderId").map((value) => Number(value)))].filter((id) => Number.isSafeInteger(id) && id > 0);
+  if (ids.length === 0) return { ok: false, message: "Nessun ordine scelto.", results: [] };
+  if (ids.length > BULK_SHIPMENT_LIMIT) return { ok: false, message: `Al massimo ${BULK_SHIPMENT_LIMIT} spedizioni per volta.`, results: [] };
+
+  const setup = inpostSetup();
+  if (!setup.ok) return { ...setup, results: [] };
   try {
     const { client, organizationId } = await clientFor(MANAGERS);
-    const order = await client
-      .from("orders")
-      .select("id,order_number,email,phone,status,payment_status,tracking_carrier,tracking_code,shipping_address_snapshot")
-      .eq("id", parsed.data.orderId)
-      .eq("organization_id", organizationId)
-      .single();
-    if (order.error) return { ok: false, message: "Ordine non trovato." };
-    if (order.data.payment_status !== "paid") return { ok: false, message: "L'ordine non risulta pagato." };
-    if (!["confirmed", "processing"].includes(order.data.status)) return { ok: false, message: "La spedizione si crea solo per ordini confermati e non ancora spediti." };
-    if (order.data.tracking_carrier === INPOST_CARRIER_LABEL && order.data.tracking_code) {
-      return { ok: false, message: `Spedizione InPost già creata: ${order.data.tracking_code}.` };
-    }
-
-    const snapshot = order.data.shipping_address_snapshot as Record<string, unknown> | null;
-    const choice = shipmentChoice(snapshot);
-    const lockerId = parsed.data.lockerId ?? choice.pickupPointId;
-    if (!lockerId) return { ok: false, message: "Scegli il Locker: il cliente l'ha scritto a mano, cercalo per CAP qui sotto." };
-    const name = recipientName(typeof snapshot?.["name"] === "string" ? snapshot["name"] : null);
-    const phone = order.data.phone ?? (typeof snapshot?.["phone"] === "string" ? snapshot["phone"] : "");
-    if (!name) return { ok: false, message: "Manca il nome del cliente sull'ordine." };
-    if (!phone.trim()) return { ok: false, message: "Manca il telefono del cliente: InPost gli manda lì il codice per aprire il Locker." };
-
-    let trackingNumber: string;
-    try {
-      trackingNumber = await createInpostClient(config).createLockerShipment({
-        orderNumber: order.data.order_number,
-        recipient: { ...name, email: order.data.email, phone },
-        lockerId,
-        size: parsed.data.size,
-        weightKg: parsed.data.weightKg,
-        senderEmail: SHOP_EMAIL,
-        senderPhone,
+    const results: BulkShipmentResult[] = [];
+    for (const orderId of ids) {
+      const parsed = inpostShipmentSchema.safeParse({
+        orderId: String(orderId),
+        lockerId: "",
+        lockerLabel: "",
+        size: text(formData, `size-${orderId}`),
+        weightKg: Number(text(formData, `weight-${orderId}`).replace(",", ".")),
       });
-    } catch (error) {
-      if (error instanceof InpostError) return { ok: false, message: inpostRefusal(error) };
-      throw error;
+      if (!parsed.success) {
+        results.push({ orderId, orderNumber: `#${orderId}`, ok: false, trackingNumber: null, message: "Controlla misura (A, B o C) e peso (fino a 25 kg)." });
+        continue;
+      }
+      try {
+        const outcome = await shipWithInpost(client, organizationId, setup, parsed.data);
+        results.push({
+          orderId,
+          orderNumber: outcome.orderNumber ?? `#${orderId}`,
+          ok: outcome.ok,
+          trackingNumber: outcome.trackingNumber,
+          message: outcome.message,
+        });
+      } catch (error) {
+        results.push({ orderId, orderNumber: `#${orderId}`, ok: false, trackingNumber: null, message: failure(error).message });
+      }
     }
-
-    // A Locker the owner picked here, in place of the buyer's typed one, stays written on the order.
-    if (parsed.data.lockerId && parsed.data.lockerId !== choice.pickupPointId) {
-      await client.rpc("add_order_note", {
-        p_order_id: parsed.data.orderId,
-        p_note: `Spedizione InPost verso il Locker ${parsed.data.lockerLabel ?? parsed.data.lockerId}.`,
-      });
-    }
-
-    const shipped = await shipAndNotify(client, organizationId, parsed.data.orderId, INPOST_CARRIER_LABEL, trackingNumber, null);
-    return shipped.ok
-      ? { ok: true, message: `Spedizione InPost ${trackingNumber} creata. ${shipped.message} Stampa l'etichetta e porta il pacco in un punto InPost.` }
-      : { ok: false, message: `Spedizione InPost ${trackingNumber} creata, ma: ${shipped.message} Non crearla di nuovo: salva questo codice con "Spedisci e avvisa".` };
+    const created = results.filter((result) => result.trackingNumber).length;
+    const clean = results.every((result) => result.ok);
+    return {
+      ok: clean,
+      message: clean
+        ? `${created} spedizioni create, ordini spediti ed email inviate. Scarica le etichette qui sotto.`
+        : `${created} spedizioni create su ${ids.length}: controlla le righe in rosso.`,
+      results,
+    };
   } catch (error) {
-    return failure(error);
+    return { ...failure(error), results: [] };
   }
 }
 
