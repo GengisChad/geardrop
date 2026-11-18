@@ -1,0 +1,65 @@
+.page { display: grid; gap: 16px; }
+.heading { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; }
+.heading p { margin: 0; color: #7b8088; font-size: 11px; font-weight: 750; text-transform: uppercase; }
+.heading h1 { margin: 2px 0; font: 750 28px var(--font-archivo), sans-serif; letter-spacing: -.03em; }
+.heading span { color: #5c6169; font-size: 12px; }
+.intro { margin: 0; max-width: 72ch; color: #4d525a; font-size: 12px; }
+
+.primary, .secondary { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; gap: 6px; border-radius: 10px; padding: 0 16px; cursor: pointer; font-size: 11px; font-weight: 850; text-decoration: none; }
+.primary { border: 0; background: #7a3cff; color: #fff; }
+.secondary { border: 1px solid #d3d6dc; background: #fff; color: #2b2f35; }
+.primary:disabled, .secondary:disabled { cursor: wait; opacity: .65; }
+.feedback { margin: 0; font-size: 11px; font-weight: 750; color: #1d6b33; }
+.feedback[data-error] { color: #a1283e; }
+
+.toolbar { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid #e0e2e6; border-radius: 16px; padding: 12px 14px; background: rgba(255,255,255,.96); }
+.toolbar span { color: #4a4f57; font-size: 12px; font-weight: 750; }
+.search { display: flex; flex-wrap: wrap; gap: 8px; }
+.search input { min-height: 42px; min-width: 220px; border: 1px solid #d3d6dc; border-radius: 10px; padding: 0 12px; }
+
+.table { width: 100%; border-collapse: collapse; background: #fff; font-size: 12px; }
+.table th, .table td { border-bottom: 1px solid #e3e5e9; padding: 8px 10px; text-align: left; vertical-align: middle; }
+.table th { background: #f4f5f7; font-size: 10px; text-transform: uppercase; }
+.table small { display: block; color: #7b8088; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 10px; }
+.copies { width: 4.5em; min-height: 36px; border: 1px solid #d3d6dc; border-radius: 8px; padding: 0 8px; }
+
+.gtin { display: grid; gap: 6px; }
+.gtin form { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.gtin input { width: 15ch; min-height: 36px; border: 1px solid #d3d6dc; border-radius: 8px; padding: 0 8px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+
+.scanner { display: grid; gap: 8px; justify-items: start; }
+.video { width: min(100%, 420px); aspect-ratio: 4 / 3; border-radius: 12px; background: #111; object-fit: cover; }
+
+/* Parcel check */
+.check { display: grid; gap: 14px; max-width: 760px; }
+.scanBox { display: grid; gap: 10px; border: 1px solid #e0e2e6; border-radius: 16px; padding: 14px; background: #fff; }
+.scanBox form { display: flex; flex-wrap: wrap; gap: 8px; }
+.scanBox input { flex: 1 1 220px; min-height: 48px; border: 2px solid #7a3cff; border-radius: 10px; padding: 0 12px; font: 700 16px ui-monospace, SFMono-Regular, Consolas, monospace; }
+.lines { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.lines li { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; align-items: center; gap: 12px; border: 1px solid #e0e2e6; border-radius: 12px; padding: 8px 10px; background: #fff; }
+.lines li[data-done] { border-color: #8fd19e; background: #f1fbf3; }
+.lines img { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; background: #f1f2f4; }
+.lines strong { font-size: 18px; font-variant-numeric: tabular-nums; }
+.lines small { display: block; color: #7b8088; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 10px; }
+.verdict { margin: 0; border-radius: 12px; padding: 12px 14px; font-size: 14px; font-weight: 850; }
+.verdict[data-tone="ok"] { background: #e6f6ea; color: #1d6b33; }
+.verdict[data-tone="error"] { background: #fdeaee; color: #a1283e; }
+.verdict[data-tone="info"] { background: #efe7ff; color: #5a23d6; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* Label sheet: A4, 3 × 8 labels of 70 × 37 mm (the common 24-per-sheet stock). */
+.printBar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.sheet { display: grid; grid-template-columns: repeat(3, 70mm); grid-auto-rows: 37mm; width: 210mm; padding: 4.5mm 0; background: #fff; }
+.label { box-sizing: border-box; display: grid; grid-template-columns: 27mm 1fr; gap: 2mm; align-items: center; overflow: hidden; padding: 2.5mm 3mm; color: #000; font: 8pt/1.2 Arial, Helvetica, sans-serif; break-inside: avoid; outline: 1px dashed #d6d9de; }
+.qr { width: 27mm; height: 27mm; }
+.qr svg { display: block; width: 100%; height: 100%; }
+.labelText { display: grid; gap: 1.2mm; min-width: 0; }
+.labelText strong { display: -webkit-box; overflow: hidden; -webkit-line-clamp: 3; -webkit-box-orient: vertical; font-size: 8.5pt; }
+.labelText code { font: 700 9pt ui-monospace, SFMono-Regular, Consolas, monospace; word-break: break-all; }
+.labelText span { font-size: 7pt; letter-spacing: .04em; }
+
+@media print {
+  .printBar, .heading, .intro { display: none !important; }
+  .label { outline: 0; }
+  @page { size: A4; margin: 0; }
+}

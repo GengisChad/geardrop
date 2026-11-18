@@ -16,6 +16,8 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { label: "Listino e margini", href: "/admin/listino", disabled: false },
   { label: "Carichi merce", href: "/admin/carichi", disabled: false },
   { label: "Fornitori", href: "/admin/fornitori", disabled: false },
+  // Owner, 2026-11-18: box barcodes, SKU labels and the parcel check read them.
+  { label: "Codici ed etichette", href: "/admin/inventario/codici", disabled: false },
   { label: "Previsioni", href: "/admin/previsioni", disabled: false },
   { label: "Prezzi IA", href: "/admin/prezzi", disabled: false },
   { label: "Assistente", href: "/admin/assistente", disabled: false },

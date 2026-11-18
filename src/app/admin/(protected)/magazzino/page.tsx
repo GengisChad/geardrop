@@ -45,6 +45,7 @@ function OrderCard({ order, claimable }: { readonly order: FulfilmentOrder; read
       <div className={styles.orderActions}>
         {claimable ? <ClaimOrderButton orderId={order.id} /> : null}
         <Link className={styles.secondary} href={{ pathname: "/admin/magazzino/stampa", query: { ordini: String(order.id) } }}>Etichetta</Link>
+        <Link className={styles.secondary} href={`/admin/magazzino/controllo/${order.id}`}>Controlla pacco</Link>
         <Link className={styles.secondary} href={`/admin/ordini/${order.id}`}>Spedisci</Link>
       </div>
     </article>
