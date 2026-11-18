@@ -7,7 +7,7 @@ import type { Database } from "@/lib/supabase/database.types";
 type Client = SupabaseClient<Database>;
 
 const COLUMNS =
-  "id,order_number,email,status,payment_status,total_cents,refunded_cents,created_at,shipped_at,delivered_at,owner_notified_at,shipping_notified_at,delivery_notified_at,refund_prepared_at,refund_amount_cents,tracking_code,shipping_address_snapshot";
+  "id,order_number,email,status,payment_status,total_cents,refunded_cents,created_at,shipped_at,delivered_at,owner_notified_at,shipping_notified_at,delivery_notified_at,refund_prepared_at,refund_amount_cents,tracking_code,tracking_carrier,shipping_address_snapshot";
 
 /** The company's orders, newest first (the shop's whole history fits: a few thousand at most). */
 export async function loadControlOrders(client: Client, organizationId: number, limit = 3000): Promise<readonly ControlOrder[]> {
@@ -42,6 +42,7 @@ export async function loadControlOrders(client: Client, organizationId: number, 
       refundPreparedAt: order.refund_prepared_at,
       refundAmountCents: order.refund_amount_cents,
       trackingCode: order.tracking_code,
+      trackingCarrier: order.tracking_carrier,
     };
   });
 }

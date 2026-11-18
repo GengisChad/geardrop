@@ -21,6 +21,7 @@ const order = (overrides: Partial<ControlOrder> = {}): ControlOrder => ({
   refundPreparedAt: null,
   refundAmountCents: null,
   trackingCode: "600",
+  trackingCarrier: "InPost",
   ...overrides,
 });
 
@@ -70,6 +71,12 @@ describe("orderAnomalies", () => {
       ["GD-5", "payment"],
       ["GD-3", "in-transit"],
     ]);
+  });
+
+  it("flags a long journey only for InPost, which closes itself on collection", () => {
+    const poste = order({ status: "shipped", deliveredAt: null, trackingCarrier: "Poste Italiane", shippedAt: "2026-10-01T10:00:00Z", createdAt: "2026-09-30T10:00:00Z" });
+    expect(orderAnomalies([poste], NOW)).toEqual([]);
+    expect(orderAnomalies([{ ...poste, trackingCarrier: "InPost" }], NOW).map((anomaly) => anomaly.kind)).toEqual(["in-transit"]);
   });
 
   it("does not flag the emails of old orders that predate the sent stamps", () => {

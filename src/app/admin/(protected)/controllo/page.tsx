@@ -67,8 +67,8 @@ export default async function ControlPage() {
       <section aria-labelledby="anomalies-title" className={styles.panel}>
         <h2 id="anomalies-title">Da controllare · {anomalies.length}</h2>
         <p>
-          Email non partite (ordini degli ultimi {EMAIL_CHECK_DAYS} giorni), ordini pagati fermi da più di 3 giorni, pacchi in viaggio da
-          più di 10, rimborsi a metà, pagamenti mai incassati. L&rsquo;errore tecnico preciso resta nei log di Vercel; qui c&rsquo;è
+          Email non partite (ordini degli ultimi {EMAIL_CHECK_DAYS} giorni), ordini pagati fermi da più di 3 giorni, pacchi InPost in
+          viaggio da più di 10 (Poste non si chiude da sola), rimborsi a metà, pagamenti mai incassati. L&rsquo;errore tecnico preciso resta nei log di Vercel; qui c&rsquo;è
           l&rsquo;ordine da sistemare.
         </p>
         {anomalies.length === 0 ? (
