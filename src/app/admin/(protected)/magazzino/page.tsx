@@ -82,8 +82,11 @@ export default async function WarehouseStationPage() {
       </header>
 
       <form action="/admin/magazzino/stampa" className={styles.toolbar} id="print-selection" method="get">
-        <span>Seleziona gli ordini da preparare: lista di prelievo e etichette in un solo foglio.</span>
-        <button className={styles.primary} type="submit">Stampa selezionati</button>
+        <span>Seleziona gli ordini: lista di prelievo da stampare, oppure spedizioni InPost create tutte insieme con le etichette in un PDF.</span>
+        <span className={styles.orderActions}>
+          <button className={styles.secondary} type="submit">Stampa selezionati</button>
+          <button className={styles.primary} formAction="/admin/magazzino/spedizioni" type="submit">Crea spedizioni InPost</button>
+        </span>
       </form>
 
       {orders.length === 0 ? (

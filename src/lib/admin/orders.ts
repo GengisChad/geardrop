@@ -79,6 +79,8 @@ export const inpostShipmentSchema = z.object({
   size: z.enum(["A", "B", "C"]),
   weightKg: z.number().min(0.1).max(25),
 });
+/** At most this many InPost shipments per click in "Da spedire", so one batch finishes inside the request. */
+export const BULK_SHIPMENT_LIMIT = 20;
 export const deliverOrderSchema = z.object({
   orderId,
   note: z.string().trim().max(1000).transform((value) => value || null),
