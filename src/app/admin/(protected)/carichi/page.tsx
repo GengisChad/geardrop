@@ -4,6 +4,7 @@ import { CostImportForm } from "@/components/admin/warehouse/cost-import-form";
 import styles from "@/components/admin/warehouse/warehouse.module.css";
 import { requireAdminAccess } from "@/lib/admin/access";
 import { DOCUMENT_KIND_LABELS, formatEuro, RECEIPT_STATUS_LABELS } from "@/lib/admin/warehouse";
+import { listOpenSupplierOrders, romeToday } from "@/lib/admin/supplier-orders-repository";
 import { listReceipts, loadWarehouseSummary } from "@/lib/admin/warehouse-repository";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -31,10 +32,12 @@ export default async function ReceiptsPage({
   const principal = await requireAdminAccess(client);
   if (principal.role === "editor") redirect("/admin");
   const organizationId = principal.organization.id;
-  const [receipts, summary] = await Promise.all([
+  const [receipts, summary, incoming] = await Promise.all([
     listReceipts(client, organizationId, { status, page: pageNumber }),
     loadWarehouseSummary(client, organizationId),
+    listOpenSupplierOrders(client, organizationId),
   ]);
+  const today = romeToday();
 
   return (
     <div className={styles.page}>
@@ -46,6 +49,38 @@ export default async function ReceiptsPage({
         </div>
         <Link href="/admin/carichi/nuovo">Nuovo carico</Link>
       </header>
+
+      {incoming.length > 0 ? (
+        <section className={styles.panel} aria-labelledby="incoming-title" data-testid="incoming-orders">
+          <h2 id="incoming-title">In arrivo dai fornitori · {incoming.length}</h2>
+          <div className={styles.tableWrap}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Fornitore</th><th>Prodotti</th><th className={styles.numeric}>Pezzi</th><th>Ordinato</th><th>Arrivo previsto</th>
+                </tr>
+              </thead>
+              <tbody>
+                {incoming.map((order) => {
+                  const late = order.expectedOn !== null && order.expectedOn < today;
+                  return (
+                    <tr key={order.id}>
+                      <td><Link href={`/admin/carichi/${order.id}`}>{order.supplierName}</Link><small className={styles.mono}>{order.documentNumber}</small></td>
+                      <td>{order.products.slice(0, 3).join(", ")}{order.products.length > 3 ? ` e altri ${order.products.length - 3}` : ""}</td>
+                      <td className={styles.numeric}>{order.pieces}</td>
+                      <td>{date.format(new Date(order.orderedAt))}</td>
+                      <td>
+                        {order.expectedOn ? date.format(new Date(`${order.expectedOn}T12:00:00Z`)) : "—"}
+                        {late ? <small className={styles.error}> in ritardo</small> : null}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
 
       <section className={styles.metrics} aria-label="Valore di magazzino">
         <article className={styles.metric} data-tone="good">

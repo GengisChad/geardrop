@@ -3387,9 +3387,11 @@ export type Database = {
           document_kind: Database["public"]["Enums"]["supplier_document_kind"]
           document_number: string
           duties_cents: number
+          expected_on: string | null
           freight_cents: number
           id: number
           notes: string | null
+          ordered_at: string | null
           organization_id: number
           reversal_reason: string | null
           reversed_at: string | null
@@ -3409,9 +3411,11 @@ export type Database = {
           document_kind: Database["public"]["Enums"]["supplier_document_kind"]
           document_number: string
           duties_cents?: number
+          expected_on?: string | null
           freight_cents?: number
           id?: never
           notes?: string | null
+          ordered_at?: string | null
           organization_id: number
           reversal_reason?: string | null
           reversed_at?: string | null
@@ -3431,9 +3435,11 @@ export type Database = {
           document_kind?: Database["public"]["Enums"]["supplier_document_kind"]
           document_number?: string
           duties_cents?: number
+          expected_on?: string | null
           freight_cents?: number
           id?: never
           notes?: string | null
+          ordered_at?: string | null
           organization_id?: number
           reversal_reason?: string | null
           reversed_at?: string | null
@@ -3798,6 +3804,14 @@ export type Database = {
         Args: { p_request_ids: number[] }
         Returns: undefined
       }
+      mark_supplier_receipt_ordered: {
+        Args: {
+          p_expected_on?: string
+          p_ordered?: boolean
+          p_receipt_id: number
+        }
+        Returns: undefined
+      }
       newsletter_confirm: { Args: { p_token: string }; Returns: string }
       newsletter_signup: {
         Args: { p_consent: string; p_email: string; p_source: string }
@@ -3861,6 +3875,10 @@ export type Database = {
           p_stripe_refund_id: string
         }
         Returns: undefined
+      }
+      record_order_return: {
+        Args: { p_lines: Json; p_note?: string; p_order_id: number }
+        Returns: number
       }
       record_staff_invite:
         | {
