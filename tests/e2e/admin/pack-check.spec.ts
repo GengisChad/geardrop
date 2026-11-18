@@ -23,7 +23,8 @@ function uniqueEan(seed: string): string {
 test("a saved box barcode counts the piece in the parcel check", async ({ page }, testInfo) => {
   const productSlug = process.env.ADMIN_E2E_GEARDROP_PRODUCT;
   if (!productSlug) throw new Error("Missing the Gear Drop product fixture");
-  const slug = uniqueSlug(testInfo, "pack");
+  // A retry gets its own order: the first attempt may already have created one with this number.
+  const slug = `${uniqueSlug(testInfo, "pack")}-r${testInfo.retry}`;
   const orderNumber = `GD-${slug.toUpperCase()}`;
   const ean = uniqueEan(slug);
   const sku = sql(`select sku from public.products where slug = '${productSlug}'`);

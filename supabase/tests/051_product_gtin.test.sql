@@ -1,10 +1,15 @@
 -- Il codice a barre della scatola: solo cifre (8 o 12-14) e mai lo stesso su due prodotti della
 -- stessa azienda, così una scansione al controllo pacco non può indicare due pezzi.
 begin;
-select plan(5);
+select plan(6);
 
 select has_column('public', 'products', 'gtin', 'products keep the barcode of their box');
 select col_is_null('public', 'products', 'gtin', 'a product may have no barcode');
+
+select ok(
+  has_column_privilege('authenticated', 'public.products', 'gtin', 'UPDATE'),
+  'staff can write the barcode column'
+);
 
 create temporary table pick on commit drop as
 select id from public.products

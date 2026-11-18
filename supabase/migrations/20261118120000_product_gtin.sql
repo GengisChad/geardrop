@@ -10,6 +10,9 @@ alter table public.products add column gtin text;
 alter table public.products
   add constraint products_gtin_shape check (gtin is null or gtin ~ '^([0-9]{8}|[0-9]{12,14})$');
 
+-- Staff edit products column by column (20260717185536); the barcode is one of those columns.
+grant update (gtin) on public.products to authenticated;
+
 create unique index products_organization_gtin_key on public.products (organization_id, gtin) where gtin is not null;
 
 comment on column public.products.gtin is
