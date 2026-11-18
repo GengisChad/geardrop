@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 import { ConfirmReceiptForm, DeleteReceiptDraftForm, ReverseReceiptForm } from "@/components/admin/warehouse/receipt-actions";
 import { ReceiptEditor } from "@/components/admin/warehouse/receipt-editor";
+import { SupplierOrderCard } from "@/components/admin/warehouse/supplier-order-card";
 import styles from "@/components/admin/warehouse/warehouse.module.css";
 import { requireAdminAccess } from "@/lib/admin/access";
 import { DOCUMENT_KIND_LABELS, formatEuro, RECEIPT_STATUS_LABELS, VAT_REGIME_LABELS } from "@/lib/admin/warehouse";
@@ -52,6 +53,7 @@ export default async function ReceiptPage({
         </header>
         {query.creato ? <p className={styles.success} role="status">Bozza creata. Controlla le righe e carica in magazzino.</p> : null}
         <ReceiptEditor products={products} receipt={detail} suppliers={choosable} today={receipt.document_date} />
+        <SupplierOrderCard expectedOn={receipt.expected_on} orderedAt={receipt.ordered_at} receiptId={receipt.id} />
         <ConfirmReceiptForm receiptId={receipt.id} />
         <DeleteReceiptDraftForm receiptId={receipt.id} />
       </div>

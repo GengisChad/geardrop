@@ -9,6 +9,8 @@ import { addressLines, shipmentChoice } from "@/lib/admin/orders";
 import { loadOrderProfits } from "@/lib/admin/warehouse-repository";
 import { CONSIGNMENT_PARTNER, partnerLines, shippingMethodByCode } from "@/data/catalog";
 import { InpostShipmentCard } from "@/components/admin/orders/inpost-shipment";
+import { ReturnPanel } from "@/components/admin/orders/return-panel";
+import { returnableLines } from "@/lib/admin/returns";
 import { INPOST_CARRIER_LABEL } from "@/lib/orders/inpost-delivery";
 import { createInpostClient, inpostConfig, type TrackingEvent } from "@/lib/shipping/inpost";
 import { eventLabel } from "@/lib/shipping/inpost-tracking";
@@ -56,6 +58,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
       <section className={styles.panel}><h2>Storico stato</h2>{data.statusEvents.length?<ul className={styles.timeline}>{data.statusEvents.map(event=><li key={event.id}><strong>{event.from_status?`${statusLabels[event.from_status]} → `:""}{statusLabels[event.to_status]}</strong>{event.note?<span>{event.note}</span>:null}<time>{new Intl.DateTimeFormat("it-IT",{dateStyle:"medium",timeStyle:"short"}).format(new Date(event.created_at))}</time></li>)}</ul>:<p>Nessun evento.</p>}</section>
       <section className={`${styles.panel} ${styles.wide}`}><h2>Azioni auditate</h2>{data.auditEvents.length?<ul className={styles.timeline}>{data.auditEvents.map(event=><li key={event.id}><strong>{event.action}</strong><time>{new Intl.DateTimeFormat("it-IT",{dateStyle:"medium",timeStyle:"short"}).format(new Date(event.created_at))}</time></li>)}</ul>:<p>Nessuna azione registrata.</p>}</section>
     </div>
+    {manager&&["shipped","completed"].includes(order.status)?<ReturnPanel orderId={order.id} lines={returnableLines(data.items,data.auditEvents)}/>:null}
     {inpostToShip?<InpostShipmentCard orderId={order.id} locker={{label:choice.pickupPoint,id:choice.pickupPointId}} itemCount={data.items.reduce((sum,item)=>sum+item.quantity,0)}/>:null}
     <OrderProfitPanel orderId={order.id} overrides={{shippingCostCents:order.shipping_cost_cents,packagingCostCents:order.packaging_cost_cents,paymentFeeCents:order.payment_fee_cents,paymentFeeSource:order.payment_fee_source}} profit={profit}/>
     <OrderActions orderId={order.id} paymentStatus={order.payment_status} role={principal.role} status={order.status} tracking={{carrier:order.tracking_carrier,code:order.tracking_code,url:order.tracking_url}} suggestedCarrierId={choice.method?.startsWith("inpost")?"inpost":"poste"} shippingNotifiedAt={order.shipping_notified_at} deliveryNotifiedAt={order.delivery_notified_at} stripePaymentIntentId={order.stripe_payment_intent_id} totalCents={order.total_cents} refundedCents={order.refunded_cents}/>
