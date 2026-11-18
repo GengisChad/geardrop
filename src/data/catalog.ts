@@ -587,6 +587,20 @@ export const BUNDLES: readonly Product[] = [
     bundleOf: [{ slug: "soar-phoenix-9-60gf", quantity: 1 }, { slug: "glory-valkerion-lf", quantity: 1 }, { slug: "cobalt-dragoon-2-60c", quantity: 1 }, { slug: "cx-18-random-booster-brachio-whip", quantity: 1 }, { slug: "shatter-horus-9-65gb", quantity: 1 }, { slug: "hurricane-enlil-is-7-55t", quantity: 1 }],
   },
   {
+    // Owner, 2026-11-18, asked the same day: a pack for the two Silver Wolf too. Silver Wolf 34,99 +
+    // Soar Phoenix 24,90 + Glory Valkerion 19,99 + Cobalt Dragoon 19,90 + Hurricane Enlil 9,99 =
+    // compareAt 109,77; at 100,00 it ships free. Saving 9,77. Two of them, like the Silver Wolf.
+    slug: "pack-meta-silver-wolf", name: "Pack Meta Silver Wolf", tagline: "Cinque starter a 100 €, spedizione gratuita.",
+    description: "Cinque starter a 100 €, spedizione gratuita compresa: Silver Wolf 3-80FB di Takara Tomy, stamina con l'anello libero e il Bit Free Ball; Soar Phoenix 9-60GF, Upper Attack; Glory Valkerion LF, attacco UX; Cobalt Dragoon 2-60C, attacco a rotazione sinistra con il suo lanciatore left-spin; Hurricane Enlil IS 7-55T, bilanciata CX. Ogni starter ha il suo lanciatore: cinque trottole, cinque lanciatori. Richiede un Beystadium Beyblade X (venduto a parte).",
+    price: eur(10000), compareAtPrice: eur(10977), category: "beyblade-x", stock: "disponibile", availableQuantity: 2, tags: ["offerta"], rating: 0, reviewCount: 0,
+    images: productImages["pack-meta-silver-wolf"],
+    specs: [{ label: "Contenuto", value: "5 trottole, 5 lanciatori" }, { label: "Produttore", value: "Takara Tomy e Hasbro (prodotti originali)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codici", value: "3-80FB · 9-60GF · LF · 2-60C · IS 7-55T" }, { label: "Spedizione", value: "Gratuita: il pack arriva già a 100 €" }, { label: "Nota", value: "Richiede un Beystadium (venduto a parte)" }],
+    features: [{ title: "Spedizione gratuita", description: "Da solo arriva a 100 €, la soglia della spedizione gratis" }, { title: "Cinque starter completi", description: "Ogni trottola ha il suo lanciatore" }, { title: "Risparmi €9,77", description: "€100,00 invece di €109,77 comprandoli separati" }, { title: "Da sapere prima di comprare", description: "Silver Wolf è giapponese: confezione e istruzioni in giapponese" }],
+    boxContents: ["1 × Starter Silver Wolf 3-80FB (trottola e Winder Launcher nero e argento)", "1 × Starter Soar Phoenix 9-60GF (trottola e lanciatore a corda)", "1 × Starter Glory Valkerion LF (trottola e lanciatore)", "1 × Starter Cobalt Dragoon 2-60C (trottola e lanciatore left-spin)", "1 × Starter Hurricane Enlil IS 7-55T (trottola e lanciatore)"],
+    relatedSlugs: ["ux-08-silver-wolf-3-80fb", "pack-meta-luster", "pack-meta-phoenix"],
+    bundleOf: [{ slug: "ux-08-silver-wolf-3-80fb", quantity: 1 }, { slug: "soar-phoenix-9-60gf", quantity: 1 }, { slug: "glory-valkerion-lf", quantity: 1 }, { slug: "cobalt-dragoon-2-60c", quantity: 1 }, { slug: "hurricane-enlil-is-7-55t", quantity: 1 }],
+  },
+  {
     slug: "kit-doppio-starter-deck", name: "Kit Doppio Starter", tagline: "Due starter e il porta deck. Pronti a sfidarsi.",
     description: "Due starter Beyblade X completi di lanciatore, Shadow Shinobi 1-80MN e Hammer Incendio 3-70H, con il porta deck giallo per portarli in giro. Shadow Shinobi devia il colpo con tre lame lisce e il Bit MN la tiene in piedi; Hammer Incendio porta il peso sul bordo e colpisce dall'alto con tre lame rialzate: due modi opposti di stare in arena. Il porta deck tiene tre trottole, una per scomparto. Richiede un Beystadium Beyblade X (venduto separatamente).",
     price: eur(3690), compareAtPrice: eur(3998), category: "beyblade-x", stock: "disponibile", tags: ["offerta"], rating: 0, reviewCount: 0,

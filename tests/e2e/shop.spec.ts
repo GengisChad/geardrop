@@ -216,11 +216,11 @@ test.describe("search", () => {
     // Two Cobalts in the catalogue since the 2026-09-21 drop, since 2026-10-05 the Deck Completo
     // that contains one, since 2026-11-06 the BX-48 booster that can hold one, and since 2026-11-13
     // the left-only String Launcher L, which names Cobalt Dragoon as a top it launches, and since
-    // 2026-11-18 the Pack Meta Phoenix, which holds one. The search finds all six; the two actually
-    // named Cobalt rank above the ones that only mention it.
+    // 2026-11-18 the Pack Meta Phoenix and the Pack Meta Silver Wolf, which hold one. The search finds
+    // all seven; the two actually named Cobalt rank above the ones that only mention it.
     await page.goto("/ricerca?q=cobalt");
     await expect(page.getByTestId("search-results")).toBeVisible();
-    await expect(page.getByTestId("product-card")).toHaveCount(6);
+    await expect(page.getByTestId("product-card")).toHaveCount(7);
     await expect(page.getByTestId("product-card").nth(0)).toContainText("Cobalt");
     await expect(page.getByTestId("product-card").nth(1)).toContainText("Cobalt");
     await expect(page.getByTestId("search-results")).toContainText("Cobalt Dragoon");

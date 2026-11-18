@@ -94,11 +94,12 @@ describe("bundle stock", () => {
       "duo-luster-enlil",
       "pack-meta-luster",
       "pack-meta-phoenix",
+      "pack-meta-silver-wolf",
       "duo-horus-enlil",
       "trio-starter-arena",
     ]);
     // Glory Valkerion sells alone, in the Promo Attack (owner, 2026-10-08) and in both meta packs.
-    expect(bundlesContaining("glory-valkerion-lf", BUNDLES).map((bundle) => bundle.slug)).toEqual(["pack-meta-luster", "pack-meta-phoenix", "promo-attack"]);
+    expect(bundlesContaining("glory-valkerion-lf", BUNDLES).map((bundle) => bundle.slug)).toEqual(["pack-meta-luster", "pack-meta-phoenix", "pack-meta-silver-wolf", "promo-attack"]);
   });
 });
 

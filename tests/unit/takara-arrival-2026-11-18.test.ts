@@ -67,7 +67,7 @@ describe("the packs of 2026-11-18", () => {
   });
 
   it("reach the free shipping on their own, with the meta pieces and the Enlil in each", async () => {
-    for (const slug of ["pack-meta-luster", "pack-meta-phoenix"]) {
+    for (const slug of ["pack-meta-luster", "pack-meta-phoenix", "pack-meta-silver-wolf"]) {
       const pack = bundle(slug);
       expect(pack.price.amount, slug).toBeGreaterThanOrEqual(FREE_SHIPPING_THRESHOLD);
       const pieces = (pack.bundleOf ?? []).map((part) => part.slug);
@@ -78,14 +78,20 @@ describe("the packs of 2026-11-18", () => {
       expect(quote.totals.freeShippingRemaining, slug).toBe(0);
     }
     expect(bundle("pack-meta-luster").bundleOf?.map((part) => part.slug)).toContain("bx-52-luster-dragoon-6-60lc");
+    expect(bundle("pack-meta-silver-wolf").bundleOf?.map((part) => part.slug)).toContain("ux-08-silver-wolf-3-80fb");
   });
 
   it("name both makers above the title when they mix the two lines", () => {
     expect(brandLabel(bundle("duo-luster-enlil"))).toBe("Takara Tomy e Hasbro");
     expect(brandLabel(bundle("pack-meta-luster"))).toBe("Takara Tomy e Hasbro");
     expect(brandLabel(bundle("pack-meta-phoenix"))).toBe("Hasbro e Takara Tomy");
+    expect(brandLabel(bundle("pack-meta-silver-wolf"))).toBe("Takara Tomy e Hasbro");
     expect(brandLabel(bundle("duo-horus-enlil"))).toBe("Hasbro");
     expect(brandLabel(product("bx-52-luster-dragoon-6-60lc"))).toBe("Takara Tomy");
+  });
+
+  it("never sell more Silver Wolf packs than there are Silver Wolf", () => {
+    expect(bundle("pack-meta-silver-wolf").availableQuantity).toBeLessThanOrEqual(product("ux-08-silver-wolf-3-80fb").availableQuantity!);
   });
 
   it("never sell more Luster packs than there are Luster Dragoon", () => {

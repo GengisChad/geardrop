@@ -60,6 +60,7 @@ const BY_SLUG: Readonly<Record<string, HoloPalette>> = {
   "bx-53-all-in-one-set": palette("#d6f0ff", "#2fb5ff", "#2fcf63", "#f2e21c", "rgba(47, 181, 255, 0.35)"),
   "duo-luster-enlil": palette("#eadcff", "#8a4dff", "#3cf0ff", "#c9fbff", "rgba(138, 77, 255, 0.35)"),
   "pack-meta-luster": palette("#eadcff", "#8a4dff", "#ff7a3d", "#c6ff00", "rgba(138, 77, 255, 0.35)"),
+  "pack-meta-silver-wolf": palette("#d9fff3", "#1fc8b4", "#ff7a3d", "#c6ff00", "rgba(31, 200, 180, 0.35)"),
   "pack-meta-phoenix": palette("#ffe2c4", "#ff7a3d", "#9d6bff", "#3cf0ff", "rgba(255, 122, 61, 0.3)"),
 };
 

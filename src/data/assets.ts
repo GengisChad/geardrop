@@ -354,6 +354,14 @@ export const productImages = {
       alt: "Luster Dragoon 6-60LC con il lanciatore L, gli starter Soar Phoenix 9-60GF, Glory Valkerion LF e Hurricane Enlil IS 7-55T e la trottola Hover Wyvern 3-85N",
     },
   ],
+  "pack-meta-silver-wolf": [
+    {
+      src: "/products/pack-meta-silver-wolf.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Silver Wolf 3-80FB con il Winder Launcher nero e gli starter Soar Phoenix 9-60GF, Glory Valkerion LF, Cobalt Dragoon 2-60C e Hurricane Enlil IS 7-55T",
+    },
+  ],
   "pack-meta-phoenix": [
     {
       src: "/products/pack-meta-phoenix.webp",

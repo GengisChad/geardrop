@@ -67,9 +67,9 @@ describe("listProducts", () => {
   });
 
   it("requires every search token to match", async () => {
-    // Only the Pack Meta Phoenix (2026-11-18) holds both a Cobalt and a Phoenix.
+    // Only the Phoenix and Silver Wolf packs (2026-11-18) hold both a Cobalt and a Phoenix.
     const page = await provider.listProducts({ search: "cobalt phoenix" });
-    expect(page.items.map((product) => product.slug)).toEqual(["pack-meta-phoenix"]);
+    expect(page.items.map((product) => product.slug).sort()).toEqual(["pack-meta-phoenix", "pack-meta-silver-wolf"]);
   });
 
   it("returns nothing for a search that matches nothing", async () => {

@@ -77,6 +77,13 @@ BUNDLES: dict[str, tuple[tuple[str, float], ...]] = {
         ("hover-wyvern-3-85n", 0.8),
         ("hurricane-enlil-is-7-55t", 1.0),
     ),
+    "pack-meta-silver-wolf": (
+        ("ux-08-silver-wolf-3-80fb", 1.35),
+        ("soar-phoenix-9-60gf", 1.0),
+        ("glory-valkerion-lf", 1.0),
+        ("cobalt-dragoon-2-60c", 1.0),
+        ("hurricane-enlil-is-7-55t", 1.0),
+    ),
     "pack-meta-phoenix": (
         ("soar-phoenix-9-60gf", 1.0),
         ("glory-valkerion-lf", 1.0),
