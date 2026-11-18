@@ -30,7 +30,12 @@
 .messages { display: grid; gap: 10px; max-height: min(62vh, 640px); overflow-y: auto; border: 1px solid #e0e2e6; border-radius: 16px; padding: 14px; background: #fafbfc; }
 .message { max-width: 80ch; border-radius: 14px; padding: 10px 12px; font-size: 13px; line-height: 1.55; white-space: pre-wrap; }
 .message[data-role="user"] { justify-self: end; background: #7a3cff; color: #fff; }
-.message[data-role="assistant"] { justify-self: start; border: 1px solid #e3e5e9; background: #fff; color: #1c1f24; }
+.message[data-role="assistant"] { justify-self: start; border: 1px solid #e3e5e9; background: #fff; color: #1c1f24; white-space: normal; }
+.message[data-role="assistant"] p, .message[data-role="assistant"] ul, .message[data-role="assistant"] ol { margin: 0 0 8px; }
+.message[data-role="assistant"] > :last-child { margin-bottom: 0; }
+.message[data-role="assistant"] ul, .message[data-role="assistant"] ol { padding-left: 20px; }
+.message[data-role="assistant"] li + li { margin-top: 2px; }
+.message[data-role="assistant"] code { border-radius: 4px; padding: 0 4px; background: #f1f2f4; font-size: 12px; }
 .suggestions { display: flex; flex-wrap: wrap; gap: 8px; }
 .suggestions button { border: 1px solid #d9dce1; border-radius: 999px; padding: 7px 12px; background: #fff; color: #3a3f46; cursor: pointer; font-size: 11px; font-weight: 750; }
 .ask { display: flex; gap: 8px; }

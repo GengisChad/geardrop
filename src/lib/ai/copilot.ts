@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import { ADMIN_NAV_ITEMS } from "@/lib/admin/navigation";
 import type { Database } from "@/lib/supabase/database.types";
 import { runAgent, type ClientTool } from "./agent-loop";
 import { CLAUDE_MODELS, emptyUsage, type ClaudeClient } from "./claude-api";
@@ -117,12 +118,29 @@ export function copilotTools(client: Client, organizationId: number): readonly C
   ];
 }
 
-function system(company: string): string {
+/**
+ * Where things are done in the panel. The page list is the admin menu itself, so the assistant
+ * can only name pages that exist (owner, 2026-11-18: it had invented "Magazzino > Riordini").
+ */
+const HOW_TO = [
+  "Riordinare: in Previsioni vedi cosa e quanto; l'ordine al fornitore è una bozza in Carichi merce (Nuovo carico) segnata come ordinata, che diventa giacenza con «Carica in magazzino» quando la merce arriva.",
+  "Spedire: Da spedire; con più ordini selezionati, «Crea spedizioni InPost» crea tutte le spedizioni e un PDF con le etichette.",
+  "Controllare un pacco prima di chiuderlo: in Da spedire, «Controlla pacco» sull'ordine.",
+  "Reso: nella scheda dell'ordine spedito, «Registra reso»; il rimborso con «Rimborsa».",
+  "Correggere la giacenza: Conteggio inventario (conteggio fisico) o Inventario (singolo movimento).",
+  "Cambiare un prezzo: la scheda del prodotto in Prodotti, oppure le proposte in Prezzi IA.",
+];
+
+export function copilotSystemPrompt(company: string): string {
+  const pages = ADMIN_NAV_ITEMS.filter((item) => !item.disabled).map((item) => item.label).join(", ");
   return [
     `Sei l'assistente del gestionale di ${company}. Rispondi ai soci in italiano, in modo breve e concreto, con i numeri.`,
     "Usa gli strumenti per leggere i dati reali prima di rispondere: magazzino, previsioni, ordini, prodotti, mercato, proposte di prezzo.",
     "Non inventare dati: se uno strumento non ha il dato dillo. Importi in euro; profitto e costi sono netti IVA.",
-    "Non puoi modificare nulla: per azioni (riordini, prezzi, spedizioni) indica la pagina del gestionale da usare.",
+    "Non puoi modificare nulla: per un'azione indica dove farla nel gestionale.",
+    `Le pagine del gestionale sono solo queste, con questi nomi: ${pages}. Non nominare pagine o menu che non sono in questo elenco.`,
+    ...HOW_TO,
+    "Formato: frasi brevi, **grassetto** per i nomi importanti, elenchi con «- ». Niente tabelle, niente emoji.",
   ].join("\n");
 }
 
@@ -140,7 +158,7 @@ export async function askCopilot(
   try {
     const result = await runAgent(claude, usage, {
       model,
-      system: system(organization.name),
+      system: copilotSystemPrompt(organization.name),
       messages: [...history.slice(-10).map((turn) => ({ role: turn.role, content: turn.text })), { role: "user" as const, content: question }],
       tools: copilotTools(client, organization.id),
       maxTokens: 2048,

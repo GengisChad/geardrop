@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AssistantText } from "./assistant-text";
 import { useActionState, useState } from "react";
 import {
   askCopilotAction,
@@ -196,7 +197,7 @@ export function CopilotChat({ configured }: { readonly configured: boolean }) {
     <section className={styles.chat} data-testid="copilot">
       <div className={styles.messages} aria-live="polite">
         {state.turns.length === 0 ? <p className={warehouse.hint}>Chiedi di stock, vendite, previsioni, profitto o prezzi dei concorrenti: l&apos;assistente legge i dati dell&apos;azienda in cui stai lavorando e non modifica nulla.</p> : null}
-        {state.turns.map((turn, index) => <div className={styles.message} data-role={turn.role} key={index}>{turn.text}</div>)}
+        {state.turns.map((turn, index) => <div className={styles.message} data-role={turn.role} key={index}>{turn.role === "assistant" ? <AssistantText text={turn.text} /> : turn.text}</div>)}
         {pending ? <div className={styles.message} data-role="assistant">Sto leggendo i dati…</div> : null}
       </div>
       {state.error ? <p className={warehouse.error} role="status">{state.error}</p> : null}
@@ -210,7 +211,14 @@ export function CopilotChat({ configured }: { readonly configured: boolean }) {
           maxLength={2000}
           name="question"
           onChange={(event) => setDraft(event.target.value)}
-          placeholder={configured ? "Scrivi una domanda…" : "Assistente non configurato: serve ANTHROPIC_API_KEY sul server."}
+          onKeyDown={(event) => {
+            // Invio manda la domanda, Maiusc+Invio va a capo.
+            if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+              event.preventDefault();
+              if (!pending && draft.trim()) event.currentTarget.form?.requestSubmit();
+            }
+          }}
+          placeholder={configured ? "Scrivi una domanda e premi Invio…" : "Assistente non configurato: serve ANTHROPIC_API_KEY sul server."}
           required
           value={draft}
         />
