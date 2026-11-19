@@ -305,16 +305,37 @@ test.describe("express checkout button", () => {
   });
 });
 
+/** Opens the cart holding one of each piece, as a returning visitor's browser would. */
+const seed = async (page: Page, slugs: readonly string[]) => {
+  await page.goto("/chi-siamo");
+  await page.evaluate((lines) => {
+    window.localStorage.setItem("geardrop.cart", JSON.stringify({ state: { lines }, version: 1 }));
+  }, slugs.map((slug) => ({ slug, quantity: 1 })));
+  await page.goto("/carrello");
+  await expect(page.getByTestId("cart-line")).toHaveCount(slugs.length);
+};
+
+test.describe("cart bundle offer", () => {
+  test("a piece that sits in several bundles gets one offer, not a box for each", async ({ page }) => {
+    await seed(page, ["soar-phoenix-9-60gf"]);
+    await expect(page.getByTestId("bundle-nudge")).toHaveCount(1);
+    await expect(page.getByTestId("bundle-nudge-text")).toContainText("invece di");
+  });
+
+  test("with both pieces of a duo in the cart, the one offer is the swap, and it replaces them", async ({ page }) => {
+    await seed(page, ["shatter-horus-9-65gb", "hurricane-enlil-is-7-55t"]);
+    const offer = page.getByTestId("bundle-nudge");
+    await expect(offer).toHaveCount(1);
+    await expect(offer).toHaveAttribute("data-slug", "duo-horus-enlil");
+    await expect(page.getByTestId("bundle-nudge-text")).toContainText("Li hai già entrambi");
+    await offer.getByTestId("bundle-nudge-swap").click();
+    await expect(page.getByTestId("cart-line")).toHaveCount(1);
+    await expect(page.locator('[data-testid="cart-line"][data-slug="duo-horus-enlil"]')).toBeVisible();
+  });
+});
+
 test.describe("cart suggestions", () => {
-  /** A cart of one launcher grip: the catalogue lists launchers as related, so the shelf shows with or without sales data. */
-  const seed = async (page: Page, slugs: readonly string[]) => {
-    await page.goto("/chi-siamo");
-    await page.evaluate((lines) => {
-      window.localStorage.setItem("geardrop.cart", JSON.stringify({ state: { lines }, version: 1 }));
-    }, slugs.map((slug) => ({ slug, quantity: 1 })));
-    await page.goto("/carrello");
-    await expect(page.getByTestId("cart-line")).toHaveCount(slugs.length);
-  };
+  // A cart of one launcher grip: the catalogue lists launchers as related, so the shelf shows with or without sales data.
 
   test("the cart suggests pieces that are not in it, under a title that names why", async ({ page }) => {
     await seed(page, ["custom-grip-takara-tomy"]);
