@@ -6,6 +6,7 @@ import { formatPrice, formatShipping } from "@/lib/format";
 import type { CartTotals } from "@/lib/commerce/types";
 import { METER_TEETH, meterTeeth, toothDelay } from "@/lib/commerce/free-shipping-meter";
 import { STANDARD_DELIVERY } from "@/lib/labels";
+import { RollingNumber } from "@/components/ui/rolling-number";
 import { cn } from "@/lib/cn";
 
 /**
@@ -136,7 +137,7 @@ export function CartTotalsPanel({
       <div className="flex justify-between text-small">
         <dt className="text-grey-600">Subtotale</dt>
         <dd className="tabular font-semibold text-graphite" data-testid="cart-subtotal">
-          {formatPrice(totals.subtotal)}
+          <RollingNumber value={formatPrice(totals.subtotal)} />
         </dd>
       </div>
       {totals.discount.amount > 0 ? (
@@ -166,8 +167,9 @@ export function CartTotalsPanel({
       </div>
       <div className="flex items-baseline justify-between border-t border-grey-200 pt-3">
         <dt className="gd-display text-small font-bold tracking-wider text-graphite">{startingPrice ? "Totale da" : "Totale"}</dt>
+        {/* The quoted total: its digits roll when the server answers with a new one. */}
         <dd className="tabular gd-display text-h3 font-extrabold text-graphite" data-testid="cart-total">
-          {formatPrice(totals.total)}
+          <RollingNumber value={formatPrice(totals.total)} />
         </dd>
       </div>
       <p className="text-[0.6875rem] text-grey-600">IVA inclusa. Spese di spedizione calcolate qui sopra.</p>

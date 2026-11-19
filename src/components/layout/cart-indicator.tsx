@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ShoppingBag } from "lucide-react";
-import { motion } from "framer-motion";
+import { RollingNumber } from "@/components/ui/rolling-number";
 import { selectCartCount, useCart } from "@/lib/store/cart";
 import { cn } from "@/lib/cn";
 
@@ -29,16 +29,8 @@ export function CartIndicator({ className }: { className?: string }) {
       >
         <ShoppingBag className="size-5" strokeWidth={2} aria-hidden="true" />
         {visible ? (
-          <motion.span
-            key={count}
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 600, damping: 22 }}
-            data-testid="cart-count"
-            className="tabular gd-display-wide text-[0.9375rem] font-extrabold leading-none"
-          >
-            {count}
-          </motion.span>
+          // The count rolls like a counter when a piece goes in; a stored cart opens at rest.
+          <RollingNumber value={String(count)} data-testid="cart-count" className="tabular gd-display-wide text-[0.9375rem] font-extrabold leading-none" />
         ) : null}
       </span>
     </Link>

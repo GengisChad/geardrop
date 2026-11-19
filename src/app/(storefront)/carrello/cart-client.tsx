@@ -11,6 +11,7 @@ import { KitDeckNudge } from "@/components/cart/kit-deck-nudge";
 import { CartTotalsPanel, FreeShippingMeter } from "@/components/cart/cart-summary";
 import { ClubCodeField } from "@/components/cart/club-code";
 import { QuantityStepper } from "@/components/product/quantity-stepper";
+import { RollingNumber } from "@/components/ui/rolling-number";
 import { StockBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -243,9 +244,12 @@ export function CartClient({ shelfProducts, nudgeCatalogue = [] }: CartClientPro
                         onChange={(next) => setQuantity(line.slug, next)}
                         label={`Quantità di ${line.name}`}
                       />
-                      <p className="tabular gd-display-wide text-[1.25rem] font-extrabold text-graphite [font-stretch:118%]" data-testid="line-total">
-                        {formatPrice(line.lineTotal)}
-                      </p>
+                      {/* The server's line total: it rolls when a new quote changes it. */}
+                      <RollingNumber
+                        value={formatPrice(line.lineTotal)}
+                        className="tabular gd-display-wide text-[1.25rem] font-extrabold text-graphite [font-stretch:118%]"
+                        data-testid="line-total"
+                      />
                     </div>
                   </div>
                 </motion.li>
