@@ -1,6 +1,6 @@
 import type { Route } from "next";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 import { fillerSpan, ShopTile } from "@/components/home/shop-tile";
 import { ProductCard } from "@/components/product/product-card";
@@ -46,7 +46,8 @@ export function ShelfHeading({
             <span aria-hidden="true" className={cn("gd-mono mr-2 not-italic", onViolet ? "text-white/80" : "text-cyan")}>
               {">"}
             </span>
-            {title}{" "}
+            {/* ScanObserver decodes this text when the shelf is scanned in. */}
+            <span data-scan-text="">{title}</span>{" "}
             <span aria-hidden="true" className="text-lime">
               {"//"}
             </span>
@@ -74,7 +75,7 @@ export function ShelfHeading({
           </div>
         ) : null}
       </div>
-      <div aria-hidden="true" className={cn("gd-rail mt-4 sm:mt-5", onViolet && "opacity-90 [background-image:repeating-linear-gradient(90deg,rgba(255,255,255,0.4)_0_5px,transparent_5px_11px)]")} />
+      <div aria-hidden="true" data-scan-rail="" className={cn("gd-rail mt-4 sm:mt-5", onViolet && "opacity-90 [background-image:repeating-linear-gradient(90deg,rgba(255,255,255,0.4)_0_5px,transparent_5px_11px)]")} />
     </div>
   );
 }
@@ -109,6 +110,8 @@ export function ProductShelf({
   const shelf = (
     <section
       data-testid={testId}
+      // Scanned in once when it arrives from below the fold (components/ui/scan-observer.tsx).
+      data-scan=""
       aria-labelledby={`${testId}-title`}
       className={cn("relative mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-10", violet ? "py-10 sm:py-16" : "pb-12 lg:pb-20")}
     >
@@ -121,12 +124,14 @@ export function ProductShelf({
         {...(single && link ? { link } : {})}
       />
       {single ? (
-        <ProductFeature product={single} />
+        <div data-scan-item="">
+          <ProductFeature product={single} />
+        </div>
       ) : (
         // Five pieces stand in one row of five rather than four and a lone card.
         <ul className={cn("grid grid-cols-2 gap-2.5 sm:gap-4", fiveAcross ? "lg:grid-cols-5" : "lg:grid-cols-4")}>
-          {products.map((product) => (
-            <li key={product.slug}>
+          {products.map((product, index) => (
+            <li key={product.slug} data-scan-item="" style={{ "--gd-scan-i": index } as CSSProperties}>
               <ProductCard product={product} showTagline />
             </li>
           ))}

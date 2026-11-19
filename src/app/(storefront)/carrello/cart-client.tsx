@@ -11,6 +11,7 @@ import { KitDeckNudge } from "@/components/cart/kit-deck-nudge";
 import { CartTotalsPanel, FreeShippingMeter } from "@/components/cart/cart-summary";
 import { ClubCodeField } from "@/components/cart/club-code";
 import { QuantityStepper } from "@/components/product/quantity-stepper";
+import { RollingNumber } from "@/components/ui/rolling-number";
 import { StockBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -31,9 +32,11 @@ import { EXPRESS_LOCKER_MISSING_MESSAGE } from "@/lib/payments/express-checkout"
 
 type CartClientProps = {
   shelfProducts: Product[];
+  /** Bundles and their packs at today's prices, for the bundle offer next to the lines. */
+  nudgeCatalogue?: readonly Product[];
 };
 
-export function CartClient({ shelfProducts }: CartClientProps) {
+export function CartClient({ shelfProducts, nudgeCatalogue = [] }: CartClientProps) {
   const { quote, hydrated } = useCartQuote();
   const setQuantity = useCart((s) => s.setQuantity);
   const remove = useCart((s) => s.remove);
@@ -241,16 +244,19 @@ export function CartClient({ shelfProducts }: CartClientProps) {
                         onChange={(next) => setQuantity(line.slug, next)}
                         label={`Quantità di ${line.name}`}
                       />
-                      <p className="tabular gd-display-wide text-[1.25rem] font-extrabold text-graphite [font-stretch:118%]" data-testid="line-total">
-                        {formatPrice(line.lineTotal)}
-                      </p>
+                      {/* The server's line total: it rolls when a new quote changes it. */}
+                      <RollingNumber
+                        value={formatPrice(line.lineTotal)}
+                        className="tabular gd-display-wide text-[1.25rem] font-extrabold text-graphite [font-stretch:118%]"
+                        data-testid="line-total"
+                      />
                     </div>
                   </div>
                 </motion.li>
               ))}
             </AnimatePresence>
           </ul>
-          <BundleNudge lines={quote.lines} />
+          <BundleNudge lines={quote.lines} catalogue={nudgeCatalogue} />
           <KitDeckNudge slots={quote.kitDeckSlots ?? 0} />
         </div>
 

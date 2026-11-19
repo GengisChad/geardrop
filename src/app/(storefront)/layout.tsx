@@ -1,7 +1,9 @@
 import { CookieConsent } from "@/components/analytics/cookie-consent";
 import { StorefrontAnalytics } from "@/components/analytics/storefront-analytics";
 import { VisitSource } from "@/components/analytics/visit-source";
+import { CartDrop } from "@/components/cart/cart-drop";
 import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
+import { ScanObserver } from "@/components/ui/scan-observer";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
 import { storefrontContent } from "@/lib/content/provider";
@@ -23,6 +25,8 @@ export default async function StorefrontLayout({ children }: { children: React.R
       </main>
       <Footer content={chrome} cookieSettings={googleAnalyticsEnabled} />
       <BottomTabBar />
+      <CartDrop />
+      <ScanObserver />
       <StorefrontAnalytics enabled={analyticsEnabled} />
       <CookieConsent enabled={googleAnalyticsEnabled} />
       {/* Not tied to cookie consent: it keeps a channel label for the order, not an identifier. */}

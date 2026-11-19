@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { FreeShippingMeter } from "@/components/cart/cart-summary";
-import { FreeShippingLine } from "@/components/cart/toast-free-shipping";
+import { DropShippingLine } from "@/components/cart/cart-drop";
 import { METER_TEETH, TOOTH_STAGGER_MS, meterTeeth, shippingLine, toothDelay } from "@/lib/commerce/free-shipping-meter";
 import type { CartQuote, CartTotals } from "@/lib/commerce/types";
 
@@ -111,19 +111,22 @@ describe("FreeShippingMeter", () => {
   });
 });
 
-describe("FreeShippingLine", () => {
-  it("keeps today's line until the quote answers", () => {
-    const html = renderToStaticMarkup(<FreeShippingLine line={{ kind: "pending" }} />);
+describe("DropShippingLine", () => {
+  it("keeps the standing offer and the teeth it last showed until the quote answers", () => {
+    const html = renderToStaticMarkup(<DropShippingLine line={{ kind: "pending" }} lit={4} from={4} />);
     expect(html).toMatch(/spedizione gratis da €100/i);
-    expect(html).not.toContain("data-tooth");
+    expect(count(html, 'data-lit="true"')).toBe(4);
+    // Nothing lights before the server has spoken.
+    expect(html).not.toContain("animation-delay");
   });
 
   it("disappears when there is no free shipping to promise", () => {
-    expect(renderToStaticMarkup(<FreeShippingLine line={{ kind: "none" }} />)).toBe("");
+    expect(renderToStaticMarkup(<DropShippingLine line={{ kind: "none" }} lit={0} from={0} />)).toBe("");
   });
 
-  it("says how much is missing over a mini rail", () => {
-    const html = renderToStaticMarkup(<FreeShippingLine line={{ kind: "remaining", remaining: 7510, teeth: 4 }} />);
+  it("says how much is missing and lights only the new teeth", () => {
+    const html = renderToStaticMarkup(<DropShippingLine line={{ kind: "remaining", remaining: 7510, teeth: 4 }} lit={4} from={1} />);
+    expect(count(html, "animation-delay")).toBe(3);
     expect(html).toContain("Ancora");
     expect(html).toContain("€75,10");
     expect(html).toContain("per la spedizione gratis");
@@ -132,7 +135,7 @@ describe("FreeShippingLine", () => {
   });
 
   it("celebrates the unlocked threshold", () => {
-    const html = renderToStaticMarkup(<FreeShippingLine line={{ kind: "unlocked", teeth: METER_TEETH }} />);
+    const html = renderToStaticMarkup(<DropShippingLine line={{ kind: "unlocked", teeth: METER_TEETH }} lit={METER_TEETH} from={METER_TEETH} />);
     expect(html).toContain("Spedizione gratuita sbloccata");
     expect(count(html, 'data-lit="true"')).toBe(METER_TEETH);
   });

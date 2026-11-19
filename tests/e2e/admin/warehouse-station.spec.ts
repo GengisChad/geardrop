@@ -14,7 +14,9 @@ function sql(query: string): string {
 test("a paid order goes from the station to a printed label and a costed shipment", async ({ page }, testInfo) => {
   const productSlug = process.env.ADMIN_E2E_GEARDROP_PRODUCT;
   if (!productSlug) throw new Error("Missing the Gear Drop product fixture");
-  const orderNumber = `GD-${uniqueSlug(testInfo, "station").toUpperCase()}`;
+  // The attempt is part of the number: order numbers are unique, so a retry that reused the first
+  // attempt's number failed on the insert and could never pass.
+  const orderNumber = `GD-${uniqueSlug(testInfo, "station").toUpperCase()}-R${testInfo.retry}`;
   const address = JSON.stringify({ name: "Mario Rossi", address: "Via Roma 1", postalCode: "20121", city: "Milano", province: "MI", country: "IT", phone: "+39 333 0000000" });
   const orderId = sql(`
     with created as (
@@ -72,7 +74,7 @@ test("a paid order goes from the station to a printed label and a costed shipmen
 test("a pre-order waits for the goods, then becomes one to tell the buyer about", async ({ page }, testInfo) => {
   const productSlug = process.env.ADMIN_E2E_GEARDROP_PRODUCT;
   if (!productSlug) throw new Error("Missing the Gear Drop product fixture");
-  const orderNumber = `GD-${uniqueSlug(testInfo, "pre").toUpperCase()}`;
+  const orderNumber = `GD-${uniqueSlug(testInfo, "pre").toUpperCase()}-R${testInfo.retry}`;
   const address = JSON.stringify({ name: "Anna Bianchi", address: "Corso Italia 5", postalCode: "00100", city: "Roma", province: "RM", country: "IT" });
   const orderId = sql(`
     with created as (
