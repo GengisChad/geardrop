@@ -304,3 +304,56 @@ test.describe("express checkout button", () => {
     await expect(page.getByTestId("express-checkout-error")).toHaveCount(0);
   });
 });
+
+test.describe("cart suggestions", () => {
+  /** A cart of one launcher grip: the catalogue lists launchers as related, so the shelf shows with or without sales data. */
+  const seed = async (page: Page, slugs: readonly string[]) => {
+    await page.goto("/chi-siamo");
+    await page.evaluate((lines) => {
+      window.localStorage.setItem("geardrop.cart", JSON.stringify({ state: { lines }, version: 1 }));
+    }, slugs.map((slug) => ({ slug, quantity: 1 })));
+    await page.goto("/carrello");
+    await expect(page.getByTestId("cart-line")).toHaveCount(slugs.length);
+  };
+
+  test("the cart suggests pieces that are not in it, under a title that names why", async ({ page }) => {
+    await seed(page, ["custom-grip-takara-tomy"]);
+    const shelf = page.getByTestId("cart-picks");
+    await expect(shelf).toBeVisible();
+    await expect(shelf).toHaveAttribute("data-reason", /^(together|bestsellers|related)$/);
+    const title = { together: "Altri clienti hanno preso anche", bestsellers: "I più venduti dello shop", related: "Ti potrebbe interessare" };
+    const reason = (await shelf.getAttribute("data-reason")) as keyof typeof title;
+    await expect(shelf.getByRole("heading", { level: 2 })).toHaveText(title[reason]);
+    const slugs = await shelf.getByTestId("cart-pick").evaluateAll((rows) => rows.map((row) => row.getAttribute("data-slug")));
+    expect(slugs.length).toBeGreaterThan(0);
+    expect(slugs.length).toBeLessThanOrEqual(4);
+    expect(slugs).not.toContain("custom-grip-takara-tomy");
+    expect(new Set(slugs).size).toBe(slugs.length);
+  });
+
+  test("one tap adds a suggested piece: it becomes a line and leaves the shelf", async ({ page }) => {
+    await seed(page, ["custom-grip-takara-tomy"]);
+    const row = page.getByTestId("cart-pick").filter({ has: page.getByTestId("cart-pick-add") }).first();
+    const slug = await row.getAttribute("data-slug");
+    await row.getByTestId("cart-pick-add").click();
+    await expect(page.getByTestId("cart-line")).toHaveCount(2);
+    await expect(page.locator(`[data-testid="cart-line"][data-slug="${slug}"]`)).toBeVisible();
+    await expect(page.locator(`[data-testid="cart-pick"][data-slug="${slug}"]`)).toHaveCount(0);
+    await expect(page.getByTestId("cart-count")).toHaveText("2");
+  });
+
+  test("the checkout form carries no suggestions", async ({ page }) => {
+    await seed(page, ["custom-grip-takara-tomy"]);
+    await page.goto("/checkout");
+    await expect(page.getByTestId("cart-picks")).toHaveCount(0);
+  });
+
+  test("the suggestions fit a phone without scrolling sideways", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await seed(page, ["custom-grip-takara-tomy"]);
+    await expect(page.getByTestId("cart-picks")).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+    const button = await page.getByTestId("cart-pick-add").first().boundingBox();
+    expect(button?.height ?? 0).toBeGreaterThanOrEqual(44);
+  });
+});
