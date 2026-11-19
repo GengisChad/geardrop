@@ -200,6 +200,7 @@ async function readClientSecrets(): Promise<ClientSecrets> {
 }
 
 function openBrowser(url: string): void {
+  if (process.env.YT_NO_OPEN) return; // the consent page is opened by hand (e.g. in the Claude app's browser)
   // Best effort: the URL is printed as well, so a failure here is not fatal.
   try {
     const [command, args] =
@@ -271,7 +272,7 @@ async function postToken(body: Record<string, string>): Promise<{ access_token: 
 }
 
 /** The cached refresh token if there is one, otherwise the consent flow, once. */
-async function getAccessToken(): Promise<string> {
+export async function getAccessToken(): Promise<string> {
   const client = await readClientSecrets();
 
   try {
