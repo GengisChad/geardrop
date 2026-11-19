@@ -345,3 +345,135 @@ test.describe("product clip", () => {
     expect(await clip.evaluate((video: HTMLVideoElement) => video.paused)).toBe(true);
   });
 });
+
+/**
+ * The second set of 2026-11-19 ("metti tutto"): the holographic card (03), the quick view (04),
+ * pop-ups one at a time (05) and the glitch cut between pages (08). The paid order's launch (06)
+ * needs a paid Stripe session and is not reachable from this gate.
+ */
+test.describe("holographic card", () => {
+  test("a new release leans under the pointer and lies flat again when it leaves", async ({ page }) => {
+    await page.goto("/negozio");
+    const holo = page.getByTestId("holo-tilt").first();
+    await expect(holo).toBeVisible();
+    // Only new releases wear it, like the foil sticker.
+    await expect(holo.locator(".gd-foil")).toHaveCount(1);
+    await holo.scrollIntoViewIfNeeded();
+    const box = (await holo.boundingBox())!;
+
+    await page.mouse.move(box.x + box.width * 0.8, box.y + box.height * 0.3);
+    await expect(holo).toHaveAttribute("data-live", "");
+    expect(Number(await holo.evaluate((element) => (element as HTMLElement).style.getPropertyValue("--gd-mx")))).toBeGreaterThan(0.2);
+
+    await page.mouse.move(2, 2);
+    await expect(holo).not.toHaveAttribute("data-live", "");
+    expect(await holo.evaluate((element) => (element as HTMLElement).style.getPropertyValue("--gd-mx"))).toBe("");
+  });
+
+  test("with reduced motion the card stays flat", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/negozio");
+    const holo = page.getByTestId("holo-tilt").first();
+    await holo.scrollIntoViewIfNeeded();
+    const box = (await holo.boundingBox())!;
+    await page.mouse.move(box.x + box.width * 0.8, box.y + box.height * 0.3);
+    await page.waitForTimeout(150);
+    await expect(holo).not.toHaveAttribute("data-live", "");
+  });
+});
+
+test.describe("quick view", () => {
+  test("the photo opens a sheet that says what the card says, and Escape gives the focus back", async ({ page }) => {
+    await page.goto("/negozio");
+    const card = page.getByTestId("product-card").filter({ has: page.getByTestId("add-to-cart") }).first();
+    const slug = await card.getAttribute("data-slug");
+    const price = (await card.getByTestId("card-price").textContent()) ?? "";
+    const availability = (await card.getByTestId("card-availability").textContent()) ?? "";
+    const opener = card.getByTestId("quick-view-open");
+    await opener.click();
+
+    const sheet = page.getByTestId("quick-view");
+    await expect(sheet).toBeVisible();
+    await expect(sheet).toHaveAttribute("aria-modal", "true");
+    await expect(sheet.getByTestId("quick-view-price")).toHaveText(price);
+    expect(availability).toContain((await sheet.getByTestId("quick-view-availability").textContent()) ?? "?");
+    await expect(sheet.getByTestId("quick-view-full")).toHaveAttribute("href", `/prodotto/${slug}`);
+    await expect(sheet.getByText(/Spedizione da €\d+,\d{2}, gratis da €\d+/)).toBeVisible();
+    await expect(page.getByTestId("quick-view-close")).toBeFocused();
+    // The list is still the page: nothing navigated.
+    await expect(page).toHaveURL(/\/negozio$/);
+
+    await page.keyboard.press("Escape");
+    await expect(sheet).toHaveCount(0);
+    await expect(opener).toBeFocused();
+  });
+
+  test("adding from the sheet closes it and the drop sheet takes over", async ({ page }) => {
+    await page.goto("/negozio");
+    const card = page.getByTestId("product-card").filter({ has: page.getByTestId("add-to-cart") }).first();
+    await card.getByTestId("quick-view-open").click();
+    const sheet = page.getByTestId("quick-view");
+    await sheet.getByTestId("add-to-cart").click();
+
+    await expect(sheet).toHaveCount(0);
+    await expect(page.getByTestId("cart-drop")).toBeVisible();
+    await expect(page.getByTestId("cart-count")).toHaveText("1");
+  });
+
+  test("the backdrop closes it, and the product name still opens the product page", async ({ page }) => {
+    await page.goto("/negozio");
+    const card = page.getByTestId("product-card").first();
+    const slug = await card.getAttribute("data-slug");
+    await card.getByTestId("quick-view-open").click();
+    await expect(page.getByTestId("quick-view")).toBeVisible();
+    await page.getByTestId("quick-view-backdrop").click({ position: { x: 8, y: 8 } });
+    await expect(page.getByTestId("quick-view")).toHaveCount(0);
+
+    await card.locator("h3 a").click();
+    await expect(page).toHaveURL(new RegExp(`/prodotto/${slug}$`));
+  });
+});
+
+test.describe("glitch cut between pages", () => {
+  async function countTransitions(page: Page) {
+    await page.addInitScript(() => {
+      const calls = { count: 0 };
+      (window as unknown as { __cuts: typeof calls }).__cuts = calls;
+      const start = document.startViewTransition?.bind(document);
+      if (start) {
+        document.startViewTransition = ((update: () => void) => {
+          calls.count += 1;
+          return start(update);
+        }) as typeof document.startViewTransition;
+      }
+    });
+  }
+  const cuts = (page: Page) => page.evaluate(() => (window as unknown as { __cuts: { count: number } }).__cuts.count);
+
+  test("a change of page is a view transition, and only the page reached by moving is marked", async ({ page }) => {
+    await countTransitions(page);
+    await page.goto("/");
+    // The page a visit opens on is at rest: nothing snaps on the first screen.
+    await expect(page.locator("#contenuto [data-page-moved]")).toHaveCount(0);
+
+    await page.goto("/negozio");
+    await expect(page.locator("#contenuto [data-page-moved]")).toHaveCount(0);
+    const card = page.getByTestId("product-card").first();
+    const slug = await card.getAttribute("data-slug");
+    await card.locator("h3 a").click();
+    await expect(page).toHaveURL(new RegExp(`/prodotto/${slug}$`));
+    await expect(page.locator("#contenuto [data-page-moved]")).toHaveCount(1);
+    expect(await cuts(page)).toBeGreaterThanOrEqual(1);
+  });
+
+  test("sorting the catalogue stays on the page and cuts nothing", async ({ page }) => {
+    await countTransitions(page);
+    await page.goto("/negozio");
+    await expect(page.getByTestId("product-card").first()).toBeVisible();
+    await page.getByTestId("sort-select").selectOption("prezzo-asc");
+    await expect(page).toHaveURL(/sort=prezzo-asc/);
+    await expect(page.getByTestId("product-card").first()).toBeVisible();
+    expect(await cuts(page)).toBe(0);
+    await expect(page.locator("#contenuto [data-page-moved]")).toHaveCount(0);
+  });
+});

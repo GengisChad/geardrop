@@ -142,6 +142,13 @@ test.describe("public homepage", () => {
     await expect(banner).toHaveCount(0);
     await expect(page.getByTestId("hero-products").getByTestId("product-card").first()).toBeVisible();
     expect(await page.evaluate(() => window.localStorage.getItem("gd-newsletter"))).toMatch(/^closed:\d+$/);
+
+    // Closed, it folds into a tab at the edge that opens it again (pop-ups one at a time, 2026-11-19).
+    const tab = page.getByTestId("newsletter-tab");
+    await expect(tab).toBeVisible();
+    await tab.click();
+    await expect(banner).toBeVisible();
+    await expect(tab).toHaveCount(0);
   });
 
   test("the confirm and unsubscribe links open a page that waits for its button", async ({ page }) => {

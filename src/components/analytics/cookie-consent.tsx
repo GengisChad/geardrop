@@ -69,6 +69,8 @@ export function CookieConsent({ enabled }: { readonly enabled: boolean }) {
   const [reopened, setReopened] = useState(false);
   const [customizing, setCustomizing] = useState(false);
   const [draft, setDraft] = useState<ConsentPurposes>(NONE);
+  // The answer counts at once; the banner only takes a moment to sink out of the way.
+  const [leaving, setLeaving] = useState(false);
   const answered = stored !== "ask" && stored !== "server";
   const current = answered ? purposesOf(stored) : NONE;
   const granted = enabled && current.analytics;
@@ -96,7 +98,7 @@ export function CookieConsent({ enabled }: { readonly enabled: boolean }) {
     return () => window.clearTimeout(timer);
   }, [granted, pathname]);
 
-  if (!open) return null;
+  if (!open && !leaving) return null;
 
   const choose = (next: ConsentPurposes) => {
     // Marketing measures sales through Analytics: without statistics it would do nothing, so it is not kept.
@@ -111,6 +113,10 @@ export function CookieConsent({ enabled }: { readonly enabled: boolean }) {
     setReopened(false);
     setCustomizing(false);
     window.dispatchEvent(new Event(CHANGE_EVENT));
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setLeaving(true);
+      window.setTimeout(() => setLeaving(false), 240);
+    }
   };
 
   return (
@@ -119,7 +125,8 @@ export function CookieConsent({ enabled }: { readonly enabled: boolean }) {
       aria-modal="false"
       aria-labelledby="cookie-consent-title"
       data-testid="cookie-consent"
-      className="on-dark fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-50 mx-auto max-h-[calc(100dvh-7rem)] max-w-xl overflow-y-auto border border-white/15 bg-void/95 p-4 shadow-2xl backdrop-blur-md sm:inset-x-6 sm:p-5 lg:bottom-6"
+      data-leaving={leaving ? "" : undefined}
+      className="motion-safe:animate-[gd-rise_420ms_var(--ease-out-gear)_both] data-[leaving]:pointer-events-none motion-safe:data-[leaving]:animate-[gd-wipe-down_220ms_cubic-bezier(0.5,0,0.9,0.4)_forwards] on-dark fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-50 mx-auto max-h-[calc(100dvh-7rem)] max-w-xl overflow-y-auto border border-white/15 bg-void/95 p-4 shadow-2xl backdrop-blur-md sm:inset-x-6 sm:p-5 lg:bottom-6"
     >
       <button
         type="button"

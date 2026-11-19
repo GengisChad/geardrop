@@ -6,6 +6,8 @@ import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { ScanObserver } from "@/components/ui/scan-observer";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
+import { PageCut } from "@/components/layout/page-cut";
+import { QuickView } from "@/components/product/quick-view";
 import { storefrontContent } from "@/lib/content/provider";
 import { getPublicStoreSettings } from "@/lib/storefront/settings-repository";
 
@@ -21,11 +23,12 @@ export default async function StorefrontLayout({ children }: { children: React.R
       <Header navigation={chrome.desktopNavigation} mobileNavigation={chrome.mobileNavigation} />
       {settings?.maintenance_mode&&settings.maintenance_message?<aside className="bg-violet px-4 py-2 text-center text-small font-bold text-white" role="status">{settings.maintenance_message}</aside>:null}
       <main id="contenuto">
-        {children}
+        <PageCut>{children}</PageCut>
       </main>
       <Footer content={chrome} cookieSettings={googleAnalyticsEnabled} />
       <BottomTabBar />
       <CartDrop />
+      <QuickView />
       <ScanObserver />
       <StorefrontAnalytics enabled={analyticsEnabled} />
       <CookieConsent enabled={googleAnalyticsEnabled} />

@@ -44,7 +44,7 @@ export function BottomTabBar() {
     <nav
       aria-label="Navigazione rapida"
       data-testid="bottom-tab-bar"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#0f0e14] pb-[env(safe-area-inset-bottom)] lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#0f0e14] pb-[env(safe-area-inset-bottom)] [view-transition-name:gd-tabbar] lg:hidden"
     >
       {/* One lime marker for the whole bar: it slides to the tab the shopper moves to. */}
       <span

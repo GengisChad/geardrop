@@ -53,8 +53,11 @@ const INITIAL: NewsletterState = { ok: false, message: "" };
  * and closed it leaves the promotions and bundles as the first thing on the page.
  *
  * It opens on the home, on the live site, once the cookie question is answered (never two boxes at
- * once). Closed, it stays away for 30 days; after a signup, for good. `?iscriviti=1` opens it anywhere
- * the home runs, for a look or a test. It renders in the browser only, so it never holds up the first paint.
+ * once) and the visitor has scrolled well into the page (owner, 2026-11-19: pop-ups one at a time, so
+ * after the cookie answer the screen stays clear). Closed, it folds into a small tab at the edge
+ * that opens it again, and does not come back on its own for 30 days; after a signup it is gone for
+ * good. `?iscriviti=1` opens it at once anywhere the home runs, for a look or a test. It renders in
+ * the browser only, so it never holds up the first paint.
  *
  * On a phone it opens as a strip (2026-11-17): the owner's line, one "Iscriviti" button and the X, about
  * a tenth of the screen instead of a third, so the promotions under it stay in sight. The button opens
@@ -68,7 +71,12 @@ export function NewsletterBanner({ enabled, cookieBanner }: { readonly enabled: 
     () => !cookieBanner || consentSeenThisVisit || readConsent() !== null,
     () => false,
   );
+  const stored = useSyncExternalStore(noSubscription, readStored, () => null);
   const [closed, setClosed] = useState(false);
+  const [reopened, setReopened] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  // True once the visitor is well into the page: the ask never sits on the first screen.
+  const [reached, setReached] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const emailRef = useRef<HTMLInputElement>(null);
   const [state, formAction, pending] = useActionState(async (previous: NewsletterState, formData: FormData) => {
@@ -79,7 +87,27 @@ export function NewsletterBanner({ enabled, cookieBanner }: { readonly enabled: 
 
   const close = useCallback(() => {
     if (readStored() !== "joined") remember(`closed:${Date.now()}`);
-    setClosed(true);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setClosed(true);
+      return;
+    }
+    // It leaves with a wipe, then the tab takes its place.
+    setLeaving(true);
+    window.setTimeout(() => {
+      setLeaving(false);
+      setClosed(true);
+    }, 220);
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const room = document.documentElement.scrollHeight - window.innerHeight;
+      if (room > 0 && window.scrollY < room * 0.4) return;
+      setReached(true);
+      window.removeEventListener("scroll", onScroll);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   // Opening the strip is a request to type: the field takes the focus, and the keyboard with it.
@@ -87,14 +115,40 @@ export function NewsletterBanner({ enabled, cookieBanner }: { readonly enabled: 
     if (expanded) emailRef.current?.focus();
   }, [expanded]);
 
-  if (closed || !(forced || (enabled && due && consentAnswered))) return null;
+  const allowed = forced || (enabled && consentAnswered);
+  const joined = stored === "joined" || state.ok;
+  const open = allowed && !closed && (forced || reopened || (due && reached));
+
+  if (!open && !leaving) {
+    // Closed, now or on an earlier visit: a tab at the edge keeps the way back, and nothing else.
+    const tab = allowed && !joined && (closed || (!due && reached));
+    if (!tab) return null;
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          setClosed(false);
+          setReopened(true);
+        }}
+        data-testid="newsletter-tab"
+        aria-label="Apri l'iscrizione alle novità"
+        className="gd-display fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] right-0 z-40 inline-flex min-h-11 items-center gap-1.5 bg-violet py-2.5 pl-5 pr-3 text-[0.6875rem] font-extrabold tracking-[0.06em] text-white [clip-path:polygon(11px_0,100%_0,100%_100%,0_100%)] motion-safe:animate-[gd-tab-slide_320ms_var(--ease-out-gear)_backwards] lg:bottom-8"
+      >
+        Novità
+        <span aria-hidden="true" className="text-lime">
+          {"//"}
+        </span>
+      </button>
+    );
+  }
 
   return (
     <section
       aria-labelledby="newsletter-banner-title"
       data-testid="newsletter-banner"
       data-compact={expanded ? undefined : "true"}
-      className="group/news on-dark fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-50 mx-auto max-w-[72rem] bg-violet text-white shadow-[0_0_0_2px_#fff,5px_6px_0_2px_rgba(0,0,0,0.55)] motion-safe:animate-[gd-rise_420ms_var(--ease-out-gear)_both] sm:inset-x-6 lg:bottom-6"
+      data-leaving={leaving ? "" : undefined}
+      className="group/news on-dark fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-50 mx-auto max-w-[72rem] bg-violet text-white shadow-[0_0_0_2px_#fff,5px_6px_0_2px_rgba(0,0,0,0.55)] motion-safe:animate-[gd-news-in_330ms_steps(1,end)_backwards] data-[leaving]:pointer-events-none motion-safe:data-[leaving]:animate-[gd-wipe-right_220ms_cubic-bezier(0.5,0,0.9,0.4)_forwards] sm:inset-x-6 lg:bottom-6"
     >
       <div aria-hidden="true" className="gd-rail absolute inset-x-0 top-0 opacity-70" />
       <button
@@ -108,7 +162,7 @@ export function NewsletterBanner({ enabled, cookieBanner }: { readonly enabled: 
       </button>
       <div className="flex flex-col gap-1 px-4 pb-4 pt-5 max-sm:group-data-[compact=true]/news:flex-row max-sm:group-data-[compact=true]/news:items-center max-sm:group-data-[compact=true]/news:gap-3 max-sm:group-data-[compact=true]/news:py-3 max-sm:group-data-[compact=true]/news:pr-12 lg:flex-row lg:items-center lg:gap-10 lg:px-8 lg:py-6">
         <div className="min-w-0 pr-10 max-sm:group-data-[compact=true]/news:flex-1 max-sm:group-data-[compact=true]/news:pr-0 lg:flex-1 lg:pr-0">
-          <p className="gd-sticker bg-void px-2 py-0.5 text-[0.6875rem] text-white max-sm:group-data-[compact=true]/news:hidden">Prossimi arrivi</p>
+          <p className="gd-sticker bg-void px-2 py-0.5 text-[0.6875rem] text-white motion-safe:animate-[gd-stamp_0.38s_linear_0.3s_backwards] max-sm:group-data-[compact=true]/news:hidden">Prossimi arrivi</p>
           <h2 id="newsletter-banner-title" className="gd-display-wide mt-3 text-[1.375rem] font-extrabold leading-[0.95] max-sm:group-data-[compact=true]/news:mt-0 max-sm:group-data-[compact=true]/news:text-[0.9375rem] max-sm:group-data-[compact=true]/news:leading-[1.05] sm:text-[1.75rem] lg:text-[2rem]">
             Questo è solo il{" "}
             <span className="whitespace-nowrap">
