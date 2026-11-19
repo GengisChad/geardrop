@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { AlertTriangle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/format";
 import { GaEvent } from "@/components/analytics/ga-event";
+import { brand } from "@/data/assets";
 import { BUNDLES, PRODUCTS } from "@/data/catalog";
 import { gaItem, purchaseEvent } from "@/lib/analytics/google";
 import { retrieveCheckoutSession, type CheckoutSessionSummary } from "@/lib/payments/stripe-checkout";
@@ -40,7 +43,7 @@ export default async function CheckoutResultPage({ searchParams }: { searchParam
         {completed ? <ClearCart /> : null}
         {paid ? <PurchaseEvent session={session} /> : null}
         {paid ? (
-          <CheckCircle2 className="size-14 text-available" strokeWidth={1.5} aria-hidden="true" />
+          <OrderLaunch />
         ) : completed ? (
           <Clock className="size-14 text-violet-soft" strokeWidth={1.5} aria-hidden="true" />
         ) : (
@@ -55,7 +58,7 @@ export default async function CheckoutResultPage({ searchParams }: { searchParam
           <>
             <p className="mt-2 text-small text-grey-600">
               Ordine{" "}
-              <span className="gd-display font-bold text-graphite" data-testid="order-number">
+              <span className={paid ? "gd-display gd-order-type font-bold text-graphite" : "gd-display font-bold text-graphite"} data-testid="order-number">
                 {session.reference}
               </span>
               {session.totalCents !== null ? <> · Totale {formatPrice({ amount: session.totalCents, currency: "EUR" })}</> : null}
@@ -89,6 +92,40 @@ export default async function CheckoutResultPage({ searchParams }: { searchParam
         )}
       </div>
     </div>
+  );
+}
+
+const SHARD_COLOURS = ["var(--color-lime)", "var(--color-cyan)", "var(--color-magenta)"] as const;
+const SHARDS = Array.from({ length: 12 }, (_, index) => ({
+  angle: index * 30 + 12,
+  reach: 70 + ((index * 37) % 50),
+  colour: SHARD_COLOURS[index % SHARD_COLOURS.length],
+}));
+
+/**
+ * The paid order's launch (owner, 2026-11-19): the emblem spins up like a launched top, a ring and
+ * a burst of shards leave it, and the sticker is stamped. Plain CSS (globals.css), so it plays
+ * once as the page arrives and needs no script; the words under it carry the outcome. "Pagato" is
+ * what Stripe reported for this session, nothing more.
+ */
+function OrderLaunch() {
+  return (
+    <>
+      <div className="gd-order-launch" aria-hidden="true" data-testid="order-launch">
+        <Image src={brand.emblem} alt="" width={84} height={81} className="size-full object-contain" />
+        <span className="gd-order-ring" />
+        {SHARDS.map((shard) => (
+          <span
+            key={shard.angle}
+            className="gd-order-shard"
+            style={{ "--gd-a": `${shard.angle}deg`, "--gd-r": `${shard.reach}px`, "--gd-shard": shard.colour } as CSSProperties}
+          />
+        ))}
+      </div>
+      <p aria-hidden="true" className="gd-sticker gd-order-stamp mt-6 bg-lime px-3 py-1.5 text-[0.9375rem] text-void">
+        Ordine pagato
+      </p>
+    </>
   );
 }
 

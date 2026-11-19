@@ -1022,3 +1022,338 @@
   }
 }
 
+/* ==========================================================================
+   Motion, second set (owner, 2026-11-19: "metti tutto")
+   The holographic card, the pop-ups one at a time, the paid order's launch, the quick view and
+   the glitch cut between pages. Each runs once and settles or moves only under the shopper's
+   hand, and reduced motion keeps all of it still.
+   ========================================================================== */
+
+/*
+ * The paid order's launch (checkout/successo): the emblem spins up like a launched top, one ring
+ * and a burst of shards leave it, the sticker is stamped and the order number is typed out.
+ */
+.gd-order-launch {
+  position: relative;
+  width: 5.25rem;
+  height: 5.25rem;
+}
+
+.gd-order-launch img {
+  animation: gd-order-spin 1s cubic-bezier(0.12, 0.8, 0.2, 1) both;
+}
+
+.gd-order-ring {
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--color-lime);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  animation: gd-order-ring 0.7s var(--ease-out-gear) 0.26s both;
+}
+
+.gd-order-shard {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  height: 4px;
+  margin: -2px 0 0 -7px;
+  opacity: 0;
+  pointer-events: none;
+  background: var(--gd-shard, var(--color-lime));
+  animation: gd-order-shard 0.52s var(--ease-out-gear) 0.3s both;
+}
+
+.gd-order-stamp {
+  animation: gd-stamp 0.38s linear 0.62s backwards;
+}
+
+.gd-order-type {
+  display: inline-block;
+  animation: gd-type 0.5s steps(16, end) 0.95s backwards;
+}
+
+@keyframes gd-order-spin {
+  from {
+    transform: rotate(0deg) scale(0.6);
+  }
+  to {
+    transform: rotate(-720deg) scale(1);
+  }
+}
+
+@keyframes gd-order-ring {
+  from {
+    transform: scale(0.4);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(3.4);
+    opacity: 0;
+  }
+}
+
+@keyframes gd-order-shard {
+  from {
+    transform: rotate(var(--gd-a, 0deg)) translateX(30px) skewX(-24deg);
+    opacity: 1;
+  }
+  to {
+    transform: rotate(var(--gd-a, 0deg)) translateX(var(--gd-r, 90px)) skewX(-24deg) scaleX(0.3);
+    opacity: 0;
+  }
+}
+
+@keyframes gd-stamp {
+  0% {
+    transform: scale(1.9) rotate(-14deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  65% {
+    transform: scale(0.94) rotate(1deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes gd-type {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/*
+ * The holographic card (components/product/holo-tilt.tsx), for new releases only, like the foil:
+ * the card leans under the pointer or the finger, a glare follows it and the rim shows the foil.
+ * --gd-mx / --gd-my are where the hand is, from -0.5 to 0.5. On a phone the card also leans a
+ * little as it crosses the screen (--gd-sy, driven by the scroll), so it moves only when the
+ * shopper does.
+ */
+@property --gd-sy {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+@property --gd-sk {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+.gd-holo {
+  height: 100%;
+  perspective: 900px;
+  touch-action: pan-y;
+}
+
+.gd-holo-card {
+  position: relative;
+  height: 100%;
+  transform: rotateX(calc((var(--gd-my, 0) + var(--gd-sy, 0)) * -26deg)) rotateY(calc(var(--gd-mx, 0) * 26deg));
+  transition: transform 0.5s var(--ease-out-gear);
+}
+
+.gd-holo[data-live] .gd-holo-card {
+  transition: none;
+}
+
+.gd-holo .gd-product-plate img {
+  translate: calc(var(--gd-mx, 0) * 14px) calc((var(--gd-my, 0) + var(--gd-sy, 0)) * 14px);
+}
+
+.gd-holo-glare,
+.gd-holo-rim {
+  position: absolute;
+  z-index: 25;
+  pointer-events: none;
+  opacity: max(var(--gd-k, 0), var(--gd-sk, 0));
+  transition: opacity 0.4s var(--ease-out-gear);
+}
+
+.gd-holo-glare {
+  inset: 0;
+  mix-blend-mode: screen;
+  background: radial-gradient(
+    circle at calc(50% + var(--gd-mx, 0) * 100%) calc(50% + (var(--gd-my, 0) + var(--gd-sy, 0)) * 100%),
+    rgba(255, 255, 255, 0.32),
+    rgba(255, 255, 255, 0.06) 32%,
+    transparent 58%
+  );
+}
+
+.gd-holo-rim {
+  inset: -1px;
+  padding: 2px;
+  background: linear-gradient(115deg, #c6ff00, #3cf0ff, #b98cff, #ff6fd8, #c6ff00, #3cf0ff) 0 0 / 300% 300%;
+  background-position: calc(50% + var(--gd-mx, 0) * 100%) calc(50% + (var(--gd-my, 0) + var(--gd-sy, 0)) * 100%);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+}
+
+@media (hover: none) and (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .gd-holo-card {
+      transition: none;
+      animation: gd-holo-pass linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 100%;
+    }
+  }
+}
+
+@keyframes gd-holo-pass {
+  0% {
+    --gd-sy: 0.2;
+    --gd-sk: 0;
+  }
+  25% {
+    --gd-sk: 0.7;
+  }
+  75% {
+    --gd-sk: 0.7;
+  }
+  100% {
+    --gd-sy: -0.2;
+    --gd-sk: 0;
+  }
+}
+
+:root[data-screenshot="true"] .gd-holo-card {
+  animation: none !important;
+  transform: none !important;
+}
+
+/*
+ * Pop-ups one at a time. The newsletter bar arrives in three hard steps and leaves with a wipe;
+ * the cookie banner rises and sinks. The clip reaches past the box so the sticker keyline and
+ * the hard shadow are never cut while it moves.
+ */
+@keyframes gd-news-in {
+  0% {
+    clip-path: inset(-12px 100% -12px -12px);
+    transform: translateX(-14px);
+  }
+  34% {
+    clip-path: inset(-12px 55% -12px -12px);
+    transform: translateX(8px);
+  }
+  67% {
+    clip-path: inset(-12px 20% -12px -12px);
+    transform: translateX(-4px);
+  }
+  100% {
+    clip-path: inset(-12px -12px -12px -12px);
+    transform: none;
+  }
+}
+
+@keyframes gd-wipe-right {
+  from {
+    clip-path: inset(-12px -12px -12px -12px);
+  }
+  to {
+    clip-path: inset(-12px -12px -12px 100%);
+  }
+}
+
+@keyframes gd-wipe-down {
+  from {
+    clip-path: inset(0 0 0 0);
+  }
+  to {
+    clip-path: inset(100% 0 0 0);
+  }
+}
+
+@keyframes gd-tab-slide {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+/*
+ * The glitch cut between pages (components/layout/page-cut.tsx): the page that leaves breaks in
+ * three hard steps over 170 ms while the new one is already underneath. The header and the tab
+ * bar are not part of it. The bands are a repeating mask, so they fall on the screen wherever
+ * the page was scrolled. The new page's split title then snaps out of register in three steps.
+ * This is the one place the glitch moves: once per page change, never on its own.
+ */
+::view-transition-old(.gd-page-cut) {
+  animation: gd-page-cut 170ms steps(1, end) both;
+}
+
+/*
+ * The header and the tab bar carry their own names (header.tsx, bottom-tab-bar.tsx), so they are
+ * drawn above the page that leaves instead of under it, and they never fade: the live bar is
+ * shown at once and its marker keeps sliding.
+ */
+::view-transition-group(gd-header),
+::view-transition-group(gd-tabbar),
+::view-transition-new(gd-header),
+::view-transition-new(gd-tabbar) {
+  animation: none;
+}
+
+::view-transition-old(gd-header),
+::view-transition-old(gd-tabbar) {
+  display: none;
+}
+
+@keyframes gd-page-cut {
+  0% {
+    transform: translateX(-12px);
+    filter: drop-shadow(8px 0 0 rgba(255, 45, 138, 0.8)) drop-shadow(-8px 0 0 rgba(37, 212, 255, 0.8));
+    mask-image: repeating-linear-gradient(0deg, #000 0 110px, transparent 110px 150px);
+  }
+  34% {
+    transform: translateX(10px);
+    filter: drop-shadow(-6px 0 0 rgba(255, 45, 138, 0.8)) drop-shadow(6px 0 0 rgba(37, 212, 255, 0.8));
+    mask-image: repeating-linear-gradient(0deg, #000 0 60px, transparent 60px 170px);
+  }
+  67% {
+    transform: translateX(-4px);
+    filter: none;
+    mask-image: repeating-linear-gradient(0deg, #000 0 24px, transparent 24px 190px);
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-page-moved] .gd-split {
+    animation: gd-split-in 0.26s steps(3, end) 0.15s backwards;
+  }
+}
+
+@keyframes gd-split-in {
+  from {
+    text-shadow:
+      0 0 0 var(--color-cyan),
+      0 0 0 var(--color-magenta);
+  }
+}
+
+/* The quick view: its copy rises in behind the photo that travelled into it. */
+@keyframes gd-quick-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}

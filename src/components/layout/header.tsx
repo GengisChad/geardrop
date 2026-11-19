@@ -19,7 +19,7 @@ export function Header({ navigation, mobileNavigation }: {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-50 bg-void/90 backdrop-blur-md after:absolute after:inset-x-0 after:top-full after:h-[5px] after:bg-[linear-gradient(90deg,var(--color-cyan),var(--color-magenta))] after:[mask-image:repeating-linear-gradient(90deg,#000_0_5px,transparent_5px_11px)] after:opacity-70 after:content-['']">
+    <header className="sticky top-0 z-50 [view-transition-name:gd-header] bg-void/90 backdrop-blur-md after:absolute after:inset-x-0 after:top-full after:h-[5px] after:bg-[linear-gradient(90deg,var(--color-cyan),var(--color-magenta))] after:[mask-image:repeating-linear-gradient(90deg,#000_0_5px,transparent_5px_11px)] after:opacity-70 after:content-['']">
       <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-2 px-3 sm:h-[4.5rem] sm:gap-3 sm:px-6 lg:gap-4 xl:gap-6 xl:px-10">
         <MobileMenu navigation={mobileNavigation} />
         <Logo priority className="shrink-0" />

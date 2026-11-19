@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { Palette } from "lucide-react";
 import { AddToCartButton } from "@/components/product/add-to-cart-button";
+import { HoloTilt } from "@/components/product/holo-tilt";
+import { QuickViewButton } from "@/components/product/quick-view";
 import { SharedPackshot } from "@/components/product/shared-packshot";
 import { WishlistButton } from "@/components/product/wishlist-button";
 import { PromoBadge, RankBadge } from "@/components/ui/badge";
@@ -12,6 +14,7 @@ import { availabilityLine, bladeName, displayName, holoStyle, partCode, partMark
 import { BLADE_TYPE_LABEL } from "@/lib/labels";
 import type { Product } from "@/lib/commerce/types";
 import { familyColours } from "@/lib/commerce/variants";
+import type { QuickViewProduct } from "@/lib/store/quick-view";
 import { cn } from "@/lib/cn";
 
 /**
@@ -65,8 +68,25 @@ export function ProductCard({
   const code = family ? null : partCode(product);
   const mark = partMark(code);
   const name = family?.familyName ?? bladeName(product.name, code);
+  // What the quick view shows: the card's own facts, so the sheet can never say anything else.
+  const quick: QuickViewProduct = {
+    slug: product.slug,
+    name: product.name,
+    title: displayName(name),
+    code,
+    mark,
+    tagline: product.tagline,
+    image: image ? { src: cutout ?? image.src, alt: image.alt } : null,
+    price: formatPrice(product.price),
+    priceCents: product.price.amount,
+    compareAt: product.compareAtPrice ? formatPrice(product.compareAtPrice) : null,
+    availability: displayName(availabilityLine(product)),
+    availabilityTone: availabilityTone(product),
+    stock: product.stock,
+    colours: colours.length,
+  };
 
-  return (
+  const card = (
     <article
       data-testid="product-card"
       data-slug={product.slug}
@@ -98,6 +118,8 @@ export function ProductCard({
             />
           </SharedPackshot>
         ) : null}
+        {/* Tapping the photo opens the quick view; the name below still leads to the product page. */}
+        <QuickViewButton product={quick} />
         {rank !== undefined ? (
           <span className="pointer-events-none absolute left-2 top-2 z-20">
             <RankBadge rank={rank} />
@@ -188,4 +210,7 @@ export function ProductCard({
       </div>
     </article>
   );
+
+  // New releases are the shop's rare cards: they wear the foil, and they lean under the hand.
+  return promo === "novita" ? <HoloTilt>{card}</HoloTilt> : card;
 }
