@@ -13,8 +13,8 @@ const SLUG = "soar-phoenix-9-60gf-solo-trottola";
 const phoenix = PRODUCTS.find((product) => product.slug === SLUG)!;
 
 describe("Soar Phoenix 9-60GF solo trottola", () => {
-  it("sells at 12,99 with two on the shelf, Hasbro, as an offer with no struck-through price", () => {
-    expect(phoenix.price.amount).toBe(1299);
+  it("sells at 16,90 (12,99 until 2026-11-19, under its 12,50 cost) with two on the shelf, Hasbro, as an offer with no struck-through price", () => {
+    expect(phoenix.price.amount).toBe(1690);
     expect(phoenix.availableQuantity).toBe(2);
     expect(phoenix.stock).toBe("disponibile");
     expect(phoenix.tags).toEqual(["offerta"]);

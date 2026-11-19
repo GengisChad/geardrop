@@ -183,10 +183,12 @@ export const PRODUCTS: readonly Product[] = [
   // bit (like Hover Wyvern and Impact Drake), at 12,99, two on the shelf for now, as a promotion. It
   // leads the catalogue and the homepage (SPOTLIGHT_SLUGS) while it lasts, under the "Offerta" tag.
   // No compare-at price: the starter it is measured against is a different product, with a launcher.
+  // Owner, 2026-11-19: 16,90 from now on. Each top comes out of a starter the shop paid 12,50, so at
+  // 12,99 it sold under cost (10,65 net of VAT); 16,90 leaves 13,85 net and the launcher to sell apart.
   {
     slug: "soar-phoenix-9-60gf-solo-trottola", name: "Soar Phoenix 9-60GF solo trottola", tagline: "La Phoenix rossa, senza lanciatore.",
     description: "Soar Phoenix 9-60GF è la trottola d'attacco rossa dello starter Hasbro, qui venduta da sola: tre lame che salgono verso l'alto per un Upper Attack capace di sollevare l'avversario, una delle blade più pesanti della serie, con Ratchet 9-60 e Bit GF (Gear Flat). Solo la trottola con ratchet e bit montati: il lanciatore non è incluso. Arriva in busta, senza scatola. Richiede lanciatore e Beystadium Beyblade X (venduti separatamente).",
-    price: eur(1299), category: "beyblade-x", bladeType: "attacco", stock: "disponibile", availableQuantity: 2, tags: ["offerta"], rating: 0, reviewCount: 0,
+    price: eur(1690), category: "beyblade-x", bladeType: "attacco", stock: "disponibile", availableQuantity: 2, tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["soar-phoenix-9-60gf-solo-trottola"],
     specs: [{ label: "Tipo", value: "Attacco" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codice", value: "9-60GF" }, { label: "Componenti", value: "1 trottola: blade, Ratchet 9-60 e Bit GF" }, { label: "Rotazione", value: "Destra" }, { label: "Confezione", value: "In busta, senza scatola" }, { label: "Nota", value: "Richiede lanciatore e Beystadium (venduti a parte)" }],
     features: [{ title: "Upper Attack", description: "Le tre lame sollevano l'avversario da terra" }, { title: "Ratchet 9-60", description: "Assetto basso a 6,0 mm, nove punti di contatto" }, { title: "Solo la trottola", description: "Blade, ratchet e bit: il lanciatore non è incluso" }, { title: "Da sapere prima di comprare", description: "Arriva in busta, senza scatola e senza lanciatore" }],
