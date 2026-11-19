@@ -702,33 +702,245 @@
   }
 }
 
-/* Scroll reveal — pure CSS, scroll-driven; see components/ui/reveal.tsx. */
-@keyframes gd-reveal {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+/*
+ * Scan-in (owner, 2026-11-19), in place of the fade that every section shared. A shelf below the
+ * fold is scanned onto the page the first time it arrives: its rail draws, a cyan line opens each
+ * card from the top, the HUD corners draw, the photo settles and the price snaps to its ghost.
+ * Once: ScanObserver (components/ui/scan-observer.tsx) arms only what is off screen when the page
+ * opens and marks it "in" as it arrives. Without script, with reduced motion or in screenshot mode
+ * nothing is ever armed, so the content is simply there.
+ */
+[data-scan-item],
+[data-scan-block] {
+  position: relative;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  @supports (animation-timeline: view()) {
-    [data-reveal] {
-      animation: gd-reveal both;
-      animation-timeline: view();
-      animation-range: entry 5% cover 24%;
-    }
+  [data-scan="armed"] [data-scan-item],
+  [data-scan="armed"][data-scan-block] {
+    clip-path: inset(0 0 100% 0);
+  }
+
+  [data-scan="armed"] [data-scan-rail] {
+    transform: scaleX(0);
+  }
+
+  [data-scan="in"] [data-scan-rail] {
+    transform-origin: left;
+    animation: gd-scan-rail 0.52s var(--ease-out-gear) 0.1s backwards;
+  }
+
+  /* One card after the other; from the eighth on they open together. */
+  [data-scan="in"] [data-scan-item],
+  [data-scan="in"][data-scan-block] {
+    --gd-scan-at: calc(min(var(--gd-scan-i, 0), 7) * 70ms + 180ms);
+    animation: gd-scan-open 0.6s var(--ease-out-gear) var(--gd-scan-at) backwards;
+  }
+
+  [data-scan="in"] [data-scan-item]::after,
+  [data-scan="in"][data-scan-block]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    pointer-events: none;
+    opacity: 0;
+    background: linear-gradient(var(--color-cyan), var(--color-cyan)) top / 100% 2px no-repeat;
+    filter: drop-shadow(0 0 6px rgba(37, 212, 255, 0.85));
+    animation: gd-scan-line 0.6s var(--ease-out-gear) var(--gd-scan-at) backwards;
+  }
+
+  [data-scan="in"] [data-scan-item] .gd-hud-corners {
+    animation: gd-scan-corners 0.32s var(--ease-out-gear) calc(var(--gd-scan-at) + 420ms) backwards;
+  }
+
+  [data-scan="in"] [data-scan-item] [data-testid="product-card"] .gd-product-plate img {
+    animation: gd-scan-shot 0.62s var(--ease-out-gear) calc(var(--gd-scan-at) + 80ms) backwards;
+  }
+
+  [data-scan="in"] [data-scan-item] [data-testid="card-price"] {
+    animation: gd-scan-price 0.3s var(--ease-out-gear) calc(var(--gd-scan-at) + 380ms) backwards;
   }
 }
 
-/* Screenshot mode: full-page captures never scroll, so reveals are forced finished. */
-:root[data-screenshot="true"] [data-reveal] {
-  opacity: 1 !important;
+@keyframes gd-scan-open {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes gd-scan-line {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  90% {
+    transform: translateY(calc(100% - 2px));
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(calc(100% - 2px));
+    opacity: 0;
+  }
+}
+
+@keyframes gd-scan-rail {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes gd-scan-corners {
+  from {
+    background-size: 0 2px, 2px 0, 0 2px, 2px 0;
+  }
+}
+
+@keyframes gd-scan-shot {
+  from {
+    transform: translateY(14px) scale(1.08);
+    filter: drop-shadow(0 14px 14px rgba(0, 0, 0, 0.55)) brightness(2.2);
+  }
+  to {
+    transform: none;
+    filter: drop-shadow(0 14px 14px rgba(0, 0, 0, 0.55)) brightness(1);
+  }
+}
+
+@keyframes gd-scan-price {
+  from {
+    opacity: 0;
+    text-shadow: 14px 0 0 rgba(255, 45, 138, 0.75);
+  }
+}
+
+/* Screenshot mode: full-page captures never scroll, so nothing may wait to be scanned in. */
+:root[data-screenshot="true"] :is([data-scan-item], [data-scan-block]) {
+  clip-path: none !important;
+  animation: none !important;
+}
+
+:root[data-screenshot="true"] [data-scan-rail] {
   transform: none !important;
   animation: none !important;
+}
+
+:root[data-screenshot="true"] :is([data-scan-item], [data-scan-block])::after {
+  content: none !important;
+}
+
+/*
+ * Rolling digits (components/ui/rolling-number.tsx): the digit that changed rolls in, the one it
+ * replaces rolls out, drawn from data-previous so the element's text is only ever the new number.
+ */
+.gd-roll-cell {
+  position: relative;
+  display: inline-block;
+  clip-path: inset(0 -0.45em);
+}
+
+.gd-roll-in {
+  display: inline-block;
+  animation: gd-roll-in 0.36s var(--ease-out-gear) calc(var(--gd-roll-i, 0) * 26ms) backwards;
+}
+
+.gd-roll-cell::before {
+  content: attr(data-previous);
+  content: attr(data-previous) / "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  animation: gd-roll-out 0.36s var(--ease-out-gear) calc(var(--gd-roll-i, 0) * 26ms) both;
+}
+
+.gd-roll-cell[data-down] .gd-roll-in {
+  animation-name: gd-roll-in-down;
+}
+
+.gd-roll-cell[data-down]::before {
+  animation-name: gd-roll-out-down;
+}
+
+@keyframes gd-roll-in {
+  from {
+    transform: translateY(105%);
+  }
+}
+
+@keyframes gd-roll-out {
+  to {
+    transform: translateY(-105%);
+  }
+}
+
+@keyframes gd-roll-in-down {
+  from {
+    transform: translateY(-105%);
+  }
+}
+
+@keyframes gd-roll-out-down {
+  to {
+    transform: translateY(105%);
+  }
+}
+
+/* The photo landing in the drop sheet as the flight ends. */
+@keyframes gd-drop-thumb {
+  from {
+    opacity: 0;
+    transform: scale(1.5) rotate(-10deg);
+  }
+}
+
+/*
+ * A favourite saved: the heart splits out of register, cyan to the left and magenta to the right,
+ * and snaps back in four steps, while the heart itself lands from small.
+ */
+@keyframes gd-heart-cyan {
+  0% {
+    opacity: 0.95;
+    transform: translateX(0);
+  }
+  40% {
+    opacity: 0.95;
+    transform: translateX(-11px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+}
+
+@keyframes gd-heart-magenta {
+  0% {
+    opacity: 0.95;
+    transform: translateX(0);
+  }
+  40% {
+    opacity: 0.95;
+    transform: translateX(11px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+}
+
+@keyframes gd-heart-land {
+  from {
+    transform: scale(0.6);
+  }
+}
+
+/* The icon of the tab the shopper just moved to. */
+@keyframes gd-tab-in {
+  from {
+    transform: translateY(5px) scale(0.86);
+  }
 }
 
 /*

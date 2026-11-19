@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import Link from "next/link";
 import { Bell, Check, ShoppingCart } from "lucide-react";
 import { Button, type ButtonSize } from "@/components/ui/button";
 import { useCart } from "@/lib/store/cart";
-import { useToast } from "@/components/ui/toast";
-import { ToastFreeShipping } from "@/components/cart/toast-free-shipping";
+import { useCartDrop } from "@/lib/store/cart-drop";
+import { flyToCart, packshotNear } from "@/lib/motion/cart-flight";
+import { hapticTick } from "@/lib/haptics";
 import { STOCK_CTA, isPurchasable } from "@/lib/labels";
 import type { StockStatus } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
@@ -49,7 +50,7 @@ export function AddToCartButton({
   compact = false,
 }: AddToCartButtonProps) {
   const add = useCart((s) => s.add);
-  const toast = useToast();
+  const showDrop = useCartDrop((s) => s.show);
   const [justAdded, setJustAdded] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -80,7 +81,8 @@ export function AddToCartButton({
     );
   }
 
-  const onAdd = () => {
+  const onAdd = (event: MouseEvent<HTMLElement>) => {
+    const packshot = packshotNear(event.currentTarget);
     add(slug, quantity);
     trackEvent("add_to_cart");
     sendGaEvent("add_to_cart", {
@@ -90,15 +92,17 @@ export function AddToCartButton({
     setJustAdded(true);
     clearTimeout(timer.current);
     timer.current = setTimeout(() => setJustAdded(false), 1400);
-    // The next step is one tap away, and the free-shipping line (from the server's quote of
-    // the new cart) nudges a second piece with what is really missing.
-    toast.push({
-      tone: "success",
-      message: "Aggiunto al carrello",
-      detail: name,
-      footer: <ToastFreeShipping />,
-      action: { label: "Vai al carrello", href: "/carrello" },
-    });
+    hapticTick();
+    // The photo flies into the cart, then the drop sheet names the piece: the next step is one
+    // tap away, and its free-shipping rail (from the server's quote of the new cart) nudges a
+    // second piece with what is really missing.
+    const drop = {
+      slug,
+      name,
+      preorder: stock === "pre-ordine",
+      image: packshot ? { src: packshot.currentSrc || packshot.src, alt: packshot.alt } : null,
+    };
+    void flyToCart(packshot).then(() => showDrop(drop));
   };
 
   if (compact) {
