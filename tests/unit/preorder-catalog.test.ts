@@ -42,7 +42,7 @@ describe("reviewed catalogue", () => {
       // neither reads as scarce when it is not.
       { slug: "impact-drake-9-60lr", price: 1399, stock: "disponibile", availableQuantity: 100, rating: 0, reviewCount: 0 },
       { slug: "hover-wyvern-3-85n", price: 1399, stock: "disponibile", availableQuantity: 100, rating: 0, reviewCount: 0 },
-      { slug: "cobalt-dragoon-2-60c", price: 1990, stock: "disponibile", availableQuantity: 56, rating: 0, reviewCount: 0 },
+      { slug: "cobalt-dragoon-2-60c", price: 1790, stock: "disponibile", availableQuantity: 56, rating: 0, reviewCount: 0 },
       { slug: "blast-pegasus-a-tr", price: 2690, stock: "esaurito", availableQuantity: 0, rating: 0, reviewCount: 0 },
       { slug: "saber-samurai-2-70l", price: 2590, stock: "disponibile", availableQuantity: 16, rating: 0, reviewCount: 0 },
       { slug: "drop-attack-battle-set", price: 3990, stock: "disponibile", availableQuantity: 102, rating: 0, reviewCount: 0 },
@@ -75,7 +75,7 @@ describe("reviewed catalogue", () => {
       { slug: "suppress-superion-0-70lp", price: 2500, stock: "pre-ordine", availableQuantity: 5, rating: 0, reviewCount: 0 },
       { slug: "strike-dran-4-50ff", price: 2300, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
       { slug: "tread-croc-tq-5-50gn", price: 2500, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
-      { slug: "soar-phoenix-9-60gf", price: 2490, stock: "disponibile", availableQuantity: 199, rating: 0, reviewCount: 0 },
+      { slug: "soar-phoenix-9-60gf", price: 1990, stock: "disponibile", availableQuantity: 199, rating: 0, reviewCount: 0 },
       // Takara Tomy on consignment from the partner, two of each (owner, 2026-10-07).
       { slug: "cx-00-evangelion-deck-set", price: 13500, stock: "disponibile", availableQuantity: 2, rating: 0, reviewCount: 0 },
       { slug: "ux-00-glory-valkyrie-lf", price: 20500, stock: "disponibile", availableQuantity: 2, rating: 0, reviewCount: 0 },
