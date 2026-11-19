@@ -171,7 +171,7 @@ describe("pricing agent tools", () => {
 });
 
 describe("copilot tools", () => {
-  it("are read-only and never read customers' personal data", async () => {
+  it("never read customers' personal data", async () => {
     const calls: string[] = [];
     const chain: Record<string, unknown> = {};
     const record = (name: string) => (...args: unknown[]) => {
@@ -181,7 +181,11 @@ describe("copilot tools", () => {
     for (const method of ["select", "eq", "gte", "order", "in", "or"]) chain[method] = record(method);
     chain["limit"] = () => Promise.resolve({ data: [], error: null });
     const tools = copilotTools({ rpc: vi.fn(), from: record("from") } as never, 1);
-    expect(tools.map((tool) => tool.name)).toEqual(["panoramica_magazzino", "previsioni", "ordini_recenti", "prodotto", "mercato", "proposte_prezzo"]);
+    // Since 2026-11-19 the action tools come first: they prepare cards and write nothing (copilot-actions.test.ts).
+    expect(tools.map((tool) => tool.name)).toEqual([
+      "cambia_stato_ordine", "spedisci_ordine", "nota_ordine", "movimento_magazzino", "cambia_prezzo", "imposta_costo",
+      "ordine", "da_spedire", "panoramica_magazzino", "previsioni", "ordini_recenti", "prodotto", "mercato", "proposte_prezzo",
+    ]);
     await tools.find((tool) => tool.name === "ordini_recenti")?.run({});
     const selects = calls.filter((call) => call.startsWith("select:")).join(" ");
     expect(selects).toContain("order_number");

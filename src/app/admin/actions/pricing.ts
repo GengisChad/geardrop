@@ -7,6 +7,7 @@ import { requireStaffRole, requireUser } from "@/lib/auth/guards";
 import type { StaffRole } from "@/lib/auth/roles";
 import { claudeApiKey, ClaudeApiError, createClaudeClient } from "@/lib/ai/claude-api";
 import { askCopilot, type CopilotTurn } from "@/lib/ai/copilot";
+import { copilotActionSchema, executeCopilotAction, type CopilotAction } from "@/lib/ai/copilot-actions";
 import { runPricingAgent } from "@/lib/ai/pricing-agent";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { STOREFRONT_CACHE_TAGS } from "@/lib/storefront/cache";
@@ -210,19 +211,78 @@ export async function decideProposalAction(_previous: PricingActionState, formDa
 // The assistant
 // ---------------------------------------------------------------------------------------
 
-const turnSchema = z.array(z.object({ role: z.enum(["user", "assistant"]), text: z.string().max(20_000) })).max(40);
+const turnSchema = z
+  .array(z.object({ role: z.enum(["user", "assistant"]), text: z.string().max(20_000), actions: z.array(copilotActionSchema).max(30).optional() }))
+  .max(40);
+
+/** Every card in `ids` updated by `change`, the rest of the conversation untouched. */
+function withActions(turns: readonly CopilotTurn[], ids: ReadonlySet<string>, change: (action: CopilotAction) => Partial<CopilotAction>): CopilotTurn[] {
+  return turns.map((turn) =>
+    turn.actions?.some((action) => ids.has(action.id))
+      ? { ...turn, actions: turn.actions.map((action) => (ids.has(action.id) ? { ...action, ...change(action) } : action)) }
+      : turn,
+  );
+}
+
+/**
+ * "Conferma", "Annulla" or "Conferma tutte" on the assistant's cards (owner, 2026-11-19). Each
+ * confirmed card runs through the panel's own server action with this person's session, so it can
+ * only do what they could do by hand; see lib/ai/copilot-actions.ts.
+ */
+async function decideCopilotActions(turns: readonly CopilotTurn[], intent: string, actionId: string, turnIndex: number): Promise<CopilotState> {
+  const ids = new Set<string>();
+  turns.forEach((turn, index) =>
+    turn.actions?.forEach((action) => {
+      if (action.status === "pending" && (intent === "confirm_all" ? index === turnIndex : action.id === actionId)) ids.add(action.id);
+    }),
+  );
+  if (ids.size === 0) return { turns, error: "Questa azione è già stata decisa." };
+  if (intent === "cancel") return { turns: withActions(turns, ids, () => ({ status: "cancelled", result: null })), error: null };
+  try {
+    const { client, organization } = await authorized(MANAGERS);
+    const results = new Map<string, { readonly ok: boolean; readonly message: string }>();
+    for (const turn of turns) {
+      for (const action of turn.actions ?? []) {
+        if (!ids.has(action.id)) continue;
+        try {
+          results.set(action.id, await executeCopilotAction(action, client, organization.id));
+        } catch (error) {
+          results.set(action.id, { ok: false, message: error instanceof z.ZodError ? "Dati dell'azione non validi." : detail(error) });
+        }
+      }
+    }
+    return {
+      turns: withActions(turns, ids, (action) => {
+        const result = results.get(action.id)!;
+        return { status: result.ok ? "done" : "failed", result: result.message };
+      }),
+      error: null,
+    };
+  } catch (error) {
+    return { turns, error: detail(error) };
+  }
+}
 
 export async function askCopilotAction(previous: CopilotState, formData: FormData): Promise<CopilotState> {
+  const history = turnSchema.safeParse(previous.turns);
+  const turns: CopilotTurn[] = history.success
+    ? history.data.map(({ actions, ...turn }) => (actions?.length ? { ...turn, actions } : turn))
+    : [];
+  const intent = text(formData, "intent");
+  if (intent === "confirm" || intent === "cancel" || intent === "confirm_all") {
+    return decideCopilotActions(turns, intent, text(formData, "actionId"), Number(text(formData, "turn")));
+  }
   const question = text(formData, "question").trim().slice(0, 2000);
   if (!question) return previous;
   const apiKey = claudeApiKey();
   if (!apiKey) return { turns: previous.turns, error: "Assistente non configurato: manca ANTHROPIC_API_KEY sul server." };
-  const history = turnSchema.safeParse(previous.turns);
-  const turns = history.success ? history.data : [];
   try {
     const { client, organization } = await authorized(MANAGERS);
     const answer = await askCopilot(client, createClaudeClient(apiKey), organization, turns, question);
-    return { turns: [...turns, { role: "user", text: question }, { role: "assistant", text: answer.answer }], error: null };
+    return {
+      turns: [...turns, { role: "user", text: question }, { role: "assistant", text: answer.answer, ...(answer.actions.length ? { actions: answer.actions } : {}) }],
+      error: null,
+    };
   } catch (error) {
     return { turns: [...turns, { role: "user", text: question }], error: detail(error) };
   }

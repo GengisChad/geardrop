@@ -17,6 +17,7 @@ import styles from "./pricing.module.css";
 import warehouse from "@/components/admin/warehouse/warehouse.module.css";
 import { formatEuro, formatEuroInput } from "@/lib/admin/warehouse";
 import type { MarketSource, PricingPolicy, ProposalListItem } from "@/lib/ai/pricing-repository";
+import type { CopilotAction } from "@/lib/ai/copilot-actions";
 
 const initial: PricingActionState = { ok: false, message: "" };
 
@@ -185,10 +186,43 @@ export function PricingPolicyForm({ policy, editable }: { readonly policy: Prici
 
 const SUGGESTIONS = [
   "Cosa devo riordinare questa settimana?",
-  "Quali prodotti stanno vendendo più del solito?",
+  "Quali ordini pagati non sono ancora spediti?",
   "Com'è andato il profitto degli ultimi 30 giorni?",
-  "I concorrenti vendono sotto il nostro prezzo?",
+  "Ho venduto 2 Soar Phoenix a mano a 20 €: toglili dal magazzino",
 ];
+
+const ACTION_STATUS: Record<CopilotAction["status"], string> = { pending: "Da confermare", done: "Eseguita", failed: "Non riuscita", cancelled: "Annullata" };
+
+/** The cards of one answer: each runs only on "Conferma", with the permissions of whoever presses it. */
+function ActionCards({ actions, turn, action, pending }: { readonly actions: readonly CopilotAction[]; readonly turn: number; readonly action: (formData: FormData) => void; readonly pending: boolean }) {
+  const open = actions.filter((item) => item.status === "pending").length;
+  return (
+    <div className={styles.actions} data-testid="copilot-actions">
+      {actions.map((item) => (
+        <div className={styles.actionCard} data-status={item.status} key={item.id}>
+          <strong>{item.title}</strong>
+          {item.details.length ? <ul>{item.details.map((line, index) => <li key={index}>{line}</li>)}</ul> : null}
+          {item.warning && item.status === "pending" ? <p className={styles.actionWarning}>{item.warning}</p> : null}
+          {item.status === "pending" ? (
+            <form action={action} className={styles.actionButtons}>
+              <input name="actionId" type="hidden" value={item.id} />
+              <button className={warehouse.primary} disabled={pending} name="intent" type="submit" value="confirm">Conferma</button>
+              <button disabled={pending} name="intent" type="submit" value="cancel">Annulla</button>
+            </form>
+          ) : (
+            <p className={styles.actionResult}>{ACTION_STATUS[item.status]}{item.result ? ` · ${item.result}` : ""}</p>
+          )}
+        </div>
+      ))}
+      {open > 1 ? (
+        <form action={action} className={styles.actionButtons}>
+          <input name="turn" type="hidden" value={turn} />
+          <button className={warehouse.primary} disabled={pending} name="intent" type="submit" value="confirm_all">Conferma tutte ({open})</button>
+        </form>
+      ) : null}
+    </div>
+  );
+}
 
 export function CopilotChat({ configured }: { readonly configured: boolean }) {
   const [state, action, pending] = useActionState(askCopilotAction, { turns: [], error: null } satisfies CopilotState);
@@ -196,9 +230,14 @@ export function CopilotChat({ configured }: { readonly configured: boolean }) {
   return (
     <section className={styles.chat} data-testid="copilot">
       <div className={styles.messages} aria-live="polite">
-        {state.turns.length === 0 ? <p className={warehouse.hint}>Chiedi di stock, vendite, previsioni, profitto o prezzi dei concorrenti: l&apos;assistente legge i dati dell&apos;azienda in cui stai lavorando e non modifica nulla.</p> : null}
-        {state.turns.map((turn, index) => <div className={styles.message} data-role={turn.role} key={index}>{turn.role === "assistant" ? <AssistantText text={turn.text} /> : turn.text}</div>)}
-        {pending ? <div className={styles.message} data-role="assistant">Sto leggendo i dati…</div> : null}
+        {state.turns.length === 0 ? <p className={warehouse.hint}>Chiedi di stock, vendite, previsioni, profitto o prezzi dei concorrenti, oppure di fare qualcosa: segnare ordini spediti, togliere pezzi venduti a mano, cambiare un prezzo o un costo. Ogni modifica compare come scheda e parte solo quando premi «Conferma», con i tuoi permessi.</p> : null}
+        {state.turns.map((turn, index) => (
+          <div className={styles.turn} key={index}>
+            <div className={styles.message} data-role={turn.role}>{turn.role === "assistant" ? <AssistantText text={turn.text} /> : turn.text}</div>
+            {turn.actions?.length ? <ActionCards action={action} actions={turn.actions} pending={pending} turn={index} /> : null}
+          </div>
+        ))}
+        {pending ? <div className={styles.message} data-role="assistant">Sto lavorando…</div> : null}
       </div>
       {state.error ? <p className={warehouse.error} role="status">{state.error}</p> : null}
       <div className={styles.suggestions}>
