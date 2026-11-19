@@ -6,6 +6,7 @@ import { Sparkles } from "lucide-react";
 import { BUNDLES, PRODUCTS } from "@/data/catalog";
 import { productTops } from "@/data/assets";
 import { useToast } from "@/components/ui/toast";
+import { bestBundleOffer, bundleOffers } from "@/lib/commerce/bundle-offer";
 import { formatPrice } from "@/lib/format";
 import { shortName } from "@/lib/holo";
 import { useCart } from "@/lib/store/cart";
@@ -13,9 +14,13 @@ import type { CartQuoteLine, Product } from "@/lib/commerce/types";
 
 const NAME_BY_SLUG = new Map(PRODUCTS.map((product) => [product.slug as string, product]));
 
+const LIST = new Intl.ListFormat("it", { style: "long", type: "conjunction" });
+
 /**
- * In the cart, a bundle the shopper is halfway into: with every pack already there it offers to
- * swap them for the bundle at its lower price; with some of them, what the rest costs inside it.
+ * In the cart, the bundle the shopper is closest to (see lib/commerce/bundle-offer.ts): with every
+ * piece already there it offers to swap them for the bundle at its lower price; with some of them,
+ * what the rest costs inside it. One offer only: a piece can sit in several bundles, and a box for
+ * each buried the cart on a phone (owner, 2026-11-19).
  * Prices come from the priced quote for what is in the cart and, for the rest, from the live
  * catalogue the cart page passes (the back office sets prices since 2026-11-19), else the catalogue.
  */
@@ -32,89 +37,74 @@ export function BundleNudge({
   const live = new Map(catalogue.map((product) => [product.slug as string, product]));
   const priceOf = (slug: string) => (live.get(slug) ?? NAME_BY_SLUG.get(slug))?.price.amount ?? 0;
 
-  const offers = BUNDLES.map((bundle) => live.get(bundle.slug) ?? bundle).flatMap((bundle) => {
-    const components = bundle.bundleOf ?? [];
-    if (!bundle.compareAtPrice || components.length === 0) return [];
-    const present = components.filter((component) =>
-      lines.some((line) => line.slug === component.slug && line.issue === null && line.quantity >= component.quantity),
-    );
-    if (present.length === 0) return [];
-    const missing = components.filter((component) => !present.includes(component));
-    // With the bundle already in the cart, "add the rest" would read as buying it twice.
-    if (missing.length > 0 && lines.some((line) => line.slug === bundle.slug)) return [];
-    const presentCost = present.reduce(
-      (sum, component) => sum + (lines.find((line) => line.slug === component.slug)?.unitPrice.amount ?? 0) * component.quantity,
-      0,
-    );
-    const missingCost = missing.reduce(
-      (sum, component) => sum + priceOf(component.slug) * component.quantity,
-      0,
-    );
-    return [{ bundle, components, present, missing, extra: bundle.price.amount - presentCost, missingCost }];
-  });
+  const offer = bestBundleOffer(
+    bundleOffers(
+      lines,
+      BUNDLES.map((bundle) => live.get(bundle.slug) ?? bundle),
+      priceOf,
+    ),
+  );
+  if (!offer) return null;
 
-  if (offers.length === 0) return null;
+  const { bundle, components, missing, extra, missingCost, saving } = offer;
+  const complete = missing.length === 0;
+  // Two pieces are a duo; the decks, kits and packs go by their own name.
+  const duo = components.length === 2;
+  const missingNames = LIST.format(missing.map((component) => shortName(NAME_BY_SLUG.get(component.slug)?.name ?? component.slug)));
+  const page = (
+    <Link href={`/prodotto/${bundle.slug}`} className="font-bold underline-offset-2 hover:underline">
+      {duo ? "duo" : `set ${bundle.name}`}
+    </Link>
+  );
 
   return (
-    <div className="flex flex-col gap-3">
-      {offers.map(({ bundle, components, missing, extra, missingCost }) => {
-        const complete = missing.length === 0;
-        const saving = (bundle.compareAtPrice?.amount ?? 0) - bundle.price.amount;
-        const missingNames = missing.map((component) => shortName(NAME_BY_SLUG.get(component.slug)?.name ?? component.slug)).join(" e ");
-        return (
-          <div key={bundle.slug} data-testid="bundle-nudge" className="gd-hud relative flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
-            <div aria-hidden="true" className="flex shrink-0 items-center">
-              {components.map((component, index) => {
-                const top = productTops[component.slug];
-                return top ? (
-                  <Image
-                    key={component.slug}
-                    src={top}
-                    alt=""
-                    width={64}
-                    height={64}
-                    className={index === 0 ? "size-12 animate-[gd-spin_1.4s_linear_infinite]" : "-ml-3 size-12 animate-[gd-spin_1.1s_linear_infinite_reverse]"}
-                  />
-                ) : null;
-              })}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="gd-mono flex items-center gap-1.5 text-[0.6875rem] uppercase tracking-[0.14em] text-lime">
-                <Sparkles className="size-3.5" aria-hidden="true" />
-                Offerta duo
-              </p>
-              <p className="mt-1 text-small leading-snug text-graphite">
-                {complete ? (
-                  <>
-                    Li hai già entrambi: passa al{" "}
-                    <Link href={`/prodotto/${bundle.slug}`} className="font-bold underline-offset-2 hover:underline">
-                      duo
-                    </Link>{" "}
-                    e risparmi <strong className="text-lime">{formatPrice({ amount: saving, currency: "EUR" })}</strong>.
-                  </>
-                ) : (
-                  <>
-                    Aggiungi {missingNames} con il duo:{" "}
-                    <strong className="whitespace-nowrap text-lime">+{formatPrice({ amount: extra, currency: "EUR" })}</strong> invece di{" "}
-                    <span className="whitespace-nowrap">+{formatPrice({ amount: missingCost, currency: "EUR" })}</span>.
-                  </>
-                )}
-              </p>
-            </div>
-            <button
-              type="button"
-              data-testid="bundle-nudge-swap"
-              onClick={() => {
-                swap(bundle.slug, components);
-                toast.push({ tone: "success", message: `${bundle.name} nel carrello.` });
-              }}
-              className="gd-chamfer gd-display inline-flex h-11 shrink-0 items-center justify-center bg-lime px-4 text-small font-bold tracking-[0.08em] text-void transition-colors hover:bg-[#d8ff4d]"
-            >
-              {complete ? "Passa al duo" : "Completa il duo"}
-            </button>
-          </div>
-        );
-      })}
+    <div data-testid="bundle-nudge" data-slug={bundle.slug} className="gd-hud relative flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+      <div aria-hidden="true" className="flex shrink-0 items-center">
+        {components.map((component, index) => {
+          const top = productTops[component.slug];
+          return top ? (
+            <Image
+              key={component.slug}
+              src={top}
+              alt=""
+              width={64}
+              height={64}
+              className={index === 0 ? "size-12 animate-[gd-spin_1.4s_linear_infinite]" : "-ml-3 size-12 animate-[gd-spin_1.1s_linear_infinite_reverse]"}
+            />
+          ) : null;
+        })}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="gd-mono flex items-center gap-1.5 text-[0.6875rem] uppercase tracking-[0.14em] text-lime">
+          <Sparkles className="size-3.5" aria-hidden="true" />
+          {duo ? "Offerta duo" : "Offerta set"}
+        </p>
+        <p className="mt-1 text-small leading-snug text-graphite" data-testid="bundle-nudge-text">
+          {complete ? (
+            <>
+              Li hai già {duo ? "entrambi" : "tutti"}: passa al {page} e risparmi{" "}
+              <strong className="whitespace-nowrap text-lime">{formatPrice({ amount: saving, currency: "EUR" })}</strong>.
+            </>
+          ) : (
+            <>
+              Aggiungi {missingNames} con il {page}:{" "}
+              <strong className="whitespace-nowrap text-lime">+{formatPrice({ amount: extra, currency: "EUR" })}</strong> invece di{" "}
+              <span className="whitespace-nowrap">+{formatPrice({ amount: missingCost, currency: "EUR" })}</span>.
+            </>
+          )}
+        </p>
+      </div>
+      <button
+        type="button"
+        data-testid="bundle-nudge-swap"
+        onClick={() => {
+          swap(bundle.slug, components);
+          toast.push({ tone: "success", message: `${bundle.name} nel carrello.` });
+        }}
+        className="gd-chamfer gd-display inline-flex h-11 shrink-0 items-center justify-center bg-lime px-4 text-small font-bold tracking-[0.08em] text-void transition-colors hover:bg-[#d8ff4d]"
+      >
+        {complete ? (duo ? "Passa al duo" : "Passa al set") : duo ? "Completa il duo" : "Completa il set"}
+      </button>
     </div>
   );
 }
