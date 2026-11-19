@@ -117,3 +117,53 @@ describe("a confirmed card", () => {
     expect(transitionOrderAction).not.toHaveBeenCalled();
   });
 });
+
+describe("an answer that announces a card it never made (seen live, 2026-11-19)", () => {
+  const usage = { input_tokens: 10, output_tokens: 5 };
+
+  function scripted(responses: readonly Record<string, unknown>[]) {
+    const requests: { messages: { role: string; content: unknown }[] }[] = [];
+    const claude = {
+      async createMessage(request: { messages: { role: string; content: unknown }[] }) {
+        requests.push(JSON.parse(JSON.stringify(request)));
+        const next = responses[requests.length - 1];
+        if (!next) throw new Error("no scripted response");
+        return { id: `msg_${requests.length}`, model: "m", content: [], stop_reason: "end_turn", usage, ...next };
+      },
+    };
+    return { claude: claude as never, requests };
+  }
+  const runs = { rpc: async () => ({ data: 1, error: null }) };
+  const clientWithRuns = () => Object.assign(fakeClient() as object, runs) as never;
+  const text = (value: string) => ({ content: [{ type: "text", text: value }] });
+
+  it("is sent back once, and the card it then prepares reaches the partner", async () => {
+    const { askCopilot, claimsACard } = await import("@/lib/ai/copilot");
+    expect(claimsACard("Scheda pronta per la nota interna su GD-ESZGLRU5. Conferma con il tasto qui sotto.")).toBe(true);
+    expect(claimsACard("Ci sono 11 ordini pagati e confermati non ancora spediti.")).toBe(false);
+    const { claude, requests } = scripted([
+      text("Scheda pronta per la nota interna su GD-ESZGLRU5. Conferma con il tasto qui sotto."),
+      { stop_reason: "tool_use", content: [{ type: "tool_use", id: "t1", name: "nota_ordine", input: { ordine: "GD-ESZGLRU5", nota: "Prova" } }] },
+      text("Scheda pronta: conferma qui sotto."),
+    ]);
+    const answer = await askCopilot(clientWithRuns(), claude, { id: 1, name: "Gear Drop" }, [], "Aggiungi una nota a GD-ESZGLRU5");
+    expect(answer.actions.map((action) => action.kind)).toEqual(["nota_ordine"]);
+    expect(JSON.stringify(requests[1]!.messages.at(-1))).toContain("non hai chiamato nessuno strumento");
+  });
+
+  it("says plainly that nothing was prepared when the second go makes no card either", async () => {
+    const { askCopilot } = await import("@/lib/ai/copilot");
+    const { claude } = scripted([text("Scheda pronta, conferma qui sotto."), text("Ecco la scheda: premi «Conferma».")]);
+    const answer = await askCopilot(clientWithRuns(), claude, { id: 1, name: "Gear Drop" }, [], "Aggiungi una nota a GD-ESZGLRU5");
+    expect(answer.actions).toEqual([]);
+    expect(answer.answer).toBe("Non sono riuscito a preparare la scheda. Riscrivi la richiesta indicando ordine o prodotto e cosa fare.");
+  });
+
+  it("leaves an answer without a card claim alone", async () => {
+    const { askCopilot } = await import("@/lib/ai/copilot");
+    const { claude, requests } = scripted([text("Ci sono 11 ordini da spedire.")]);
+    const answer = await askCopilot(clientWithRuns(), claude, { id: 1, name: "Gear Drop" }, [], "Cosa devo spedire?");
+    expect(answer.answer).toBe("Ci sono 11 ordini da spedire.");
+    expect(requests).toHaveLength(1);
+  });
+});

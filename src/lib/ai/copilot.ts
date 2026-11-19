@@ -168,6 +168,8 @@ export function copilotSystemPrompt(company: string): string {
     "Non inventare dati: se uno strumento non ha il dato dillo. Importi in euro; profitto e costi sono netti IVA.",
     "Puoi preparare modifiche con gli strumenti d'azione: cambia_stato_ordine, spedisci_ordine, nota_ordine, movimento_magazzino, cambia_prezzo, imposta_costo. Ogni azione diventa una scheda che l'utente conferma con un tasto, con i suoi permessi: non dire mai che una cosa è fatta finché la conversazione non riporta «Eseguita».",
     "Prima di preparare un'azione leggi i dati che servono (ordine, da_spedire, prodotto). Se l'utente chiede più cose, prepara una scheda per ciascuna. Se un dato è ambiguo (più prodotti con lo stesso nome), chiedi invece di indovinare.",
+    "Una scheda esiste solo se chiami lo strumento d'azione in questa risposta: le schede delle risposte precedenti non contano. Non scrivere mai «scheda pronta» o «conferma qui sotto» senza averlo chiamato ora.",
+    "«Segna come spedito/evaso» senza un codice di tracciamento: usa cambia_stato_ordine (nessuna email). Usa spedisci_ordine solo quando l'utente ti dà corriere e codice.",
     "Rimborsi, annullamenti e coupon non li puoi preparare: indica dove farli.",
     `Le pagine del gestionale sono solo queste, con questi nomi: ${pages}. Non nominare pagine o menu che non sono in questo elenco.`,
     ...HOW_TO,
@@ -183,6 +185,15 @@ function withOutcomes(turn: CopilotTurn): string {
   return [turn.text, ...turn.actions.map((action) => `[${action.title}: ${OUTCOME[action.status]}${action.result ? ` · ${action.result}` : ""}]`)].join("\n");
 }
 
+/** An answer that points the partner at a card to confirm. */
+export function claimsACard(text: string): boolean {
+  return /\bsched[ae]\b|tast[oi] qui sotto|«\s*conferma\s*»|conferma(lo|la|le|li)? (qui )?sotto/i.test(text);
+}
+
+const NO_CARD_NUDGE =
+  "In questa risposta non hai chiamato nessuno strumento d'azione, quindi non c'è nessuna scheda da confermare. Se serve un'azione, chiama ora lo strumento; altrimenti rispondi senza parlare di schede.";
+const NO_CARD_ANSWER = "Non sono riuscito a preparare la scheda. Riscrivi la richiesta indicando ordine o prodotto e cosa fare.";
+
 export async function askCopilot(
   client: Client,
   claude: ClaudeClient,
@@ -196,14 +207,26 @@ export async function askCopilot(
   const usage = emptyUsage();
   const actions: CopilotAction[] = [];
   try {
-    const result = await runAgent(claude, usage, {
+    const messages = [...history.slice(-10).map((turn) => ({ role: turn.role, content: withOutcomes(turn) })), { role: "user" as const, content: question }];
+    const options = {
       model,
       system: copilotSystemPrompt(organization.name),
-      messages: [...history.slice(-10).map((turn) => ({ role: turn.role, content: withOutcomes(turn) })), { role: "user" as const, content: question }],
       tools: copilotTools(client, organization.id, (action) => actions.push(action)),
       maxTokens: 2048,
       maxTurns: 8,
-    });
+    };
+    let result = await runAgent(claude, usage, { ...options, messages });
+    // Seen live on 2026-11-19: the model wrote "Scheda pronta … conferma qui sotto" without calling
+    // any action tool, so no card showed. One more go, told so; if it still prepares nothing, the
+    // answer says that plainly instead of pointing at a button that is not there.
+    if (actions.length === 0 && claimsACard(result.text)) {
+      result = await runAgent(claude, usage, {
+        ...options,
+        maxTurns: 4,
+        messages: [...messages, { role: "assistant" as const, content: result.text }, { role: "user" as const, content: NO_CARD_NUDGE }],
+      });
+      if (actions.length === 0 && claimsACard(result.text)) result = { ...result, text: NO_CARD_ANSWER };
+    }
     await client.rpc("finish_agent_run", {
       p_run_id: started.data,
       p_outcome: {
