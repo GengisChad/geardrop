@@ -17,7 +17,7 @@ describe("reviewed catalogue", () => {
       // sits at the bottom. Glory Valkerion is first because it is the best seller the shop can
       // actually send — nine pieces, second only to the sold-out Suppress Superion.
       // The promotion of 2026-11-13: two red Phoenix without the launcher, leading the shop.
-      { slug: "soar-phoenix-9-60gf-solo-trottola", price: 1299, stock: "disponibile", availableQuantity: 2, rating: 0, reviewCount: 0 },
+      { slug: "soar-phoenix-9-60gf-solo-trottola", price: 1690, stock: "disponibile", availableQuantity: 2, rating: 0, reviewCount: 0 },
       // Takara Tomy pieces on the shop's own shelf: the arrival of 2026-11-18, then that of 2026-11-06.
       { slug: "bx-52-luster-dragoon-6-60lc", price: 3999, stock: "disponibile", availableQuantity: 6, rating: 0, reviewCount: 0 },
       { slug: "ux-08-silver-wolf-3-80fb", price: 3499, stock: "disponibile", availableQuantity: 2, rating: 0, reviewCount: 0 },
@@ -75,7 +75,7 @@ describe("reviewed catalogue", () => {
       { slug: "suppress-superion-0-70lp", price: 2500, stock: "pre-ordine", availableQuantity: 5, rating: 0, reviewCount: 0 },
       { slug: "strike-dran-4-50ff", price: 2300, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
       { slug: "tread-croc-tq-5-50gn", price: 2500, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
-      { slug: "soar-phoenix-9-60gf", price: 1990, stock: "disponibile", availableQuantity: 199, rating: 0, reviewCount: 0 },
+      { slug: "soar-phoenix-9-60gf", price: 2190, stock: "disponibile", availableQuantity: 199, rating: 0, reviewCount: 0 },
       // Takara Tomy on consignment from the partner, two of each (owner, 2026-10-07).
       { slug: "cx-00-evangelion-deck-set", price: 13500, stock: "disponibile", availableQuantity: 2, rating: 0, reviewCount: 0 },
       { slug: "ux-00-glory-valkyrie-lf", price: 20500, stock: "disponibile", availableQuantity: 2, rating: 0, reviewCount: 0 },

@@ -183,10 +183,12 @@ export const PRODUCTS: readonly Product[] = [
   // bit (like Hover Wyvern and Impact Drake), at 12,99, two on the shelf for now, as a promotion. It
   // leads the catalogue and the homepage (SPOTLIGHT_SLUGS) while it lasts, under the "Offerta" tag.
   // No compare-at price: the starter it is measured against is a different product, with a launcher.
+  // Owner, 2026-11-19: 16,90 from now on. Each top comes out of a starter the shop paid 12,50, so at
+  // 12,99 it sold under cost (10,65 net of VAT); 16,90 leaves 13,85 net and the launcher to sell apart.
   {
     slug: "soar-phoenix-9-60gf-solo-trottola", name: "Soar Phoenix 9-60GF solo trottola", tagline: "La Phoenix rossa, senza lanciatore.",
     description: "Soar Phoenix 9-60GF è la trottola d'attacco rossa dello starter Hasbro, qui venduta da sola: tre lame che salgono verso l'alto per un Upper Attack capace di sollevare l'avversario, una delle blade più pesanti della serie, con Ratchet 9-60 e Bit GF (Gear Flat). Solo la trottola con ratchet e bit montati: il lanciatore non è incluso. Arriva in busta, senza scatola. Richiede lanciatore e Beystadium Beyblade X (venduti separatamente).",
-    price: eur(1299), category: "beyblade-x", bladeType: "attacco", stock: "disponibile", availableQuantity: 2, tags: ["offerta"], rating: 0, reviewCount: 0,
+    price: eur(1690), category: "beyblade-x", bladeType: "attacco", stock: "disponibile", availableQuantity: 2, tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["soar-phoenix-9-60gf-solo-trottola"],
     specs: [{ label: "Tipo", value: "Attacco" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codice", value: "9-60GF" }, { label: "Componenti", value: "1 trottola: blade, Ratchet 9-60 e Bit GF" }, { label: "Rotazione", value: "Destra" }, { label: "Confezione", value: "In busta, senza scatola" }, { label: "Nota", value: "Richiede lanciatore e Beystadium (venduti a parte)" }],
     features: [{ title: "Upper Attack", description: "Le tre lame sollevano l'avversario da terra" }, { title: "Ratchet 9-60", description: "Assetto basso a 6,0 mm, nove punti di contatto" }, { title: "Solo la trottola", description: "Blade, ratchet e bit: il lanciatore non è incluso" }, { title: "Da sapere prima di comprare", description: "Arriva in busta, senza scatola e senza lanciatore" }],
@@ -497,9 +499,9 @@ export const PRODUCTS: readonly Product[] = [
   {
     slug: "soar-phoenix-9-60gf", name: "Soar Phoenix 9-60GF", tagline: "Upper attack. Colpisci verso l'alto.",
     description: "Soar Phoenix 9-60GF è una trottola d'attacco a tre lame che salgono verso l'alto per un Upper Attack capace di sollevare l'avversario, unito allo Smash che lo spinge fuori arena. Tra le blade più pesanti della serie. Lo starter include il lanciatore a corda.",
-    // Owner, 2026-11-19: 24,90 → 19,90. The other Italian shops ask 24,99-30,49 and the shelf holds
-    // ~180 of them, which sold 11 in 90 days at 24,90.
-    price: eur(1990), category: "beyblade-x", bladeType: "attacco", stock: "disponibile", availableQuantity: 199, tags: ["novita"], rating: 0, reviewCount: 0,
+    // Owner, 2026-11-19: 24,90 → 19,90 (other Italian shops 24,99-30,49, ~180 on the shelf), then the
+    // same day 21,90: the shop paid 12,50 a piece, not the 8,00 the cut was worked out on.
+    price: eur(2190), category: "beyblade-x", bladeType: "attacco", stock: "disponibile", availableQuantity: 199, tags: ["novita"], rating: 0, reviewCount: 0,
     images: productImages["soar-phoenix-9-60gf"],
     specs: [{ label: "Tipo", value: "Attacco" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codice", value: "9-60GF" }, { label: "Componenti", value: "1 trottola, 1 lanciatore a corda" }, { label: "Materiale", value: "Plastica e metallo" }],
     features: [{ title: "Upper Attack", description: "Le tre lame sollevano l'avversario da terra" }, { title: "Peso elevato", description: "Massa che domina i confronti d'attacco" }, { title: "Starter completo", description: "Include il lanciatore a corda" }, { title: "Compatibile Beyblade X", description: "Blade, Ratchet e Bit intercambiabili con la serie" }],
@@ -549,15 +551,15 @@ export const PRODUCTS: readonly Product[] = [
 export const BUNDLES: readonly Product[] = [
   // Owner, 2026-11-19 ("Sì, procedi" on the proposal): three attack starters off the deepest shelves
   // and a case, a few euros under what the other Italian shops ask for the same pieces. Glory
-  // Valkerion 19,99 + Cobalt Dragoon 17,90 + Soar Phoenix 19,90 + case 18,00 = compareAt 75,79;
-  // saving 15,89. Listed first: the newest offer leads the promotions row.
+  // Valkerion 19,99 + Cobalt Dragoon 17,90 + Soar Phoenix 21,90 + case 18,00 = compareAt 77,79;
+  // saving 17,89. Listed first: the newest offer leads the promotions row.
   {
-    slug: "deck-da-torneo", name: "Deck da Torneo", tagline: "Tre attacchi e il porta deck. €15,89 in meno.",
+    slug: "deck-da-torneo", name: "Deck da Torneo", tagline: "Tre attacchi e il porta deck. €17,89 in meno.",
     description: "Tre starter d'attacco e la custodia per portarli al torneo: Glory Valkerion LF, attacco UX a rotazione destra con il Bit Low Flat che aggancia l'Xtreme Line; Cobalt Dragoon 2-60C, attacco a rotazione sinistra con lo Smash delle quattro lame inclinate e il suo lanciatore left-spin; Soar Phoenix 9-60GF, Upper Attack con tre lame che sollevano l'avversario. Ogni starter ha il suo lanciatore. Il porta deck giallo tiene tre trottole, una per scomparto. Richiede un Beystadium Beyblade X (venduto separatamente).",
-    price: eur(5990), compareAtPrice: eur(7579), category: "beyblade-x", stock: "disponibile", tags: ["offerta"], rating: 0, reviewCount: 0,
+    price: eur(5990), compareAtPrice: eur(7779), category: "beyblade-x", stock: "disponibile", tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["deck-da-torneo"],
     specs: [{ label: "Contenuto", value: "3 starter, 3 lanciatori, 1 porta deck" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codici", value: "LF · 2-60C · 9-60GF" }, { label: "Rotazione", value: "Cobalt Dragoon sinistra, le altre due destra" }, { label: "Porta deck", value: "Giallo, 3 scomparti, non ufficiale" }],
-    features: [{ title: "Tre modi di attaccare", description: "Xtreme Dash, Smash left-spin e Upper Attack" }, { title: "Tre starter completi", description: "Ogni trottola ha il suo lanciatore" }, { title: "Porta deck incluso", description: "Tre scomparti, uno per trottola" }, { title: "Risparmi €15,89", description: "€59,90 invece di €75,79 comprandoli separati" }],
+    features: [{ title: "Tre modi di attaccare", description: "Xtreme Dash, Smash left-spin e Upper Attack" }, { title: "Tre starter completi", description: "Ogni trottola ha il suo lanciatore" }, { title: "Porta deck incluso", description: "Tre scomparti, uno per trottola" }, { title: "Risparmi €17,89", description: "€59,90 invece di €77,79 comprandoli separati" }],
     boxContents: ["1 × Starter Glory Valkerion LF (trottola e lanciatore)", "1 × Starter Cobalt Dragoon 2-60C (trottola e lanciatore left-spin)", "1 × Starter Soar Phoenix 9-60GF (trottola e lanciatore a corda)", "1 × Porta Deck giallo", "Manuali"],
     relatedSlugs: ["glory-valkerion-lf", "cobalt-dragoon-2-60c", "soar-phoenix-9-60gf"],
     bundleOf: [{ slug: "glory-valkerion-lf", quantity: 1 }, { slug: "cobalt-dragoon-2-60c", quantity: 1 }, { slug: "soar-phoenix-9-60gf", quantity: 1 }, { slug: "porta-deck-giallo", quantity: 1 }],
@@ -579,41 +581,41 @@ export const BUNDLES: readonly Product[] = [
     bundleOf: [{ slug: "bx-52-luster-dragoon-6-60lc", quantity: 1 }, { slug: "hurricane-enlil-is-7-55t", quantity: 1 }],
   },
   {
-    // Luster 39,99 + Soar Phoenix 19,90 + Glory Valkerion 19,99 + Hover Wyvern 13,99 + Enlil 9,99 =
-    // compareAt 103,86 (Phoenix at 19,90 since 2026-11-19); at 100,00 it clears FREE_SHIPPING_THRESHOLD alone. Saving 3,86.
+    // Luster 39,99 + Soar Phoenix 21,90 + Glory Valkerion 19,99 + Hover Wyvern 13,99 + Enlil 9,99 =
+    // compareAt 105,86 (prices of 2026-11-19); at 100,00 it clears FREE_SHIPPING_THRESHOLD alone. Saving 5,86.
     slug: "pack-meta-luster", name: "Pack Meta Luster", tagline: "Cinque trottole a 100 €, spedizione gratuita.",
     description: "Il pack che da solo arriva a 100 € e spedisce gratis: Luster Dragoon 6-60LC di Takara Tomy, attacco a rotazione sinistra con il Winder Launcher L; Soar Phoenix 9-60GF, Upper Attack con il lanciatore a corda; Glory Valkerion LF, attacco UX con il lanciatore; Hover Wyvern 3-85N, difesa, imbustata e senza lanciatore; Hurricane Enlil IS 7-55T, bilanciata CX con il lanciatore. Cinque trottole tra attacco, difesa e bilanciata, quattro lanciatori. Richiede un Beystadium Beyblade X (venduto a parte).",
-    price: eur(10000), compareAtPrice: eur(10386), category: "beyblade-x", stock: "disponibile", availableQuantity: 6, tags: ["offerta"], rating: 0, reviewCount: 0,
+    price: eur(10000), compareAtPrice: eur(10586), category: "beyblade-x", stock: "disponibile", availableQuantity: 6, tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["pack-meta-luster"],
     specs: [{ label: "Contenuto", value: "5 trottole, 4 lanciatori" }, { label: "Produttore", value: "Takara Tomy e Hasbro (prodotti originali)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codici", value: "6-60LC · 9-60GF · LF · 3-85N · IS 7-55T" }, { label: "Spedizione", value: "Gratuita: il pack arriva già a 100 €" }, { label: "Nota", value: "Richiede un Beystadium (venduto a parte)" }],
-    features: [{ title: "Spedizione gratuita", description: "Da solo arriva a 100 €, la soglia della spedizione gratis" }, { title: "Lanciatore L incluso", description: "Luster Dragoon gira a sinistra e ha il suo lanciatore" }, { title: "Risparmi €3,86", description: "€100,00 invece di €103,86 comprandoli separati" }, { title: "Da sapere prima di comprare", description: "Hover Wyvern è imbustata, estratta dal Battle Set e senza lanciatore" }],
+    features: [{ title: "Spedizione gratuita", description: "Da solo arriva a 100 €, la soglia della spedizione gratis" }, { title: "Lanciatore L incluso", description: "Luster Dragoon gira a sinistra e ha il suo lanciatore" }, { title: "Risparmi €5,86", description: "€100,00 invece di €105,86 comprandoli separati" }, { title: "Da sapere prima di comprare", description: "Hover Wyvern è imbustata, estratta dal Battle Set e senza lanciatore" }],
     boxContents: ["1 × Starter Luster Dragoon 6-60LC (trottola, Winder Launcher L e Long Winder)", "1 × Starter Soar Phoenix 9-60GF (trottola e lanciatore a corda)", "1 × Starter Glory Valkerion LF (trottola e lanciatore)", "1 × Trottola Hover Wyvern 3-85N imbustata", "1 × Starter Hurricane Enlil IS 7-55T (trottola e lanciatore)"],
     relatedSlugs: ["bx-52-luster-dragoon-6-60lc", "pack-meta-phoenix", "duo-luster-enlil"],
     bundleOf: [{ slug: "bx-52-luster-dragoon-6-60lc", quantity: 1 }, { slug: "soar-phoenix-9-60gf", quantity: 1 }, { slug: "glory-valkerion-lf", quantity: 1 }, { slug: "hover-wyvern-3-85n", quantity: 1 }, { slug: "hurricane-enlil-is-7-55t", quantity: 1 }],
   },
   {
-    // Soar Phoenix 19,90 + Glory Valkerion 19,99 + Cobalt Dragoon 17,90 + Brachio Whip 28,00 + Shatter
-    // Horus 11,99 + Hurricane Enlil 9,99 = compareAt 107,77 (prices of 2026-11-19); at 100,00 it ships free. Saving 7,77.
+    // Soar Phoenix 21,90 + Glory Valkerion 19,99 + Cobalt Dragoon 17,90 + Brachio Whip 28,00 + Shatter
+    // Horus 11,99 + Hurricane Enlil 9,99 = compareAt 109,77 (prices of 2026-11-19); at 100,00 it ships free. Saving 9,77.
     slug: "pack-meta-phoenix", name: "Pack Meta Phoenix", tagline: "Sei trottole a 100 €, spedizione gratuita.",
     description: "Sei trottole a 100 €, spedizione gratuita compresa: Soar Phoenix 9-60GF, Upper Attack; Glory Valkerion LF, attacco UX; Cobalt Dragoon 2-60C, attacco a rotazione sinistra con il suo lanciatore left-spin; Brachio Whip OW5-70Nr dalla Random Booster CX-18 di Takara Tomy, stamina con il Bit Narrow, in un colore a sorpresa; Shatter Horus 9-65GB, stamina BX; Hurricane Enlil IS 7-55T, bilanciata CX. I cinque starter Hasbro hanno ognuno il suo lanciatore; Brachio Whip è solo la trottola, nella sua scatola sigillata. Richiede un Beystadium Beyblade X (venduto a parte).",
-    price: eur(10000), compareAtPrice: eur(10777), category: "beyblade-x", stock: "disponibile", availableQuantity: 13, tags: ["offerta"], rating: 0, reviewCount: 0,
+    price: eur(10000), compareAtPrice: eur(10977), category: "beyblade-x", stock: "disponibile", availableQuantity: 13, tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["pack-meta-phoenix"],
     specs: [{ label: "Contenuto", value: "6 trottole, 5 lanciatori" }, { label: "Produttore", value: "Hasbro e Takara Tomy (prodotti originali)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codici", value: "9-60GF · LF · 2-60C · OW5-70Nr · 9-65GB · IS 7-55T" }, { label: "Spedizione", value: "Gratuita: il pack arriva già a 100 €" }, { label: "Nota", value: "Richiede un Beystadium (venduto a parte)" }],
-    features: [{ title: "Spedizione gratuita", description: "Da solo arriva a 100 €, la soglia della spedizione gratis" }, { title: "Sei trottole, cinque lanciatori", description: "Attacco, left-spin, stamina e bilanciata nello stesso pacco" }, { title: "Risparmi €7,77", description: "€100,00 invece di €107,77 comprandoli separati" }, { title: "Da sapere prima di comprare", description: "Brachio Whip arriva in un colore a sorpresa e senza lanciatore" }],
+    features: [{ title: "Spedizione gratuita", description: "Da solo arriva a 100 €, la soglia della spedizione gratis" }, { title: "Sei trottole, cinque lanciatori", description: "Attacco, left-spin, stamina e bilanciata nello stesso pacco" }, { title: "Risparmi €9,77", description: "€100,00 invece di €109,77 comprandoli separati" }, { title: "Da sapere prima di comprare", description: "Brachio Whip arriva in un colore a sorpresa e senza lanciatore" }],
     boxContents: ["1 × Starter Soar Phoenix 9-60GF (trottola e lanciatore a corda)", "1 × Starter Glory Valkerion LF (trottola e lanciatore)", "1 × Starter Cobalt Dragoon 2-60C (trottola e lanciatore left-spin)", "1 × Random Booster CX-18 Brachio Whip (solo trottola, colore a sorpresa)", "1 × Starter Shatter Horus 9-65GB (trottola e lanciatore)", "1 × Starter Hurricane Enlil IS 7-55T (trottola e lanciatore)"],
     relatedSlugs: ["pack-meta-luster", "soar-phoenix-9-60gf", "cx-18-random-booster-brachio-whip"],
     bundleOf: [{ slug: "soar-phoenix-9-60gf", quantity: 1 }, { slug: "glory-valkerion-lf", quantity: 1 }, { slug: "cobalt-dragoon-2-60c", quantity: 1 }, { slug: "cx-18-random-booster-brachio-whip", quantity: 1 }, { slug: "shatter-horus-9-65gb", quantity: 1 }, { slug: "hurricane-enlil-is-7-55t", quantity: 1 }],
   },
   {
     // Owner, 2026-11-18, asked the same day: a pack for the two Silver Wolf too. Silver Wolf 34,99 +
-    // Soar Phoenix 19,90 + Glory Valkerion 19,99 + Cobalt Dragoon 17,90 + Hurricane Enlil 9,99 =
-    // compareAt 102,77 (prices of 2026-11-19); at 100,00 it ships free. Saving 2,77. Two of them, like the Silver Wolf.
+    // Soar Phoenix 21,90 + Glory Valkerion 19,99 + Cobalt Dragoon 17,90 + Hurricane Enlil 9,99 =
+    // compareAt 104,77 (prices of 2026-11-19); at 100,00 it ships free. Saving 4,77. Two of them, like the Silver Wolf.
     slug: "pack-meta-silver-wolf", name: "Pack Meta Silver Wolf", tagline: "Cinque starter a 100 €, spedizione gratuita.",
     description: "Cinque starter a 100 €, spedizione gratuita compresa: Silver Wolf 3-80FB di Takara Tomy, stamina con l'anello libero e il Bit Free Ball; Soar Phoenix 9-60GF, Upper Attack; Glory Valkerion LF, attacco UX; Cobalt Dragoon 2-60C, attacco a rotazione sinistra con il suo lanciatore left-spin; Hurricane Enlil IS 7-55T, bilanciata CX. Ogni starter ha il suo lanciatore: cinque trottole, cinque lanciatori. Richiede un Beystadium Beyblade X (venduto a parte).",
-    price: eur(10000), compareAtPrice: eur(10277), category: "beyblade-x", stock: "disponibile", availableQuantity: 2, tags: ["offerta"], rating: 0, reviewCount: 0,
+    price: eur(10000), compareAtPrice: eur(10477), category: "beyblade-x", stock: "disponibile", availableQuantity: 2, tags: ["offerta"], rating: 0, reviewCount: 0,
     images: productImages["pack-meta-silver-wolf"],
     specs: [{ label: "Contenuto", value: "5 trottole, 5 lanciatori" }, { label: "Produttore", value: "Takara Tomy e Hasbro (prodotti originali)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codici", value: "3-80FB · 9-60GF · LF · 2-60C · IS 7-55T" }, { label: "Spedizione", value: "Gratuita: il pack arriva già a 100 €" }, { label: "Nota", value: "Richiede un Beystadium (venduto a parte)" }],
-    features: [{ title: "Spedizione gratuita", description: "Da solo arriva a 100 €, la soglia della spedizione gratis" }, { title: "Cinque starter completi", description: "Ogni trottola ha il suo lanciatore" }, { title: "Risparmi €2,77", description: "€100,00 invece di €102,77 comprandoli separati" }, { title: "Da sapere prima di comprare", description: "Silver Wolf è giapponese: confezione e istruzioni in giapponese" }],
+    features: [{ title: "Spedizione gratuita", description: "Da solo arriva a 100 €, la soglia della spedizione gratis" }, { title: "Cinque starter completi", description: "Ogni trottola ha il suo lanciatore" }, { title: "Risparmi €4,77", description: "€100,00 invece di €104,77 comprandoli separati" }, { title: "Da sapere prima di comprare", description: "Silver Wolf è giapponese: confezione e istruzioni in giapponese" }],
     boxContents: ["1 × Starter Silver Wolf 3-80FB (trottola e Winder Launcher nero e argento)", "1 × Starter Soar Phoenix 9-60GF (trottola e lanciatore a corda)", "1 × Starter Glory Valkerion LF (trottola e lanciatore)", "1 × Starter Cobalt Dragoon 2-60C (trottola e lanciatore left-spin)", "1 × Starter Hurricane Enlil IS 7-55T (trottola e lanciatore)"],
     relatedSlugs: ["ux-08-silver-wolf-3-80fb", "pack-meta-luster", "pack-meta-phoenix"],
     bundleOf: [{ slug: "ux-08-silver-wolf-3-80fb", quantity: 1 }, { slug: "soar-phoenix-9-60gf", quantity: 1 }, { slug: "glory-valkerion-lf", quantity: 1 }, { slug: "cobalt-dragoon-2-60c", quantity: 1 }, { slug: "hurricane-enlil-is-7-55t", quantity: 1 }],
