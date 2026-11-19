@@ -9,10 +9,11 @@ import { applyLiveStock, type LiveStockRow } from "./live-stock-overlay";
 import type { Product } from "./types";
 
 /**
- * The reviewed catalogue with today's stock.
+ * The reviewed catalogue with today's stock and prices.
  *
- * Product copy, prices and images stay in src/data/catalog.ts, but availability lives in the
- * database, where every paid Stripe order takes the pieces it sold. A product the owner lets run
+ * Product copy and images stay in src/data/catalog.ts, but availability lives in the database,
+ * where every paid Stripe order takes the pieces it sold, and so does the selling price, which the
+ * owner changes from the back office (since 2026-11-19; the catalogue's figure is the fallback). A product the owner lets run
  * past its stock comes back as "pre-ordine" at zero and keeps selling. The read is cached under
  * the products tag, which the webhook expires after each order. Without a Supabase project, or
  * if the read fails, the catalogue's own numbers are served rather than an error page.
@@ -33,7 +34,7 @@ export async function loadLiveCatalogue(): Promise<readonly Product[]> {
     const rows = await cacheStorefrontRead(["commerce", "live-stock"], [STOREFRONT_CACHE_TAGS.products], async () => {
       const result = await createSupabasePublicClient()
         .from("products")
-        .select("slug,stock_status,stock_quantity,preorder_allocation,availability_override,allow_backorder")
+        .select("slug,stock_status,stock_quantity,preorder_allocation,availability_override,allow_backorder,price_cents,compare_at_price_cents")
         .eq("organization_id", await storefrontOrganizationId())
         .in(
           "slug",

@@ -16,6 +16,7 @@ import {
 } from "@/lib/admin/products";
 import { associateMediaSchema } from "@/lib/admin/media";
 import { formatEuro, netOfVat, parseEuroCents } from "@/lib/admin/warehouse";
+import { bundlePartnersOf, bundlesLosingTheirSaving } from "@/lib/admin/bundle-saving-guard";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Database, Json } from "@/lib/supabase/database.types";
 
@@ -601,7 +602,18 @@ export async function setListPriceAction(_previous: ListPriceState, formData: Fo
     if (error) return safeFailure(error);
     refreshProductCache(product.data.slug);
     revalidatePath("/admin/listino");
-    return { ok: true, message: `Prezzo salvato: ${formatEuro(priceCents)}.` };
+    // The shop sells at this price at once (2026-11-19); a pack holding the piece keeps its own price.
+    const partners = bundlePartnersOf(product.data.slug);
+    let packNote = "";
+    if (partners.length > 0) {
+      const live = await client.from("products").select("slug,price_cents").eq("organization_id", organizationId).in("slug", partners);
+      const livePrices = new Map((live.data ?? []).map((row) => [row.slug, row.price_cents]));
+      const losing = bundlesLosingTheirSaving(product.data.slug, priceCents, livePrices);
+      if (losing.length > 0) {
+        packNote = ` Attenzione: ${losing.map((bundle) => `«${bundle.name}»`).join(", ")} ora costa quanto o più dei pezzi presi da soli, quindi il sito non mostra più il risparmio. Il prezzo dei pack non si cambia da questa pagina.`;
+      }
+    }
+    return { ok: true, message: `Prezzo salvato: ${formatEuro(priceCents)}. Sul sito entro pochi minuti.${packNote}` };
   } catch (error) {
     return safeFailure(error);
   }

@@ -9,20 +9,30 @@ import { useToast } from "@/components/ui/toast";
 import { formatPrice } from "@/lib/format";
 import { shortName } from "@/lib/holo";
 import { useCart } from "@/lib/store/cart";
-import type { CartQuoteLine } from "@/lib/commerce/types";
+import type { CartQuoteLine, Product } from "@/lib/commerce/types";
 
 const NAME_BY_SLUG = new Map(PRODUCTS.map((product) => [product.slug as string, product]));
 
 /**
  * In the cart, a bundle the shopper is halfway into: with every pack already there it offers to
  * swap them for the bundle at its lower price; with some of them, what the rest costs inside it.
- * Prices come from the priced quote for what is in the cart and from the catalogue for the rest.
+ * Prices come from the priced quote for what is in the cart and, for the rest, from the live
+ * catalogue the cart page passes (the back office sets prices since 2026-11-19), else the catalogue.
  */
-export function BundleNudge({ lines }: { readonly lines: readonly CartQuoteLine[] }) {
+export function BundleNudge({
+  lines,
+  catalogue = [],
+}: {
+  readonly lines: readonly CartQuoteLine[];
+  /** Bundles and their packs at today's prices, as the storefront serves them. */
+  readonly catalogue?: readonly Product[];
+}) {
   const swap = useCart((state) => state.swapIntoBundle);
   const toast = useToast();
+  const live = new Map(catalogue.map((product) => [product.slug as string, product]));
+  const priceOf = (slug: string) => (live.get(slug) ?? NAME_BY_SLUG.get(slug))?.price.amount ?? 0;
 
-  const offers = BUNDLES.flatMap((bundle) => {
+  const offers = BUNDLES.map((bundle) => live.get(bundle.slug) ?? bundle).flatMap((bundle) => {
     const components = bundle.bundleOf ?? [];
     if (!bundle.compareAtPrice || components.length === 0) return [];
     const present = components.filter((component) =>
@@ -37,7 +47,7 @@ export function BundleNudge({ lines }: { readonly lines: readonly CartQuoteLine[
       0,
     );
     const missingCost = missing.reduce(
-      (sum, component) => sum + (NAME_BY_SLUG.get(component.slug)?.price.amount ?? 0) * component.quantity,
+      (sum, component) => sum + priceOf(component.slug) * component.quantity,
       0,
     );
     return [{ bundle, components, present, missing, extra: bundle.price.amount - presentCost, missingCost }];

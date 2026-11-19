@@ -67,26 +67,33 @@ export type StripePriceRow = {
 };
 
 /**
- * Pairs every quote line with its Stripe price. Any drift from the catalogue amount refuses the
- * whole cart: the buyer must never be charged a number the site did not show.
+ * Each quote line's Stripe price id, plus the lines whose Stripe amount is not the one the shop
+ * showed. Those lines are charged at the shop's own amount (`price_data` on the same product), so
+ * a price changed in the back office sells at once, before any Stripe sync (owner, 2026-11-19).
  */
-export function matchStripePrices(quote: CartQuote, prices: readonly StripePriceRow[]): Map<string, string> | null {
+export type StripePricePairs = ReadonlyMap<string, string> & {
+  /** Slugs whose active Stripe price differs from the quote's unit price. */
+  readonly drifted?: ReadonlySet<string>;
+};
+
+/**
+ * Pairs every quote line with its Stripe price. A line without an active price for its product, or
+ * in another currency, refuses the whole cart. A different amount does not: the line is listed as
+ * drifted and charged at the quote's price, so the buyer never pays a number the site did not show.
+ */
+export function matchStripePrices(quote: CartQuote, prices: readonly StripePriceRow[]): StripePricePairs | null {
   const byLookupKey = new Map<string, StripePriceRow>();
   for (const price of prices) if (price.active && price.lookup_key) byLookupKey.set(price.lookup_key, price);
 
   const matched = new Map<string, string>();
+  const drifted = new Set<string>();
   for (const line of quote.lines) {
     const price = byLookupKey.get(stripeProductId(line.slug));
-    if (
-      !price ||
-      price.unit_amount !== line.unitPrice.amount ||
-      price.currency !== line.unitPrice.currency.toLowerCase()
-    ) {
-      return null;
-    }
+    if (!price || price.currency !== line.unitPrice.currency.toLowerCase()) return null;
+    if (price.unit_amount !== line.unitPrice.amount) drifted.add(line.slug);
     matched.set(line.slug, price.id);
   }
-  return matched;
+  return Object.assign(matched, { drifted });
 }
 
 function truncate(value: string, limit: number): string {
@@ -146,7 +153,7 @@ export const CHECKOUT_SESSION_MINUTES = 35;
 
 export function buildCheckoutSessionFields(
   input: CheckoutSessionInput,
-  priceIds: ReadonlyMap<string, string>,
+  priceIds: StripePricePairs,
 ): Record<string, string | number> {
   // Discriminate: the 'express' field is only present (and true) on the second union arm.
   const express = "express" in input && input.express === true;
@@ -236,8 +243,10 @@ export function buildCheckoutSessionFields(
   quote.lines.forEach((line, index) => {
     const priceId = priceIds.get(line.slug);
     if (!priceId) throw new Error(`Missing Stripe price for ${line.slug}`);
-    // A price from a code, or a deck case at the kit price: the catalogue's Stripe product at that amount.
-    const specialPrice = (clubCode ? line.clubUnitPrice : undefined) ?? line.kitUnitPrice;
+    // A price from a code, a deck case at the kit price, or a price the back office changed since
+    // the last Stripe sync: the catalogue's Stripe product at the amount the shop showed.
+    const specialPrice =
+      (clubCode ? line.clubUnitPrice : undefined) ?? line.kitUnitPrice ?? (priceIds.drifted?.has(line.slug) ? line.unitPrice : undefined);
     if (specialPrice) {
       // The webhook still reads the slug from the product id, and the price list in Stripe stays
       // the one the shop shows everyone.
@@ -290,8 +299,11 @@ export async function createStripeCheckout(
 
     const priceIds = matchStripePrices(input.quote, prices?.data ?? []);
     if (!priceIds) {
-      console.error("[stripe-checkout] catalogue and Stripe prices differ: run pnpm stripe:products --apply");
+      console.error("[stripe-checkout] a product has no active Stripe price: run pnpm stripe:products --apply");
       return { ok: false, message: STRIPE_PRICE_MISMATCH_MESSAGE };
+    }
+    if (priceIds.drifted?.size) {
+      console.warn(`[stripe-checkout] charged at the shop's price, Stripe differs: ${[...priceIds.drifted].join(", ")}`);
     }
 
     const fields = buildCheckoutSessionFields(input, priceIds);
