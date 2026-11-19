@@ -23,7 +23,7 @@ export type QuickViewProduct = {
   readonly colours: number;
 };
 
-/** Where the card's photo stood when it was tapped, so it can travel into the sheet. */
+/** Where the card's photo was drawn when it was tapped (lib/motion/drawn-box.ts), so it can travel into the sheet. */
 export type QuickViewOrigin = { readonly left: number; readonly top: number; readonly width: number; readonly height: number; readonly src: string };
 
 type QuickViewState = {
