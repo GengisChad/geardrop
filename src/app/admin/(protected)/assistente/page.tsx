@@ -20,7 +20,7 @@ export default async function AssistantPage() {
         <div>
           <p>Agente IA / {principal.organization.name}</p>
           <h1>Assistente</h1>
-          <span>Magazzino, vendite, previsioni, profitto e mercato in tempo reale · sola lettura</span>
+          <span>Magazzino, vendite, previsioni, profitto e mercato in tempo reale · modifica solo con la tua conferma</span>
         </div>
       </header>
       <CopilotChat configured={claudeApiKey() !== null} />

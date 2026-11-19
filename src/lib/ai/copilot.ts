@@ -5,19 +5,22 @@ import { z } from "zod";
 import { ADMIN_NAV_ITEMS } from "@/lib/admin/navigation";
 import type { Database } from "@/lib/supabase/database.types";
 import { runAgent, type ClientTool } from "./agent-loop";
+import { copilotActionTools, type CopilotAction } from "./copilot-actions";
 import { CLAUDE_MODELS, emptyUsage, type ClaudeClient } from "./claude-api";
 import { listObservations, listProposals } from "./pricing-repository";
 
 /**
- * The partners' assistant: answers questions on stock, sales, forecast, profit and market
- * with read-only tools over the company in view. It changes nothing and sees no customer's
- * personal data: orders come without names, emails or addresses.
+ * The partners' assistant: answers questions on stock, sales, forecast, profit and market with
+ * read tools over the company in view, and since 2026-11-19 prepares changes (order status,
+ * tracking, notes, stock, prices, costs) that run only when the partner presses "Conferma", with
+ * the partner's own permissions (see copilot-actions.ts). It sees no customer's personal data:
+ * orders come without names, emails, addresses or the buyer's notes.
  */
 
 type Client = SupabaseClient<Database>;
 
-export type CopilotTurn = { readonly role: "user" | "assistant"; readonly text: string };
-export type CopilotAnswer = { readonly answer: string; readonly dollars: number; readonly toolCalls: number };
+export type CopilotTurn = { readonly role: "user" | "assistant"; readonly text: string; readonly actions?: readonly CopilotAction[] };
+export type CopilotAnswer = { readonly answer: string; readonly dollars: number; readonly toolCalls: number; readonly actions: readonly CopilotAction[] };
 
 const euros = (cents: number | null | undefined) => (cents == null ? null : Math.round(cents) / 100);
 
@@ -33,8 +36,33 @@ function tool(name: string, description: string, properties: Record<string, unkn
 const searchText = z.string().trim().max(100).optional().catch(undefined);
 const days = z.number().int().min(1).max(365).optional().catch(undefined);
 
-export function copilotTools(client: Client, organizationId: number): readonly ClientTool[] {
+export function copilotTools(client: Client, organizationId: number, collect: (action: CopilotAction) => void = () => {}): readonly ClientTool[] {
   return [
+    ...copilotActionTools(client, organizationId, collect),
+    tool("ordine", "Un ordine cercato per numero (es. GD-ESZGLRU5): stato, pagamento, data, spedizione, tracciamento e articoli. Senza dati personali.",
+      { numero: { type: "string" } },
+      async (input) => {
+        const wanted = String(input.numero ?? "").trim().toUpperCase().slice(0, 30);
+        const { data, error } = await client.from("orders")
+          .select("id,order_number,created_at,status,payment_status,total_cents,refunded_cents,shipping_method_code,tracking_carrier,tracking_code,shipped_at,delivered_at")
+          .eq("organization_id", organizationId).eq("order_number", wanted).maybeSingle();
+        if (error || !data) throw new Error(`Ordine ${wanted} non trovato`);
+        const items = await client.from("order_items").select("product_name_snapshot,sku_snapshot,quantity,unit_price_cents").eq("organization_id", organizationId).eq("order_id", data.id);
+        return {
+          numero: data.order_number, data: data.created_at.slice(0, 16), stato: data.status, pagamento: data.payment_status,
+          totale_eur: euros(data.total_cents), rimborsato_eur: euros(data.refunded_cents), spedizione: data.shipping_method_code,
+          corriere: data.tracking_carrier, tracciamento: data.tracking_code, spedito_il: data.shipped_at?.slice(0, 10) ?? null, consegnato_il: data.delivered_at?.slice(0, 10) ?? null,
+          articoli: (items.data ?? []).map((item) => ({ nome: item.product_name_snapshot, sku: item.sku_snapshot, quantita: item.quantity, prezzo_eur: euros(item.unit_price_cents) })),
+        };
+      }),
+    tool("da_spedire", "Ordini pagati non ancora spediti, dal più vecchio, senza dati personali.", {},
+      async () => {
+        const { data, error } = await client.from("orders").select("order_number,created_at,status,total_cents,shipping_method_code")
+          .eq("organization_id", organizationId).eq("payment_status", "paid").is("shipped_at", null).in("status", ["confirmed", "processing"])
+          .order("created_at", { ascending: true }).limit(100);
+        if (error) throw new Error("Ordini non disponibili");
+        return (data ?? []).map((order) => ({ numero: order.order_number, data: order.created_at.slice(0, 10), stato: order.status, totale_eur: euros(order.total_cents), spedizione: order.shipping_method_code }));
+      }),
     tool("panoramica_magazzino", "Valore del magazzino, profitto e ordini completi/incompleti degli ultimi N giorni, prodotti senza costo, carichi in bozza.",
       { giorni: { type: "integer", description: "Periodo in giorni, default 30" } },
       async (input) => {
@@ -128,7 +156,8 @@ const HOW_TO = [
   "Controllare un pacco prima di chiuderlo: in Da spedire, «Controlla pacco» sull'ordine.",
   "Reso: nella scheda dell'ordine spedito, «Registra reso»; il rimborso con «Rimborsa».",
   "Correggere la giacenza: Conteggio inventario (conteggio fisico) o Inventario (singolo movimento).",
-  "Cambiare un prezzo: la scheda del prodotto in Prodotti, oppure le proposte in Prezzi IA.",
+  "Cambiare un prezzo: la scheda del prodotto in Prodotti, Listino e margini, oppure le proposte in Prezzi IA.",
+  "Rimborsare o annullare un ordine: solo dalla scheda dell'ordine in Ordini («Rimborsa», «Annulla»), perché muovono soldi.",
 ];
 
 export function copilotSystemPrompt(company: string): string {
@@ -137,11 +166,21 @@ export function copilotSystemPrompt(company: string): string {
     `Sei l'assistente del gestionale di ${company}. Rispondi ai soci in italiano, in modo breve e concreto, con i numeri.`,
     "Usa gli strumenti per leggere i dati reali prima di rispondere: magazzino, previsioni, ordini, prodotti, mercato, proposte di prezzo.",
     "Non inventare dati: se uno strumento non ha il dato dillo. Importi in euro; profitto e costi sono netti IVA.",
-    "Non puoi modificare nulla: per un'azione indica dove farla nel gestionale.",
+    "Puoi preparare modifiche con gli strumenti d'azione: cambia_stato_ordine, spedisci_ordine, nota_ordine, movimento_magazzino, cambia_prezzo, imposta_costo. Ogni azione diventa una scheda che l'utente conferma con un tasto, con i suoi permessi: non dire mai che una cosa è fatta finché la conversazione non riporta «Eseguita».",
+    "Prima di preparare un'azione leggi i dati che servono (ordine, da_spedire, prodotto). Se l'utente chiede più cose, prepara una scheda per ciascuna. Se un dato è ambiguo (più prodotti con lo stesso nome), chiedi invece di indovinare.",
+    "Rimborsi, annullamenti e coupon non li puoi preparare: indica dove farli.",
     `Le pagine del gestionale sono solo queste, con questi nomi: ${pages}. Non nominare pagine o menu che non sono in questo elenco.`,
     ...HOW_TO,
     "Formato: frasi brevi, **grassetto** per i nomi importanti, elenchi con «- ». Niente tabelle, niente emoji.",
   ].join("\n");
+}
+
+const OUTCOME: Record<CopilotAction["status"], string> = { pending: "in attesa di conferma", done: "Eseguita", failed: "Non riuscita", cancelled: "Annullata dall'utente" };
+
+/** An assistant turn as the model reads it back: its text, then what became of each card. */
+function withOutcomes(turn: CopilotTurn): string {
+  if (!turn.actions?.length) return turn.text;
+  return [turn.text, ...turn.actions.map((action) => `[${action.title}: ${OUTCOME[action.status]}${action.result ? ` · ${action.result}` : ""}]`)].join("\n");
 }
 
 export async function askCopilot(
@@ -155,12 +194,13 @@ export async function askCopilot(
   const started = await client.rpc("start_agent_run", { p_organization_id: organization.id, p_agent: "copilot", p_models: [model] });
   if (started.error) throw new Error(started.error.message);
   const usage = emptyUsage();
+  const actions: CopilotAction[] = [];
   try {
     const result = await runAgent(claude, usage, {
       model,
       system: copilotSystemPrompt(organization.name),
-      messages: [...history.slice(-10).map((turn) => ({ role: turn.role, content: turn.text })), { role: "user" as const, content: question }],
-      tools: copilotTools(client, organization.id),
+      messages: [...history.slice(-10).map((turn) => ({ role: turn.role, content: withOutcomes(turn) })), { role: "user" as const, content: question }],
+      tools: copilotTools(client, organization.id, (action) => actions.push(action)),
       maxTokens: 2048,
       maxTurns: 8,
     });
@@ -171,7 +211,7 @@ export async function askCopilot(
         cost_estimate_cents: Math.ceil(usage.dollars * 100), summary: question.slice(0, 500),
       },
     });
-    return { answer: result.text || "Non ho una risposta con i dati disponibili.", dollars: usage.dollars, toolCalls: result.toolCalls };
+    return { answer: result.text || (actions.length ? "Ecco cosa preparo: conferma sotto." : "Non ho una risposta con i dati disponibili."), dollars: usage.dollars, toolCalls: result.toolCalls, actions };
   } catch (error) {
     await client.rpc("finish_agent_run", {
       p_run_id: started.data,
