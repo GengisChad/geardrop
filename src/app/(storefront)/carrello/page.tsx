@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { BUNDLES } from "@/data/catalog";
+import { BUNDLES, PRODUCTS } from "@/data/catalog";
 import { TrackPageView } from "@/components/funnel/track-page-view";
+import { loadCartPickShelf } from "@/lib/commerce/cart-pick-shelf";
 import { getCommerceProvider } from "@/lib/commerce/provider";
 import { CartClient } from "./cart-client";
 import type { Product } from "@/lib/commerce/types";
@@ -29,11 +30,15 @@ export default async function CarrelloPage() {
   const nudgeSlugs = [...new Set(BUNDLES.flatMap((bundle) => [bundle.slug, ...(bundle.bundleOf ?? []).map((part) => part.slug)]))];
   const nudgeCatalogue = await commerce.getProductsBySlugs(nudgeSlugs);
 
+  // What the cart suggests next to its lines: pieces on the shelf today, ordered by what paid
+  // orders really held together. Every colour is read, so an item stands on one still in stock.
+  const pickShelf = await loadCartPickShelf(await commerce.getProductsBySlugs(PRODUCTS.map((product) => product.slug)));
+
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-10 sm:px-6">
       <TrackPageView event="cart_view" />
       <h1 className="gd-display-wide text-[2rem] font-extrabold text-graphite sm:text-[2.5rem]">Carrello</h1>
-      <CartClient shelfProducts={shelf} nudgeCatalogue={nudgeCatalogue} />
+      <CartClient shelfProducts={shelf} nudgeCatalogue={nudgeCatalogue} pickShelf={pickShelf} />
     </div>
   );
 }

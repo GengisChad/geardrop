@@ -7,6 +7,7 @@ import { AlertTriangle, ArrowRight, Loader2, Trash2, Zap } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useState } from "react";
 import { BundleNudge } from "@/components/cart/bundle-nudge";
+import { CartPicks } from "@/components/cart/cart-picks";
 import { KitDeckNudge } from "@/components/cart/kit-deck-nudge";
 import { CartTotalsPanel, FreeShippingMeter } from "@/components/cart/cart-summary";
 import { ClubCodeField } from "@/components/cart/club-code";
@@ -24,6 +25,7 @@ import { formatPrice } from "@/lib/format";
 import { holoStyle } from "@/lib/holo";
 import { cartDelivery, preorderNote, stockLabel } from "@/lib/labels";
 import { gaItem, sendGaEvent } from "@/lib/analytics/google";
+import { EMPTY_PICK_SHELF, type CartPickShelf } from "@/lib/commerce/cart-picks";
 import type { Product } from "@/lib/commerce/types";
 import { visitSourceForCheckout } from "@/lib/attribution";
 import { LockerPicker, type PickedLocker } from "@/components/checkout/locker-picker";
@@ -34,9 +36,11 @@ type CartClientProps = {
   shelfProducts: Product[];
   /** Bundles and their packs at today's prices, for the bundle offer next to the lines. */
   nudgeCatalogue?: readonly Product[];
+  /** Pieces the cart may suggest under its lines, with what paid orders say about them. */
+  pickShelf?: CartPickShelf;
 };
 
-export function CartClient({ shelfProducts, nudgeCatalogue = [] }: CartClientProps) {
+export function CartClient({ shelfProducts, nudgeCatalogue = [], pickShelf = EMPTY_PICK_SHELF }: CartClientProps) {
   const { quote, hydrated } = useCartQuote();
   const setQuantity = useCart((s) => s.setQuantity);
   const remove = useCart((s) => s.remove);
@@ -256,6 +260,8 @@ export function CartClient({ shelfProducts, nudgeCatalogue = [] }: CartClientPro
               ))}
             </AnimatePresence>
           </ul>
+          {/* One-tap pieces come first: the bundle offers below them can be several boxes tall. */}
+          <CartPicks shelf={pickShelf} quote={quote} />
           <BundleNudge lines={quote.lines} catalogue={nudgeCatalogue} />
           <KitDeckNudge slots={quote.kitDeckSlots ?? 0} />
         </div>
