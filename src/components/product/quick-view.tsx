@@ -8,6 +8,7 @@ import { ArrowRight, Palette, X } from "lucide-react";
 import { AddToCartButton } from "@/components/product/add-to-cart-button";
 import { Button } from "@/components/ui/button";
 import { FREE_SHIPPING_FROM_LABEL, SHIPPING_FLAT_LABEL } from "@/lib/labels";
+import { drawnBox } from "@/lib/motion/drawn-box";
 import { useCartPulse } from "@/lib/store/cart";
 import { useQuickView, type QuickViewOrigin, type QuickViewProduct } from "@/lib/store/quick-view";
 import { cn } from "@/lib/cn";
@@ -28,8 +29,9 @@ export function QuickViewButton({ product }: { readonly product: QuickViewProduc
       aria-haspopup="dialog"
       onClick={(event) => {
         const photo = event.currentTarget.closest("article")?.querySelector("img") ?? null;
-        const box = photo?.getBoundingClientRect();
-        open(product, photo && box ? { left: box.left, top: box.top, width: box.width, height: box.height, src: photo.currentSrc || photo.src } : null);
+        // The picture as drawn, not its padded box: the flight keeps the photo's own proportions.
+        const drawn = photo ? drawnBox(photo) : null;
+        open(product, photo && drawn && drawn.width > 0 && drawn.height > 0 ? { ...drawn, src: photo.currentSrc || photo.src } : null);
       }}
       className="absolute inset-0 z-[15] cursor-zoom-in"
     />
@@ -105,21 +107,22 @@ function Sheet({ product, origin, close }: { readonly product: QuickViewProduct;
     };
   }, [close]);
 
-  // The card's photo travels into the sheet: a copy flies from where it stood to where the
-  // sheet's own photo will rest, and that one shows as it lands.
+  // The card's photo travels into the sheet: a copy flies from where it was drawn to where the
+  // sheet's own photo will be drawn, and that one shows as it lands. One scale for both axes, so
+  // the photo only grows: the square card plate and the wide sheet plate never stretch it.
   useLayoutEffect(() => {
     const target = photo.current;
     const sheet = panel.current;
     if (!origin || !target || !sheet || typeof target.animate !== "function") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const to = target.getBoundingClientRect();
+    const to = drawnBox(target, origin.width / origin.height);
     const box = sheet.getBoundingClientRect();
     // On a phone the sheet is still below the screen at this point: measure where it will rest.
     const rise = phone ? box.top - (window.innerHeight - box.height) : 0;
     const copy = new Image();
     copy.alt = "";
     copy.src = origin.src;
-    copy.style.cssText = `position:fixed;z-index:120;pointer-events:none;left:${origin.left}px;top:${origin.top}px;width:${origin.width}px;height:${origin.height}px;object-fit:contain;transform-origin:0 0;filter:drop-shadow(0 14px 14px rgba(0,0,0,0.55))`;
+    copy.style.cssText = `position:fixed;z-index:120;pointer-events:none;left:${origin.left}px;top:${origin.top}px;width:${origin.width}px;height:${origin.height}px;transform-origin:0 0;filter:drop-shadow(0 14px 14px rgba(0,0,0,0.55))`;
     document.body.append(copy);
     target.style.opacity = "0";
     let done = false;
@@ -133,7 +136,7 @@ function Sheet({ product, origin, close }: { readonly product: QuickViewProduct;
       .animate(
         [
           { transform: "none" },
-          { transform: `translate(${to.left - origin.left}px, ${to.top - rise - origin.top}px) scale(${to.width / origin.width}, ${to.height / origin.height})` },
+          { transform: `translate(${to.left - origin.left}px, ${to.top - rise - origin.top}px) scale(${to.width / origin.width})` },
         ],
         { duration: 420, easing: "cubic-bezier(0.16, 1, 0.3, 1)", fill: "forwards" },
       )

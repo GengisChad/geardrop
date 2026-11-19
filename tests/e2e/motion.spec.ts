@@ -408,6 +408,30 @@ test.describe("quick view", () => {
     await expect(opener).toBeFocused();
   });
 
+  test("the photo flies into the sheet at its own proportions, never stretched", async ({ page }) => {
+    await page.goto("/negozio");
+    const card = page.getByTestId("product-card").first();
+    const natural = await card.locator("img").first().evaluate((image: HTMLImageElement) => image.naturalWidth / image.naturalHeight);
+    await card.getByTestId("quick-view-open").click();
+
+    // The flying copy: read while it is in the air.
+    const copy = page.locator("body > img[style*='z-index: 120']");
+    const flight = await copy.evaluate((image: HTMLImageElement) => {
+      const matrix = new DOMMatrixReadOnly(getComputedStyle(image).transform);
+      return { scaleX: matrix.a, scaleY: matrix.d, skew: Math.abs(matrix.b) + Math.abs(matrix.c), ratio: image.offsetWidth / image.offsetHeight };
+    });
+    // One scale for both axes, on a box cut to the picture itself.
+    expect(flight.scaleX).toBeCloseTo(flight.scaleY, 5);
+    expect(flight.skew).toBe(0);
+    expect(flight.ratio).toBeCloseTo(natural, 1);
+
+    // It lands on the sheet's photo, which is drawn at those same proportions.
+    await expect(copy).toHaveCount(0);
+    const photo = page.getByTestId("quick-view").locator("img");
+    await expect(photo).toHaveCSS("object-fit", "contain");
+    await expect(photo).toHaveCSS("opacity", "1");
+  });
+
   test("adding from the sheet closes it and the drop sheet takes over", async ({ page }) => {
     await page.goto("/negozio");
     const card = page.getByTestId("product-card").filter({ has: page.getByTestId("add-to-cart") }).first();
