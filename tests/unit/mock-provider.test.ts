@@ -67,9 +67,10 @@ describe("listProducts", () => {
   });
 
   it("requires every search token to match", async () => {
-    // Only the Phoenix and Silver Wolf packs (2026-11-18) hold both a Cobalt and a Phoenix.
+    // Only the Phoenix and Silver Wolf packs (2026-11-18) and the Deck da Torneo (2026-11-19) hold
+    // both a Cobalt and a Phoenix.
     const page = await provider.listProducts({ search: "cobalt phoenix" });
-    expect(page.items.map((product) => product.slug).sort()).toEqual(["pack-meta-phoenix", "pack-meta-silver-wolf"]);
+    expect(page.items.map((product) => product.slug).sort()).toEqual(["deck-da-torneo", "pack-meta-phoenix", "pack-meta-silver-wolf"]);
   });
 
   it("returns nothing for a search that matches nothing", async () => {

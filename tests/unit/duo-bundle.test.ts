@@ -88,18 +88,21 @@ describe("bundle stock", () => {
       { slug: "hurricane-enlil-is-7-55t", quantity: 2 },
     ]);
     expect(piecesOf(horus, 3)).toEqual([{ slug: "shatter-horus-9-65gb", quantity: 3 }]);
-    // Hurricane Enlil is in five bundles since the packs of 2026-11-18, so a line of it has to
-    // decrement against all of them.
+    // Hurricane Enlil is in five bundles since the packs of 2026-11-18, and in both arena kits since
+    // 2026-11-19, so a line of it has to decrement against all of them.
     expect(bundlesContaining("hurricane-enlil-is-7-55t", BUNDLES).map((bundle) => bundle.slug)).toEqual([
       "duo-luster-enlil",
       "pack-meta-luster",
       "pack-meta-phoenix",
       "pack-meta-silver-wolf",
+      "kit-arena-drop-completo",
+      "kit-arena-sneak-completo",
       "duo-horus-enlil",
       "trio-starter-arena",
     ]);
-    // Glory Valkerion sells alone, in the Promo Attack (owner, 2026-10-08) and in both meta packs.
-    expect(bundlesContaining("glory-valkerion-lf", BUNDLES).map((bundle) => bundle.slug)).toEqual(["pack-meta-luster", "pack-meta-phoenix", "pack-meta-silver-wolf", "promo-attack"]);
+    // Glory Valkerion sells alone, in the Promo Attack (owner, 2026-10-08), in the meta packs and,
+    // since 2026-11-19, in the Deck da Torneo.
+    expect(bundlesContaining("glory-valkerion-lf", BUNDLES).map((bundle) => bundle.slug)).toEqual(["deck-da-torneo", "pack-meta-luster", "pack-meta-phoenix", "pack-meta-silver-wolf", "promo-attack"]);
   });
 });
 

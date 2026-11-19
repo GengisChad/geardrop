@@ -38,21 +38,29 @@ DECK_CASE_BAND = (60, 150, 940, 600)
 
 # bundle slug -> its component cut-outs, in the order they are staged, each with a relative weight.
 BUNDLES: dict[str, tuple[tuple[str, float], ...]] = {
+    # Owner, 2026-11-19: three attack starters and a case.
+    "deck-da-torneo": (
+        ("glory-valkerion-lf", 1.0),
+        ("cobalt-dragoon-2-60c", 1.0),
+        ("soar-phoenix-9-60gf", 1.0),
+        ("porta-deck-case", 0.8),
+    ),
+    # 2026-11-19: Hammer Incendio (three left) out of the kits; Horus, and Enlil in the arena kits.
     "kit-doppio-starter-deck": (
         ("shadow-shinobi-1-80mn", 1.0),
-        ("hammer-incendio-3-70h", 1.0),
+        ("shatter-horus-9-65gb", 1.0),
         ("porta-deck-case", 0.8),
     ),
     "kit-arena-drop-completo": (
         ("drop-attack-battle-set", 1.25),
-        ("shadow-shinobi-1-80mn", 1.0),
-        ("hammer-incendio-3-70h", 1.0),
+        ("shatter-horus-9-65gb", 1.0),
+        ("hurricane-enlil-is-7-55t", 1.0),
         ("porta-deck-case", 0.8),
     ),
     "kit-arena-sneak-completo": (
         ("sneak-attack-battle-set", 1.25),
-        ("shadow-shinobi-1-80mn", 1.0),
-        ("hammer-incendio-3-70h", 1.0),
+        ("shatter-horus-9-65gb", 1.0),
+        ("hurricane-enlil-is-7-55t", 1.0),
         ("porta-deck-case", 0.8),
     ),
     "duo-pegasus-samurai": (

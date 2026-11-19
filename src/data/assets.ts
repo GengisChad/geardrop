@@ -235,12 +235,20 @@ export const productImages = {
       alt: "Confezione Beyblade X Wand Wizard 1-60R con trottola verde e lanciatore",
     },
   ],
+  "deck-da-torneo": [
+    {
+      src: "/products/deck-da-torneo.webp",
+      width: 1000,
+      height: 1000,
+      alt: "Deck da Torneo: starter Glory Valkerion LF, Cobalt Dragoon 2-60C e Soar Phoenix 9-60GF con il porta deck giallo",
+    },
+  ],
   "kit-doppio-starter-deck": [
     {
       src: "/products/kit-doppio-starter-deck.webp",
       width: 1000,
       height: 1000,
-      alt: "Kit con gli starter Sword Dran 3-60F e Helm Knight 3-80N e il porta deck",
+      alt: "Kit con gli starter Shadow Shinobi 1-80MN e Shatter Horus 9-65GB e il porta deck",
     },
   ],
   "kit-arena-drop-completo": [
