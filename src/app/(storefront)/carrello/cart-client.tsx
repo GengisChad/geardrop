@@ -31,9 +31,11 @@ import { EXPRESS_LOCKER_MISSING_MESSAGE } from "@/lib/payments/express-checkout"
 
 type CartClientProps = {
   shelfProducts: Product[];
+  /** Bundles and their packs at today's prices, for the bundle offer next to the lines. */
+  nudgeCatalogue?: readonly Product[];
 };
 
-export function CartClient({ shelfProducts }: CartClientProps) {
+export function CartClient({ shelfProducts, nudgeCatalogue = [] }: CartClientProps) {
   const { quote, hydrated } = useCartQuote();
   const setQuantity = useCart((s) => s.setQuantity);
   const remove = useCart((s) => s.remove);
@@ -250,7 +252,7 @@ export function CartClient({ shelfProducts }: CartClientProps) {
               ))}
             </AnimatePresence>
           </ul>
-          <BundleNudge lines={quote.lines} />
+          <BundleNudge lines={quote.lines} catalogue={nudgeCatalogue} />
           <KitDeckNudge slots={quote.kitDeckSlots ?? 0} />
         </div>
 

@@ -32,9 +32,53 @@ export function resolveBundle(bundle: Product, bySlug: ReadonlyMap<string, Produ
         : "esaurito"
       : (STOCK_PRIORITY.find((candidate) => parts.some((part) => part.product!.stock === candidate)) ?? bundle.stock);
 
-  const resolved = { ...bundle, stock: status, ...(autoPreorder ? { autoPreorder: true } : {}) };
+  const partsCents = parts.reduce((sum, { component, product }) => sum + product!.price.amount * component.quantity, 0);
+  const resolved = { ...withPartsTotal(bundle, partsCents), stock: status, ...(autoPreorder ? { autoPreorder: true } : {}) };
   // With no component counting its stock, the bundle keeps its own catalogue figure, if any.
   return available === undefined ? resolved : { ...resolved, availableQuantity: available };
+}
+
+/** "€15,89": the way the bundles' copy writes an amount. */
+function euro(cents: number): string {
+  return `€${(cents / 100).toFixed(2).replace(".", ",")}`;
+}
+
+const SAVING_IN_TAGLINE = /€\d+,\d{2} in meno/;
+const SAVING_CLAUSE_IN_TAGLINE = /[,.]?\s*€\d+,\d{2} in meno\.?/;
+const PRICES_IN_CLAIM = /€\d+,\d{2} invece di €\d+,\d{2}/;
+
+/**
+ * The bundle struck through at what its packs cost today. A bundle's own price is fixed in the
+ * catalogue, but its packs take the price the back office holds (2026-11-19), so the struck-through
+ * figure and every "€X in meno" / "Risparmi €X" line follow the packs. A bundle that no longer costs
+ * less than its packs keeps selling with no saving claimed: its price is the owner's to change.
+ */
+export function withPartsTotal(bundle: Product, partsCents: number): Product {
+  if (bundle.compareAtPrice?.amount === partsCents) return bundle;
+  const saving = partsCents - bundle.price.amount;
+  if (saving <= 0) {
+    const copy: { -readonly [Key in keyof Product]?: Product[Key] } = {
+      ...bundle,
+      tagline: bundle.tagline.replace(SAVING_CLAUSE_IN_TAGLINE, "."),
+      features: bundle.features.filter((feature) => !feature.title.startsWith("Risparmi")),
+    };
+    delete copy.compareAtPrice;
+    return copy as Product;
+  }
+  return {
+    ...bundle,
+    compareAtPrice: { amount: partsCents, currency: bundle.price.currency },
+    tagline: bundle.tagline.replace(SAVING_IN_TAGLINE, `${euro(saving)} in meno`),
+    features: bundle.features.map((feature) =>
+      feature.title.startsWith("Risparmi")
+        ? {
+            ...feature,
+            title: `Risparmi ${euro(saving)}`,
+            description: feature.description.replace(PRICES_IN_CLAIM, `${euro(bundle.price.amount)} invece di ${euro(partsCents)}`),
+          }
+        : feature,
+    ),
+  };
 }
 
 /**

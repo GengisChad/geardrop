@@ -110,11 +110,18 @@ describe("stripe checkout session", () => {
     expect(orderReference("00000000-0000-4000-8000-000000000000")).not.toBe(reference);
   });
 
-  it("only pairs lines with active Stripe prices that match the catalogue amount", async () => {
+  it("only pairs lines with an active Stripe price, and marks the ones whose amount differs", async () => {
     const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }]);
 
-    expect(matchStripePrices(quote, catalogPrices)?.get("cobalt-dragoon-2-60c")).toBe("price_cobalt-dragoon-2-60c");
-    expect(matchStripePrices(quote, catalogPrices.map((price) => ({ ...price, unit_amount: 1 })))).toBeNull();
+    const matched = matchStripePrices(quote, catalogPrices);
+    expect(matched?.get("cobalt-dragoon-2-60c")).toBe("price_cobalt-dragoon-2-60c");
+    expect(matched?.drifted?.size).toBe(0);
+    // A price changed in the back office since the last Stripe sync no longer refuses the cart
+    // (2026-11-19): the line is charged at the amount the shop showed.
+    const drifted = matchStripePrices(quote, catalogPrices.map((price) => ({ ...price, unit_amount: 1 })));
+    expect(drifted?.get("cobalt-dragoon-2-60c")).toBe("price_cobalt-dragoon-2-60c");
+    expect([...(drifted?.drifted ?? [])]).toEqual(["cobalt-dragoon-2-60c"]);
+    expect(matchStripePrices(quote, catalogPrices.map((price) => ({ ...price, currency: "usd" })))).toBeNull();
     expect(matchStripePrices(quote, catalogPrices.map((price) => ({ ...price, active: false })))).toBeNull();
     expect(matchStripePrices(quote, [])).toBeNull();
   });
@@ -261,10 +268,21 @@ describe("stripe checkout session", () => {
     expect(stripe.post.mock.calls[1]?.[2]).toBe(stripe.post.mock.calls[0]?.[2]);
   });
 
-  it("refuses to charge when Stripe and the catalogue disagree", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
+  it("charges the shop's price when Stripe still holds another amount (2026-11-19)", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
     const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }]);
     const stripe = fakeStripe(catalogPrices.map((price) => ({ ...price, unit_amount: (price.unit_amount ?? 0) + 100 })));
+
+    expect(await createStripeCheckout({ quote, order, origin: ORIGIN }, ENV, stripe.client)).toMatchObject({ ok: true });
+    const fields = stripe.post.mock.calls[0]![1] as Record<string, string | number>;
+    expect(fields["line_items[0][price]"]).toBeUndefined();
+    expect(fields["line_items[0][price_data][unit_amount]"]).toBe(quote.lines[0]!.unitPrice.amount);
+  });
+
+  it("refuses to charge a product Stripe does not sell", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }]);
+    const stripe = fakeStripe(catalogPrices.filter((price) => price.lookup_key !== stripeProductId("cobalt-dragoon-2-60c")));
 
     expect(await createStripeCheckout({ quote, order, origin: ORIGIN }, ENV, stripe.client)).toEqual({
       ok: false,
