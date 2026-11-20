@@ -284,6 +284,15 @@ def cut_glow(im: Image.Image, floor: float = 0.05) -> Image.Image:
     )
 
 
+def favicon_frame(emblem: Image.Image, px: int) -> Image.Image:
+    """One favicon size: the emblem edge to edge on a transparent square."""
+    frame = Image.new("RGBA", (px, px), (0, 0, 0, 0))
+    art = emblem.copy()
+    art.thumbnail((px, px), Image.LANCZOS)
+    frame.paste(art, ((px - art.width) // 2, (px - art.height) // 2), art)
+    return frame
+
+
 def save(im: Image.Image, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     im.save(path)
@@ -333,12 +342,13 @@ def main() -> None:
         tile.paste(art, ((px - art.width) // 2, (px - art.height) // 2), art)
         tile.save(PUB / "brand" / f"emblem-{px}.png")
 
-    ico_src = Image.new("RGBA", (64, 64), (255, 255, 255, 255))
-    art = emblem.copy()
-    art.thumbnail((54, 54), Image.LANCZOS)
-    ico_src.paste(art, ((64 - art.width) // 2, (64 - art.height) // 2), art)
-    ico_src.save(PUB / "favicon.ico", sizes=[(16, 16), (32, 32), (48, 48)])
-    print("favicon.ico + emblem-{16,32,48,180,192,512}.png (light tile)")
+    # The browser tab is the one place without the tile: on a dark tab strip the white square
+    # read as a box around the logo. The emblem now has a real alpha channel and carries its
+    # own light outline, so it stands on light and dark tabs alike. Each size is drawn from
+    # the full-size art, not scaled down from one frame, which keeps 16 px legible.
+    frames = [favicon_frame(emblem, px) for px in (16, 32, 48, 64)]
+    frames[-1].save(PUB / "favicon.ico", sizes=[f.size for f in frames], append_images=frames[:-1])
+    print("favicon.ico (transparent) + emblem-{16,32,48,180,192,512}.png (light tile)")
 
     # 3. product cut-outs.
     for slug, (mk, box, excl, ma, sc) in {**PRODUCTS}.items():

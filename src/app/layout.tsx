@@ -43,7 +43,8 @@ export const metadata: Metadata = {
   applicationName: SITE_NAME,
   keywords: ["Beyblade X", "Beyblade", "trottole Beyblade X", "Beyblade X Italia", "negozio Beyblade", "lanciatore Beyblade", "stadio Beyblade X"],
   icons: {
-    icon: "/favicon.ico",
+    // The query string only makes browsers drop the white-tile icon they cached; bump it when the art changes.
+    icon: "/favicon.ico?v=2",
     apple: brand.appleIcon,
   },
   openGraph: {
