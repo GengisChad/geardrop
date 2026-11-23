@@ -27,6 +27,25 @@ const nextConfig: NextConfig = {
       { source: "/prodotto/glory-valkyrie-lf", destination: "/prodotto/glory-valkerion-lf", permanent: false },
     ];
   },
+  async headers() {
+    // Baseline security headers for every route. Deliberately conservative: CSP is limited to
+    // frame-ancestors (anti-clickjacking) so it cannot break inline JSON-LD or third-party scripts;
+    // a full script-src CSP is a separate, tested follow-up. HSTS is already served by Vercel.
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          // Conservative: only disable the Topics ad API. Camera/geolocation are left untouched
+          // (e.g. InPost locker search uses the browser's location), so no feature breaks.
+          { key: "Permissions-Policy", value: "browsing-topics=()" },
+        ],
+      },
+    ];
+  },
   experimental: {
     optimizePackageImports: ["lucide-react", "framer-motion"],
     // The card-to-product photo transition (lib/view-transitions.ts). Experimental in Next 16;

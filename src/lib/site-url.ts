@@ -31,6 +31,11 @@ export function safeRedirectPath(candidate: string | null | undefined, fallback 
   if (!candidate) return fallback;
   if (!candidate.startsWith("/")) return fallback;
   if (candidate.startsWith("//")) return fallback;
+  // A backslash is treated as "/" by the WHATWG URL parser, so "/\evil.com" (and its
+  // "/%5Cevil.com" encoding) resolves to another origin. Reject it, like api/preview's safePath.
+  if (candidate.includes("\\") || /%5c/i.test(candidate)) return fallback;
+  // Control characters (incl. CR/LF, tab) can smuggle past clients; never a valid path here.
+  if (/[\u0000-\u001f]/.test(candidate)) return fallback;
 
   return candidate;
 }
