@@ -51,7 +51,8 @@ const BY_SLUG: Readonly<Record<string, HoloPalette>> = {
   "winder-launcher-takara-tomy": palette("#d6e2ff", "#3a5bff", "#e5384a", "#c6ff00", "rgba(58, 91, 255, 0.35)"),
   "string-launcher-takara-tomy": palette("#d9efff", "#2f8fd8", "#62a6d8", "#e6f4ff", "rgba(47, 143, 216, 0.35)"),
   "long-winder-launcher-takara-tomy": palette("#ffd3db", "#e5384a", "#12d6a4", "#c6ff00", "rgba(229, 56, 74, 0.35)"),
-  "custom-grip-takara-tomy": palette("#ffd3db", "#e0202c", "#1d5fd0", "#e8ecf5", "rgba(224, 32, 44, 0.35)"),
+  // The black BX-11 grip: graphite and the X-Rail lime, no colour of its own to borrow.
+  "custom-grip-takara-tomy": palette("#e8ecf5", "#5b6070", "#c6ff00", "#b9bcc4", "rgba(185, 188, 196, 0.3)"),
   "cx-18-random-booster-brachio-whip": palette("#eadcff", "#9d6bff", "#12d6a4", "#ffd36b", "rgba(157, 107, 255, 0.35)"),
   "bx-48-random-booster-vol-9": palette("#ffe2c4", "#e5384a", "#e6b422", "#ffd36b", "rgba(229, 56, 74, 0.35)"),
   // 2026-11-18: Luster's violet and red chip, Silver Wolf's teal ring, BX-53's three tops.

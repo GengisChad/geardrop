@@ -7,7 +7,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
-export const maxDuration = 120;
+// The assistant reads, thinks and prepares cards in several model calls: it stops starting new ones at 240 s.
+export const maxDuration = 300;
 
 export default async function AssistantPage() {
   const client = await createSupabaseServerClient();

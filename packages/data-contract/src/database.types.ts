@@ -2700,6 +2700,7 @@ export type Database = {
           sort_order: number
           stock_quantity: number
           stock_status: Database["public"]["Enums"]["stock_status"]
+          storefront_fields: string[]
           tagline: string
           updated_at: string
         }
@@ -2737,6 +2738,7 @@ export type Database = {
           sort_order?: number
           stock_quantity?: number
           stock_status?: Database["public"]["Enums"]["stock_status"]
+          storefront_fields?: string[]
           tagline: string
           updated_at?: string
         }
@@ -2774,6 +2776,7 @@ export type Database = {
           sort_order?: number
           stock_quantity?: number
           stock_status?: Database["public"]["Enums"]["stock_status"]
+          storefront_fields?: string[]
           tagline?: string
           updated_at?: string
         }

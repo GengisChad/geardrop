@@ -8,9 +8,11 @@ const addOrderNoteAction = vi.fn(async (_state: unknown, _form: FormData) => ({ 
 const adjustInventoryAction = vi.fn(async (_state: unknown, _form: FormData) => ({ ok: true, message: "Movimento registrato. Stock attuale: 182." }));
 const setListPriceAction = vi.fn(async (_state: unknown, _form: FormData) => ({ ok: true, message: "Prezzo salvato: €17,90." }));
 const setProductCostAction = vi.fn(async (_state: unknown, _form: FormData) => ({ ok: true, message: "Costo salvato." }));
+const saveProductAction = vi.fn(async (_state: unknown, _form: FormData) => ({ ok: true, message: "Prodotto salvato. Sul sito entro pochi minuti." }));
+const saveProductDetailsAction = vi.fn(async (_state: unknown, _form: FormData) => ({ ok: true, message: "Dettagli salvati. Sul sito entro pochi minuti." }));
 vi.mock("@/app/admin/actions/orders", () => ({ transitionOrderAction, shipOrderAction, addOrderNoteAction }));
 vi.mock("@/app/admin/actions/inventory", () => ({ adjustInventoryAction }));
-vi.mock("@/app/admin/actions/products", () => ({ setListPriceAction }));
+vi.mock("@/app/admin/actions/products", () => ({ setListPriceAction, saveProductAction, saveProductDetailsAction }));
 vi.mock("@/app/admin/actions/warehouse", () => ({ setProductCostAction }));
 
 const { copilotActionTools, executeCopilotAction } = await import("@/lib/ai/copilot-actions");
@@ -30,7 +32,7 @@ function fakeClient() {
     from: (table: string) => {
       const result = () => ({ data: rows[table] ?? [], error: null });
       const chain: Record<string, unknown> = {};
-      for (const method of ["select", "eq", "or", "in", "is", "order", "gte"]) chain[method] = () => chain;
+      for (const method of ["select", "eq", "neq", "or", "in", "is", "order", "gte"]) chain[method] = () => chain;
       for (const method of ["insert", "update", "upsert", "delete"]) {
         chain[method] = () => {
           writes.push(`${method}:${table}`);
@@ -159,11 +161,115 @@ describe("an answer that announces a card it never made (seen live, 2026-11-19)"
     expect(answer.answer).toBe("Non sono riuscito a preparare la scheda. Riscrivi la richiesta indicando ordine o prodotto e cosa fare.");
   });
 
+  it("does not take a product sheet for a card (seen live: «dalla scheda del prodotto» was sent back)", async () => {
+    const { askCopilot, claimsACard } = await import("@/lib/ai/copilot");
+    const answer = "Il prezzo si cambia dalla **scheda del prodotto** in Prodotti, oppure chiedilo a me. Ecco la scheda del grip: 23,99 €, 15 pezzi.";
+    expect(claimsACard(answer)).toBe(false);
+    expect(claimsACard("Ho preparato 2 schede: conferma qui sotto.")).toBe(true);
+    const { claude, requests } = scripted([text(answer)]);
+    expect((await askCopilot(clientWithRuns(), claude, { id: 1, name: "Gear Drop" }, [], "Dove cambio un prezzo?")).answer).toBe(answer);
+    expect(requests).toHaveLength(1);
+  });
+
+  it("runs on Opus, thinking hard, with room for the answer and a fallback on refusal", async () => {
+    const { askCopilot } = await import("@/lib/ai/copilot");
+    const { claude, requests } = scripted([text("Ci sono 11 ordini da spedire.")]);
+    await askCopilot(clientWithRuns(), claude, { id: 1, name: "Gear Drop" }, [], "Cosa devo spedire?");
+    expect(requests[0]).toMatchObject({
+      model: "claude-opus-5-5", max_tokens: 16000, output_config: { effort: "high" }, fallbacks: "default", betas: ["server-side-fallback-2026-07-01"],
+    });
+    expect(JSON.stringify(requests[0])).toContain("elenco_prodotti");
+  });
+
+  it("says when it stopped before the end instead of leaving a half answer", async () => {
+    const { askCopilot } = await import("@/lib/ai/copilot");
+    const { claude } = scripted([{ stop_reason: "max_tokens", content: [{ type: "text", text: "Sto leggendo gli ordini" }] }]);
+    const answer = await askCopilot(clientWithRuns(), claude, { id: 1, name: "Gear Drop" }, [], "Riepilogo del mese");
+    expect(answer.answer).toContain("Mi sono fermato prima di finire");
+  });
+
   it("leaves an answer without a card claim alone", async () => {
     const { askCopilot } = await import("@/lib/ai/copilot");
     const { claude, requests } = scripted([text("Ci sono 11 ordini da spedire.")]);
     const answer = await askCopilot(clientWithRuns(), claude, { id: 1, name: "Gear Drop" }, [], "Cosa devo spedire?");
     expect(answer.answer).toBe("Ci sono 11 ordini da spedire.");
     expect(requests).toHaveLength(1);
+  });
+});
+
+// Owner, 2026-11-24: "l'assistente deve poter eseguire tutto quello che fai anche tu da qui ... se
+// sono fuori e devo cambiare dei prodotti". The case that started it: the Custom Grip sheet becoming
+// the BX-11 Launcher Grip.
+describe("a product sheet changed through the assistant", () => {
+  const GRIP = {
+    id: 7, slug: "custom-grip-takara-tomy", sku: "CUSTOM-GRIP-TAKARA-TOMY", name: "Custom Grip Takara Tomy", short_name: null,
+    tagline: "Si monta sul lanciatore. Tre colori, stesso prezzo.", description: "La Custom Grip è l'impugnatura originale.",
+    category_id: 4, blade_type: null, price_cents: 1290, compare_at_price_cents: null, publication_status: "published", active: true,
+    manage_stock: true, low_stock_threshold: 5, allow_backorder: false, availability_override: null, preorder_allocation: 0,
+    preorder_release_date: null, seo_title: null, seo_description: null, sort_order: 35, stock_quantity: 15, storefront_fields: [],
+  };
+
+  beforeEach(() => {
+    rows["products"] = [GRIP];
+    rows["categories"] = [{ id: 4, name: "Accessori", slug: "accessori" }, { id: 2, name: "Lanciatori", slug: "lanciatori" }];
+  });
+
+  it("prepares one card with every change spelled out, and writes nothing", async () => {
+    const { card } = await prepare("modifica_prodotto", {
+      prodotto: "CUSTOM-GRIP-TAKARA-TOMY", nome: "BX-11 Launcher Grip Takara Tomy", sku: "bx-11", tagline: "Il grip nero classico.",
+    });
+    expect(card).toMatchObject({
+      kind: "modifica_prodotto",
+      title: "Scheda di Custom Grip Takara Tomy: 3 modifiche",
+      input: { productId: 7, newName: "BX-11 Launcher Grip Takara Tomy", sku: "BX-11", tagline: "Il grip nero classico." },
+      warning: null,
+    });
+    expect(card.details).toContain("SKU: CUSTOM-GRIP-TAKARA-TOMY → BX-11");
+    expect(card.details[0]).toBe("Nome: «Custom Grip Takara Tomy» → «BX-11 Launcher Grip Takara Tomy»");
+    expect(writes).toEqual([]);
+    expect(saveProductAction).not.toHaveBeenCalled();
+  });
+
+  it("refuses an empty change, an offer under the price and a category that does not exist", async () => {
+    await expect(prepare("modifica_prodotto", { prodotto: "CUSTOM-GRIP-TAKARA-TOMY", nome: "Custom Grip Takara Tomy" })).rejects.toThrow("Nessun cambiamento");
+    await expect(prepare("modifica_prodotto", { prodotto: "CUSTOM-GRIP-TAKARA-TOMY", prezzo_barrato_eur: 10 })).rejects.toThrow("sopra il prezzo");
+    await expect(prepare("modifica_prodotto", { prodotto: "CUSTOM-GRIP-TAKARA-TOMY", categoria: "stadi" })).rejects.toThrow("non trovata");
+    await expect(prepare("modifica_prodotto", { prodotto: "CUSTOM-GRIP-TAKARA-TOMY", sku: "BX 11" })).rejects.toThrow("SKU non valido");
+  });
+
+  it("warns on the card when the product would stop selling", async () => {
+    const { card } = await prepare("modifica_prodotto", { prodotto: "CUSTOM-GRIP-TAKARA-TOMY", pubblicazione: "bozza" });
+    expect(card.warning).toContain("non si può più ordinare");
+  });
+
+  it("saves through the sheet's own action, sending back every field it does not change", async () => {
+    const { card } = await prepare("modifica_prodotto", { prodotto: "CUSTOM-GRIP-TAKARA-TOMY", nome: "BX-11 Launcher Grip Takara Tomy", sku: "BX-11", categoria: "lanciatori", prezzo_barrato_eur: 15 });
+    const result = await executeCopilotAction(card, fakeClient(), 1);
+    expect(result).toEqual({ ok: true, message: "BX-11 Launcher Grip Takara Tomy: Prodotto salvato. Sul sito entro pochi minuti." });
+    const sent = saveProductAction.mock.calls[0]![1];
+    expect(Object.fromEntries(["id", "name", "sku", "slug", "categoryId", "tagline", "priceCents", "compareAtPriceCents", "publicationStatus", "active", "intent", "belowCostConfirmed"].map((key) => [key, sent.get(key)]))).toEqual({
+      id: "7", name: "BX-11 Launcher Grip Takara Tomy", sku: "BX-11", slug: "custom-grip-takara-tomy", categoryId: "2",
+      tagline: GRIP.tagline, priceCents: "1290", compareAtPriceCents: "1500", publicationStatus: "published", active: "true", intent: "", belowCostConfirmed: "on",
+    });
+  });
+
+  it("replaces only the lists asked for and keeps what the page shows for the others", async () => {
+    const { card } = await prepare("dettagli_prodotto", {
+      prodotto: "CUSTOM-GRIP-TAKARA-TOMY",
+      confezione: ["1 × Launcher Grip BX-11 nero", "1 × Pannello del grip"],
+    });
+    expect(card).toMatchObject({ kind: "dettagli_prodotto", title: "Dettagli di Custom Grip Takara Tomy" });
+    expect(card.details).toEqual([expect.stringContaining("Confezione (2, prima")]);
+    // Nothing was ever changed on the sheet: the specs the page shows are the catalogue's.
+    const specs = JSON.parse(String(card.input["specs"])) as { label: string }[];
+    expect(specs.length).toBeGreaterThan(0);
+    expect(JSON.parse(String(card.input["boxContents"]))).toEqual([{ content: "1 × Launcher Grip BX-11 nero" }, { content: "1 × Pannello del grip" }]);
+    await executeCopilotAction(card, fakeClient(), 1);
+    expect(saveProductDetailsAction.mock.calls[0]![1].get("boxContents")).toBe(card.input["boxContents"]);
+    expect(writes).toEqual([]);
+  });
+
+  it("refuses a list with an empty row", async () => {
+    await expect(prepare("dettagli_prodotto", { prodotto: "CUSTOM-GRIP-TAKARA-TOMY", specifiche: [{ etichetta: "Colore", valore: "" }] })).rejects.toThrow("Ogni riga");
   });
 });

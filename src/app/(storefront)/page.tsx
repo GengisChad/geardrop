@@ -110,7 +110,7 @@ export default async function HomePage() {
               content: {
                 eyebrow: "Disponibili ora · Nuovi arrivi",
                 title: SPOTLIGHT_HERO_TITLE,
-                description: "Random Booster BX-48 e CX-18, Custom Grip, Long Winder, String e Winder Launcher. Originali giapponesi, pronti da spedire.",
+                description: "Random Booster BX-48 e CX-18, Launcher Grip, Long Winder, String e Winder Launcher. Originali giapponesi, pronti da spedire.",
                 ctaHref: "/negozio/takara-tomy",
                 ctaLabel: "Tutto Takara Tomy",
               },

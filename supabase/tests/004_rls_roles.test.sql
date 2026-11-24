@@ -114,7 +114,8 @@ select results_eq(
 );
 select results_eq(
   $$select count(*)::bigint from public.product_images$$,
-  array[78::bigint],
+  -- 76 since 2026-11-24: the grip listing became the BX-11, three photos instead of the Custom Grip's five.
+  array[76::bigint],
   'anon sees only images belonging to eligible published products'
 );
 reset role;

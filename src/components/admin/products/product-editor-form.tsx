@@ -15,6 +15,7 @@ import {
   removeProductRelationAction,
   removeProductTagAction,
   reorderProductImagesAction,
+  replaceProductDetailsAction,
   saveProductAction,
   updateProductImageAction,
 } from "@/app/admin/actions/products";
@@ -37,9 +38,34 @@ type Props = {
   readonly role: StaffRole;
   /** Owners and admins: the average cost, to show the margin while the price is typed. */
   readonly costGuard?: { readonly averageCostCents: number | null; readonly vatRateBp: number } | null;
+  /** Set for a product the shop sells from its catalogue: the details its page shows today. */
+  readonly shop?: ShopDetails | null;
 };
 
-export function ProductEditorForm({ data, categories, deletionImpact, role, costGuard = null }: Props) {
+export type ShopDetails = {
+  readonly specs: readonly { readonly label: string; readonly value: string }[];
+  readonly features: readonly { readonly title: string; readonly description: string }[];
+  readonly boxContents: readonly string[];
+};
+
+/** The sheet's details are not what the page shows: the shop still prints the catalogue's. */
+function detailsDifferFromShop(data: AdminProductEditorData, shop: ShopDetails): boolean {
+  const marked = new Set<string>(data.product.storefront_fields ?? []);
+  if (marked.has("specs") || marked.has("features") || marked.has("box_contents")) return false;
+  const sheet = JSON.stringify([
+    data.specs.map(({ label, value }) => [label, value]),
+    data.features.map(({ title, description }) => [title, description]),
+    data.boxContents.map(({ content }) => content),
+  ]);
+  const page = JSON.stringify([
+    shop.specs.map(({ label, value }) => [label, value]),
+    shop.features.map(({ title, description }) => [title, description]),
+    shop.boxContents,
+  ]);
+  return sheet !== page;
+}
+
+export function ProductEditorForm({ data, categories, deletionImpact, role, costGuard = null, shop = null }: Props) {
   const [state, action, pending] = useActionState(saveProductAction, initialState);
   const formRef = useRef<HTMLFormElement>(null);
   const product = data?.product;
@@ -86,10 +112,10 @@ export function ProductEditorForm({ data, categories, deletionImpact, role, cost
       <input name="publicationStatus" type="hidden" value={product?.publication_status ?? "draft"} />
       <input name="active" type="hidden" value={String(product?.active ?? false)} />
 
-      <EditorSection id="informazioni" title="Informazioni" subtitle="Identità pubblica e classificazione.">
+      <EditorSection id="informazioni" title="Informazioni" subtitle={shop ? "Nome, tagline, descrizione, categoria e tipo blade salvati qui vanno sul sito entro pochi minuti." : "Identità pubblica e classificazione."}>
         <Field label="Nome"><input defaultValue={product?.name ?? ""} maxLength={160} name="name" required /></Field>
         <Field label="Nome breve"><input defaultValue={product?.short_name ?? ""} maxLength={80} name="shortName" /></Field>
-        <Field label="Slug"><input defaultValue={product?.slug ?? ""} name="slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required /></Field>
+        <Field label={shop ? "Slug (indirizzo sul sito, fisso)" : "Slug"}><input defaultValue={product?.slug ?? ""} name="slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" readOnly={shop !== null} required /></Field>
         <Field label="SKU"><input className={styles.mono} defaultValue={product?.sku ?? ""} name="sku" pattern="[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*" required /></Field>
         <Field label="Categoria"><select defaultValue={product?.category_id ?? ""} name="categoryId" required><option disabled value="">Seleziona categoria</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}{category.active ? "" : " · inattiva"}</option>)}</select></Field>
         <Field label="Tipo blade"><select defaultValue={product?.blade_type ?? ""} name="bladeType"><option value="">Non definito</option><option value="attacco">Attacco</option><option value="difesa">Difesa</option><option value="stamina">Stamina</option><option value="bilanciato">Bilanciato</option></select></Field>
@@ -159,6 +185,14 @@ export function ProductEditorForm({ data, categories, deletionImpact, role, cost
       </ResourceSection>
 
       <ResourceSection id="dettagli" title="Dettagli strutturati" note="Specifiche, feature e contenuto confezione rimangono tabelle normalizzate.">
+        {shop && detailsDifferFromShop(data, shop) ? <form action={replaceProductDetailsAction} className={styles.resourceCreate} data-testid="copy-shop-details">
+          <p className={styles.inlineNote}>Il sito mostra ancora le specifiche del catalogo ({shop.specs.length} specifiche, {shop.features.length} feature, {shop.boxContents.length} righe di confezione), non queste. Portale qui con «Copia dal sito» prima di modificarle: da quel momento il sito mostra quelle della scheda.</p>
+          <input name="productId" type="hidden" value={product.id} />
+          <input name="specs" type="hidden" value={JSON.stringify(shop.specs)} />
+          <input name="features" type="hidden" value={JSON.stringify(shop.features)} />
+          <input name="boxContents" type="hidden" value={JSON.stringify(shop.boxContents.map((content) => ({ content })))} />
+          <button type="submit">Copia dal sito</button>
+        </form> : null}
         <ResourceList rows={data.specs.map((item) => ({ id: item.id, label: `${item.label}: ${item.value}`, kind: "spec" as const }))} productId={product.id} />
         <ResourceList rows={data.features.map((item) => ({ id: item.id, label: `${item.title} — ${item.description}`, kind: "feature" as const }))} productId={product.id} />
         <ResourceList rows={data.boxContents.map((item) => ({ id: item.id, label: item.content, kind: "box" as const }))} productId={product.id} />
