@@ -209,6 +209,26 @@ describe("the assistant's work on the code (owner, 2026-11-24)", () => {
     expect(report.pr[0]).toMatchObject({ numero: 128, stato: "aperta", verifica: "ok", controlli_completi: "ok", anteprima: "https://geardrop-git-assistente-991-gengischad.vercel.app", si_puo_pubblicare: "sì", riassunto: "Ho cambiato le foto." });
   });
 
+  it("says why a job failed, in Claude Code's own words (24/11: a refused key read as «finito»)", async () => {
+    routes["/actions/workflows/assistant-code.yml/runs"] = {
+      workflow_runs: [{ id: 994, display_title: "Assistente: Prova lavoro sul codice", status: "completed", conclusion: "failure", html_url: "https://github.com/r/994", created_at: "2026-11-24T21:34:43Z" }],
+    };
+    routes["/pulls"] = [];
+    routes["/actions/workflows/assistant-migrations.yml/runs"] = { workflow_runs: [] };
+    routes["/actions/runs/994/jobs"] = { jobs: [{ conclusion: "success", check_run_url: "https://api.github.com/repos/x/check-runs/1" }, { conclusion: "failure", check_run_url: `https://api.github.com/repos/${REPO}/check-runs/55` }] };
+    routes["/check-runs/55/annotations"] = [
+      { annotation_level: "failure", message: "Process completed with exit code 1." },
+      { annotation_level: "failure", message: "API Error: 400 This API key is not scoped to a workspace" },
+    ];
+    const report = (await codeWorkTool(fakeGitHub).run({})) as { lavori: Record<string, unknown>[] };
+    expect(report.lavori[0]).toMatchObject({ stato: "finito con errore (failure)", motivo: "API Error: 400 This API key is not scoped to a workspace" });
+
+    // No readable reason: the answer still comes, without one.
+    delete routes["/check-runs/55/annotations"];
+    const bare = (await codeWorkTool(fakeGitHub).run({})) as { lavori: Record<string, unknown>[] };
+    expect(bare.lavori[0]).not.toHaveProperty("motivo");
+  });
+
   it("reads a migration's opening comment as its description", () => {
     expect(migrationHeader("\n-- One\n--   two\nbegin;")).toBe("One two");
     expect(migrationHeader("alter table x add column y int;")).toBe("alter table x add column y int;");
