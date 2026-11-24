@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { AssistantText } from "./assistant-text";
+import { DEFAULT_LINK_POLICY, type LinkPolicy } from "@/lib/ai/markdown-lite";
+import { AssistantText, LinkedText } from "./assistant-text";
 import { useActionState, useState } from "react";
 import {
   askCopilotAction,
@@ -194,14 +195,14 @@ const SUGGESTIONS = [
 const ACTION_STATUS: Record<CopilotAction["status"], string> = { pending: "Da confermare", done: "Eseguita", failed: "Non riuscita", cancelled: "Annullata" };
 
 /** The cards of one answer: each runs only on "Conferma", with the permissions of whoever presses it. */
-function ActionCards({ actions, turn, action, pending }: { readonly actions: readonly CopilotAction[]; readonly turn: number; readonly action: (formData: FormData) => void; readonly pending: boolean }) {
+function ActionCards({ actions, turn, action, pending, links }: { readonly actions: readonly CopilotAction[]; readonly turn: number; readonly action: (formData: FormData) => void; readonly pending: boolean; readonly links: LinkPolicy }) {
   const open = actions.filter((item) => item.status === "pending").length;
   return (
     <div className={styles.actions} data-testid="copilot-actions">
       {actions.map((item) => (
         <div className={styles.actionCard} data-status={item.status} key={item.id}>
           <strong>{item.title}</strong>
-          {item.details.length ? <ul>{item.details.map((line, index) => <li key={index}>{line}</li>)}</ul> : null}
+          {item.details.length ? <ul>{item.details.map((line, index) => <li key={index}><LinkedText links={links} text={line} /></li>)}</ul> : null}
           {item.warning && item.status === "pending" ? <p className={styles.actionWarning}>{item.warning}</p> : null}
           {item.status === "pending" ? (
             <form action={action} className={styles.actionButtons}>
@@ -210,7 +211,7 @@ function ActionCards({ actions, turn, action, pending }: { readonly actions: rea
               <button disabled={pending} name="intent" type="submit" value="cancel">Annulla</button>
             </form>
           ) : (
-            <p className={styles.actionResult}>{ACTION_STATUS[item.status]}{item.result ? ` · ${item.result}` : ""}</p>
+            <p className={styles.actionResult}>{ACTION_STATUS[item.status]}{item.result ? <> · <LinkedText links={links} text={item.result} /></> : null}</p>
           )}
         </div>
       ))}
@@ -224,17 +225,17 @@ function ActionCards({ actions, turn, action, pending }: { readonly actions: rea
   );
 }
 
-export function CopilotChat({ configured }: { readonly configured: boolean }) {
+export function CopilotChat({ configured, links = DEFAULT_LINK_POLICY }: { readonly configured: boolean; readonly links?: LinkPolicy }) {
   const [state, action, pending] = useActionState(askCopilotAction, { turns: [], error: null } satisfies CopilotState);
   const [draft, setDraft] = useState("");
   return (
     <section className={styles.chat} data-testid="copilot">
       <div className={styles.messages} aria-live="polite">
-        {state.turns.length === 0 ? <p className={warehouse.hint}>Chiedi di stock, vendite, previsioni, profitto o prezzi dei concorrenti, oppure di fare qualcosa: segnare ordini spediti, togliere pezzi venduti a mano, cambiare un prezzo o un costo. Ogni modifica compare come scheda e parte solo quando premi «Conferma», con i tuoi permessi.</p> : null}
+        {state.turns.length === 0 ? <p className={warehouse.hint}>Chiedi di stock, vendite, previsioni, profitto o prezzi dei concorrenti, oppure di fare qualcosa: segnare ordini spediti, togliere pezzi venduti a mano, cambiare un prezzo, un costo o una scheda prodotto, o cambiare il sito stesso (prodotti nuovi, foto, pagine), che affido a Claude Code: arriva una PR con anteprima. Ogni modifica compare come scheda e parte solo quando premi «Conferma», con i tuoi permessi.</p> : null}
         {state.turns.map((turn, index) => (
           <div className={styles.turn} key={index}>
-            <div className={styles.message} data-role={turn.role}>{turn.role === "assistant" ? <AssistantText text={turn.text} /> : turn.text}</div>
-            {turn.actions?.length ? <ActionCards action={action} actions={turn.actions} pending={pending} turn={index} /> : null}
+            <div className={styles.message} data-role={turn.role}>{turn.role === "assistant" ? <AssistantText links={links} text={turn.text} /> : turn.text}</div>
+            {turn.actions?.length ? <ActionCards action={action} actions={turn.actions} links={links} pending={pending} turn={index} /> : null}
           </div>
         ))}
         {pending ? <div className={styles.message} data-role="assistant">Sto lavorando…</div> : null}

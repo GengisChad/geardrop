@@ -218,7 +218,10 @@ describe("copilot tools", () => {
       "cambia_stato_ordine", "spedisci_ordine", "nota_ordine", "movimento_magazzino", "cambia_prezzo", "imposta_costo",
       // Since 2026-11-24 it edits product sheets too, and reads one whole before doing so.
       "modifica_prodotto", "dettagli_prodotto",
+      // And hands work on the site's code to Claude Code, then publishes it (code-work.test.ts).
+      "lavoro_codice", "pubblica_lavoro", "scarta_lavoro", "applica_migrazioni",
       "ordine", "da_spedire", "panoramica_magazzino", "previsioni", "ordini_recenti", "prodotto", "elenco_prodotti", "scheda_prodotto", "mercato", "proposte_prezzo",
+      "lavori_codice",
     ]);
     await tools.find((tool) => tool.name === "ordini_recenti")?.run({});
     const selects = calls.filter((call) => call.startsWith("select:")).join(" ");

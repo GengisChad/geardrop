@@ -1,0 +1,327 @@
+name: Assistente - lavoro sul codice
+
+# The partners' assistant (src/lib/ai/code-work.ts) hands work on the site's code to Claude Code
+# here (owner, 2026-11-24). Nothing reaches main until an owner or admin presses "Pubblica" in the
+# assistant.
+#
+# Two jobs, so that nothing Claude Code writes ever runs next to a GitHub token:
+#   work    Claude Code edits a checkout that keeps no credentials, then lint, typecheck and unit
+#           tests run on its result. The job has no write permission at all; it hands on a patch,
+#           the summary and the verdict as an artifact.
+#   publish A fresh machine and checkout apply the patch (git refuses paths inside .git), refuse
+#           .github and .env changes, commit with hooks off, push the assistente/* branch, open or
+#           update the pull request labelled "assistente" and start the full database CI on it.
+#           It never installs or runs the repository's code.
+# Inputs reach the shell only through env, never interpolated into a script.
+
+run-name: "Assistente: ${{ inputs.title }}${{ inputs.pr != '' && format(' (PR #{0})', inputs.pr) || '' }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: Titolo breve del lavoro
+        required: true
+        type: string
+      task:
+        description: Incarico completo per Claude Code
+        required: true
+        type: string
+      pr:
+        description: Numero di una PR dell'assistente da continuare (vuoto per un lavoro nuovo)
+        required: false
+        type: string
+        default: ""
+
+permissions: {}
+
+concurrency:
+  group: assistant-code-${{ inputs.pr != '' && inputs.pr || github.run_id }}
+  cancel-in-progress: false
+
+env:
+  CLAUDE_CODE_VERSION: 2.1.331
+
+jobs:
+  branch:
+    name: Branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    env:
+      PR: ${{ inputs.pr }}
+      REPO: ${{ github.repository }}
+    outputs:
+      name: ${{ steps.pick.outputs.name }}
+      checkout: ${{ steps.pick.outputs.checkout }}
+    steps:
+      - name: Choose the branch
+        id: pick
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ -n "$PR" ]; then
+            [[ "$PR" =~ ^[0-9]{1,6}$ ]] || { echo "::error::PR non valida: $PR"; exit 1; }
+            info="$(gh api "repos/$REPO/pulls/$PR")"
+            ref="$(jq -r .head.ref <<<"$info")"
+            if [ "$(jq -r .state <<<"$info")" != open ] || [ "$(jq -r .head.repo.full_name <<<"$info")" != "$REPO" ] || ! [[ "$ref" =~ ^assistente/[A-Za-z0-9_-]+$ ]] || ! jq -e '[.labels[].name] | index("assistente")' <<<"$info" > /dev/null; then
+              echo "::error::La PR #$PR non è un lavoro aperto dell'assistente"; exit 1
+            fi
+            echo "name=$ref" >> "$GITHUB_OUTPUT"
+            echo "checkout=$ref" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=assistente/$GITHUB_RUN_ID" >> "$GITHUB_OUTPUT"
+            echo "checkout=main" >> "$GITHUB_OUTPUT"
+          fi
+
+  work:
+    name: Claude Code
+    needs: branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    permissions:
+      contents: read
+    env:
+      CI: true
+    outputs:
+      base: ${{ steps.base.outputs.sha }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.branch.outputs.checkout }}
+          persist-credentials: false
+
+      - name: Record the starting point
+        id: base
+        run: |
+          echo "BASE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.16.0
+
+      - name: Activate exact pnpm version
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.34.6 --activate
+          test "$(pnpm --version)" = "10.34.6"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.109.1
+
+      - name: Install Claude Code
+        run: npm install -g "@anthropic-ai/claude-code@$CLAUDE_CODE_VERSION"
+
+      - name: Claude Code works on the task
+        id: claude
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ASSISTANT_ANTHROPIC_API_KEY }}
+          TASK: ${{ inputs.task }}
+          MODEL: ${{ vars.ASSISTANT_CODE_MODEL || 'claude-opus-5-5' }}
+          BUDGET: ${{ vars.ASSISTANT_CODE_BUDGET_USD || '8' }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/handoff"
+          test -n "$ANTHROPIC_API_KEY" || { echo "Manca il secret ASSISTANT_ANTHROPIC_API_KEY del repository." > "$RUNNER_TEMP/handoff/summary.md"; echo "::error::Manca il secret ASSISTANT_ANTHROPIC_API_KEY"; exit 1; }
+          # The prompt opens with words, so a brief that starts with "- " is never read as an option.
+          # This machine holds no GitHub token and no production key, and nothing it writes is run
+          # by the job that pushes, so Claude Code works without prompts; it is still told not to
+          # commit or push, and gh is denied.
+          set +e
+          claude -p "Incarico dal gestionale:"$'\n\n'"$TASK" \
+            --model "$MODEL" \
+            --permission-mode bypassPermissions \
+            --disallowedTools "Bash(git push *)" "Bash(git commit *)" "Bash(git reset *)" "Bash(gh *)" \
+            --max-turns 150 \
+            --max-budget-usd "$BUDGET" \
+            --append-system-prompt-file .github/assistant/brief.md \
+            --output-format json > "$RUNNER_TEMP/claude.json"
+          status=$?
+          set -e
+          if ! jq -er '.result // empty' "$RUNNER_TEMP/claude.json" > "$RUNNER_TEMP/handoff/summary.md" 2>/dev/null; then
+            { echo "Claude Code si è fermato senza un riassunto (uscita $status)."; head -c 1500 "$RUNNER_TEMP/claude.json" 2>/dev/null || true; } > "$RUNNER_TEMP/handoff/summary.md"
+          fi
+          jq -n --argjson status "$status" \
+            --arg cost "$(jq -r '.total_cost_usd // 0' "$RUNNER_TEMP/claude.json" 2>/dev/null || echo 0)" \
+            --arg subtype "$(jq -r '.subtype // ""' "$RUNNER_TEMP/claude.json" 2>/dev/null || true)" \
+            '{exit: $status, cost: $cost, subtype: $subtype}' > "$RUNNER_TEMP/handoff/claude.json"
+
+      - name: Capture the work
+        id: capture
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/handoff"
+          test -s "$RUNNER_TEMP/handoff/summary.md" || echo "Claude Code non è partito." > "$RUNNER_TEMP/handoff/summary.md"
+          # Claude Code's own local settings, if it wrote any, are never part of the work. The patch
+          # is taken before the checks run, so nothing they generate rides along.
+          git add -A -- . ':!.claude' || true
+          git diff --cached --binary "$BASE_SHA" > "$RUNNER_TEMP/handoff/work.patch" || true
+          if [ -s "$RUNNER_TEMP/handoff/work.patch" ]; then echo "any=true" >> "$GITHUB_OUTPUT"; else echo "any=false" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Verify lint, typecheck and unit tests
+        id: verify
+        if: steps.capture.outputs.any == 'true'
+        continue-on-error: true
+        run: |
+          pnpm lint
+          pnpm typecheck
+          pnpm test
+
+      - name: Record the verdict
+        if: always()
+        env:
+          VERIFY: ${{ steps.verify.outcome }}
+        run: echo "${VERIFY:-skipped}" > "$RUNNER_TEMP/handoff/verify.txt"
+
+      - name: Upload the handoff
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: handoff
+          path: ${{ runner.temp }}/handoff
+          retention-days: 7
+          if-no-files-found: error
+
+  publish:
+    name: Branch e pull request
+    needs: [branch, work]
+    if: always() && needs.branch.result == 'success' && needs.work.outputs.base != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      statuses: write
+      actions: write
+    env:
+      TITLE: ${{ inputs.title }}
+      PR: ${{ inputs.pr }}
+      REPO: ${{ github.repository }}
+      BRANCH: ${{ needs.branch.outputs.name }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - name: Download the handoff
+        uses: actions/download-artifact@v4
+        with:
+          name: handoff
+          path: ${{ runner.temp }}/handoff
+
+      - name: Check the starting point
+        env:
+          BASE: ${{ needs.work.outputs.base }}
+        run: |
+          [[ "$BASE" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::Punto di partenza non valido"; exit 1; }
+          echo "BASE=$BASE" >> "$GITHUB_ENV"
+
+      # The commit Claude Code started from, not whatever main is now: the patch applies as made,
+      # and a branch someone pushed to in the meantime refuses the push instead of losing work.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BASE }}
+          persist-credentials: false
+          path: repo
+
+      - name: Apply the patch
+        id: changes
+        working-directory: repo
+        run: |
+          set -euo pipefail
+          git switch -C "$BRANCH"
+          patch="$RUNNER_TEMP/handoff/work.patch"
+          if [ ! -s "$patch" ]; then echo "any=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if grep -qE '^diff --git (a/)?(.*/)?\.git/|^(\+\+\+|---) [ab]/(.*/)?\.git/' "$patch"; then
+            echo "::error::La patch tocca percorsi dentro .git: niente commit"; exit 1
+          fi
+          git -c core.hooksPath=/dev/null apply --index "$patch"
+          git diff --cached --name-only > "$RUNNER_TEMP/changed.txt"
+          if [ ! -s "$RUNNER_TEMP/changed.txt" ]; then echo "any=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if grep -E '^\.github/|^\.claude/|(^|/)\.env' "$RUNNER_TEMP/changed.txt"; then
+            echo "::error::Claude Code ha toccato file che non può cambiare (.github, .claude o .env): niente commit"
+            exit 1
+          fi
+          echo "any=true" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and push the branch
+        if: steps.changes.outputs.any == 'true'
+        working-directory: repo
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          { echo "$TITLE"; echo; echo "Lavoro dell'assistente del gestionale, fatto da Claude Code."; echo "$RUN_URL"; } > "$RUNNER_TEMP/message.txt"
+          git -c core.hooksPath=/dev/null -c user.name="GearDrop Assistente" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -F "$RUNNER_TEMP/message.txt"
+          auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          git -c core.hooksPath=/dev/null -c http.https://github.com/.extraheader="AUTHORIZATION: basic $auth" push "https://github.com/$REPO.git" "HEAD:refs/heads/$BRANCH"
+          echo "SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Open or update the pull request
+        id: pull
+        if: steps.changes.outputs.any == 'true'
+        working-directory: ${{ runner.temp }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TASK: ${{ inputs.task }}
+        run: |
+          set -euo pipefail
+          verify="$(cat handoff/verify.txt)"
+          cost="$(jq -r .cost handoff/claude.json 2>/dev/null || echo 0)"
+          verdict="passati"; [ "$verify" = success ] || verdict="NON passati: la PR resta in bozza"
+          {
+            cat handoff/summary.md
+            echo; echo "---"; echo
+            echo "**Incarico dal gestionale**"; echo
+            printf '%s\n' "$TASK"; echo
+            echo "Lint, typecheck e test: $verdict. Costo API stimato: \$$cost. Lavoro: $RUN_URL"
+          } > body.md
+          if [ -z "$PR" ]; then
+            gh label create assistente --repo "$REPO" --color 7C3AED --description "Lavoro preparato dall'assistente del gestionale" 2>/dev/null || true
+            draft=(); [ "$verify" = success ] || draft=(--draft)
+            url="$(gh pr create --repo "$REPO" --base main --head "$BRANCH" --title "$TITLE" --body-file body.md --label assistente "${draft[@]}")"
+            number="${url##*/}"
+          else
+            number="$PR"
+            # The description is what the assistant reads back: it carries the latest summary, the
+            # comment keeps the history.
+            gh pr edit "$number" --repo "$REPO" --body-file body.md
+            gh pr comment "$number" --repo "$REPO" --body-file body.md
+            if [ "$verify" = success ]; then gh pr ready "$number" --repo "$REPO" || true; else gh pr ready "$number" --repo "$REPO" --undo || true; fi
+          fi
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+
+      - name: Record the verification and start the full checks
+        if: steps.changes.outputs.any == 'true'
+        working-directory: ${{ runner.temp }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          state=failure; description="Lint, typecheck o test non passati"
+          if [ "$(cat handoff/verify.txt)" = success ]; then state=success; description="Lint, typecheck e test passati"; fi
+          gh api "repos/$REPO/statuses/$SHA" -f state="$state" -f context="assistente/verifica" -f description="$description" -f target_url="$RUN_URL" > /dev/null
+          # Pushes made with this job's token start no workflow, but a dispatch does: the full gate
+          # (database, RLS, browser tests, builds) runs on the branch head the partner will publish.
+          if [ "$state" = success ]; then gh workflow run supabase-database-ci.yml --repo "$REPO" --ref "$BRANCH"; fi
+
+      - name: Summary for the partner
+        if: always()
+        working-directory: ${{ runner.temp }}
+        env:
+          NUMBER: ${{ steps.pull.outputs.number }}
+          CHANGED: ${{ steps.changes.outputs.any }}
+        run: |
+          {
+            if [ -n "$NUMBER" ]; then echo "PR #$NUMBER"; elif [ "$CHANGED" = false ]; then echo "Nessun file cambiato."; fi
+            echo
+            cat handoff/summary.md 2>/dev/null || echo "Nessun riassunto."
+          } >> "$GITHUB_STEP_SUMMARY"

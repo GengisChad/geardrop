@@ -4,7 +4,7 @@ vi.mock("server-only", () => ({}));
 
 import { ADMIN_NAV_ITEMS } from "@/lib/admin/navigation";
 import { copilotSystemPrompt } from "@/lib/ai/copilot";
-import { parseBlocks, parseInline } from "@/lib/ai/markdown-lite";
+import { parseBlocks, parseInline, previewScopeOf } from "@/lib/ai/markdown-lite";
 
 describe("parseInline", () => {
   it("reads bold, italic and code, and leaves the rest as text", () => {
@@ -17,6 +17,28 @@ describe("parseInline", () => {
       { kind: "code", text: "GD-SOAR" },
       { kind: "text", text: "." },
     ]);
+  });
+
+  it("links this project's previews, this repository and the shop, and leaves any other address as text (2026-11-24)", () => {
+    const policy = { repo: "GengisChad/geardrop", previewScope: previewScopeOf("geardrop-f0dmmqdm3-team-5625s-projects.vercel.app") };
+    expect(policy.previewScope).toBe("team-5625s-projects.vercel.app");
+    const preview = "https://geardrop-j84x8i8pk-team-5625s-projects.vercel.app/prodotto/bx";
+    expect(parseInline(`Anteprima: ${preview}. PR [#128](https://github.com/GengisChad/geardrop/pull/128), altro https://evil.example/x`, policy)).toEqual([
+      { kind: "text", text: "Anteprima: " },
+      { kind: "link", text: preview, href: preview },
+      { kind: "text", text: ". PR " },
+      { kind: "link", text: "#128", href: "https://github.com/GengisChad/geardrop/pull/128" },
+      { kind: "text", text: ", altro https://evil.example/x" },
+    ]);
+    for (const text of [
+      "[clicca](javascript:alert(1)) http://geardropshop.it",
+      "https://phish.vercel.app/login",
+      "https://geardrop-abc-someone-projects.vercel.app",
+      "https://github.com/someone/geardrop/pull/1",
+    ]) expect(parseInline(text, policy)).toEqual([{ kind: "text", text }]);
+    // Without a scope from the server, no preview is a link.
+    expect(parseInline(preview)).toEqual([{ kind: "text", text: preview }]);
+    expect(parseInline("https://geardropshop.it/prodotto/x")[0]).toMatchObject({ kind: "link" });
   });
 
   it("keeps lone asterisks, snake_case and multiplications as text", () => {

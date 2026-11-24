@@ -22,6 +22,9 @@ const API = `https://api.supabase.com/v1/projects/${PROJECT}/database/query`;
 const MIGRATIONS = path.join(ROOT, "supabase", "migrations");
 
 function token() {
+  // The assistant's migrations workflow passes it as a secret; on this machine it is in .env.local.
+  const fromEnv = process.env.SUPABASE_ACCESS_TOKEN?.trim();
+  if (fromEnv) return fromEnv;
   const line = readFileSync(path.join(ROOT, ".env.local"), "utf8")
     .split(/\r?\n/)
     .find((row) => row.startsWith("SUPABASE_ACCESS_TOKEN="));

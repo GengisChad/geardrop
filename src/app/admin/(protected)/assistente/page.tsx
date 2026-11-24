@@ -3,6 +3,8 @@ import { CopilotChat } from "@/components/admin/pricing/pricing-forms";
 import styles from "@/components/admin/warehouse/warehouse.module.css";
 import { requireAdminAccess } from "@/lib/admin/access";
 import { claudeApiKey } from "@/lib/ai/claude-api";
+import { githubConfig } from "@/lib/ai/github";
+import { DEFAULT_LINK_POLICY, previewScopeOf } from "@/lib/ai/markdown-lite";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +26,11 @@ export default async function AssistantPage() {
           <span>Magazzino, vendite, previsioni, profitto e mercato in tempo reale · modifica solo con la tua conferma</span>
         </div>
       </header>
-      <CopilotChat configured={claudeApiKey() !== null} />
+      {/* Links in answers and cards: this repository, this project's previews (scope from this deployment's own URL), the shop. */}
+      <CopilotChat
+        configured={claudeApiKey() !== null}
+        links={{ repo: githubConfig()?.repo ?? DEFAULT_LINK_POLICY.repo, previewScope: previewScopeOf(process.env["VERCEL_URL"]) }}
+      />
     </div>
   );
 }
