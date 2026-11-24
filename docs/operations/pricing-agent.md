@@ -7,7 +7,9 @@ l'approvazione cambia il prezzo (con audit che nomina la proposta). Owner e admi
 ## Attivazione
 
 1. Variabile server-only `ANTHROPIC_API_KEY` (mai con prefisso `NEXT_PUBLIC_`). Senza, pagine e
-   pulsanti restano visibili ma spenti. Facoltativa `COPILOT_MODEL` (default `claude-sonnet-5`).
+   pulsanti restano visibili ma spenti. Facoltativa `COPILOT_MODEL`: dal 2026-11-24 l'assistente
+   usa di default `claude-opus-5-5` con effort `high`; se la variabile è impostata su Vercel vince
+   lei, quindi va tolta per avere il default.
 2. **Prezzi IA → Fonti e politica**: approvare i domini dei concorrenti (dominio nudo, es.
    `negozio.it`; Amazon rifiutato per decisione dei soci) e impostare la politica: margine minimo
    sul costo, variazione massima per proposta, giorni di attesa, arrotondamento (,90 di default),
@@ -33,6 +35,14 @@ l'approvazione cambia il prezzo (con audit che nomina la proposta). Owner e admi
 `/admin/assistente`: domande su magazzino, previsioni, ordini, profitto, mercato e proposte. Gli
 ordini arrivano senza nome, email, telefono o indirizzo. Ogni domanda è registrata come esecuzione
 `copilot` con il suo costo.
+
+Dal 2026-11-24 (il proprietario: "risponde a caso, mi serve un vero agente IA") lavora da agente:
+legge quello che serve, prepara in una volta tutte le schede che la richiesta chiede, e domanda solo
+ciò che non può leggere. Gira su Opus 5.5 con effort `high`, fino a 20 chiamate e 16000 token di
+risposta; non inizia chiamate nuove dopo 240 secondi (la pagina ne ha 300) e, se si ferma prima di
+finire, lo dice. Se il modello rifiuta una richiesta per sicurezza, l'API la ripete su un modello di
+riserva (`fallbacks: "default"`). Costa circa il doppio per token rispetto a Sonnet: ogni domanda
+resta registrata con il suo costo.
 
 L'assistente non scrive mai da solo: prepara una scheda, e la modifica parte solo quando chi chiede
 preme «Conferma», con i suoi permessi e la stessa azione del tasto del gestionale

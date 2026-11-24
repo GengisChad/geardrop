@@ -2,6 +2,7 @@ import {
   addUsage,
   type ClaudeClient,
   type ContentBlock,
+  type Effort,
   type MessageParam,
   type ServerToolDefinition,
   type ToolResultBlock,
@@ -26,7 +27,19 @@ export type AgentOptions = {
   readonly maxTokens?: number;
   /** Model calls before the loop gives up: a bound on what a run can spend. */
   readonly maxTurns?: number;
+  readonly effort?: Effort;
+  /** Rerun a refused turn on a fallback model (server side). */
+  readonly fallbacks?: "default";
+  readonly betas?: readonly string[];
+  /**
+   * Epoch milliseconds after which no new model call starts, and 50 s past which none may run: the
+   * server's own time limit would otherwise cut the request off with nothing to show for it.
+   */
+  readonly deadline?: number;
 };
+
+const CALL_TIMEOUT_MS = 180_000;
+const LAST_CALL_MS = 50_000;
 
 export type AgentResult = {
   readonly text: string;
@@ -62,6 +75,9 @@ export async function runAgent(client: ClaudeClient, usage: UsageTotals, options
   let lastText = "";
 
   for (let turn = 1; turn <= maxTurns; turn += 1) {
+    if (options.deadline !== undefined && turn > 1 && Date.now() > options.deadline) {
+      return { text: lastText, turns: turn - 1, stopReason: "deadline", toolCalls };
+    }
     const response = await client.createMessage({
       model: options.model,
       max_tokens: options.maxTokens ?? 4096,
@@ -71,6 +87,10 @@ export async function runAgent(client: ClaudeClient, usage: UsageTotals, options
         ...(options.serverTools ?? []),
         ...tools.map(({ name, description, input_schema }) => ({ name, description, input_schema })),
       ],
+      ...(options.effort ? { output_config: { effort: options.effort } } : {}),
+      ...(options.fallbacks ? { fallbacks: options.fallbacks } : {}),
+      ...(options.betas?.length ? { betas: options.betas } : {}),
+      ...(options.deadline === undefined ? {} : { timeoutMs: Math.max(1_000, Math.min(CALL_TIMEOUT_MS, options.deadline + LAST_CALL_MS - Date.now())) }),
     });
     addUsage(usage, response.model || options.model, response.usage);
     messages.push({ role: "assistant", content: response.content });

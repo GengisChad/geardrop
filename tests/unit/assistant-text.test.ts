@@ -60,4 +60,11 @@ describe("copilotSystemPrompt", () => {
     }
     expect(prompt).not.toContain("Riordini");
   });
+
+  it("knows today's date in Italian time, and tells a card from a product sheet", () => {
+    const tuesday = copilotSystemPrompt("Gear Drop", new Date("2026-11-24T23:30:00Z"));
+    expect(tuesday).toContain("Oggi è mercoledì 25 novembre 2026, ora italiana.");
+    expect(tuesday).toContain("scheda di conferma");
+    expect(tuesday).toContain("elenco_prodotti");
+  });
 });

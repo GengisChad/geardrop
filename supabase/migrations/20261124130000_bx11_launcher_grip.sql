@@ -6,8 +6,9 @@
 -- read, the Stripe product (gd_custom_grip_takara_tomy) and the orders match on. The row takes the
 -- catalogue's new copy (src/data/catalog.ts), Takara Tomy's renders and the barcode printed on the
 -- BX-11 box (JAN 4904810910787, from Takara Tomy's lineup/bx11.html). The SKU becomes BX-11 unless
--- the back office already changed it. Price and stock are left alone: the owner set them on the
--- sheet. Stripe's product name follows with pnpm stripe:products --apply.
+-- the back office already changed it. The price is 23,99, two euros under the Custom Grip's 25,99
+-- (owner, the same day), with no struck-through figure: the BX-11 never sold at 25,99. The stock is
+-- left alone. Stripe's product name and price follow with pnpm stripe:products --apply.
 --
 -- A replay writes the same values again.
 
@@ -23,6 +24,8 @@ set name = 'BX-11 Launcher Grip Takara Tomy',
     tagline = 'Il grip nero classico. Si monta sul lanciatore.',
     description = 'Il Launcher Grip BX-11 è l''impugnatura originale Takara Tomy, nera, che si monta sul lanciatore Beyblade X (venduto a parte): ha una forma comoda da impugnare e rende il lancio più stabile. Nella confezione c''è anche il suo pannello con il logo Beyblade X. Lanciatore, trottola e Beystadium non inclusi. Prodotto originale giapponese, confezione in giapponese.',
     sku = case when product.sku = 'CUSTOM-GRIP-TAKARA-TOMY' then 'BX-11' else product.sku end,
+    price_cents = 2399,
+    compare_at_price_cents = null,
     gtin = case
       when exists (select 1 from public.products as other where other.gtin = '4904810910787' and other.id <> product.id) then product.gtin
       else '4904810910787'

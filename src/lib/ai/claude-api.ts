@@ -59,13 +59,25 @@ export type Usage = {
   readonly server_tool_use?: { readonly web_search_requests?: number; readonly web_fetch_requests?: number };
 };
 
+export type Effort = "low" | "medium" | "high" | "xhigh" | "max";
+
 export type MessageRequest = {
   readonly model: string;
   readonly max_tokens: number;
   readonly system?: string;
   readonly messages: readonly MessageParam[];
   readonly tools?: readonly (ToolDefinition | ServerToolDefinition)[];
+  /** How hard the model thinks. Opus 5.5 always thinks and defaults to medium. */
+  readonly output_config?: { readonly effort?: Effort };
+  /** On a safety refusal the API reruns the turn on a fallback model it picks; needs SERVER_SIDE_FALLBACK_BETA. */
+  readonly fallbacks?: "default";
+  /** Beta features: sent as the anthropic-beta header, never in the body. */
+  readonly betas?: readonly string[];
+  /** How long this call may take, 180 s when absent; not sent. */
+  readonly timeoutMs?: number;
 };
+
+export const SERVER_SIDE_FALLBACK_BETA = "server-side-fallback-2026-07-01";
 
 export type MessageResponse = {
   readonly id: string;
@@ -86,17 +98,18 @@ export class ClaudeApiError extends Error {
 
 export function createClaudeClient(apiKey: string, fetchImpl: typeof fetch = fetch): ClaudeClient {
   return {
-    async createMessage(request) {
+    async createMessage({ betas, timeoutMs, ...request }) {
       const response = await fetchImpl(CLAUDE_API, {
         method: "POST",
         headers: {
           "x-api-key": apiKey,
           "anthropic-version": API_VERSION,
           "content-type": "application/json",
+          ...(betas?.length ? { "anthropic-beta": betas.join(",") } : {}),
         },
         body: JSON.stringify(request),
         cache: "no-store",
-        signal: AbortSignal.timeout(180_000),
+        signal: AbortSignal.timeout(timeoutMs ?? 180_000),
       });
       const payload = (await response.json().catch(() => null)) as
         | (MessageResponse & { readonly error?: { readonly message?: string } })

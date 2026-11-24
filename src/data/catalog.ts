@@ -262,9 +262,11 @@ export const PRODUCTS: readonly Product[] = [
     // in bx-11 che sarebbe il grip classico nero"); before, three Custom Grip editions from one lot.
     // The slug stays: it is the page's address and the key of the stock and the Stripe product. The
     // words come from Takara Tomy's BX-11 page (lineup/bx11.html), the panel from its official render.
+    // 23,99: two euros under the Custom Grip's 25,99 (owner, 2026-11-24). A plain price, not an offer:
+    // the BX-11 never sold at 25,99, so there is no struck-through figure.
     slug: "custom-grip-takara-tomy", name: "BX-11 Launcher Grip Takara Tomy", tagline: "Il grip nero classico. Si monta sul lanciatore.",
     description: "Il Launcher Grip BX-11 è l'impugnatura originale Takara Tomy, nera, che si monta sul lanciatore Beyblade X (venduto a parte): ha una forma comoda da impugnare e rende il lancio più stabile. Nella confezione c'è anche il suo pannello con il logo Beyblade X. Lanciatore, trottola e Beystadium non inclusi. Prodotto originale giapponese, confezione in giapponese.",
-    price: eur(2599), category: "accessori", brand: "takara-tomy", stock: "disponibile", availableQuantity: 15, tags: ["novita"], rating: 0, reviewCount: 0,
+    price: eur(2399), category: "accessori", brand: "takara-tomy", stock: "disponibile", availableQuantity: 15, tags: ["novita"], rating: 0, reviewCount: 0,
     images: productImages["custom-grip-takara-tomy"],
     specs: [{ label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Tipo", value: "Impugnatura per lanciatore" }, { label: "Modello", value: "BX-11 Launcher Grip" }, { label: "Colore", value: "Nero" }, { label: "Confezione", value: "In giapponese" }, { label: "Nota", value: "Lanciatore non incluso" }],
     features: [{ title: "Lancio più stabile", description: "La forma è più comoda da impugnare" }, { title: "Il grip classico", description: "Nero, con il pannello Beyblade X" }, { title: "Da sapere prima di comprare", description: "Il lanciatore non è incluso: il grip si monta su uno che hai già" }],

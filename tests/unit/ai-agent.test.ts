@@ -10,6 +10,7 @@ import {
   claudeApiKey,
   createClaudeClient,
   emptyUsage,
+  SERVER_SIDE_FALLBACK_BETA,
   type ClaudeClient,
   type MessageRequest,
   type MessageResponse,
@@ -49,6 +50,21 @@ describe("createClaudeClient", () => {
     const client = createClaudeClient("bad", fetchMock as unknown as typeof fetch);
     await expect(client.createMessage({ model: "m", max_tokens: 1, messages: [] })).rejects.toMatchObject({ status: 401 });
     await expect(client.createMessage({ model: "m", max_tokens: 1, messages: [] })).rejects.toBeInstanceOf(ClaudeApiError);
+  });
+
+  it("sends betas as a header and keeps them and the call's time limit out of the body", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ id: "m", model: "x", content: [], stop_reason: "end_turn", usage }), { status: 200 }));
+    const client = createClaudeClient("sk-ant-test", fetchMock as unknown as typeof fetch);
+    await client.createMessage({
+      model: CLAUDE_MODELS.orchestrator, max_tokens: 10, messages: [], output_config: { effort: "high" },
+      fallbacks: "default", betas: [SERVER_SIDE_FALLBACK_BETA], timeoutMs: 5_000,
+    });
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(init.headers).toMatchObject({ "anthropic-beta": "server-side-fallback-2026-07-01" });
+    const body = JSON.parse(String(init.body)) as Record<string, unknown>;
+    expect(body).toMatchObject({ model: "claude-opus-5-5", output_config: { effort: "high" }, fallbacks: "default" });
+    expect(body).not.toHaveProperty("betas");
+    expect(body).not.toHaveProperty("timeoutMs");
   });
 
   it("stays off without a key", () => {
@@ -109,6 +125,22 @@ describe("runAgent", () => {
         { type: "tool_result", tool_use_id: "b", content: "Strumento sconosciuto: inesistente", is_error: true },
       ],
     });
+  });
+
+  it("starts no new model call past its deadline, and gives each call only the time left", async () => {
+    const { client, requests } = scripted([
+      { stop_reason: "tool_use", content: [{ type: "text", text: "Leggo." }, { type: "tool_use", id: "t1", name: "lento", input: {} }] },
+      { stop_reason: "end_turn", content: [{ type: "text", text: "Mai letto" }] },
+    ]);
+    const deadline = Date.now() + 20;
+    const result = await runAgent(client, emptyUsage(), {
+      model: "m", system: "s", messages: [{ role: "user", content: "x" }], deadline, effort: "high",
+      tools: [{ name: "lento", description: "d", input_schema: {}, run: () => new Promise((resolve) => setTimeout(() => resolve("ok"), 40)) }],
+    });
+    expect(result).toMatchObject({ text: "Leggo.", stopReason: "deadline", turns: 1 });
+    expect(requests).toHaveLength(1);
+    expect(requests[0]).toMatchObject({ output_config: { effort: "high" } });
+    expect(requests[0]!.timeoutMs).toBeLessThanOrEqual(50_020);
   });
 
   it("continues a paused server tool turn and stops at the turn limit", async () => {
@@ -186,7 +218,7 @@ describe("copilot tools", () => {
       "cambia_stato_ordine", "spedisci_ordine", "nota_ordine", "movimento_magazzino", "cambia_prezzo", "imposta_costo",
       // Since 2026-11-24 it edits product sheets too, and reads one whole before doing so.
       "modifica_prodotto", "dettagli_prodotto",
-      "ordine", "da_spedire", "panoramica_magazzino", "previsioni", "ordini_recenti", "prodotto", "scheda_prodotto", "mercato", "proposte_prezzo",
+      "ordine", "da_spedire", "panoramica_magazzino", "previsioni", "ordini_recenti", "prodotto", "elenco_prodotti", "scheda_prodotto", "mercato", "proposte_prezzo",
     ]);
     await tools.find((tool) => tool.name === "ordini_recenti")?.run({});
     const selects = calls.filter((call) => call.startsWith("select:")).join(" ");

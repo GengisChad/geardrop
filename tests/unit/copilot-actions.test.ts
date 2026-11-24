@@ -161,6 +161,33 @@ describe("an answer that announces a card it never made (seen live, 2026-11-19)"
     expect(answer.answer).toBe("Non sono riuscito a preparare la scheda. Riscrivi la richiesta indicando ordine o prodotto e cosa fare.");
   });
 
+  it("does not take a product sheet for a card (seen live: «dalla scheda del prodotto» was sent back)", async () => {
+    const { askCopilot, claimsACard } = await import("@/lib/ai/copilot");
+    const answer = "Il prezzo si cambia dalla **scheda del prodotto** in Prodotti, oppure chiedilo a me. Ecco la scheda del grip: 23,99 €, 15 pezzi.";
+    expect(claimsACard(answer)).toBe(false);
+    expect(claimsACard("Ho preparato 2 schede: conferma qui sotto.")).toBe(true);
+    const { claude, requests } = scripted([text(answer)]);
+    expect((await askCopilot(clientWithRuns(), claude, { id: 1, name: "Gear Drop" }, [], "Dove cambio un prezzo?")).answer).toBe(answer);
+    expect(requests).toHaveLength(1);
+  });
+
+  it("runs on Opus, thinking hard, with room for the answer and a fallback on refusal", async () => {
+    const { askCopilot } = await import("@/lib/ai/copilot");
+    const { claude, requests } = scripted([text("Ci sono 11 ordini da spedire.")]);
+    await askCopilot(clientWithRuns(), claude, { id: 1, name: "Gear Drop" }, [], "Cosa devo spedire?");
+    expect(requests[0]).toMatchObject({
+      model: "claude-opus-5-5", max_tokens: 16000, output_config: { effort: "high" }, fallbacks: "default", betas: ["server-side-fallback-2026-07-01"],
+    });
+    expect(JSON.stringify(requests[0])).toContain("elenco_prodotti");
+  });
+
+  it("says when it stopped before the end instead of leaving a half answer", async () => {
+    const { askCopilot } = await import("@/lib/ai/copilot");
+    const { claude } = scripted([{ stop_reason: "max_tokens", content: [{ type: "text", text: "Sto leggendo gli ordini" }] }]);
+    const answer = await askCopilot(clientWithRuns(), claude, { id: 1, name: "Gear Drop" }, [], "Riepilogo del mese");
+    expect(answer.answer).toContain("Mi sono fermato prima di finire");
+  });
+
   it("leaves an answer without a card claim alone", async () => {
     const { askCopilot } = await import("@/lib/ai/copilot");
     const { claude, requests } = scripted([text("Ci sono 11 ordini da spedire.")]);

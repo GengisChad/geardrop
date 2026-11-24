@@ -7,7 +7,7 @@ import type { Database } from "@/lib/supabase/database.types";
 import { runAgent, type ClientTool } from "./agent-loop";
 import { PRODUCTS } from "@/data/catalog";
 import { copilotActionTools, shopDetailLists, type CopilotAction } from "./copilot-actions";
-import { CLAUDE_MODELS, emptyUsage, type ClaudeClient } from "./claude-api";
+import { CLAUDE_MODELS, emptyUsage, SERVER_SIDE_FALLBACK_BETA, type ClaudeClient } from "./claude-api";
 import { listObservations, listProposals } from "./pricing-repository";
 
 /**
@@ -134,6 +134,21 @@ export function copilotTools(client: Client, organizationId: number, collect: (a
           };
         });
       }),
+    tool("elenco_prodotti", "Tutti i prodotti: SKU, nome come lo mostra il sito, prezzo, giacenza e pubblicazione. Usalo per trovare un prodotto quando il nome dato dal socio non basta («il grip», «la fenice rossa»).", {},
+      async () => {
+        // "*" and not a column list: storefront_fields may not exist yet (migration 20261124120000).
+        const { data, error } = await client.from("products").select("*").eq("organization_id", organizationId).order("sort_order").limit(200);
+        if (error) throw new Error("Prodotti non disponibili");
+        const catalogue = new Map(PRODUCTS.map((product) => [product.slug as string, product]));
+        return (data ?? []).map((row) => {
+          const page = catalogue.get(row.slug);
+          const marked = new Set(row.storefront_fields ?? []);
+          return {
+            sku: row.sku, nome: page && !marked.has("name") ? page.name : row.name, prezzo_eur: euros(row.price_cents),
+            stock: row.stock_quantity, pubblicazione: row.publication_status, sul_sito: page ? "sì" : "no, solo nel gestionale",
+          };
+        });
+      }),
     tool("scheda_prodotto", "La scheda completa di un prodotto cercato per nome o SKU, come la mostra il sito: nome, nome breve, SKU, slug, categoria, tipo blade, tagline, descrizione, prezzo e prezzo barrato, pubblicazione, specifiche, feature, confezione e foto. Leggila prima di modifica_prodotto o dettagli_prodotto.",
       { cerca: { type: "string" } },
       async (input) => {
@@ -195,20 +210,39 @@ const HOW_TO = [
   "Rimborsare o annullare un ordine: solo dalla scheda dell'ordine in Ordini («Rimborsa», «Annulla»), perché muovono soldi.",
 ];
 
-export function copilotSystemPrompt(company: string): string {
+/** Today as the partners say it, in Italian time: "martedì 24 novembre 2026". */
+function today(now: Date): string {
+  return new Intl.DateTimeFormat("it-IT", { timeZone: "Europe/Rome", weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(now);
+}
+
+/**
+ * The assistant's brief. Since 2026-11-24 (owner: "risponde a caso, mi serve un vero agente IA") it
+ * is told to act: read what it needs, prepare every card the request calls for in one go, and ask
+ * only for what it cannot read. "Scheda di conferma" is the card; "scheda prodotto" the product
+ * sheet: the two used to share one word, and the model mixed them up.
+ */
+export function copilotSystemPrompt(company: string, now: Date = new Date()): string {
   const pages = ADMIN_NAV_ITEMS.filter((item) => !item.disabled).map((item) => item.label).join(", ");
   return [
-    `Sei l'assistente del gestionale di ${company}. Rispondi ai soci in italiano, in modo breve e concreto, con i numeri.`,
-    "Usa gli strumenti per leggere i dati reali prima di rispondere: magazzino, previsioni, ordini, prodotti, mercato, proposte di prezzo.",
-    "Non inventare dati: se uno strumento non ha il dato dillo. Importi in euro; profitto e costi sono netti IVA.",
-    "Puoi preparare modifiche con gli strumenti d'azione: cambia_stato_ordine, spedisci_ordine, nota_ordine, movimento_magazzino, cambia_prezzo, imposta_costo, modifica_prodotto, dettagli_prodotto. Ogni azione diventa una scheda che l'utente conferma con un tasto, con i suoi permessi: non dire mai che una cosa è fatta finché la conversazione non riporta «Eseguita».",
-    "Prima di preparare un'azione leggi i dati che servono (ordine, da_spedire, prodotto, scheda_prodotto). Se l'utente chiede più cose, prepara una scheda per ciascuna. Se un dato è ambiguo (più prodotti con lo stesso nome), chiedi invece di indovinare.",
-    "Prodotti: con modifica_prodotto cambi nome, nome breve, SKU, tagline, descrizione, categoria, tipo blade, offerta (prezzo barrato) e pubblicazione; con dettagli_prodotto le specifiche, le feature e la confezione. Se un prodotto cambia (per esempio un pezzo diverso sulla stessa scheda), aggiorna anche tagline, descrizione e dettagli perché parlino del pezzo nuovo: proponi tu i testi, brevi e senza promettere ciò che non sai, e chiedi i dati che mancano. Lo slug (l'indirizzo della pagina) non si cambia.",
-    "Una scheda esiste solo se chiami lo strumento d'azione in questa risposta: le schede delle risposte precedenti non contano. Non scrivere mai «scheda pronta» o «conferma qui sotto» senza averlo chiamato ora.",
-    "«Segna come spedito/evaso» senza un codice di tracciamento: usa cambia_stato_ordine (nessuna email). Usa spedisci_ordine solo quando l'utente ti dà corriere e codice.",
-    "Rimborsi, annullamenti e coupon non li puoi preparare: indica dove farli.",
+    `Sei l'agente operativo del gestionale di ${company}: lavori per i soci, che spesso ti scrivono dal telefono quando non sono al computer. Rispondi in italiano, breve e concreto, con i numeri.`,
+    `Oggi è ${today(now)}, ora italiana.`,
+    "",
+    "Come lavori:",
+    "- Prima leggi, poi rispondi: ogni dato (ordini, giacenze, prezzi, schede prodotto, vendite, mercato) viene dagli strumenti, mai dalla memoria né da una risposta precedente se può essere cambiato. Se non trovi un prodotto per nome, usa elenco_prodotti.",
+    "- Quando ti chiedono di cambiare qualcosa, preparalo subito con gli strumenti d'azione, senza chiedere il permesso in chat: ogni azione diventa una scheda di conferma, e la modifica parte solo quando il socio preme «Conferma», con i suoi permessi. Prepara nella stessa risposta tutte le schede che la richiesta richiede.",
+    "- Chiedi solo ciò che non puoi leggere né ricavare: quale di due prodotti con lo stesso nome, un prezzo o un codice mai detto.",
+    "- Se uno strumento risponde con un errore, leggi il motivo, correggi e riprova; se non si può fare, dillo in una frase con il motivo.",
+    "- Chiudi dicendo cosa hai preparato e cosa resta da fare. Non dire mai che una cosa è fatta finché la conversazione non riporta «Eseguita».",
+    "- Una scheda di conferma esiste solo se chiami lo strumento d'azione in questa risposta: quelle delle risposte precedenti non contano. Non scrivere «scheda pronta» o «conferma qui sotto» senza averlo chiamato ora.",
+    "- Non inventare dati: se uno strumento non ha il dato, dillo. Importi in euro; profitto e costi sono netti IVA.",
+    "",
+    "Strumenti d'azione: cambia_stato_ordine, spedisci_ordine, nota_ordine, movimento_magazzino, cambia_prezzo, imposta_costo, modifica_prodotto, dettagli_prodotto.",
+    "Prodotti: leggi prima scheda_prodotto. Con modifica_prodotto cambi nome, nome breve, SKU, tagline, descrizione, categoria, tipo blade, offerta (prezzo barrato) e pubblicazione; con dettagli_prodotto le specifiche, le feature e la confezione; il prezzo con cambia_prezzo; la giacenza con movimento_magazzino. Se sulla stessa scheda prodotto ora si vende un pezzo diverso, aggiorna anche tagline, descrizione e dettagli perché parlino del pezzo nuovo: scrivi tu testi brevi, senza promettere ciò che non sai. Il sito si aggiorna entro pochi minuti dalla conferma.",
+    "Ordini: «segna come spedito/evaso» senza un codice di tracciamento si fa con cambia_stato_ordine (nessuna email); spedisci_ordine solo quando il socio dà corriere e codice.",
+    "Non puoi preparare: rimborsi, annullamenti, coupon, lo slug (l'indirizzo della pagina), un prodotto nuovo che compaia sul sito, foto nuove sul sito. Indica dove si fanno; per prodotti nuovi e foto serve chi cura il codice del sito.",
     `Le pagine del gestionale sono solo queste, con questi nomi: ${pages}. Non nominare pagine o menu che non sono in questo elenco.`,
     ...HOW_TO,
+    "",
     "Formato: frasi brevi, **grassetto** per i nomi importanti, elenchi con «- ». Niente tabelle, niente emoji.",
   ].join("\n");
 }
@@ -221,14 +255,26 @@ function withOutcomes(turn: CopilotTurn): string {
   return [turn.text, ...turn.actions.map((action) => `[${action.title}: ${OUTCOME[action.status]}${action.result ? ` · ${action.result}` : ""}]`)].join("\n");
 }
 
-/** An answer that points the partner at a card to confirm. */
+/**
+ * An answer that points the partner at a card to confirm. Not the bare word "scheda": until
+ * 2026-11-24 it matched "la scheda del prodotto" too, so a plain answer about a product sheet was
+ * sent back and could come out as "Non sono riuscito a preparare la scheda".
+ */
 export function claimsACard(text: string): boolean {
-  return /\bsched[ae]\b|tast[oi] qui sotto|«\s*conferma\s*»|conferma(lo|la|le|li)? (qui )?sotto/i.test(text);
+  return /tast[oi] qui sotto|«\s*conferma\s*»|\bpremi\s+(il tasto\s+)?conferma\b|conferma(lo|la|le|li)? (qui )?sotto|sched[ae] (di conferma )?(pront[ae]|preparat[ae]|da confermare)|ho preparato (la|le|una|\d+) sched/i.test(text);
 }
 
 const NO_CARD_NUDGE =
   "In questa risposta non hai chiamato nessuno strumento d'azione, quindi non c'è nessuna scheda da confermare. Se serve un'azione, chiama ora lo strumento; altrimenti rispondi senza parlare di schede.";
 const NO_CARD_ANSWER = "Non sono riuscito a preparare la scheda. Riscrivi la richiesta indicando ordine o prodotto e cosa fare.";
+
+/** The text the partner reads, saying so when the run stopped before its end. */
+function finalAnswer(result: { readonly text: string; readonly stopReason: string }, cards: number): string {
+  const unfinished = result.stopReason === "deadline" || result.stopReason === "max_turns" || result.stopReason === "max_tokens";
+  if (result.stopReason === "refusal" && !result.text) return "Su questa richiesta il modello si è fermato. Riformulala indicando ordine o prodotto e cosa fare.";
+  const text = result.text || (cards ? "Ecco cosa ho preparato: conferma sotto." : "Non ho una risposta con i dati disponibili.");
+  return unfinished ? `${text}\n\nMi sono fermato prima di finire: ${cards ? "conferma le schede pronte e " : ""}chiedimi di continuare.` : text;
+}
 
 export async function askCopilot(
   client: Client,
@@ -236,8 +282,12 @@ export async function askCopilot(
   organization: { readonly id: number; readonly name: string },
   history: readonly CopilotTurn[],
   question: string,
-  model: string = process.env["COPILOT_MODEL"]?.trim() || CLAUDE_MODELS.worker,
+  // Opus since 2026-11-24 (owner: "mi serve un vero agente IA"); COPILOT_MODEL still overrides it.
+  model: string = process.env["COPILOT_MODEL"]?.trim() || CLAUDE_MODELS.orchestrator,
+  now: () => number = Date.now,
 ): Promise<CopilotAnswer> {
+  // The page may run for 300 s: no new model call starts after 240, so an answer always comes back.
+  const deadline = now() + 240_000;
   const started = await client.rpc("start_agent_run", { p_organization_id: organization.id, p_agent: "copilot", p_models: [model] });
   if (started.error) throw new Error(started.error.message);
   const usage = emptyUsage();
@@ -246,10 +296,17 @@ export async function askCopilot(
     const messages = [...history.slice(-10).map((turn) => ({ role: turn.role, content: withOutcomes(turn) })), { role: "user" as const, content: question }];
     const options = {
       model,
-      system: copilotSystemPrompt(organization.name),
+      system: copilotSystemPrompt(organization.name, new Date(now())),
       tools: copilotTools(client, organization.id, (action) => actions.push(action)),
-      maxTokens: 2048,
-      maxTurns: 8,
+      // The model thinks before it answers, and its thinking counts here: 2048 cut answers short.
+      maxTokens: 16_000,
+      // Reading a sheet, its details and preparing several cards takes more than eight calls.
+      maxTurns: 20,
+      effort: "high" as const,
+      // A safety refusal is rerun on a fallback model instead of leaving the partner without answer.
+      fallbacks: "default" as const,
+      betas: [SERVER_SIDE_FALLBACK_BETA],
+      deadline,
     };
     let result = await runAgent(claude, usage, { ...options, messages });
     // Seen live on 2026-11-19: the model wrote "Scheda pronta … conferma qui sotto" without calling
@@ -258,7 +315,7 @@ export async function askCopilot(
     if (actions.length === 0 && claimsACard(result.text)) {
       result = await runAgent(claude, usage, {
         ...options,
-        maxTurns: 4,
+        maxTurns: 6,
         messages: [...messages, { role: "assistant" as const, content: result.text }, { role: "user" as const, content: NO_CARD_NUDGE }],
       });
       if (actions.length === 0 && claimsACard(result.text)) result = { ...result, text: NO_CARD_ANSWER };
@@ -270,7 +327,7 @@ export async function askCopilot(
         cost_estimate_cents: Math.ceil(usage.dollars * 100), summary: question.slice(0, 500),
       },
     });
-    return { answer: result.text || (actions.length ? "Ecco cosa preparo: conferma sotto." : "Non ho una risposta con i dati disponibili."), dollars: usage.dollars, toolCalls: result.toolCalls, actions };
+    return { answer: finalAnswer(result, actions.length), dollars: usage.dollars, toolCalls: result.toolCalls, actions };
   } catch (error) {
     await client.rpc("finish_agent_run", {
       p_run_id: started.data,

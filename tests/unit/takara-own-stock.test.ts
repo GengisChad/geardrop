@@ -20,9 +20,13 @@ const OWNER_LIST: Readonly<Record<string, { readonly price: number; readonly sto
   "winder-launcher-takara-tomy": { price: 1299, stock: 33 },
 };
 
-/** What sells below its listing price today. The owner, 2026-11-15: the Brachio at 28,00, on promotion. */
+/**
+ * What sells below its listing price today. The owner, 2026-11-15: the Brachio at 28,00, on promotion.
+ * 2026-11-24: the grip listing, now the BX-11, at 23,99, two euros under the Custom Grip (no offer).
+ */
 const PROMOTIONS: Readonly<Record<string, number>> = {
   "cx-18-random-booster-brachio-whip": 2800,
+  "custom-grip-takara-tomy": 2399,
 };
 
 const pieces = PRODUCTS.filter((product) => product.slug in OWNER_LIST);
@@ -271,7 +275,9 @@ describe("the migration", () => {
     const grip = piece("custom-grip-takara-tomy");
     expect(bx11).toContain(`name = '${grip.name}'`);
     expect(bx11).toContain("sku = case when product.sku = 'CUSTOM-GRIP-TAKARA-TOMY' then 'BX-11' else product.sku end");
-    expect(bx11).not.toMatch(/price_cents|stock_quantity|set slug/);
+    // The price the owner gave (23,99); the stock and the address stay as they are.
+    expect(bx11).toContain("price_cents = 2399");
+    expect(bx11).not.toMatch(/stock_quantity|set slug/);
     for (const spec of grip.specs) expect(bx11, spec.label).toContain(`('${spec.label}', '${spec.value}'`);
     for (const content of grip.boxContents) expect(bx11, content).toContain(`('${content}'`);
   });
