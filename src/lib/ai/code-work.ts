@@ -56,6 +56,8 @@ type Pull = {
 type PullFile = { readonly filename: string; readonly status: string };
 type Run = { readonly id: number; readonly display_title: string; readonly status: string; readonly conclusion: string | null; readonly html_url: string; readonly created_at: string };
 type Runs = { readonly workflow_runs: readonly Run[] };
+type Job = { readonly conclusion: string | null; readonly check_run_url: string };
+type Annotation = { readonly annotation_level: string; readonly message: string };
 type CommitStatus = { readonly statuses: readonly { readonly context: string; readonly state: string }[] };
 type Deployment = { readonly id: number; readonly environment: string; readonly production_environment?: boolean };
 type DeploymentStatus = { readonly state: string; readonly environment_url?: string | null };
@@ -227,6 +229,28 @@ export function briefLines(task: string, width = 500): readonly string[] {
   return lines;
 }
 
+/**
+ * Why a job failed, in its own words: the error annotation the workflow writes when Claude Code
+ * stops on an error (24/11: a refused API key read as "finito"), or another step's error. GitHub's
+ * generic "Process completed with exit code" line says nothing and is skipped; with no readable
+ * reason the answer is null and the job's link stays the way to find out.
+ */
+export async function failureReason(gh: GitHub, runId: number): Promise<string | null> {
+  try {
+    const { jobs } = await gh.request<{ readonly jobs: readonly Job[] }>("GET", `/actions/runs/${runId}/jobs`);
+    for (const job of jobs.filter((candidate) => candidate.conclusion === "failure")) {
+      const checkRun = /\/check-runs\/(\d+)$/.exec(job.check_run_url)?.[1];
+      if (!checkRun) continue;
+      const notes = await gh.request<readonly Annotation[]>("GET", `/check-runs/${checkRun}/annotations`);
+      const note = notes.find((candidate) => candidate.annotation_level === "failure" && !/^Process completed with exit code/.test(candidate.message));
+      if (note) return clip(note.message.trim(), 400);
+    }
+  } catch {
+    // A reason is a help, never a reason for the status answer to fail.
+  }
+  return null;
+}
+
 async function migrationRuns(gh: GitHub): Promise<readonly Run[]> {
   // Before the workflow reaches main there is none: no run, not an error.
   return (await gh.request<Runs>("GET", `/actions/workflows/${MIGRATIONS_WORKFLOW}/runs?per_page=30`).catch(() => ({ workflow_runs: [] }))).workflow_runs;
@@ -384,19 +408,26 @@ export function codeWorkTool(github: () => GitHub = defaultGitHub): ClientTool {
       const mine = pulls.filter((pull) => isAssistantPull(pull, gh.repo)).slice(0, 6);
       const pullOfRun = (run: Run) =>
         mine.find((pull) => pull.head.ref === `${BRANCH_PREFIX}${run.id}`)?.number ?? (Number(/\(PR #(\d+)\)$/.exec(run.display_title)?.[1]) || null);
-      const reports = await Promise.all(
-        mine.map(async (pull) => {
-          if (pull.state === "open") return pullReport(gh, pull);
-          if (pull.merged_at) return { migrations: (await migrationsOf(gh, pull.number)).added };
-          return null;
-        }),
-      );
+      const failed = (run: Run) => run.status === "completed" && run.conclusion === "failure";
+      // The reasons of the three latest failed jobs: enough to answer, without a call per old job.
+      const explained = new Set(runs.workflow_runs.filter(failed).slice(0, 3).map((run) => run.id));
+      const [reports, reasons] = await Promise.all([
+        Promise.all(
+          mine.map(async (pull) => {
+            if (pull.state === "open") return pullReport(gh, pull);
+            if (pull.merged_at) return { migrations: (await migrationsOf(gh, pull.number)).added };
+            return null;
+          }),
+        ),
+        Promise.all(runs.workflow_runs.map((run) => (explained.has(run.id) ? failureReason(gh, run.id) : Promise.resolve(null)))),
+      ]);
       return {
-        lavori: runs.workflow_runs.map((run) => ({
+        lavori: runs.workflow_runs.map((run, index) => ({
           titolo: run.display_title.replace(/^Assistente: /, ""),
           stato: run.status !== "completed" ? "in corso" : run.conclusion === "success" ? "finito" : `finito con errore (${run.conclusion ?? "sconosciuto"})`,
           avviato: when(run.created_at),
           pr: pullOfRun(run),
+          ...(reasons[index] ? { motivo: reasons[index] } : {}),
           dettagli: run.html_url,
         })),
         pr: mine.map((pull, index) => {
@@ -424,7 +455,7 @@ export function codeWorkTool(github: () => GitHub = defaultGitHub): ClientTool {
             riassunto: clip((pull.body ?? "").split(/\n---\n/)[0]!.trim(), 1500),
           };
         }),
-        nota: "Un lavoro finito senza PR non ha cambiato file: il motivo è nei dettagli del lavoro su GitHub.",
+        nota: "Un lavoro finito con errore dice il perché in «motivo»: riportalo al socio con parole sue (es. chiave API non valida, test non passati). Un lavoro finito senza PR e senza errore non ha cambiato file: il motivo è nei dettagli del lavoro su GitHub.",
       };
     },
   };

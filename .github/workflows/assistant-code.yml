@@ -325,3 +325,18 @@ jobs:
             echo
             cat handoff/summary.md 2>/dev/null || echo "Nessun riassunto."
           } >> "$GITHUB_STEP_SUMMARY"
+
+      # 24/11, the first live job: the API key was refused, Claude Code stopped at once, and the run
+      # still came out green with no pull request, so the assistant said "finito". Now a Claude Code
+      # that stopped on an error fails the run, and the error annotation carries its message, which
+      # the assistant reads back (lavori_codice). Work it made before stopping still got its PR above.
+      - name: Fail when Claude Code stopped on an error
+        if: always()
+        working-directory: ${{ runner.temp }}
+        run: |
+          code="$(jq -r '.exit // 1' handoff/claude.json 2>/dev/null || echo 1)"
+          [ "$code" = 0 ] && exit 0
+          message="$(head -c 400 handoff/summary.md 2>/dev/null || echo "nessun messaggio")"
+          message="${message//'%'/'%25'}"; message="${message//$'\r'/'%0D'}"; message="${message//$'\n'/'%0A'}"
+          echo "::error title=Claude Code si è fermato::$message"
+          exit 1
