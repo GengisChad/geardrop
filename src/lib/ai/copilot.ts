@@ -5,7 +5,8 @@ import { z } from "zod";
 import { ADMIN_NAV_ITEMS } from "@/lib/admin/navigation";
 import type { Database } from "@/lib/supabase/database.types";
 import { runAgent, type ClientTool } from "./agent-loop";
-import { copilotActionTools, type CopilotAction } from "./copilot-actions";
+import { PRODUCTS } from "@/data/catalog";
+import { copilotActionTools, shopDetailLists, type CopilotAction } from "./copilot-actions";
 import { CLAUDE_MODELS, emptyUsage, type ClaudeClient } from "./claude-api";
 import { listObservations, listProposals } from "./pricing-repository";
 
@@ -13,7 +14,8 @@ import { listObservations, listProposals } from "./pricing-repository";
  * The partners' assistant: answers questions on stock, sales, forecast, profit and market with
  * read tools over the company in view, and since 2026-11-19 prepares changes (order status,
  * tracking, notes, stock, prices, costs) that run only when the partner presses "Conferma", with
- * the partner's own permissions (see copilot-actions.ts). It sees no customer's personal data:
+ * the partner's own permissions (see copilot-actions.ts), and since 2026-11-24 product sheets too
+ * (name, SKU, texts, category, offer, publication, specs). It sees no customer's personal data:
  * orders come without names, emails, addresses or the buyer's notes.
  */
 
@@ -132,6 +134,37 @@ export function copilotTools(client: Client, organizationId: number, collect: (a
           };
         });
       }),
+    tool("scheda_prodotto", "La scheda completa di un prodotto cercato per nome o SKU, come la mostra il sito: nome, nome breve, SKU, slug, categoria, tipo blade, tagline, descrizione, prezzo e prezzo barrato, pubblicazione, specifiche, feature, confezione e foto. Leggila prima di modifica_prodotto o dettagli_prodotto.",
+      { cerca: { type: "string" } },
+      async (input) => {
+        const needle = searchText.parse(input.cerca);
+        if (!needle) throw new Error("Indica nome o SKU");
+        const pattern = `%${needle.replace(/[,%_()]/g, "")}%`;
+        const { data, error } = await client.from("products").select("*, category:categories(name,slug)")
+          .eq("organization_id", organizationId).or(`name.ilike.${pattern},sku.ilike.${pattern},slug.ilike.${pattern}`).limit(5);
+        if (error) throw new Error("Prodotto non disponibile");
+        const rows = data ?? [];
+        if (rows.length === 0) throw new Error(`Nessun prodotto per «${needle}»`);
+        if (rows.length > 1) return { piu_prodotti: rows.map((row) => ({ nome: row.name, sku: row.sku })), nota: "Più prodotti: richiama con lo SKU." };
+        const row = rows[0]!;
+        const lists = await shopDetailLists(client, row);
+        const marked = new Set(row.storefront_fields ?? []);
+        const catalogue = PRODUCTS.find((product) => product.slug === row.slug);
+        // The page prints the catalogue's copy for every field the back office never changed.
+        const shown = <T,>(field: string, sheet: T, page: T | undefined) => (catalogue && !marked.has(field) && page !== undefined ? page : sheet);
+        const images = await client.from("product_images").select("alt,published,is_primary,sort_order").eq("organization_id", organizationId).eq("product_id", row.id).order("sort_order").limit(50);
+        return {
+          sku: row.sku, slug: row.slug, sul_sito: catalogue ? `/prodotto/${row.slug}` : "non è nel catalogo del sito",
+          nome: shown("name", row.name, catalogue?.name), nome_breve: row.short_name, tagline: shown("tagline", row.tagline, catalogue?.tagline),
+          descrizione: shown("description", row.description, catalogue?.description),
+          categoria: (Array.isArray(row.category) ? row.category[0] : row.category)?.name ?? null, tipo_blade: row.blade_type,
+          prezzo_eur: euros(row.price_cents), prezzo_barrato_eur: euros(row.compare_at_price_cents), pubblicazione: row.publication_status,
+          specifiche: lists.specs, feature: lists.features, confezione: lists.boxContents.map(({ content }) => content),
+          foto: catalogue && !marked.has("images")
+            ? catalogue.images.map((image) => image.alt)
+            : (images.data ?? []).filter((image) => image.published).map((image) => image.alt),
+        };
+      }),
     tool("mercato", "Prezzi osservati dall'agente sulle fonti approvate negli ultimi N giorni.",
       { giorni: { type: "integer", description: "Default 30" } },
       async (input) => (await listObservations(client, organizationId, { sinceDays: days.parse(input.giorni) ?? 30, limit: 80 })).map((row) => ({
@@ -157,6 +190,8 @@ const HOW_TO = [
   "Reso: nella scheda dell'ordine spedito, «Registra reso»; il rimborso con «Rimborsa».",
   "Correggere la giacenza: Conteggio inventario (conteggio fisico) o Inventario (singolo movimento).",
   "Cambiare un prezzo: la scheda del prodotto in Prodotti, Listino e margini, oppure le proposte in Prezzi IA.",
+  "Cambiare nome, SKU, testi, specifiche o pubblicazione di un prodotto: la sua scheda in Prodotti, oppure chiedilo a me. Il sito si aggiorna entro pochi minuti.",
+  "Cambiare le foto di un prodotto: la sezione Immagini della sua scheda in Prodotti. Le foto nuove caricate nella libreria media non compaiono ancora sul sito: le aggiunge chi cura il codice del sito.",
   "Rimborsare o annullare un ordine: solo dalla scheda dell'ordine in Ordini («Rimborsa», «Annulla»), perché muovono soldi.",
 ];
 
@@ -166,8 +201,9 @@ export function copilotSystemPrompt(company: string): string {
     `Sei l'assistente del gestionale di ${company}. Rispondi ai soci in italiano, in modo breve e concreto, con i numeri.`,
     "Usa gli strumenti per leggere i dati reali prima di rispondere: magazzino, previsioni, ordini, prodotti, mercato, proposte di prezzo.",
     "Non inventare dati: se uno strumento non ha il dato dillo. Importi in euro; profitto e costi sono netti IVA.",
-    "Puoi preparare modifiche con gli strumenti d'azione: cambia_stato_ordine, spedisci_ordine, nota_ordine, movimento_magazzino, cambia_prezzo, imposta_costo. Ogni azione diventa una scheda che l'utente conferma con un tasto, con i suoi permessi: non dire mai che una cosa è fatta finché la conversazione non riporta «Eseguita».",
-    "Prima di preparare un'azione leggi i dati che servono (ordine, da_spedire, prodotto). Se l'utente chiede più cose, prepara una scheda per ciascuna. Se un dato è ambiguo (più prodotti con lo stesso nome), chiedi invece di indovinare.",
+    "Puoi preparare modifiche con gli strumenti d'azione: cambia_stato_ordine, spedisci_ordine, nota_ordine, movimento_magazzino, cambia_prezzo, imposta_costo, modifica_prodotto, dettagli_prodotto. Ogni azione diventa una scheda che l'utente conferma con un tasto, con i suoi permessi: non dire mai che una cosa è fatta finché la conversazione non riporta «Eseguita».",
+    "Prima di preparare un'azione leggi i dati che servono (ordine, da_spedire, prodotto, scheda_prodotto). Se l'utente chiede più cose, prepara una scheda per ciascuna. Se un dato è ambiguo (più prodotti con lo stesso nome), chiedi invece di indovinare.",
+    "Prodotti: con modifica_prodotto cambi nome, nome breve, SKU, tagline, descrizione, categoria, tipo blade, offerta (prezzo barrato) e pubblicazione; con dettagli_prodotto le specifiche, le feature e la confezione. Se un prodotto cambia (per esempio un pezzo diverso sulla stessa scheda), aggiorna anche tagline, descrizione e dettagli perché parlino del pezzo nuovo: proponi tu i testi, brevi e senza promettere ciò che non sai, e chiedi i dati che mancano. Lo slug (l'indirizzo della pagina) non si cambia.",
     "Una scheda esiste solo se chiami lo strumento d'azione in questa risposta: le schede delle risposte precedenti non contano. Non scrivere mai «scheda pronta» o «conferma qui sotto» senza averlo chiamato ora.",
     "«Segna come spedito/evaso» senza un codice di tracciamento: usa cambia_stato_ordine (nessuna email). Usa spedisci_ordine solo quando l'utente ti dà corriere e codice.",
     "Rimborsi, annullamenti e coupon non li puoi preparare: indica dove farli.",

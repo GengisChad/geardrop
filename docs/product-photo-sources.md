@@ -92,6 +92,24 @@ prodotto non gliene dà uno.
 I tre pack dello stesso giorno (`duo-luster-enlil`, `pack-meta-luster`, `pack-meta-phoenix`) sono
 montati dagli scontorni dei loro pezzi con `python scripts/compose_bundle_images.py`.
 
+## BX-11 Launcher Grip, 2026-11-24
+
+Il proprietario: "era da cambiare CUSTOM-GRIP-TAKARA-TOMY in bx-11 che sarebbe il grip classico
+nero". La scheda `custom-grip-takara-tomy` (lo slug resta: è l'indirizzo della pagina e la chiave di
+giacenza, Stripe e ordini) ora vende il BX-11. Render ufficiali Takara Tomy, senza watermark, presi da
+`beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/<file>@2.png` (1172×1418) e salvati intatti in
+`assets-source/takara-tomy/`. Lo scontorno è di `python scripts/cutout_takara.py custom-grip-takara-tomy`.
+
+| Prodotto | File | Pagina ufficiale | Fedeltà |
+| --- | --- | --- | --- |
+| BX-11 Launcher Grip | `BX11` (card), `BX11_05`, `BX11_02` | `lineup/bx11.html` | Il grip nero; poi con il suo pannello smontato, che è l'altro pezzo della confezione; poi visto da sotto. |
+
+`BX11_06`, il grip montato su un lanciatore con la trottola, non è usato: lanciatore e trottola non
+sono inclusi. I testi vengono dalla stessa pagina (uscita 15/7/2023, "forma comoda da impugnare, lancio
+più stabile", "trottola e lanciatore non inclusi"); il codice a barre della scatola, JAN
+4904810910787, anche. Le foto dei Custom Grip (`BX30`, `BX41`, `BX41_01`, `BX42`) restano tra gli
+originali, ma il sito non le usa più.
+
 ## Ancora da migliorare
 
 - **UX-00 Glory Valkyrie LF** (750 px, foto del partner): l'unica foto ufficiale della scatola

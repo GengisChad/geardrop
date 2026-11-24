@@ -184,7 +184,9 @@ describe("copilot tools", () => {
     // Since 2026-11-19 the action tools come first: they prepare cards and write nothing (copilot-actions.test.ts).
     expect(tools.map((tool) => tool.name)).toEqual([
       "cambia_stato_ordine", "spedisci_ordine", "nota_ordine", "movimento_magazzino", "cambia_prezzo", "imposta_costo",
-      "ordine", "da_spedire", "panoramica_magazzino", "previsioni", "ordini_recenti", "prodotto", "mercato", "proposte_prezzo",
+      // Since 2026-11-24 it edits product sheets too, and reads one whole before doing so.
+      "modifica_prodotto", "dettagli_prodotto",
+      "ordine", "da_spedire", "panoramica_magazzino", "previsioni", "ordini_recenti", "prodotto", "scheda_prodotto", "mercato", "proposte_prezzo",
     ]);
     await tools.find((tool) => tool.name === "ordini_recenti")?.run({});
     const selects = calls.filter((call) => call.startsWith("select:")).join(" ");

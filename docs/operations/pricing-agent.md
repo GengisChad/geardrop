@@ -30,9 +30,31 @@ l'approvazione cambia il prezzo (con audit che nomina la proposta). Owner e admi
 
 ## Assistente
 
-`/admin/assistente`: domande su magazzino, previsioni, ordini, profitto, mercato e proposte.
-Strumenti in sola lettura; gli ordini arrivano senza nome, email, telefono o indirizzo. Ogni domanda
-è registrata come esecuzione `copilot` con il suo costo.
+`/admin/assistente`: domande su magazzino, previsioni, ordini, profitto, mercato e proposte. Gli
+ordini arrivano senza nome, email, telefono o indirizzo. Ogni domanda è registrata come esecuzione
+`copilot` con il suo costo.
+
+L'assistente non scrive mai da solo: prepara una scheda, e la modifica parte solo quando chi chiede
+preme «Conferma», con i suoi permessi e la stessa azione del tasto del gestionale
+(`src/lib/ai/copilot-actions.ts`). Può preparare: stato, spedizione e note di un ordine; movimenti di
+magazzino; prezzo e costo; dal 2026-11-24 anche la scheda di un prodotto (nome, nome breve, SKU,
+tagline, descrizione, categoria, tipo blade, prezzo barrato, pubblicazione) e le sue specifiche,
+feature e confezione. Rimborsi, annullamenti e coupon restano nella scheda dell'ordine.
+
+## Quello che la scheda prodotto manda al sito
+
+Il sito legge testi e foto dal catalogo nel codice (`src/data/catalog.ts`) e dal database prezzo e
+giacenza. Dal 2026-11-24 ogni salvataggio dalla scheda (o dall'assistente) segna in
+`products.storefront_fields` i campi cambiati, e il sito prende dal database proprio quelli: nome,
+tagline, descrizione, categoria, tipo blade, specifiche, feature, confezione, foto e tag
+(`src/lib/commerce/storefront-content.ts`, migrazione `20261124120000`). Il resto resta quello del
+catalogo. Limiti:
+
+- lo slug di un prodotto del sito non si cambia dalla scheda: è l'indirizzo della pagina e la chiave
+  di giacenza, Stripe e ordini;
+- le foto caricate nella libreria media non vanno sul sito, che serve solo i suoi file;
+- un prodotto nuovo creato dalla scheda non compare sul sito finché non entra nel catalogo;
+- il nome sulla pagina di pagamento Stripe segue il catalogo con `pnpm stripe:products --apply`.
 
 ## Valutare prima di fidarsi
 

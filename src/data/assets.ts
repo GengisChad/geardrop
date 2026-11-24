@@ -436,12 +436,12 @@ export const productImages = {
   "long-winder-launcher-takara-tomy": [
     takaraImage("long-winder-launcher-takara-tomy", "Due lanciatori Takara Tomy Beyblade X con Long Winder: verde acqua, e nero con il logo NERV di Evangelion e la winder rossa"),
   ],
+  // The slug stays the Custom Grip's: it is the page's address and the key of its stock and Stripe
+  // product. Since 2026-11-24 the listing is the black BX-11 Launcher Grip.
   "custom-grip-takara-tomy": [
-    takaraImage("custom-grip-takara-tomy", "Tre Custom Grip Takara Tomy Beyblade X: BX-41 gunmetal, BX-42 blu e BX-30 rossa"),
-    takaraImage("custom-grip-takara-tomy-bx30", "Custom Grip BX-30 rossa e nera"),
-    takaraImage("custom-grip-takara-tomy-bx42", "Rubber Custom Grip BX-42 blu con pannelli trasparenti"),
-    takaraImage("custom-grip-takara-tomy-bx41", "Rubber Custom Grip BX-41 gunmetal con pannelli rossi"),
-    takaraImage("custom-grip-takara-tomy-bx41_01", "La Rubber Custom Grip BX-41 con i suoi pannelli smontati"),
+    takaraImage("custom-grip-takara-tomy", "Launcher Grip BX-11 Takara Tomy Beyblade X nero, con il logo Beyblade X"),
+    takaraImage("custom-grip-takara-tomy-bx11_05", "Il Launcher Grip BX-11 con il suo pannello smontato"),
+    takaraImage("custom-grip-takara-tomy-bx11_02", "Il Launcher Grip BX-11 visto da sotto, con l'aggancio al lanciatore"),
   ],
   "cx-18-random-booster-brachio-whip": [
     takaraImage("cx-18-random-booster-brachio-whip", "Confezione Takara Tomy Beyblade X CX-18 Random Booster Brachio Whip Select con le tre trottole: viola, oro e nera"),

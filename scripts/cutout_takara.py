@@ -62,8 +62,9 @@ STAGED: dict[str, tuple[tuple[str, int, int, int], ...]] = {
     "string-launcher-takara-tomy": (("BX34_05", 500, 500, 760),),
     # The Evangelion print the owner photographed and a plain Long Winder, CX-07's green.
     "long-winder-launcher-takara-tomy": (("CX07_07", 330, 500, 760), ("BXG57_23", 670, 500, 760)),
-    # The three editions in the owner's lot: one listing, the buyer asks for a colour.
-    "custom-grip-takara-tomy": (("BX41", 292, 520, 620), ("BX42", 500, 500, 620), ("BX30", 708, 480, 620)),
+    # Since 2026-11-24 the listing is the plain black BX-11 Launcher Grip (owner: "il grip classico
+    # nero"). The Custom Grip editions it held before (BX-30, BX-41, BX-42) stay in RENDERS.
+    "custom-grip-takara-tomy": (("BX11", 500, 500, 900),),
     "cx-18-random-booster-brachio-whip": (("CX18", 722, 500, 500), ("box-cx-18", 245, 500, 900)),
     "bx-48-random-booster-vol-9": (("BX48", 722, 500, 740), ("box-bx-48", 245, 500, 900)),
     # Owner, 2026-11-18: the two starters and the All-in-One Set, each shown by Takara Tomy's own
@@ -75,7 +76,8 @@ STAGED: dict[str, tuple[tuple[str, int, int, int], ...]] = {
 
 #: Further photos of the gallery, one render each, written as <slug>-<render in lower case>.webp.
 GALLERY: dict[str, tuple[str, ...]] = {
-    "custom-grip-takara-tomy": ("BX30", "BX42", "BX41", "BX41_01"),
+    # The grip with its panel off, then from below.
+    "custom-grip-takara-tomy": ("BX11_05", "BX11_02"),
     "cx-18-random-booster-brachio-whip": ("CX18_01", "CX18_03", "CX18_04"),
     "bx-48-random-booster-vol-9": ("BX48_02", "BX48_03", "BX48_04", "BX48_05", "BX48_06"),
     "bx-52-luster-dragoon-6-60lc": ("BX52_01", "BX52_02", "BX52_05"),

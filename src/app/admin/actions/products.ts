@@ -19,6 +19,8 @@ import { formatEuro, netOfVat, parseEuroCents } from "@/lib/admin/warehouse";
 import { bundlePartnersOf, bundlesLosingTheirSaving } from "@/lib/admin/bundle-saving-guard";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Database, Json } from "@/lib/supabase/database.types";
+import { BUNDLES, PRODUCTS } from "@/data/catalog";
+import { changedContentFields, mergeStorefrontFields, type StorefrontField } from "@/lib/commerce/storefront-content";
 
 export type ProductActionState = { readonly ok: boolean; readonly message: string };
 type Client = Awaited<ReturnType<typeof createSupabaseServerClient>>;
@@ -195,6 +197,33 @@ function publicationFields(formData: FormData, input: z.infer<typeof productEdit
   return { publication_status: input.publicationStatus, active: input.active };
 }
 
+/** Slugs the shop sells from its catalogue: their address, Stripe product and stock all hang on it. */
+const SHOP_SLUGS: ReadonlySet<string> = new Set([...PRODUCTS, ...BUNDLES].map((product) => product.slug));
+
+/**
+ * Records which fields of a product the sheet changed, so the shop shows them instead of the
+ * catalogue's copy (lib/commerce/storefront-content.ts). Best effort: the change itself is already
+ * saved, and before migration 20261124120000 the column does not exist, so a failure is logged and
+ * the shop simply keeps the catalogue's copy.
+ */
+async function markStorefrontFields(client: Client, organizationId: number, productIds: readonly number[], fields: readonly StorefrontField[]): Promise<void> {
+  if (fields.length === 0 || productIds.length === 0) return;
+  try {
+    const current = await client.from("products").select("id,storefront_fields").eq("organization_id", organizationId).in("id", [...productIds]);
+    if (current.error) throw new Error(current.error.message);
+    for (const row of current.data) {
+      const next = mergeStorefrontFields(row.storefront_fields, fields);
+      if (next.length === (row.storefront_fields ?? []).length) continue;
+      const { error } = await client.from("products").update({ storefront_fields: next }).eq("id", row.id).eq("organization_id", organizationId);
+      if (error) throw new Error(error.message);
+    }
+  } catch (error) {
+    console.error("[products] shop copy not marked:", error instanceof Error ? error.message : error);
+  }
+}
+
+const DETAIL_FIELD = { spec: "specs", feature: "features", box: "box_contents" } as const satisfies Record<string, StorefrontField>;
+
 function refreshProductCache(slug?: string): void {
   revalidateTag("products", "max");
   revalidateTag("categories", "max");
@@ -275,6 +304,15 @@ export async function saveProductAction(
     }
   }
 
+  const before = await client.from("products").select("slug,name,tagline,description,category_id,blade_type")
+    .eq("id", productId).eq("organization_id", principal.organization.id).maybeSingle();
+  if (before.error || !before.data) return { ok: false, message: "Prodotto non trovato." };
+  // The slug is the page's address and the key the shop, Stripe and the stock read match on:
+  // renamed here, the shop would lose the product's price and stock and keep the old page.
+  if (SHOP_SLUGS.has(before.data.slug) && parsed.data.slug !== before.data.slug) {
+    return { ok: false, message: `Lo slug «${before.data.slug}» è l'indirizzo del prodotto sul sito e non si cambia da qui. Nome, testi e SKU sì.` };
+  }
+
   const update: ProductUpdate = {
     ...content,
     ...requestedPublication,
@@ -283,8 +321,13 @@ export async function saveProductAction(
   const { error } = await client.from("products").update(update).eq("id", productId)
     .eq("organization_id", principal.organization.id);
   if (error) return safeFailure(error);
+  const shopFields = changedContentFields(before.data, parsed.data);
+  await markStorefrontFields(client, principal.organization.id, [productId], shopFields);
   refreshProductCache(parsed.data.slug);
-  return { ok: true, message: "Prodotto salvato." };
+  return {
+    ok: true,
+    message: shopFields.length > 0 && SHOP_SLUGS.has(before.data.slug) ? "Prodotto salvato. Sul sito entro pochi minuti." : "Prodotto salvato.",
+  };
 }
 
 export async function duplicateProductAction(formData: FormData): Promise<void> {
@@ -346,7 +389,7 @@ export async function bulkProductAction(
   if (!parsed.success) return safeFailure(parsed.error);
 
   const client = await createSupabaseServerClient();
-  await verifiedStaff(client);
+  const principal = await verifiedStaff(client);
   const input = parsed.data;
   if (input.operation === "tag") {
     const { error } = await client.from("product_tags").upsert(
@@ -362,6 +405,8 @@ export async function bulkProductAction(
     });
     if (error) return safeFailure(error);
   }
+  const bulkField: StorefrontField | null = input.operation === "tag" ? "tags" : input.operation === "category" ? "category" : null;
+  if (bulkField) await markStorefrontFields(client, principal.organization.id, input.productIds, [bulkField]);
   refreshProductCache();
   return { ok: true, message: `${input.productIds.length} prodotti aggiornati.` };
 }
@@ -402,9 +447,10 @@ export async function removeProductRelationAction(formData: FormData): Promise<v
 export async function addProductTagAction(formData: FormData): Promise<void> {
   const input = tagActionSchema.parse({ productId: text(formData, "productId"), tag: text(formData, "tag") });
   const client = await createSupabaseServerClient();
-  await verifiedStaff(client);
+  const principal = await verifiedStaff(client);
   const { error } = await client.from("product_tags").upsert({ product_id: input.productId, tag: input.tag });
   if (error) redirect(`/admin/prodotti/${input.productId}?error=tag`);
+  await markStorefrontFields(client, principal.organization.id, [input.productId], ["tags"]);
   refreshProductCache();
   redirect(`/admin/prodotti/${input.productId}#merchandising`);
 }
@@ -412,10 +458,11 @@ export async function addProductTagAction(formData: FormData): Promise<void> {
 export async function removeProductTagAction(formData: FormData): Promise<void> {
   const input = tagActionSchema.parse({ productId: text(formData, "productId"), tag: text(formData, "tag") });
   const client = await createSupabaseServerClient();
-  await verifiedStaff(client);
+  const principal = await verifiedStaff(client);
   const { error } = await client.from("product_tags").delete()
     .eq("product_id", input.productId).eq("tag", input.tag);
   if (error) redirect(`/admin/prodotti/${input.productId}?error=tag`);
+  await markStorefrontFields(client, principal.organization.id, [input.productId], ["tags"]);
   refreshProductCache();
   redirect(`/admin/prodotti/${input.productId}#merchandising`);
 }
@@ -428,13 +475,14 @@ export async function addProductDetailAction(formData: FormData): Promise<void> 
     content: text(formData, "content"), sortOrder: text(formData, "sortOrder"),
   });
   const client = await createSupabaseServerClient();
-  await verifiedStaff(client);
+  const principal = await verifiedStaff(client);
   const result = input.kind === "spec"
     ? await client.from("product_specs").insert({ product_id: input.productId, label: input.label, value: input.value, sort_order: input.sortOrder })
     : input.kind === "feature"
       ? await client.from("product_features").insert({ product_id: input.productId, title: input.title, description: input.description, sort_order: input.sortOrder })
       : await client.from("product_box_contents").insert({ product_id: input.productId, content: input.content, sort_order: input.sortOrder });
   if (result.error) redirect(`/admin/prodotti/${input.productId}?error=detail`);
+  await markStorefrontFields(client, principal.organization.id, [input.productId], [DETAIL_FIELD[input.kind]]);
   refreshProductCache();
   redirect(`/admin/prodotti/${input.productId}#dettagli`);
 }
@@ -444,35 +492,53 @@ export async function removeProductDetailAction(formData: FormData): Promise<voi
     productId: text(formData, "productId"), detailId: text(formData, "detailId"), kind: text(formData, "kind"),
   });
   const client = await createSupabaseServerClient();
-  await verifiedStaff(client);
+  const principal = await verifiedStaff(client);
   const result = input.kind === "spec"
     ? await client.from("product_specs").delete().eq("id", input.detailId).eq("product_id", input.productId)
     : input.kind === "feature"
       ? await client.from("product_features").delete().eq("id", input.detailId).eq("product_id", input.productId)
       : await client.from("product_box_contents").delete().eq("id", input.detailId).eq("product_id", input.productId);
   if (result.error) redirect(`/admin/prodotti/${input.productId}?error=detail`);
+  await markStorefrontFields(client, principal.organization.id, [input.productId], [DETAIL_FIELD[input.kind]]);
   refreshProductCache();
   redirect(`/admin/prodotti/${input.productId}#dettagli`);
 }
 
-export async function replaceProductDetailsAction(formData: FormData): Promise<void> {
-  const input = detailsReplacementSchema.parse({
-    productId: text(formData, "productId"),
-    specs: JSON.parse(text(formData, "specs")) as unknown,
-    features: JSON.parse(text(formData, "features")) as unknown,
-    boxContents: JSON.parse(text(formData, "boxContents")) as unknown,
-  });
+/**
+ * Replaces a product's specs, features and box contents in one go and answers with a state instead
+ * of a redirect, so the assistant's "Conferma" can run it too (lib/ai/copilot-actions.ts).
+ */
+export async function saveProductDetailsAction(_previous: ProductActionState, formData: FormData): Promise<ProductActionState> {
+  let input: z.infer<typeof detailsReplacementSchema>;
+  try {
+    input = detailsReplacementSchema.parse({
+      productId: text(formData, "productId"),
+      specs: JSON.parse(text(formData, "specs")) as unknown,
+      features: JSON.parse(text(formData, "features")) as unknown,
+      boxContents: JSON.parse(text(formData, "boxContents")) as unknown,
+    });
+  } catch {
+    return { ok: false, message: "Dettagli non validi: ogni riga vuole etichetta e valore, titolo e descrizione, o un contenuto." };
+  }
   const client = await createSupabaseServerClient();
-  await verifiedStaff(client);
+  const principal = await verifiedStaff(client);
   const { error } = await client.rpc("replace_product_details", {
     p_product_id: input.productId,
     p_specs: input.specs as Json,
     p_features: input.features as Json,
     p_box_contents: input.boxContents as Json,
   });
-  if (error) redirect(`/admin/prodotti/${input.productId}?error=details`);
+  if (error) return safeFailure(error);
+  await markStorefrontFields(client, principal.organization.id, [input.productId], ["specs", "features", "box_contents"]);
   refreshProductCache();
-  redirect(`/admin/prodotti/${input.productId}#dettagli`);
+  return { ok: true, message: "Dettagli salvati. Sul sito entro pochi minuti." };
+}
+
+export async function replaceProductDetailsAction(formData: FormData): Promise<void> {
+  const productId = text(formData, "productId");
+  const state = await saveProductDetailsAction({ ok: false, message: "" }, formData);
+  if (!state.ok) redirect(`/admin/prodotti/${productId}?error=details`);
+  redirect(`/admin/prodotti/${productId}#dettagli`);
 }
 
 export async function updateProductImageAction(formData: FormData): Promise<void> {
@@ -482,12 +548,13 @@ export async function updateProductImageAction(formData: FormData): Promise<void
     isPrimary: checked(formData, "isPrimary"),
   });
   const client = await createSupabaseServerClient();
-  await verifiedStaff(client);
+  const principal = await verifiedStaff(client);
   const { error } = await client.rpc("update_product_image_metadata", {
     p_product_id: input.productId, p_image_id: input.imageId, p_alt: input.alt,
     p_published: input.published, p_is_primary: input.isPrimary,
   });
   if (error) redirect(`/admin/prodotti/${input.productId}?error=image`);
+  await markStorefrontFields(client, principal.organization.id, [input.productId], ["images"]);
   refreshProductCache();
   redirect(`/admin/prodotti/${input.productId}#immagini`);
 }
@@ -497,11 +564,12 @@ export async function reorderProductImagesAction(formData: FormData): Promise<vo
     productId: text(formData, "productId"), imageIds: formData.getAll("imageIds"),
   });
   const client = await createSupabaseServerClient();
-  await verifiedStaff(client);
+  const principal = await verifiedStaff(client);
   const { error } = await client.rpc("reorder_product_images", {
     p_product_id: input.productId, p_image_ids: input.imageIds,
   });
   if (error) redirect(`/admin/prodotti/${input.productId}?error=image-order`);
+  await markStorefrontFields(client, principal.organization.id, [input.productId], ["images"]);
   refreshProductCache();
   redirect(`/admin/prodotti/${input.productId}#immagini`);
 }
@@ -541,6 +609,7 @@ export async function associateProductMediaAction(formData: FormData): Promise<v
     });
     if (primaryError) redirect(`/admin/prodotti/${input.productId}?error=media-association`);
   }
+  await markStorefrontFields(client, organizationId, [input.productId], ["images"]);
   refreshProductCache();
   redirect(`/admin/prodotti/${input.productId}#immagini`);
 }
@@ -552,6 +621,7 @@ export async function removeProductImageLinkAction(formData: FormData): Promise<
   const { error } = await client.from("product_images").delete()
     .eq("id", input.imageId).eq("product_id", input.productId).eq("organization_id", principal.organization.id);
   if (error) redirect(`/admin/prodotti/${input.productId}?error=image`);
+  await markStorefrontFields(client, principal.organization.id, [input.productId], ["images"]);
   refreshProductCache();
   redirect(`/admin/prodotti/${input.productId}#immagini`);
 }

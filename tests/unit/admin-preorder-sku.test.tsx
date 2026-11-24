@@ -63,7 +63,12 @@ describe("seeded uppercase SKU admin operations", () => {
       then: (resolve: (value: unknown) => unknown) => Promise.resolve({ error: null }).then(resolve),
     };
     boundary.eq.mockReturnValue(filtered);
-    boundary.select.mockReturnValue(filtered);
+    // The row as it was before the save: the sheet compares it to know what reaches the shop.
+    const before = {
+      eq: () => before,
+      maybeSingle: async () => ({ data: { slug: "cobalt-dragoon-2-60c", name: "Cobalt Dragoon 2-60C", tagline: "Attacco left-spin.", description: "Starter con lanciatore a corda.", category_id: 1, blade_type: "attacco" }, error: null }),
+    };
+    boundary.select.mockImplementation((columns?: string) => (columns === "slug,name,tagline,description,category_id,blade_type" ? before : filtered));
     boundary.rpc.mockResolvedValue({ data: 5, error: null });
   });
 
@@ -82,7 +87,7 @@ describe("seeded uppercase SKU admin operations", () => {
   });
 
   it("saves an edited seeded product retaining its uppercase SKU", async () => {
-    expect(await saveProductAction({ ok: false, message: "" }, editForm())).toEqual({ ok: true, message: "Prodotto salvato." });
+    expect(await saveProductAction({ ok: false, message: "" }, editForm())).toEqual({ ok: true, message: "Prodotto salvato. Sul sito entro pochi minuti." });
     expect(boundary.from).toHaveBeenCalledWith("products");
     expect(boundary.update).toHaveBeenCalledWith(expect.objectContaining({ sku: "COBALT-DRAGOON-2-60C", name: "Cobalt Dragoon aggiornato" }));
     expect(boundary.eq).toHaveBeenCalledWith("id", 1);

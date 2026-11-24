@@ -5,8 +5,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { adjustInventoryAction } from "@/app/admin/actions/inventory";
 import { addOrderNoteAction, shipOrderAction, transitionOrderAction } from "@/app/admin/actions/orders";
-import { setListPriceAction } from "@/app/admin/actions/products";
+import { saveProductAction, saveProductDetailsAction, setListPriceAction } from "@/app/admin/actions/products";
 import { setProductCostAction } from "@/app/admin/actions/warehouse";
+import { PRODUCTS } from "@/data/catalog";
+import { skuSchema } from "@/lib/admin/products";
 import { CARRIERS, carrierById } from "@/lib/orders/carriers";
 import type { Database } from "@/lib/supabase/database.types";
 import type { ClientTool } from "./agent-loop";
@@ -22,11 +24,16 @@ import type { ClientTool } from "./agent-loop";
  * emails. So the assistant can do exactly what the person asking could do by hand, and nothing
  * else, and nothing happens without a click. Refunds and cancellations stay on the order page:
  * they move money.
+ *
+ * Since 2026-11-24 (owner: "l'assistente deve poter eseguire tutto quello che fai anche tu da qui,
+ * se sono fuori e devo cambiare dei prodotti") it also edits a product's sheet, name, SKU, texts,
+ * category, offer and publication, and its specs, features and box contents, through the same
+ * save as the sheet's own button; what it changes reaches the shop (lib/commerce/storefront-content.ts).
  */
 
 type Client = SupabaseClient<Database>;
 
-export const COPILOT_ACTION_KINDS = ["stato_ordine", "spedisci_ordine", "nota_ordine", "movimento_magazzino", "prezzo", "costo"] as const;
+export const COPILOT_ACTION_KINDS = ["stato_ordine", "spedisci_ordine", "nota_ordine", "movimento_magazzino", "prezzo", "costo", "modifica_prodotto", "dettagli_prodotto"] as const;
 export type CopilotActionKind = (typeof COPILOT_ACTION_KINDS)[number];
 
 export type CopilotAction = {
@@ -83,7 +90,32 @@ const inputSchemas = {
   movimento_magazzino: z.object({ sku: z.string().min(1).max(120), name: z.string(), delta: z.number().int().min(-100_000).max(100_000).refine((value) => value !== 0), reason: z.enum(["manual_adjustment", "return", "damage"]), note: z.string().max(500) }),
   prezzo: z.object({ productId: z.number().int().positive(), name: z.string(), priceCents: z.number().int().positive(), belowCost: z.boolean() }),
   costo: z.object({ productId: z.number().int().positive(), name: z.string(), costCents: z.number().int().positive(), reason: z.string().min(1).max(500) }),
+  modifica_prodotto: z.object({
+    productId: z.number().int().positive(),
+    name: z.string(),
+    newName: z.string().trim().min(2).max(160).optional(),
+    shortName: z.string().trim().max(80).optional(),
+    sku: skuSchema.optional(),
+    tagline: z.string().trim().min(1).max(240).optional(),
+    description: z.string().trim().min(1).max(4000).optional(),
+    categoryId: z.number().int().positive().optional(),
+    bladeType: z.enum(["attacco", "difesa", "stamina", "bilanciato", "nessuno"]).optional(),
+    /** 0 takes the offer away. */
+    compareAtCents: z.number().int().min(0).optional(),
+    publication: z.enum(["published", "draft", "archived"]).optional(),
+  }),
+  dettagli_prodotto: z.object({
+    productId: z.number().int().positive(),
+    name: z.string(),
+    specs: z.string().max(4000),
+    features: z.string().max(4000),
+    boxContents: z.string().max(4000),
+  }),
 } satisfies Record<CopilotActionKind, z.ZodTypeAny>;
+
+const specsSchema = z.array(z.object({ label: z.string().trim().min(1).max(160), value: z.string().trim().min(1).max(500) })).max(40);
+const featuresSchema = z.array(z.object({ title: z.string().trim().min(1).max(160), description: z.string().trim().min(1).max(2000) })).max(40);
+const boxSchema = z.array(z.object({ content: z.string().trim().min(1).max(500) })).max(40);
 
 function card(kind: CopilotActionKind, input: CopilotAction["input"], title: string, details: readonly string[], warning: string | null = null): CopilotAction {
   return { id: randomUUID(), kind, input, title, details, warning, status: "pending", result: null };
@@ -119,6 +151,51 @@ async function findProduct(client: Client, organizationId: number, search: unkno
   if (pick.length === 0) throw new Error(`Nessun prodotto per «${needle}».`);
   if (pick.length > 1) throw new Error(`Più prodotti per «${needle}»: ${pick.map((row) => `${row.name} (SKU ${row.sku})`).join("; ")}. Usa lo SKU.`);
   return pick[0]!;
+}
+
+const clip = (value: string, length: number) => (value.length > length ? `${value.slice(0, length - 1)}…` : value);
+const quoted = (value: string | null | undefined) => (value ? `«${clip(value, 140)}»` : "vuoto");
+
+const PUBLICATION: Record<string, "published" | "draft" | "archived"> = { pubblicato: "published", bozza: "draft", archiviato: "archived" };
+const PUBLICATION_LABEL = { published: "pubblicato", draft: "bozza", archived: "archiviato" } as const;
+
+type DetailLists = {
+  readonly specs: readonly { readonly label: string; readonly value: string }[];
+  readonly features: readonly { readonly title: string; readonly description: string }[];
+  readonly boxContents: readonly { readonly content: string }[];
+};
+
+/**
+ * The specs, features and box contents the shop's page shows today: the sheet's rows once the back
+ * office has changed them, the catalogue's until then (lib/commerce/storefront-content.ts).
+ */
+export async function shopDetailLists(client: Client, product: { readonly id: number; readonly slug: string; readonly storefront_fields?: readonly string[] | null }): Promise<DetailLists> {
+  const [specs, features, box] = await Promise.all([
+    client.from("product_specs").select("label,value,sort_order").eq("product_id", product.id).order("sort_order").limit(100),
+    client.from("product_features").select("title,description,sort_order").eq("product_id", product.id).order("sort_order").limit(100),
+    client.from("product_box_contents").select("content,sort_order").eq("product_id", product.id).order("sort_order").limit(100),
+  ]);
+  if (specs.error || features.error || box.error) throw new Error("Dettagli del prodotto non disponibili.");
+  const marked = new Set(product.storefront_fields ?? []);
+  const catalogue = PRODUCTS.find((candidate) => candidate.slug === product.slug);
+  const sheet = (field: string) => !catalogue || marked.has(field);
+  return {
+    specs: sheet("specs") ? (specs.data ?? []).map(({ label, value }) => ({ label, value })) : catalogue?.specs ?? [],
+    features: sheet("features") ? (features.data ?? []).map(({ title, description }) => ({ title, description })) : catalogue?.features ?? [],
+    boxContents: sheet("box_contents") ? (box.data ?? []).map(({ content }) => ({ content })) : (catalogue?.boxContents ?? []).map((content) => ({ content })),
+  };
+}
+
+function stringList(value: unknown): readonly string[] | null {
+  return Array.isArray(value) ? value.map((item) => String(item ?? "").trim()) : null;
+}
+
+function pairList(value: unknown, first: string, second: string): readonly (readonly [string, string])[] | null {
+  if (!Array.isArray(value)) return null;
+  return value.map((item) => {
+    const row = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
+    return [String(row[first] ?? "").trim(), String(row[second] ?? "").trim()] as const;
+  });
 }
 
 function tool(name: string, description: string, properties: Record<string, unknown>, required: readonly string[], run: (input: Record<string, unknown>) => Promise<CopilotAction>, collect: (action: CopilotAction) => void): ClientTool {
@@ -264,6 +341,143 @@ export function copilotActionTools(client: Client, organizationId: number, colle
       },
       collect,
     ),
+    tool(
+      "modifica_prodotto",
+      "Cambia la scheda di un prodotto, e quindi la sua pagina sul sito: nome, nome breve, SKU, tagline, descrizione, categoria, tipo blade, prezzo barrato dell'offerta (0 la toglie), pubblicazione. Passa solo i campi da cambiare. Prezzo di vendita: cambia_prezzo; giacenza: movimento_magazzino; specifiche, feature e confezione: dettagli_prodotto. Lo slug (l'indirizzo della pagina) non si cambia.",
+      {
+        prodotto: { type: "string", description: "Nome o SKU attuale" },
+        nome: { type: "string" },
+        nome_breve: { type: "string", description: "Stringa vuota per toglierlo" },
+        sku: { type: "string", description: "Lettere, numeri e trattini, es. BX-11" },
+        tagline: { type: "string", description: "La riga breve sotto il nome, max 240 caratteri" },
+        descrizione: { type: "string" },
+        categoria: { type: "string", description: "Nome o slug della categoria, es. accessori" },
+        tipo_blade: { type: "string", enum: ["attacco", "difesa", "stamina", "bilanciato", "nessuno"] },
+        prezzo_barrato_eur: { type: "number", description: "Prezzo barrato dell'offerta, sopra il prezzo; 0 toglie l'offerta" },
+        pubblicazione: { type: "string", enum: Object.keys(PUBLICATION) },
+      },
+      ["prodotto"],
+      async (input) => {
+        const found = await findProduct(client, organizationId, input.prodotto);
+        const { data: row, error } = await client
+          .from("products")
+          .select("id,slug,sku,name,short_name,tagline,description,category_id,blade_type,price_cents,compare_at_price_cents,publication_status")
+          .eq("organization_id", organizationId)
+          .eq("id", found.id)
+          .maybeSingle();
+        if (error || !row) throw new Error("Prodotto non disponibile.");
+        const changes: Record<string, string | number> = {};
+        const details: string[] = [];
+        const textField = (key: string, value: unknown, current: string | null, label: string, min: number, max: number) => {
+          if (value === undefined || value === null) return;
+          const next = String(value).trim();
+          if (next === (current ?? "").trim()) return;
+          if (next.length < min || next.length > max) throw new Error(`${label}: da ${min} a ${max} caratteri.`);
+          changes[key] = next;
+          details.push(`${label}: ${quoted(current)} → ${quoted(next)}`);
+        };
+        textField("newName", input.nome, row.name, "Nome", 2, 160);
+        textField("shortName", input.nome_breve, row.short_name, "Nome breve", 0, 80);
+        textField("tagline", input.tagline, row.tagline, "Tagline", 1, 240);
+        textField("description", input.descrizione, row.description, "Descrizione", 1, 4000);
+        if (input.sku !== undefined && input.sku !== null) {
+          const sku = skuSchema.safeParse(String(input.sku).trim().toUpperCase());
+          if (!sku.success) throw new Error("SKU non valido: lettere, numeri e trattini, es. BX-11.");
+          if (sku.data !== row.sku) {
+            const taken = await client.from("products").select("id,name").eq("organization_id", organizationId).eq("sku", sku.data).limit(5);
+            const other = (taken.data ?? []).find((candidate) => candidate.id !== row.id);
+            if (other) throw new Error(`Lo SKU ${sku.data} è già di ${other.name}.`);
+            changes["sku"] = sku.data;
+            details.push(`SKU: ${row.sku} → ${sku.data}`);
+          }
+        }
+        if (input.categoria !== undefined && input.categoria !== null && String(input.categoria).trim()) {
+          const wanted = String(input.categoria).trim().toLowerCase();
+          const categories = await client.from("categories").select("id,name,slug").eq("organization_id", organizationId).limit(50);
+          const category = (categories.data ?? []).find((candidate) => candidate.slug.toLowerCase() === wanted || candidate.name.toLowerCase() === wanted);
+          if (!category) throw new Error(`Categoria «${String(input.categoria)}» non trovata: ${(categories.data ?? []).map((candidate) => candidate.name).join(", ")}.`);
+          if (category.id !== row.category_id) {
+            changes["categoryId"] = category.id;
+            details.push(`Categoria: ${category.name}`);
+          }
+        }
+        if (input.tipo_blade !== undefined && input.tipo_blade !== null) {
+          const blade = String(input.tipo_blade);
+          if (!["attacco", "difesa", "stamina", "bilanciato", "nessuno"].includes(blade)) throw new Error("Tipo blade non valido.");
+          if ((blade === "nessuno" ? null : blade) !== row.blade_type) {
+            changes["bladeType"] = blade;
+            details.push(`Tipo blade: ${row.blade_type ?? "nessuno"} → ${blade}`);
+          }
+        }
+        if (input.prezzo_barrato_eur !== undefined && input.prezzo_barrato_eur !== null) {
+          const off = Number(String(input.prezzo_barrato_eur).replace(",", ".")) === 0;
+          const compareAt = off ? 0 : cents(input.prezzo_barrato_eur);
+          if (compareAt === null) throw new Error("Prezzo barrato non valido.");
+          if (compareAt > 0 && compareAt <= row.price_cents) throw new Error(`Il prezzo barrato deve stare sopra il prezzo, ${euro(row.price_cents)}.`);
+          if ((compareAt || null) !== row.compare_at_price_cents) {
+            changes["compareAtCents"] = compareAt;
+            details.push(compareAt ? `Offerta: barrato ${euro(compareAt)}, prezzo ${euro(row.price_cents)}` : "Offerta tolta: niente prezzo barrato");
+          }
+        }
+        let warning: string | null = null;
+        if (input.pubblicazione !== undefined && input.pubblicazione !== null) {
+          const publication = PUBLICATION[String(input.pubblicazione)];
+          if (!publication) throw new Error("Pubblicazione: pubblicato, bozza o archiviato.");
+          if (publication !== row.publication_status) {
+            changes["publication"] = publication;
+            details.push(`Pubblicazione: ${PUBLICATION_LABEL[row.publication_status]} → ${PUBLICATION_LABEL[publication]}`);
+            if (publication !== "published") warning = "In bozza o archiviato il prodotto non si può più ordinare.";
+          }
+        }
+        if (details.length === 0) throw new Error(`Nessun cambiamento: la scheda di ${row.name} ha già questi valori.`);
+        return card(
+          "modifica_prodotto",
+          { productId: row.id, name: row.name, ...changes },
+          `Scheda di ${row.name}: ${details.length === 1 ? "1 modifica" : `${details.length} modifiche`}`,
+          details.slice(0, 12).map((line) => clip(line, 500)),
+          warning,
+        );
+      },
+      collect,
+    ),
+    tool(
+      "dettagli_prodotto",
+      "Sostituisce le specifiche, le feature (titolo e descrizione) e/o il contenuto della confezione di un prodotto, come li mostra la sua pagina. Ogni lista passata sostituisce quella intera: per cambiare una riga ripassa anche le altre (leggile prima con scheda_prodotto). Le liste non passate restano come sono.",
+      {
+        prodotto: { type: "string", description: "Nome o SKU" },
+        specifiche: { type: "array", items: { type: "object", properties: { etichetta: { type: "string" }, valore: { type: "string" } }, required: ["etichetta", "valore"] } },
+        feature: { type: "array", items: { type: "object", properties: { titolo: { type: "string" }, descrizione: { type: "string" } }, required: ["titolo", "descrizione"] } },
+        confezione: { type: "array", items: { type: "string" } },
+      },
+      ["prodotto"],
+      async (input) => {
+        const found = await findProduct(client, organizationId, input.prodotto);
+        const { data: row, error } = await client.from("products").select("*").eq("organization_id", organizationId).eq("id", found.id).maybeSingle();
+        if (error || !row) throw new Error("Prodotto non disponibile.");
+        const current = await shopDetailLists(client, row);
+        const specPairs = pairList(input.specifiche, "etichetta", "valore");
+        const featurePairs = pairList(input.feature, "titolo", "descrizione");
+        const boxLines = stringList(input.confezione);
+        if (!specPairs && !featurePairs && !boxLines) throw new Error("Indica almeno una lista: specifiche, feature o confezione.");
+        const specs = specsSchema.safeParse(specPairs ? specPairs.map(([label, value]) => ({ label, value })) : current.specs);
+        const features = featuresSchema.safeParse(featurePairs ? featurePairs.map(([title, description]) => ({ title, description })) : current.features);
+        const box = boxSchema.safeParse(boxLines ? boxLines.map((content) => ({ content })) : current.boxContents);
+        if (!specs.success || !features.success || !box.success) throw new Error("Ogni riga vuole testo: etichetta e valore, titolo e descrizione, o il contenuto della confezione (max 40 righe per lista).");
+        const encoded = { specs: JSON.stringify(specs.data), features: JSON.stringify(features.data), boxContents: JSON.stringify(box.data) };
+        if (Object.values(encoded).some((value) => value.length > 4000)) throw new Error("Liste troppo lunghe per una scheda: dividile in due richieste o accorcia i testi.");
+        const lines: string[] = [];
+        if (specPairs) lines.push(`Specifiche (${specs.data.length}, prima ${current.specs.length}): ${specs.data.map(({ label, value }) => `${label}: ${value}`).join(" · ")}`);
+        if (featurePairs) lines.push(`Feature (${features.data.length}, prima ${current.features.length}): ${features.data.map(({ title, description }) => `${title}: ${description}`).join(" · ")}`);
+        if (boxLines) lines.push(`Confezione (${box.data.length}, prima ${current.boxContents.length}): ${box.data.map(({ content }) => content).join(" · ")}`);
+        return card(
+          "dettagli_prodotto",
+          { productId: row.id, name: row.name, ...encoded },
+          `Dettagli di ${row.name}`,
+          lines.map((line) => clip(line, 500)),
+        );
+      },
+      collect,
+    ),
   ];
 }
 
@@ -322,6 +536,50 @@ export async function executeCopilotAction(action: CopilotAction, client: Client
         { ok: false, message: "" },
         form({ productId: String(input.productId), price: (input.priceCents / 100).toFixed(2).replace(".", ","), ...(input.belowCost ? { belowCostConfirmed: "on" } : {}) }),
       );
+      return { ok: state.ok, message: `${input.name}: ${state.message}` };
+    }
+    case "modifica_prodotto": {
+      const input = inputSchemas.modifica_prodotto.parse(action.input);
+      const { data: row, error } = await client.from("products").select("*").eq("id", input.productId).eq("organization_id", organizationId).maybeSingle();
+      if (error || !row) return { ok: false, message: `${input.name}: prodotto non trovato.` };
+      const compareAt = input.compareAtCents === undefined ? row.compare_at_price_cents : input.compareAtCents || null;
+      const bladeType = input.bladeType === undefined ? row.blade_type : input.bladeType === "nessuno" ? null : input.bladeType;
+      const intent = input.publication === undefined ? "" : input.publication === "published" ? "publish" : input.publication === "draft" ? "draft" : "archive";
+      // Every other field goes back as it is: the sheet's save writes the whole row.
+      const state = await saveProductAction(NO_STATE, form({
+        id: String(row.id),
+        name: input.newName ?? row.name,
+        shortName: input.shortName ?? row.short_name ?? "",
+        slug: row.slug,
+        sku: input.sku ?? row.sku,
+        categoryId: String(input.categoryId ?? row.category_id),
+        tagline: input.tagline ?? row.tagline,
+        description: input.description ?? row.description,
+        priceCents: String(row.price_cents),
+        compareAtPriceCents: compareAt === null ? "" : String(compareAt),
+        publicationStatus: row.publication_status,
+        active: String(row.active),
+        bladeType: bladeType ?? "",
+        manageStock: String(row.manage_stock),
+        lowStockThreshold: String(row.low_stock_threshold),
+        allowBackorder: String(row.allow_backorder),
+        availabilityOverride: row.availability_override ?? "",
+        preorderAllocation: String(row.preorder_allocation),
+        preorderReleaseDate: row.preorder_release_date ?? "",
+        // A pre-order already open without a date stays as it is: this card does not touch it.
+        ...(row.availability_override === "preorder" && !row.preorder_release_date ? { preorderWarningConfirmed: "on" } : {}),
+        seoTitle: row.seo_title ?? "",
+        seoDescription: row.seo_description ?? "",
+        sortOrder: String(row.sort_order),
+        // The price does not change here, so the under-cost check of a new price does not apply.
+        belowCostConfirmed: "on",
+        intent,
+      }));
+      return { ok: state.ok, message: `${input.newName ?? input.name}: ${state.message}` };
+    }
+    case "dettagli_prodotto": {
+      const input = inputSchemas.dettagli_prodotto.parse(action.input);
+      const state = await saveProductDetailsAction(NO_STATE, form({ productId: String(input.productId), specs: input.specs, features: input.features, boxContents: input.boxContents }));
       return { ok: state.ok, message: `${input.name}: ${state.message}` };
     }
     case "costo": {

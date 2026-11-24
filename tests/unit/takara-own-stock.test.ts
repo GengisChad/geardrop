@@ -193,16 +193,21 @@ describe("the page says what the box does not", () => {
     expect(boxContents).toEqual(["1 × String Launcher L Takara Tomy"]);
   });
 
-  it("the grip: one price and one shelf, the buyer asks for a colour and the shop checks it is left", () => {
-    const { description, specs, features, variant, images } = piece("custom-grip-takara-tomy");
+  it("the grip: the black BX-11 Launcher Grip since 2026-11-24, nothing to choose", () => {
+    const { name, description, specs, features, boxContents, variant, images } = piece("custom-grip-takara-tomy");
+    expect(name).toBe("BX-11 Launcher Grip Takara Tomy");
     expect(variant).toBeUndefined();
-    for (const edition of ["BX-30", "BX-41", "BX-42"]) expect(description).toContain(edition);
-    expect(description).toContain("stesso prezzo");
-    expect(description).toContain("se è rimasto è tuo, altrimenti ti scriviamo prima di spedire");
-    expect(specs.find((spec) => spec.label === "Versioni")?.value).toBe("BX-30 rossa · BX-41 gunmetal · BX-42 blu");
-    expect(features.at(-1)?.description).toContain("vediamo se è rimasto");
-    // The first photo shows all three, then one photo per edition.
-    expect(images).toHaveLength(5);
+    expect(description).toContain("nera");
+    expect(description).not.toMatch(/BX-30|BX-41|BX-42|note dell'ordine|colore preciso/);
+    expect(specs.find((spec) => spec.label === "Colore")?.value).toBe("Nero");
+    expect(features.at(-1)?.description).toContain("Il lanciatore non è incluso");
+    expect(boxContents).toEqual(["1 × Launcher Grip BX-11", "1 × Pannello del grip"]);
+    // Takara Tomy's own renders: the grip, then with its panel off, then from below.
+    expect(images.map((image) => image.src)).toEqual([
+      "/products/custom-grip-takara-tomy.webp",
+      "/products/custom-grip-takara-tomy-bx11_05.webp",
+      "/products/custom-grip-takara-tomy-bx11_02.webp",
+    ]);
   });
 
   it("the launchers come in a bag, and Google is told they have no barcode", async () => {
@@ -220,7 +225,8 @@ describe("what the buyer is asked at the checkout", () => {
   it("lists a choice for each piece that has one, and nothing for the rest", () => {
     expect(orderChoices(["winder-launcher-takara-tomy"])).toEqual(["Winder Launcher, destro (right) o sinistro (L)"]);
     expect(orderChoices(["string-launcher-takara-tomy"])).toEqual([]);
-    expect(orderChoices(["custom-grip-takara-tomy"])).toEqual(["Custom Grip, rossa, blu o gunmetal"]);
+    // The BX-11 grip is one black edition: nothing to ask (2026-11-24).
+    expect(orderChoices(["custom-grip-takara-tomy"])).toEqual([]);
     expect(orderChoices(["bx-48-random-booster-vol-9", "long-winder-launcher-takara-tomy", hasbroPiece.slug])).toEqual([]);
   });
 
@@ -236,15 +242,18 @@ describe("the migration", () => {
   const migration = readFileSync("supabase/migrations/20261106120000_takara_tomy_on_the_shop_shelf.sql", "utf8");
   // The String Launcher's words were rewritten when only the left-spin ones were left.
   const leftOnly = readFileSync("supabase/migrations/20261113120000_soar_phoenix_loose_and_string_launcher_l.sql", "utf8");
+  // The grip's listing became the black BX-11 Launcher Grip (2026-11-24): new words and photos.
+  const bx11 = readFileSync("supabase/migrations/20261124130000_bx11_launcher_grip.sql", "utf8");
 
   it("mirrors the catalogue: price, stock and every photo", () => {
     for (const product of pieces) {
       const listed = OWNER_LIST[product.slug]!;
-      const words = product.slug === "string-launcher-takara-tomy" ? leftOnly : migration;
+      const words = product.slug === "string-launcher-takara-tomy" ? leftOnly : product.slug === "custom-grip-takara-tomy" ? bx11 : migration;
+      const photos = product.slug === "custom-grip-takara-tomy" ? bx11 : migration;
       expect(migration, product.slug).toContain(`${listed.price}, ${listed.stock},`);
       expect(migration, product.slug).toContain(`'${product.slug}'`);
       expect(words, product.slug).toContain(`${product.description.replaceAll("'", "''")}`);
-      for (const image of product.images) expect(migration, image.src).toContain(`'${image.src}'`);
+      for (const image of product.images) expect(photos, image.src).toContain(`'${image.src}'`);
     }
   });
 
@@ -255,5 +264,15 @@ describe("the migration", () => {
 
   it("does not put what the shop paid in a public repository", () => {
     expect(migration.toLowerCase()).not.toMatch(/\bcost|costo|paid|pagat/);
+    expect(bx11.toLowerCase()).not.toMatch(/\bcost|costo|pagat/);
+  });
+
+  it("turns the grip into the BX-11 without touching its price, its stock or its address", () => {
+    const grip = piece("custom-grip-takara-tomy");
+    expect(bx11).toContain(`name = '${grip.name}'`);
+    expect(bx11).toContain("sku = case when product.sku = 'CUSTOM-GRIP-TAKARA-TOMY' then 'BX-11' else product.sku end");
+    expect(bx11).not.toMatch(/price_cents|stock_quantity|set slug/);
+    for (const spec of grip.specs) expect(bx11, spec.label).toContain(`('${spec.label}', '${spec.value}'`);
+    for (const content of grip.boxContents) expect(bx11, content).toContain(`('${content}'`);
   });
 });
