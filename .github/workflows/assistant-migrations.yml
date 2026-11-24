@@ -1,0 +1,78 @@
+name: Assistente - migrazioni
+
+# Applies to the production database the new migrations of a published assistant pull request,
+# when an owner or admin confirms "Applica al database" in the assistant (owner, 2026-11-24: "Sì,
+# con conferma a parte"). The job checks again that the pull request is the assistant's and is
+# merged, and that every file is a migration it added, then runs scripts/apply-migration.mjs, which
+# records each version and skips one already applied.
+
+run-name: "Migrazioni PR #${{ inputs.pr }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Numero della PR dell'assistente pubblicata
+        required: true
+        type: string
+      files:
+        description: Migrazioni da applicare, separate da spazi
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: assistant-migrations
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    name: Migrazioni in produzione
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PR: ${{ inputs.pr }}
+      FILES: ${{ inputs.files }}
+      REPO: ${{ github.repository }}
+
+    steps:
+      - name: Check the pull request and its migrations
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$PR" =~ ^[0-9]{1,6}$ ]] || { echo "::error::PR non valida"; exit 1; }
+          info="$(gh api "repos/$REPO/pulls/$PR")"
+          [ "$(jq -r '.merged_at // empty' <<<"$info")" != "" ] || { echo "::error::La PR #$PR non è pubblicata"; exit 1; }
+          [ "$(jq -r .head.repo.full_name <<<"$info")" = "$REPO" ] || { echo "::error::La PR #$PR non viene da questo repository"; exit 1; }
+          [[ "$(jq -r .head.ref <<<"$info")" =~ ^assistente/ ]] || { echo "::error::La PR #$PR non è un lavoro dell'assistente"; exit 1; }
+          jq -e '[.labels[].name] | index("assistente")' <<<"$info" > /dev/null || { echo "::error::La PR #$PR non ha l'etichetta assistente"; exit 1; }
+          added="$(gh api --paginate "repos/$REPO/pulls/$PR/files?per_page=100" --jq '.[] | select(.status == "added") | .filename')"
+          for file in $FILES; do
+            [[ "$file" =~ ^supabase/migrations/[0-9]{14}_[a-z0-9_]+\.sql$ ]] || { echo "::error::$file non è una migrazione"; exit 1; }
+            grep -qxF "$file" <<<"$added" || { echo "::error::$file non è una migrazione aggiunta dalla PR #$PR"; exit 1; }
+          done
+
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.16.0
+
+      - name: Apply the migrations, oldest first
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_ACCESS_TOKEN" || { echo "::error::Manca il secret SUPABASE_ACCESS_TOKEN del repository"; exit 1; }
+          mapfile -t ordered < <(tr ' ' '\n' <<<"$FILES" | sed '/^$/d' | sort)
+          for file in "${ordered[@]}"; do test -f "$file" || { echo "::error::$file non è su main"; exit 1; }; done
+          node scripts/apply-migration.mjs "${ordered[@]}" | tee -a "$GITHUB_STEP_SUMMARY"

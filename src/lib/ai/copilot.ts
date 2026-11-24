@@ -6,6 +6,7 @@ import { ADMIN_NAV_ITEMS } from "@/lib/admin/navigation";
 import type { Database } from "@/lib/supabase/database.types";
 import { runAgent, type ClientTool } from "./agent-loop";
 import { PRODUCTS } from "@/data/catalog";
+import { codeWorkTool } from "./code-work";
 import { copilotActionTools, shopDetailLists, type CopilotAction } from "./copilot-actions";
 import { CLAUDE_MODELS, emptyUsage, SERVER_SIDE_FALLBACK_BETA, type ClaudeClient } from "./claude-api";
 import { listObservations, listProposals } from "./pricing-repository";
@@ -15,7 +16,8 @@ import { listObservations, listProposals } from "./pricing-repository";
  * read tools over the company in view, and since 2026-11-19 prepares changes (order status,
  * tracking, notes, stock, prices, costs) that run only when the partner presses "Conferma", with
  * the partner's own permissions (see copilot-actions.ts), and since 2026-11-24 product sheets too
- * (name, SKU, texts, category, offer, publication, specs). It sees no customer's personal data:
+ * (name, SKU, texts, category, offer, publication, specs), and hands anything else on the site to
+ * Claude Code as a pull request with a preview (code-work.ts). It sees no customer's personal data:
  * orders come without names, emails, addresses or the buyer's notes.
  */
 
@@ -191,6 +193,7 @@ export function copilotTools(client: Client, organizationId: number, collect: (a
         prodotto: row.productName, sku: row.productSku, attuale_eur: euros(row.current_price_cents), proposto_eur: euros(row.proposed_price_cents),
         confidenza: Number(row.confidence), fuori_politica: row.out_of_policy, note: row.policy_notes, motivazione: row.rationale,
       }))),
+    codeWorkTool(),
   ];
 }
 
@@ -206,7 +209,8 @@ const HOW_TO = [
   "Correggere la giacenza: Conteggio inventario (conteggio fisico) o Inventario (singolo movimento).",
   "Cambiare un prezzo: la scheda del prodotto in Prodotti, Listino e margini, oppure le proposte in Prezzi IA.",
   "Cambiare nome, SKU, testi, specifiche o pubblicazione di un prodotto: la sua scheda in Prodotti, oppure chiedilo a me. Il sito si aggiorna entro pochi minuti.",
-  "Cambiare le foto di un prodotto: la sezione Immagini della sua scheda in Prodotti. Le foto nuove caricate nella libreria media non compaiono ancora sul sito: le aggiunge chi cura il codice del sito.",
+  "Cambiare le foto di un prodotto: la sezione Immagini della sua scheda in Prodotti. Le foto nuove caricate nella libreria media non compaiono ancora sul sito da sole: chiedimelo e le metto con un lavoro sul codice.",
+  "Cambiare il sito stesso (un prodotto nuovo, foto, pagine, grafica, un errore): chiedilo a me, lo affido a Claude Code; arriva una PR con l'anteprima e va online solo con «Pubblica».",
   "Rimborsare o annullare un ordine: solo dalla scheda dell'ordine in Ordini («Rimborsa», «Annulla»), perché muovono soldi.",
 ];
 
@@ -236,10 +240,15 @@ export function copilotSystemPrompt(company: string, now: Date = new Date()): st
     "- Una scheda di conferma esiste solo se chiami lo strumento d'azione in questa risposta: quelle delle risposte precedenti non contano. Non scrivere «scheda pronta» o «conferma qui sotto» senza averlo chiamato ora.",
     "- Non inventare dati: se uno strumento non ha il dato, dillo. Importi in euro; profitto e costi sono netti IVA.",
     "",
-    "Strumenti d'azione: cambia_stato_ordine, spedisci_ordine, nota_ordine, movimento_magazzino, cambia_prezzo, imposta_costo, modifica_prodotto, dettagli_prodotto.",
+    "Strumenti d'azione: cambia_stato_ordine, spedisci_ordine, nota_ordine, movimento_magazzino, cambia_prezzo, imposta_costo, modifica_prodotto, dettagli_prodotto, lavoro_codice, pubblica_lavoro, scarta_lavoro, applica_migrazioni.",
     "Prodotti: leggi prima scheda_prodotto. Con modifica_prodotto cambi nome, nome breve, SKU, tagline, descrizione, categoria, tipo blade, offerta (prezzo barrato) e pubblicazione; con dettagli_prodotto le specifiche, le feature e la confezione; il prezzo con cambia_prezzo; la giacenza con movimento_magazzino. Se sulla stessa scheda prodotto ora si vende un pezzo diverso, aggiorna anche tagline, descrizione e dettagli perché parlino del pezzo nuovo: scrivi tu testi brevi, senza promettere ciò che non sai. Il sito si aggiorna entro pochi minuti dalla conferma.",
     "Ordini: «segna come spedito/evaso» senza un codice di tracciamento si fa con cambia_stato_ordine (nessuna email); spedisci_ordine solo quando il socio dà corriere e codice.",
-    "Non puoi preparare: rimborsi, annullamenti, coupon, lo slug (l'indirizzo della pagina), un prodotto nuovo che compaia sul sito, foto nuove sul sito. Indica dove si fanno; per prodotti nuovi e foto serve chi cura il codice del sito.",
+    "Codice del sito: tutto ciò che gli strumenti sopra non fanno (un prodotto nuovo sul sito, foto nuove, lo slug, testi e pagine fuori dalla scheda prodotto, grafica, un errore, una funzione nuova del sito o del gestionale) lo affidi a Claude Code con lavoro_codice, l'agente di sviluppo che lavora sul repository. Non dire mai che una cosa non si può fare perché è nel codice: si fa così.",
+    "- L'incarico deve bastare da solo, perché Claude Code non vede questa conversazione: cosa cambiare, dove si vede sul sito, i dati esatti dati dal socio (nomi, prezzi, codici, link di foto ufficiali), cosa non toccare. Se manca un dato che solo il socio sa, chiedilo prima.",
+    "- Il repository è pubblico: nell'incarico niente costi d'acquisto, margini, fornitori, dati di clienti o ordini.",
+    "- Claude Code lavora 5-20 minuti e apre una PR con l'anteprima del sito; poi i controlli completi durano circa 20 minuti. Quando il socio chiede a che punto è, leggi lavori_codice e dagli il link dell'anteprima e il riassunto.",
+    "- Pubblica (pubblica_lavoro) solo quando il socio lo chiede. Se la PR pubblicata ha migrazioni, prepara subito dopo applica_migrazioni. Per correggere una PR aperta: lavoro_codice con il numero della PR e cosa cambiare; per buttarla: scarta_lavoro.",
+    "Non puoi preparare: rimborsi e annullamenti (scheda dell'ordine in Ordini), coupon (Coupon): muovono soldi e li fa il socio.",
     `Le pagine del gestionale sono solo queste, con questi nomi: ${pages}. Non nominare pagine o menu che non sono in questo elenco.`,
     ...HOW_TO,
     "",

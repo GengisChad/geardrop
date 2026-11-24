@@ -50,6 +50,8 @@
 .actionCard[data-status="failed"] { border-color: #f0b8b8; background: #fff6f6; }
 .actionCard[data-status="cancelled"] { border-color: #e3e5e9; background: #fafbfc; color: #5b6170; }
 .actionCard ul { margin: 0; padding-left: 18px; }
+/* Preview and pull request addresses are long: on a phone they wrap instead of widening the card. */
+.message a, .actionCard a { color: #5b21d9; overflow-wrap: anywhere; }
 .actionWarning { margin: 0; color: #b42318; font-weight: 600; }
 .actionButtons { display: flex; flex-wrap: wrap; gap: 8px; }
 .actionButtons button { min-height: 36px; border-radius: 10px; padding: 0 14px; border: 1px solid #d0d4da; background: #fff; font-weight: 600; cursor: pointer; }

@@ -12,6 +12,7 @@ import { skuSchema } from "@/lib/admin/products";
 import { CARRIERS, carrierById } from "@/lib/orders/carriers";
 import type { Database } from "@/lib/supabase/database.types";
 import type { ClientTool } from "./agent-loop";
+import { CODE_ACTION_KINDS, CODE_INPUT_SCHEMAS, codeActionTools, executeCodeAction } from "./code-work";
 
 /**
  * What the assistant may change (owner, 2026-11-19: "l'assistente deve avere modo di poter fare
@@ -29,11 +30,14 @@ import type { ClientTool } from "./agent-loop";
  * se sono fuori e devo cambiare dei prodotti") it also edits a product's sheet, name, SKU, texts,
  * category, offer and publication, and its specs, features and box contents, through the same
  * save as the sheet's own button; what it changes reaches the shop (lib/commerce/storefront-content.ts).
+ *
+ * Also since 2026-11-24 it hands work on the site's code to Claude Code and publishes what comes
+ * back, always as cards too (lib/ai/code-work.ts).
  */
 
 type Client = SupabaseClient<Database>;
 
-export const COPILOT_ACTION_KINDS = ["stato_ordine", "spedisci_ordine", "nota_ordine", "movimento_magazzino", "prezzo", "costo", "modifica_prodotto", "dettagli_prodotto"] as const;
+export const COPILOT_ACTION_KINDS = ["stato_ordine", "spedisci_ordine", "nota_ordine", "movimento_magazzino", "prezzo", "costo", "modifica_prodotto", "dettagli_prodotto", ...CODE_ACTION_KINDS] as const;
 export type CopilotActionKind = (typeof COPILOT_ACTION_KINDS)[number];
 
 export type CopilotAction = {
@@ -111,6 +115,7 @@ const inputSchemas = {
     features: z.string().max(4000),
     boxContents: z.string().max(4000),
   }),
+  ...CODE_INPUT_SCHEMAS,
 } satisfies Record<CopilotActionKind, z.ZodTypeAny>;
 
 const specsSchema = z.array(z.object({ label: z.string().trim().min(1).max(160), value: z.string().trim().min(1).max(500) })).max(40);
@@ -478,6 +483,7 @@ export function copilotActionTools(client: Client, organizationId: number, colle
       },
       collect,
     ),
+    ...codeActionTools(collect),
   ];
 }
 
@@ -590,5 +596,10 @@ export async function executeCopilotAction(action: CopilotAction, client: Client
       );
       return { ok: state.ok, message: `${input.name}: ${state.message}` };
     }
+    case "lavoro_codice":
+    case "pubblica_lavoro":
+    case "scarta_lavoro":
+    case "migrazioni_lavoro":
+      return executeCodeAction(action);
   }
 }
