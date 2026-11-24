@@ -19,6 +19,8 @@ export { formEncode, stripeProductId } from "../src/lib/payments/stripe-api";
  *
  *   pnpm stripe:products            preview the changes
  *   pnpm stripe:products --apply    write them to the account behind STRIPE_SECRET_KEY
+ *   pnpm stripe:products --apply custom-grip-takara-tomy
+ *                                   only the products named (slugs), the others left as they are
  */
 
 export type StripeProductPayload = {
@@ -204,6 +206,13 @@ export async function syncStripeProducts(argv: readonly string[]): Promise<void>
   }
 
   const apply = argv.includes("--apply");
+  const only = argv.filter((arg) => !arg.startsWith("--"));
+  const unknown = only.filter((slug) => !STRIPE_CATALOGUE.some((product) => product.slug === slug));
+  if (unknown.length > 0) {
+    console.error(`Non sono nel catalogo: ${unknown.join(", ")}`);
+    process.exitCode = 1;
+    return;
+  }
   const client = createStripeClient(secretKey);
 
   const account = await client.get<StripeAccount>("/account").catch(() => null);
@@ -213,7 +222,7 @@ export async function syncStripeProducts(argv: readonly string[]): Promise<void>
   console.log(apply ? "Scrittura attiva.\n" : "Anteprima: nessuna modifica. Rilancia con --apply per scrivere.\n");
 
   let pending = 0;
-  for (const product of STRIPE_CATALOGUE) {
+  for (const product of only.length > 0 ? STRIPE_CATALOGUE.filter((candidate) => only.includes(candidate.slug)) : STRIPE_CATALOGUE) {
     const desired = buildStripeProduct(product);
     const price = buildStripePrice(product);
     const existing = await client.get<StripeProduct>(`/products/${desired.id}?expand%5B%5D=default_price`);
