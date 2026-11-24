@@ -77,3 +77,7 @@ admin), con la sessione di chi conferma. Il ruolo editor non usa l'assistente.
 5. **Vercel → Settings → Environment Variables**: controlla la colonna Preview e togli da lì ogni
    chiave di produzione. Se la protezione delle anteprime è attiva, per aprirle serve essere
    entrati in Vercel con un account del team.
+
+## Prove
+
+24/11/2026: primo lavoro di prova affidato dall'assistente del gestionale.
