@@ -17,6 +17,17 @@ function withoutCount(product: Product): Product {
   return copy as Product;
 }
 
+/**
+ * A Telegram-only pre-order (Product.channelOnly) once it is no longer a pre-order in the back
+ * office: its pieces are on the shelf, so it is a product of the shop like any other.
+ */
+function listed(product: Product): Product {
+  if (!product.channelOnly) return product;
+  const copy: { -readonly [Key in keyof Product]?: Product[Key] } = { ...product };
+  delete copy.channelOnly;
+  return copy as Product;
+}
+
 export function isUnlimitedStock(row: { readonly stock_quantity: number; readonly availability_override: string | null }): boolean {
   return row.availability_override !== "preorder" && row.stock_quantity >= UNLIMITED_FROM;
 }
@@ -71,7 +82,7 @@ export function applyLiveStock(products: readonly Product[], rows: readonly Live
     // sold out until the owner adds pieces (owner's rule, 2026-09-21; migration 20260921180000).
     const soldOutPreorder = row.availability_override === "preorder" && row.preorder_allocation <= 0 && row.stock_quantity <= 0;
     return {
-      ...withoutCount(product),
+      ...withoutCount(row.availability_override === "preorder" ? product : listed(product)),
       // The database already reads "pre-ordine" at zero; this also holds while that change is deploying.
       stock: soldOutPreorder
         ? "esaurito"

@@ -3,6 +3,7 @@ import { BUNDLES, PRODUCTS } from "@/data/catalog";
 import { TrackPageView } from "@/components/funnel/track-page-view";
 import { loadCartPickShelf } from "@/lib/commerce/cart-pick-shelf";
 import { getCommerceProvider } from "@/lib/commerce/provider";
+import { PreorderArrival } from "@/components/cart/preorder-arrival";
 import { CartClient } from "./cart-client";
 import type { Product } from "@/lib/commerce/types";
 
@@ -32,12 +33,17 @@ export default async function CarrelloPage() {
 
   // What the cart suggests next to its lines: pieces on the shelf today, ordered by what paid
   // orders really held together. Every colour is read, so an item stands on one still in stock.
-  const pickShelf = await loadCartPickShelf(await commerce.getProductsBySlugs(PRODUCTS.map((product) => product.slug)));
+  // A Telegram-only pre-order is never suggested: it is not in the shop (Product.channelOnly).
+  const pickShelf = await loadCartPickShelf(
+    (await commerce.getProductsBySlugs(PRODUCTS.map((product) => product.slug))).filter((product) => !product.channelOnly),
+  );
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-10 sm:px-6">
       <TrackPageView event="cart_view" />
       <h1 className="gd-display-wide text-[2rem] font-extrabold text-graphite sm:text-[2.5rem]">Carrello</h1>
+      {/* A buyer sent by the Telegram bot arrives with his pre-order in the address (see the component). */}
+      <PreorderArrival />
       <CartClient shelfProducts={shelf} nudgeCatalogue={nudgeCatalogue} pickShelf={pickShelf} />
     </div>
   );

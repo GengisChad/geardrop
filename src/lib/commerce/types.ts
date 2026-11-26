@@ -101,6 +101,13 @@ export type Product = {
    * release, not from a shelf. It changes only how long the shop says the wait is.
    */
   readonly releasePreorder?: true;
+  /**
+   * Pre-ordered on the Telegram channel only (owner, 2026-11-26): the product is loaded in the
+   * catalogue but kept out of the shop, the search, the sitemap and Google until its pieces are
+   * on the shelf. The catalogue sets it; the live overlay drops it as soon as the back office no
+   * longer holds the product as a pre-order, so the product shows up by itself when it arrives.
+   */
+  readonly channelOnly?: true;
   readonly tags: readonly PromoTag[];
   readonly rating: number;
   readonly reviewCount: number;

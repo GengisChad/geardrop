@@ -106,7 +106,8 @@ export async function GET(): Promise<Response> {
   const commerce = await getCommerceProvider();
   // The two-colour deck cases are sold on the site only (KEPT_OFF_GOOGLE, owner 2026-10-24).
   const slugs = [...BUNDLES, ...PRODUCTS].map((product) => product.slug).filter((slug) => !KEPT_OFF_GOOGLE.has(slug));
-  const products = await commerce.getProductsBySlugs(slugs);
+  // A Telegram-only pre-order is not in the shop yet (Product.channelOnly), so it is not on Google either.
+  const products = (await commerce.getProductsBySlugs(slugs)).filter((product) => !product.channelOnly);
 
   const body = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">

@@ -50,6 +50,8 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
     alternates: { canonical: `/prodotto/${familyLead(product)}` },
     openGraph: { type: "website", url: `/prodotto/${product.slug}`, title, description, images },
     twitter: { card: "summary_large_image", title, description, images: images.map((item) => item.url) },
+    // A Telegram-only pre-order has a page only for whoever holds its link: search engines stay out.
+    ...(product.channelOnly ? { robots: { index: false, follow: false } } : {}),
   };
 }
 
@@ -78,7 +80,7 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
   // Product structured data: price, live availability, shipping and returns make the page
   // eligible for Google's product results, and it tracks the catalogue rather than hand-written copy.
   // The two-colour deck cases stay off Google (KEPT_OFF_GOOGLE): no product markup for them.
-  const productData = KEPT_OFF_GOOGLE.has(product.slug) ? null : productJsonLd(product);
+  const productData = KEPT_OFF_GOOGLE.has(product.slug) || product.channelOnly ? null : productJsonLd(product);
   const breadcrumbData = breadcrumbJsonLd([
     { name: "Home", path: "/" },
     { name: "Negozio", path: "/negozio" },

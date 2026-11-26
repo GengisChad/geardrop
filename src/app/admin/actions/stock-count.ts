@@ -5,6 +5,7 @@ import { requireStaffRole, requireUser } from "@/lib/auth/guards";
 import { parseThreshold, stockCountNote, stockCountPlan, type StockCountChange, type StockCountProblem } from "@/lib/admin/stock-count";
 import { loadStockCountRows } from "@/lib/admin/stock-count-repository";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { scanNewsAfterChange } from "@/lib/telegram/runtime";
 
 export type StockCountState = {
   readonly ok: boolean;
@@ -75,6 +76,7 @@ export async function applyStockCountAction(_previous: StockCountState, formData
       revalidatePath("/admin");
       revalidatePath("/admin/inventario");
       revalidatePath("/admin/inventario/conteggio");
+      scanNewsAfterChange();
     }
 
     const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;

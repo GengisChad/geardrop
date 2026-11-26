@@ -121,10 +121,13 @@ export function createMockProvider(
   findCoupon: FindSiteCoupon = async () => ({ status: "unknown" }),
 ): CommerceProvider {
   const bySlug = new Map(catalogue.map((product) => [product.slug as string, product]));
+  // A Telegram-only pre-order is in the catalogue but not in the shop (Product.channelOnly): no
+  // list, search or filter shows it, while its slug still resolves for the cart its link fills.
+  const shelf = catalogue.filter((product) => !product.channelOnly);
 
   // Lists show an item sold in several colours once (see variants.ts); its product page still
   // finds every colour by slug.
-  const filter = (query: ProductQuery) => oneCardPerFamily(catalogue.filter((product) => matches(product, query)));
+  const filter = (query: ProductQuery) => oneCardPerFamily(shelf.filter((product) => matches(product, query)));
 
   return {
     name: "mock",
@@ -155,14 +158,14 @@ export function createMockProvider(
     async getFacets(query = {}) {
       // Each facet is counted against the query with that facet removed, so ticking
       // "Disponibile" doesn't drive the other availability counts to zero.
-      const forCategories = oneCardPerFamily(catalogue.filter((p) => matches(p, omit(query, ["category"]))));
-      const forStock = oneCardPerFamily(catalogue.filter((p) => matches(p, omit(query, ["stock"]))));
-      const forType = oneCardPerFamily(catalogue.filter((p) => matches(p, omit(query, ["bladeType"]))));
+      const forCategories = oneCardPerFamily(shelf.filter((p) => matches(p, omit(query, ["category"]))));
+      const forStock = oneCardPerFamily(shelf.filter((p) => matches(p, omit(query, ["stock"]))));
+      const forType = oneCardPerFamily(shelf.filter((p) => matches(p, omit(query, ["bladeType"]))));
 
       const categoryCounts = countBy<CategorySlug>(forCategories, (p) => p.category);
       const stockCounts = countBy<StockStatus>(forStock, (p) => p.stock);
       const typeCounts = countBy<BladeType>(forType, (p) => p.bladeType);
-      const prices = catalogue.map((p) => p.price.amount);
+      const prices = shelf.map((p) => p.price.amount);
 
       return {
         categories: CATEGORIES.map((c) => ({ value: c.slug, count: categoryCounts.get(c.slug) ?? 0 })),
