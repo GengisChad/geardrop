@@ -14,9 +14,18 @@ Si appoggia al bot delle news: vedi [`telegram-news-bot.md`](telegram-news-bot.m
    pre-ordine con i pezzi ordinati (30). Finché resta un pre-ordine non compare in negozio,
    ricerca, home, sitemap, feed Google e suggerimenti del carrello; la sua pagina esiste solo per
    chi ha il link ed è `noindex`.
-2. **Post sul canale.** Il bot ti manda la bozza `PRE-ORDINE // solo sul canale` con prezzo, pezzi
-   e tempi. Con «Pubblica» esce sul canale con un tasto solo, **Pre-ordina**, che apre il bot.
-3. **Nel bot.** Chi compra sceglie quanti pezzi (al massimo 3) e come pagare:
+2. **Post sul canale, e come si paga.** Il bot ti manda la bozza `PRE-ORDINE // solo sul canale`
+   con prezzo, pezzi e tempi. Pubblicandola decidi tu come si paga quel pre-ordine (proprietario,
+   26/11: "decidiamo noi quali solo con PayPal e quali con Stripe"), con tre tasti:
+   - **Pubblica · solo Stripe**: il tasto **Pre-ordina** del canale apre direttamente il carrello
+     del sito con il pezzo dentro. Tutto tracciato: ordine nel gestionale, niente conferme a mano.
+   - **Pubblica · solo PayPal.me**: **Pre-ordina** apre il bot, che offre solo PayPal.me.
+   - **Pubblica · Stripe e PayPal.me**: **Pre-ordina** apre il bot e sceglie chi compra.
+
+   Senza `PAYPAL_ME_HANDLE` c'è solo il primo tasto. La scelta vale per quel prodotto finché non
+   ripubblichi il suo pre-ordine con un altro tasto.
+3. **Nel bot** (quando non è solo Stripe). Chi compra sceglie quanti pezzi (al massimo 3) e, se
+   hai lasciato tutti e due i modi, come pagare:
    - **Carta, PayPal o Revolut sul sito**: si apre il carrello del sito con il pezzo dentro. Da lì
      è un ordine normale: Locker, pagamento, ordine nel gestionale, pezzi scalati da soli. Il bot
      non riserva niente.
@@ -47,7 +56,9 @@ vendere lo stesso pezzo, e il numero che resta è quello da caricare a magazzino
   Locker) e li spedisci a mano. Quelli pagati dal checkout del sito invece sono ordini normali.
 - Un rimborso PayPal.me lo fai tu su PayPal: «Annulla» libera solo i pezzi.
 - PayPal.me nel bot solo per i pezzi che viaggiano in Locker; uno stadio o un pezzo in conto
-  vendita passa dal checkout del sito.
+  vendita passa dal checkout del sito, anche se avevi scelto «solo PayPal.me».
+- «Solo PayPal.me» vale per quello che il bot offre: il sito non rifiuta il pezzo a chi arrivasse
+  al carrello con il suo link, che però in quel caso non viene pubblicato da nessuna parte.
 - Una prenotazione non pagata tiene fermi i pezzi fino a 24 ore (un po' di più se nel frattempo
   il bot non viene usato: la scadenza scatta al primo sguardo allo shop o a `/preordini`).
 - **Privacy**: il bot raccoglie nome, email, cellulare e Locker su Telegram. L'informativa del sito

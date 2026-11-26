@@ -5,8 +5,8 @@ import { createMockProvider } from "@/lib/commerce/mock-provider";
 import type { Product } from "@/lib/commerce/types";
 import { PREORDER_DELIVERY } from "@/lib/labels";
 import type { TelegramGateway } from "@/lib/telegram/api";
-import { handleUpdate, scanNews, type NewsDeps, type NewsStore } from "@/lib/telegram/bot";
-import { channelPreorderPost, productPost, type InlineKeyboard } from "@/lib/telegram/messages";
+import { handleUpdate, scanNews, type DraftStatus, type NewsDeps, type NewsStore } from "@/lib/telegram/bot";
+import { channelPreorderPost, draftKeyboard, parseDraftAction, productPost, type InlineKeyboard } from "@/lib/telegram/messages";
 import { scanProducts } from "@/lib/telegram/news";
 import {
   newPreorderCode,
@@ -19,6 +19,7 @@ import {
   preorderTotals,
   slugFromStart,
   startPayload,
+  type PaymentMode,
 } from "@/lib/telegram/preorder-rules";
 import { parsePreorderAction, type Preorder, type PreorderStatus, type PreorderStore } from "@/lib/telegram/preorders";
 
@@ -179,12 +180,13 @@ describe("the rules of a pre-order", () => {
 
 type Sent = { chatId: string; text: string; keyboard?: InlineKeyboard | undefined };
 
-function world(options: { left?: number; paypal?: string | null } = {}) {
+function world(options: { left?: number; paypal?: string | null; mode?: PaymentMode; draft?: boolean } = {}) {
   const state = { left: options.left ?? 30, now: new Date("2026-11-26T09:00:00.000Z"), lockersDown: false };
   const rows: Preorder[] = [];
   const sent: Sent[] = [];
   const answers: string[] = [];
   const cleared: number[] = [];
+  const modes = new Map<string, PaymentMode>(options.mode ? [[SLUG, options.mode]] : []);
   let nextMessage = 900;
 
   const telegram: TelegramGateway = {
@@ -237,18 +239,33 @@ function world(options: { left?: number; paypal?: string | null } = {}) {
     },
     overdue: async (now) => rows.filter((row) => row.status === "awaiting_payment" && row.expiresAt !== null && Date.parse(row.expiresAt) < now.getTime()),
     list: async (statuses) => rows.filter((row) => (statuses as readonly PreorderStatus[]).includes(row.status)),
+    paymentMode: async (slug) => modes.get(slug) ?? null,
+    setPaymentMode: async (slug, mode) => {
+      modes.set(slug, mode);
+    },
   };
 
+  // With `draft`, the bot has one pre-order waiting to be shown to the owner and published.
+  const draft = { id: 1, payload: { kind: "channel_preorder" as const, slugs: [SLUG] } };
+  const drafted = { status: (options.draft ? "draft" : "discarded") as DraftStatus, ownerMessageId: null as number | null };
   const news: NewsStore = {
     readMemory: async () => new Map<string, unknown>([["products", {}], ["meta", { months: [] }], ["videos", { ids: [] }]]),
     writeMemory: async () => {},
     addDrafts: async () => 0,
-    unsentDrafts: async () => [],
-    claimSending: async () => false,
-    markSent: async () => {},
+    unsentDrafts: async () => (drafted.status === "draft" && drafted.ownerMessageId === null ? [{ ...draft, ...drafted }] : []),
+    claimSending: async () => drafted.status === "draft",
+    markSent: async (_id, messageId) => {
+      drafted.ownerMessageId = messageId;
+    },
     forgetSent: async () => 0,
-    claimDecision: async () => null,
-    finish: async () => {},
+    claimDecision: async () => {
+      if (drafted.status !== "draft") return null;
+      drafted.status = "publishing";
+      return { ...draft, ...drafted };
+    },
+    finish: async (_id, status) => {
+      drafted.status = status;
+    },
   };
 
   const deps: NewsDeps = {
@@ -290,7 +307,7 @@ function world(options: { left?: number; paypal?: string | null } = {}) {
     await tap(`gd:o:${id}:ok`);
     return id;
   };
-  return { state, rows, sent, answers, cleared, deps, write, tap, last, reserve };
+  return { state, rows, sent, answers, cleared, modes, drafted, deps, write, tap, last, reserve };
 }
 
 describe("pre-ordering in the bot's chat", () => {
@@ -427,6 +444,102 @@ describe("pre-ordering in the bot's chat", () => {
     await tap(`gd:o:${id}:paid`);
     expect(answers.at(-1)).toBe("Solo il proprietario può farlo.");
     expect(rows[id - 1]!.status).toBe("awaiting_payment");
+  });
+});
+
+describe("the owner decides how each pre-order is paid", () => {
+  const CHANNEL = "@geardropnews";
+
+  it("offers one Pubblica per way of paying, and only Stripe while no PayPal.me name is set", async () => {
+    const withPaypal = world({ draft: true });
+    await scanNews(withPaypal.deps);
+    expect(withPaypal.last(OWNER).keyboard?.slice(0, 4)).toEqual([
+      [{ text: "Pubblica · solo Stripe", callback_data: "gd:p:1:s" }],
+      [{ text: "Pubblica · solo PayPal.me", callback_data: "gd:p:1:p" }],
+      [{ text: "Pubblica · Stripe e PayPal.me", callback_data: "gd:p:1:b" }],
+      [{ text: "Scarta", callback_data: "gd:x:1" }],
+    ]);
+    const without = world({ draft: true, paypal: null });
+    await scanNews(without.deps);
+    expect(without.last(OWNER).keyboard?.slice(0, 2)).toEqual([
+      [{ text: "Pubblica · solo Stripe", callback_data: "gd:p:1:s" }],
+      [{ text: "Scarta", callback_data: "gd:x:1" }],
+    ]);
+  });
+
+  it("on Stripe only, the channel's button is the cart with the piece in it", async () => {
+    const { deps, tap, last, modes, drafted, answers } = world({ draft: true });
+    await scanNews(deps);
+    await tap("gd:p:1:s", OWNER);
+    expect(answers.at(-1)).toBe("Pubblicato sul canale.");
+    expect(drafted.status).toBe("published");
+    expect(modes.get(SLUG)).toBe("stripe");
+    const post = last(CHANNEL);
+    expect(post.text).toContain("Si paga sul sito, con carta, PayPal o Revolut.");
+    expect(post.keyboard).toEqual([
+      [{ text: "Pre-ordina", url: `https://geardropshop.it/carrello?preordine=${SLUG}&utm_source=telegram&utm_medium=social&utm_campaign=news` }],
+    ]);
+  });
+
+  it("on PayPal.me only, the button opens the bot and the bot offers nothing else", async () => {
+    const { deps, tap, write, last, modes, answers, rows } = world({ draft: true });
+    await scanNews(deps);
+    await tap("gd:p:1:p", OWNER);
+    expect(modes.get(SLUG)).toBe("paypal");
+    expect(last(CHANNEL).keyboard).toEqual([[{ text: "Pre-ordina", url: `https://t.me/GearDropNewsBot?start=pre-${SLUG}` }]]);
+    await write(`/start pre-${SLUG}`);
+    await tap("gd:o:1:q:1");
+    expect(last(BUYER).keyboard?.map((row) => row[0]!.text)).toEqual(["PayPal.me", "Annulla"]);
+    await tap("gd:o:1:site");
+    expect(answers.at(-1)).toBe("Questo pre-ordine si paga solo con PayPal.me.");
+    expect(rows[0]!.status).toBe("collecting");
+  });
+
+  it("on both, the buyer chooses in the bot", async () => {
+    const { deps, tap, write, last, modes } = world({ draft: true });
+    await scanNews(deps);
+    await tap("gd:p:1:b", OWNER);
+    expect(modes.get(SLUG)).toBe("both");
+    await write(`/start pre-${SLUG}`);
+    await tap("gd:o:1:q:1");
+    expect(last(BUYER).keyboard?.map((row) => row[0]!.text)).toEqual(["PayPal.me", "Carta, PayPal o Revolut sul sito", "Annulla"]);
+  });
+
+  it("a pre-order paid on Stripe only offers no PayPal.me, even to someone who opens the bot by hand", async () => {
+    const { write, tap, last, answers } = world({ mode: "stripe" });
+    await write(`/start pre-${SLUG}`);
+    await tap("gd:o:1:q:1");
+    expect(last(BUYER).keyboard?.map((row) => row[0]!.text)).toEqual(["Carta, PayPal o Revolut sul sito", "Annulla"]);
+    await tap("gd:o:1:pp");
+    expect(answers.at(-1)).toBe("PayPal.me non è disponibile per questo pezzo: usa il sito.");
+  });
+
+  it("falls back to the site when PayPal.me was chosen but cannot take the piece", async () => {
+    const { write, tap, last } = world({ mode: "paypal", paypal: null });
+    await write(`/start pre-${SLUG}`);
+    await tap("gd:o:1:q:1");
+    expect(last(BUYER).keyboard?.map((row) => row[0]!.text)).toEqual(["Carta, PayPal o Revolut sul sito", "Annulla"]);
+  });
+
+  it("only the owner's tap publishes, whatever way of paying it names", async () => {
+    const { deps, tap, drafted, answers } = world({ draft: true });
+    await scanNews(deps);
+    await tap("gd:p:1:s");
+    expect(answers.at(-1)).toBe("Solo il proprietario può farlo.");
+    expect(drafted.status).toBe("draft");
+  });
+
+  it("reads the way of paying off the button, and ignores one on Scarta", () => {
+    expect(parseDraftAction("gd:p:7:s")).toEqual({ action: "publish", draftId: 7, mode: "stripe" });
+    expect(parseDraftAction("gd:p:7:p")).toEqual({ action: "publish", draftId: 7, mode: "paypal" });
+    expect(parseDraftAction("gd:p:7:b")).toEqual({ action: "publish", draftId: 7, mode: "both" });
+    expect(parseDraftAction("gd:x:7:s")).toEqual({ action: "discard", draftId: 7 });
+    expect(parseDraftAction("gd:p:7:z")).toBeNull();
+    const post = { text: "x", link: { label: "Pre-ordina", url: "https://t.me/Bot?start=pre-x" } };
+    expect(draftKeyboard(7, post)[0]).toEqual([
+      { text: "Pubblica", callback_data: "gd:p:7" },
+      { text: "Scarta", callback_data: "gd:x:7" },
+    ]);
   });
 });
 

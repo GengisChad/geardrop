@@ -13,6 +13,7 @@ import {
   piecesOffered,
   preorderOpen,
   preorderTotals,
+  type PaymentMode,
 } from "./preorder-rules";
 
 /**
@@ -24,6 +25,9 @@ import {
  * takes the pieces off the product's allocation for 24 hours, gives him a PayPal.me address for
  * the exact amount and tells the owner, who marks it paid once he sees the money: PayPal.me sends
  * no word to anybody, so that tap is the only confirmation there is.
+ *
+ * Which of the two ways a pre-order offers is the owner's choice, made when he publishes its post
+ * (PaymentMode): Stripe only, PayPal.me only, or both.
  *
  * The pieces are counted in one place, products.preorder_allocation, which the site's checkout
  * uses too: a piece reserved here cannot be sold there, and what is left when the goods arrive is
@@ -78,6 +82,9 @@ export type PreorderStore = {
   /** Reserved pieces whose 24 hours ran out without a payment. */
   overdue(now: Date): Promise<readonly Preorder[]>;
   list(statuses: readonly PreorderStatus[]): Promise<readonly Preorder[]>;
+  /** How the owner said this product's pre-order is paid, or null if he has not published it yet. */
+  paymentMode(slug: string): Promise<PaymentMode | null>;
+  setPaymentMode(slug: string, mode: PaymentMode): Promise<void>;
 };
 
 export type PreorderDeps = {
@@ -214,6 +221,12 @@ export async function preorderTap(context: PreorderContext, tap: { readonly from
     return "Pre-ordine chiuso.";
   }
 
+  // How this pre-order is paid is the owner's choice, made when he published its post.
+  const mode = (await store.paymentMode(preorder.slug)) ?? "both";
+  const byPaypal = (quantity: number) => mode !== "stripe" && paypalHandle !== null && preorderTotals(product, quantity) !== null;
+  // The site stays the way out when PayPal.me cannot take the piece (no name set, no Locker route).
+  const bySite = (quantity: number) => mode !== "paypal" || !byPaypal(quantity);
+
   if (parsed.verb === "q") {
     const quantity = parsed.argument ?? 0;
     if (quantity < 1 || quantity > piecesOffered(product)) return `Ne restano ${piecesOffered(product)}.`;
@@ -227,8 +240,8 @@ export async function preorderTap(context: PreorderContext, tap: { readonly from
     };
     await store.update(preorder.id, { quantity, unitCents: next.unitCents, shippingCents: next.shippingCents, totalCents: next.totalCents, step: "payment" });
     const ways: InlineKeyboard = [
-      ...(totals && paypalHandle ? [[{ text: "PayPal.me", callback_data: action(preorder.id, "pp") }]] : []),
-      [{ text: "Carta, PayPal o Revolut sul sito", callback_data: action(preorder.id, "site") }],
+      ...(byPaypal(quantity) ? [[{ text: "PayPal.me", callback_data: action(preorder.id, "pp") }]] : []),
+      ...(bySite(quantity) ? [[{ text: "Carta, PayPal o Revolut sul sito", callback_data: action(preorder.id, "site") }]] : []),
       [{ text: "Annulla", callback_data: action(preorder.id, "no") }],
     ];
     const text = totals ? summary(next) : [`${quantity} × ${escapeTelegram(product.name)}: <b>${euro(next.totalCents)}</b>`, "Spedizione: la scegli al checkout."];
@@ -237,6 +250,7 @@ export async function preorderTap(context: PreorderContext, tap: { readonly from
   }
 
   if (parsed.verb === "site") {
+    if (!bySite(preorder.quantity)) return "Questo pre-ordine si paga solo con PayPal.me.";
     // Nothing is reserved here: the site's checkout takes the piece when the payment goes through.
     await store.move(preorder.id, "collecting", "cancelled");
     await telegram.sendText(
@@ -248,7 +262,7 @@ export async function preorderTap(context: PreorderContext, tap: { readonly from
   }
 
   if (parsed.verb === "pp") {
-    if (!paypalHandle || !preorderTotals(product, preorder.quantity)) return "PayPal.me non è disponibile per questo pezzo: usa il sito.";
+    if (!byPaypal(preorder.quantity)) return "PayPal.me non è disponibile per questo pezzo: usa il sito.";
     await store.update(preorder.id, { step: "name" });
     await telegram.sendText(
       preorder.chatId,
@@ -275,7 +289,7 @@ export async function preorderTap(context: PreorderContext, tap: { readonly from
   }
 
   // "ok": the pieces are taken and the payment asked for.
-  if (preorder.step !== "confirm" || !preorder.buyerName || !preorder.email || !preorder.phone || !preorder.locker || !paypalHandle) {
+  if (preorder.step !== "confirm" || !preorder.buyerName || !preorder.email || !preorder.phone || !preorder.locker || !paypalHandle || !byPaypal(preorder.quantity)) {
     return "Mancano ancora dei dati: riparti dal post sul canale.";
   }
   const totals = preorderTotals(product, preorder.quantity);

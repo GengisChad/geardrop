@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/lib/supabase/database.types";
+import { isPaymentMode } from "./preorder-rules";
 import type { LockerChoice, Preorder, PreorderPatch, PreorderStatus, PreorderStep, PreorderStore } from "./preorders";
 
 /**
@@ -12,6 +13,9 @@ import type { LockerChoice, Preorder, PreorderPatch, PreorderStatus, PreorderSte
 type Client = SupabaseClient<Database>;
 type Row = Database["public"]["Tables"]["telegram_preorders"]["Row"];
 type Update = Database["public"]["Tables"]["telegram_preorders"]["Update"];
+
+/** The memory row that says how one product's pre-order is paid. */
+const PAYMENT_SUBJECT = "preorder-pay:";
 
 function lockerOf(value: unknown): LockerChoice | null {
   if (typeof value !== "object" || value === null) return null;
@@ -111,6 +115,19 @@ export function createSupabasePreorderStore(client: Client): PreorderStore {
       const result = await table().select("*").in("status", [...statuses]).order("product_slug").order("id").limit(500);
       check(result.error, "list");
       return (result.data ?? []).map(preorderOf);
+    },
+    // Kept with the rest of what the bot remembers (telegram_news_memory), one row per product.
+    async paymentMode(slug) {
+      const result = await client.from("telegram_news_memory").select("state").eq("subject", `${PAYMENT_SUBJECT}${slug}`).maybeSingle();
+      check(result.error, "payment mode");
+      const mode = (result.data?.state as { readonly mode?: unknown } | null | undefined)?.mode;
+      return isPaymentMode(mode) ? mode : null;
+    },
+    async setPaymentMode(slug, mode) {
+      const result = await client
+        .from("telegram_news_memory")
+        .upsert({ subject: `${PAYMENT_SUBJECT}${slug}`, state: { mode }, updated_at: new Date().toISOString() }, { onConflict: "subject" });
+      check(result.error, "set payment mode");
     },
   };
 }

@@ -10,6 +10,19 @@ import type { Product } from "@/lib/commerce/types";
  * the product the shop serves and from the catalogue's own shipping methods, never typed.
  */
 
+/**
+ * How one pre-order is paid, which the owner decides post by post when he publishes it (owner,
+ * 2026-11-26: "decidiamo noi quali solo con PayPal e quali con Stripe"). "stripe" is the site's
+ * checkout, where the order is recorded by itself; "paypal" is PayPal.me in the bot's chat, which
+ * the owner confirms by hand; "both" lets the buyer choose.
+ */
+export const PAYMENT_MODES = ["stripe", "paypal", "both"] as const;
+export type PaymentMode = (typeof PAYMENT_MODES)[number];
+
+export function isPaymentMode(value: unknown): value is PaymentMode {
+  return typeof value === "string" && (PAYMENT_MODES as readonly string[]).includes(value);
+}
+
 /** Pieces one buyer may reserve at a time, so a short drop reaches more than a few people. */
 export const MAX_PREORDER_PIECES = 3;
 

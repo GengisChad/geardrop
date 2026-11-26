@@ -4,7 +4,7 @@ import { bundleNoun, preorderDelivery, stockHint, stockLabel } from "@/lib/label
 import { monthLabel } from "@/lib/meta/types";
 import { absoluteUrl } from "@/lib/seo";
 import type { NewsPayload } from "./news";
-import { startPayload } from "./preorder-rules";
+import { startPayload, type PaymentMode } from "./preorder-rules";
 
 /**
  * The words of the channel's posts.
@@ -111,7 +111,12 @@ export function productPost(payload: ProductPayload, catalogue: readonly Product
  * The post that opens a pre-order taken on Telegram only: the piece is not in the shop yet, so the
  * one button opens the bot, which takes the reservation and the payment (see preorders.ts).
  */
-export function channelPreorderPost(payload: { readonly slugs: readonly string[] }, catalogue: readonly Product[], botUsername: string): PostResult {
+export function channelPreorderPost(
+  payload: { readonly slugs: readonly string[] },
+  catalogue: readonly Product[],
+  botUsername: string,
+  mode: PaymentMode = "both",
+): PostResult {
   const product = catalogue.find((candidate) => candidate.slug === payload.slugs[0]);
   if (!product) return { ok: false, reason: "il prodotto non è più a catalogo" };
   if (!product.channelOnly) return { ok: false, reason: `${product.name} è già in vendita sul sito` };
@@ -125,7 +130,9 @@ export function channelPreorderPost(payload: { readonly slugs: readonly string[]
     `<b>${escapeTelegram(product.name)}</b>`,
     `<b>${formatPrice(product.price)}</b>${left === undefined ? "" : ` · ${left === 1 ? "1 pezzo" : `${left} pezzi`}`}`,
     escapeTelegram(preorderDelivery(product.releasePreorder)),
-    "Si prenota e si paga qui. Sul sito arriva quando è in magazzino.",
+    mode === "stripe"
+      ? "Si paga sul sito, con carta, PayPal o Revolut. In negozio arriva quando è in magazzino."
+      : "Si prenota e si paga qui. Sul sito arriva quando è in magazzino.",
   ];
   const image = product.images[0];
   return {
@@ -133,7 +140,8 @@ export function channelPreorderPost(payload: { readonly slugs: readonly string[]
     post: {
       text: lines.join("\n"),
       ...(image ? { photoUrl: absoluteUrl(image.src) } : {}),
-      link: { label: "Pre-ordina", url: `https://t.me/${botUsername}?start=${start}` },
+      // Paid on Stripe only, there is nothing to ask in the bot: the button is the cart with the piece in it.
+      link: { label: "Pre-ordina", url: mode === "stripe" ? shopLink(`/carrello?preordine=${product.slug}`) : `https://t.me/${botUsername}?start=${start}` },
     },
   };
 }
@@ -166,8 +174,26 @@ export function postKeyboard(post: TelegramPost): InlineKeyboard {
   return [[{ text: post.link.label, url: post.link.url }]];
 }
 
-/** The same post in the owner's chat, with the two answers above the channel's button. */
-export function draftKeyboard(draftId: number, post: TelegramPost): InlineKeyboard {
+const MODE_CODE: Record<PaymentMode, string> = { stripe: "s", paypal: "p", both: "b" };
+const MODE_LABEL: Record<PaymentMode, string> = {
+  stripe: "Pubblica · solo Stripe",
+  paypal: "Pubblica · solo PayPal.me",
+  both: "Pubblica · Stripe e PayPal.me",
+};
+
+/**
+ * The same post in the owner's chat, with the two answers above the channel's button. A pre-order
+ * has one "Pubblica" per way of paying it (`modes`), because publishing it is also when the owner
+ * says how it is paid.
+ */
+export function draftKeyboard(draftId: number, post: TelegramPost, modes?: readonly PaymentMode[]): InlineKeyboard {
+  if (modes?.length) {
+    return [
+      ...modes.map((mode) => [{ text: MODE_LABEL[mode], callback_data: `${PUBLISH_ACTION}${draftId}:${MODE_CODE[mode]}` }]),
+      [{ text: "Scarta", callback_data: `${DISCARD_ACTION}${draftId}` }],
+      ...postKeyboard(post),
+    ];
+  }
   return [
     [
       { text: "Pubblica", callback_data: `${PUBLISH_ACTION}${draftId}` },
@@ -182,9 +208,12 @@ export function asDraft(post: TelegramPost, destination: string): TelegramPost {
   return { ...post, text: `<i>Bozza per ${escapeTelegram(destination)}: esce solo se tocchi Pubblica.</i>\n\n${post.text}` };
 }
 
-/** `gd:p:12` → publish draft 12. Anything else is not one of the bot's buttons. */
-export function parseDraftAction(data: string | undefined): { readonly action: "publish" | "discard"; readonly draftId: number } | null {
-  const match = /^gd:([px]):(\d{1,12})$/.exec(data ?? "");
+/** `gd:p:12` → publish draft 12; `gd:p:12:s` → publish it paid on Stripe only. Anything else is not one of the bot's buttons. */
+export function parseDraftAction(
+  data: string | undefined,
+): { readonly action: "publish" | "discard"; readonly draftId: number; readonly mode?: PaymentMode } | null {
+  const match = /^gd:([px]):(\d{1,12})(?::([spb]))?$/.exec(data ?? "");
   if (!match) return null;
-  return { action: match[1] === "p" ? "publish" : "discard", draftId: Number(match[2]) };
+  const mode = (Object.keys(MODE_CODE) as PaymentMode[]).find((candidate) => MODE_CODE[candidate] === match[3]);
+  return { action: match[1] === "p" ? "publish" : "discard", draftId: Number(match[2]), ...(mode && match[1] === "p" ? { mode } : {}) };
 }

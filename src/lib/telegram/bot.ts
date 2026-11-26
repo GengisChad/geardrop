@@ -2,7 +2,7 @@ import type { Product } from "@/lib/commerce/types";
 import { channelPostUrl, type TelegramGateway } from "./api";
 import { asDraft, channelPreorderPost, draftKeyboard, metaPost, parseDraftAction, postKeyboard, productPost, videoPost, type MetaSummary, type PostResult } from "./messages";
 import { isProductMemory, scanMeta, scanProducts, scanVideos, type ChannelVideo, type NewsEvent, type NewsPayload, type ProductMemory } from "./news";
-import { slugFromStart } from "./preorder-rules";
+import { slugFromStart, type PaymentMode } from "./preorder-rules";
 import { expirePreorders, preorderReport, preorderTap, preorderText, startPreorder, type PreorderContext, type PreorderDeps } from "./preorders";
 
 /**
@@ -157,8 +157,13 @@ export async function scanNews(deps: NewsDeps, options: { readonly videos?: bool
 
 type Written = PostResult | { readonly ok: false; readonly reason: string; readonly retry: true };
 
-/** The post for a draft, from the shop as it is now. */
-async function writePost(payload: NewsPayload, deps: NewsDeps): Promise<Written> {
+/** The ways of paying a pre-order the owner can pick from: PayPal.me only once its name is set. */
+function paymentModes(deps: NewsDeps): readonly PaymentMode[] {
+  return deps.preorders?.paypalHandle ? ["stripe", "paypal", "both"] : ["stripe"];
+}
+
+/** The post for a draft, from the shop as it is now. `mode` is how a pre-order is paid. */
+async function writePost(payload: NewsPayload, deps: NewsDeps, mode?: PaymentMode): Promise<Written> {
   try {
     switch (payload.kind) {
       case "new_product":
@@ -168,7 +173,7 @@ async function writePost(payload: NewsPayload, deps: NewsDeps): Promise<Written>
       case "channel_preorder": {
         const botUsername = await deps.preorders?.botUsername();
         if (!botUsername) return { ok: false, reason: "non riesco a leggere il nome del bot", retry: true };
-        return channelPreorderPost(payload, await deps.loadProducts(), botUsername);
+        return channelPreorderPost(payload, await deps.loadProducts(), botUsername, mode ?? paymentModes(deps).at(-1)!);
       }
       case "meta_update": {
         const meta = await deps.loadMeta(payload.month);
@@ -197,7 +202,8 @@ export async function showWaitingDrafts(deps: NewsDeps): Promise<number> {
       else await deps.store.finish(draft.id, "discarded");
       continue;
     }
-    const messageId = await deps.telegram.sendPost(deps.ownerChatId, asDraft(written.post, destination), draftKeyboard(draft.id, written.post));
+    const modes = draft.payload.kind === "channel_preorder" ? paymentModes(deps) : undefined;
+    const messageId = await deps.telegram.sendPost(deps.ownerChatId, asDraft(written.post, destination), draftKeyboard(draft.id, written.post, modes));
     await deps.store.markSent(draft.id, messageId);
     if (messageId !== null) sent += 1;
   }
@@ -205,12 +211,29 @@ export async function showWaitingDrafts(deps: NewsDeps): Promise<number> {
   return sent;
 }
 
-/** "Pubblica": the answer shown to the owner over the button. */
-export async function publishDraft(draftId: number, deps: NewsDeps): Promise<string> {
+/** "Pubblica": the answer shown to the owner over the button. `mode` is the way of paying he tapped, on a pre-order. */
+export async function publishDraft(draftId: number, deps: NewsDeps, mode?: PaymentMode): Promise<string> {
   const draft = await deps.store.claimDecision(draftId);
   if (!draft) return "Già gestita.";
 
-  const written = await writePost(draft.payload, deps);
+  // Publishing a pre-order is also when the owner says how it is paid: the bot's chat asks for
+  // that choice again every time a buyer opens the pre-order, so it is written down first.
+  let payment: PaymentMode | undefined;
+  if (draft.payload.kind === "channel_preorder" && deps.preorders) {
+    const slug = draft.payload.slugs[0]!;
+    try {
+      const allowed = paymentModes(deps);
+      const wanted = mode ?? (await deps.preorders.store.paymentMode(slug)) ?? "stripe";
+      payment = allowed.includes(wanted) ? wanted : "stripe";
+      await deps.preorders.store.setPaymentMode(slug, payment);
+    } catch (error) {
+      console.error("[telegram-news] payment mode:", error instanceof Error ? error.message : error);
+      await deps.store.finish(draft.id, "draft");
+      return "Non riesco a salvare come si paga: riprova tra poco.";
+    }
+  }
+
+  const written = await writePost(draft.payload, deps, payment);
   if (!written.ok) {
     if ("retry" in written) {
       await deps.store.finish(draft.id, "draft");
@@ -310,7 +333,7 @@ export async function handleUpdate(input: unknown, deps: NewsDeps): Promise<stri
       await deps.telegram.answerCallback(tap.id, "");
       return "ignored";
     }
-    const answer = action.action === "publish" ? await publishDraft(action.draftId, deps) : await discardDraft(action.draftId, deps);
+    const answer = action.action === "publish" ? await publishDraft(action.draftId, deps, action.mode) : await discardDraft(action.draftId, deps);
     await deps.telegram.answerCallback(tap.id, answer);
     return action.action;
   }
