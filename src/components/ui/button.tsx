@@ -41,6 +41,19 @@ const SIZES: Record<ButtonSize, string> = {
   lg: "h-[3.75rem] px-7 text-[0.9375rem]",
 };
 
+/**
+ * The classes of a button, for the one thing `Button` cannot be: a link that leaves the shop
+ * (`href` there only takes the shop's own routes).
+ */
+export function buttonClass({
+  variant = "primary",
+  size = "md",
+  fullWidth = false,
+  className,
+}: { variant?: ButtonVariant; size?: ButtonSize; fullWidth?: boolean; className?: string } = {}): string {
+  return cn(BASE, VARIANTS[variant], SIZES[size], fullWidth && "w-full", className);
+}
+
 export type ButtonProps<T extends ElementType> = {
   as?: T;
   variant?: ButtonVariant;
@@ -70,10 +83,7 @@ export function Button<T extends ElementType = "button">({
 }: ButtonProps<T>) {
   const Component = (as ?? "button") as ElementType;
   return (
-    <Component
-      className={cn(BASE, VARIANTS[variant], SIZES[size], fullWidth && "w-full", className)}
-      {...rest}
-    >
+    <Component className={buttonClass({ variant, size, fullWidth, ...(className ? { className } : {}) })} {...rest}>
       {children}
     </Component>
   );

@@ -116,3 +116,17 @@ Poi `/controlla` dal telefono dopo un cambio di stock o di prezzo.
 - `src/lib/telegram/api.ts`, `supabase-store.ts`, `runtime.ts`: Telegram, tabelle, collegamento allo shop.
 - `src/app/api/telegram/webhook/route.ts`, `src/app/api/cron/telegram-news/route.ts`.
 - Test: `tests/unit/telegram-*.test.ts`, `supabase/tests/054_telegram_news_bot.test.sql`.
+
+## Ingresso dal sito
+
+Dal 26/11/2026 (proprietario: "un bel pulsante su geardropshop per entrare nella community
+telegram per pre-orders, news ecc") il sito porta al canale `t.me/geardropshop` da tre punti:
+
+- la fascia viola in home, dopo i pre-ordini (`src/components/home/telegram-band.tsx`);
+- il tasto in fondo al menu del telefono (`src/components/layout/mobile-menu.tsx`);
+- la riga dei social nel footer (`SOCIAL_LINKS` in `src/lib/navigation.ts`, dove un link nuovo va
+  in fondo: vedi il commento lì).
+
+L'indirizzo del canale sta in un posto solo, `TELEGRAM_CHANNEL_URL`. Il tocco su fascia e menu è
+contato in Analytics come `join_group` (`group_id: telegram`, con `placement`), solo per chi ha
+accettato le statistiche. Il testo della fascia dice solo quello che il canale porta davvero.
