@@ -479,6 +479,16 @@ export const productImages = {
     takaraImage("bx-53-all-in-one-set-bx53_16", "Winder Launcher blu e ciano"),
     takaraImage("bx-53-all-in-one-set-bx53_17", "String Launcher giallo"),
   ],
+  // Owner, 2026-11-26: Takara Tomy's own renders of the CX-20 Customize Set C and of its pieces.
+  "cx-20-customize-set-c": [
+    takaraImage("cx-20-customize-set-c", "Contenuto del Takara Tomy Beyblade X CX-20 Customize Set C: quattro blade, tre ratchet e sei bit"),
+    takaraImage("cx-20-customize-set-c-cx20_01", "Phoenix Force WHM-65MT Metal Coat rossa, montata, vista di tre quarti"),
+    takaraImage("cx-20-customize-set-c-cx20_10", "Blade Shark Scale, argento e arancione"),
+    takaraImage("cx-20-customize-set-c-cx20_11", "Blade Wizard Rod Metal Coat blu"),
+    takaraImage("cx-20-customize-set-c-cx20_12", "Blade Hells Scythe versione 2.0, argento e rossa"),
+    takaraImage("cx-20-customize-set-c-cx20_08", "Ratchet M-65 rosso, con la parte in metallo"),
+    takaraImage("cx-20-customize-set-c-cx20_09", "Bit MT (Metal Taper) rosso, con la punta in metallo"),
+  ],
 } as const satisfies Record<string, readonly ProductImage[]>;
 
 export type ProductSlug = keyof typeof productImages;

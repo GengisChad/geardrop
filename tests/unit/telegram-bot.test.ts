@@ -175,7 +175,7 @@ describe("looking at the shop", () => {
   });
 
   it("shows a few drafts at a time when a whole price list changes", async () => {
-    const many = PRODUCTS.slice(0, DRAFTS_PER_RUN + 3).map((product) => ({ ...product, stock: "esaurito" as const, variant: undefined }) as unknown as Product);
+    const many = PRODUCTS.filter((product) => !product.channelOnly).slice(0, DRAFTS_PER_RUN + 3).map((product) => ({ ...product, stock: "esaurito" as const, variant: undefined }) as unknown as Product);
     const { world, deps, sent } = shop({ products: many });
     await scanNews(deps);
     world.products = many.map((product) => ({ ...product, stock: "disponibile" as const }));

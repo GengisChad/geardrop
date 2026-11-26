@@ -34,7 +34,8 @@ import { hiddenFromShop, shopView } from "./channel-only";
 
 // The catalogue is small: one page holds it all, so nobody lands on a page with two cards.
 // 48 since 2026-10-24: the two-colour deck cases made 25 cards, one past the old 24.
-const DEFAULT_PER_PAGE = 48;
+// 60 since 2026-11-26: the CX-20 Customize Set C made 49 cards, one past 48.
+const DEFAULT_PER_PAGE = 60;
 
 // No module-level shipping constants: shipping options are derived per-cart from whose
 // warehouse the pieces leave (shippingPlanFor), so the plan is computed inside quoteCart.

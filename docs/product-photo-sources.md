@@ -110,6 +110,25 @@ più stabile", "trottola e lanciatore non inclusi"); il codice a barre della sca
 4904810910787, anche. Le foto dei Custom Grip (`BX30`, `BX41`, `BX41_01`, `BX42`) restano tra gli
 originali, ma il sito non le usa più.
 
+## CX-20 Customize Set C, 2026-11-26
+
+Il proprietario: "arrivano 20 cx-20. mettili sul sito con avvisami e solo 8 in pre order per
+telegram". Render ufficiali Takara Tomy, senza watermark, presi da
+`beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/<file>@2.png` (1172×1418) e salvati intatti in
+`assets-source/takara-tomy/` con lo stesso nome. Lo scontorno è di
+`python scripts/cutout_takara.py cx-20-customize-set-c`.
+
+| Prodotto | File | Pagina ufficiale | Fedeltà |
+| --- | --- | --- | --- |
+| CX-20 Customize Set C | `CX20` (card), `CX20_01`, `CX20_10`, `CX20_11`, `CX20_12`, `CX20_08`, `CX20_09` | `lineup/cx20.html` | Il contenuto del set: quattro blade, tre ratchet, sei bit. Poi Phoenix Force montata, le altre tre blade, il ratchet e il bit con il metallo. |
+
+Nessuna foto della scatola, come per l'arrivo del 18/11. Nomi dei pezzi, tipo, rotazione e
+contenuto vengono dalla scheda `_image/detail_CX20.png` della stessa pagina (uscita in Giappone il
+21/11/2026): Phoenix Force WHM-65MT Metal Coat rossa, Shark Scale, Wizard Rod Metal Coat blu, Hells
+Scythe versione 2.0; ratchet M-65, 8-80, 1-70; bit MT, UF, K, LR, LO, HN. La scheda dice anche che
+lanciatore e stadio non sono inclusi e che la vernice può consumarsi. Il set non ha una clip: le
+clip mostrano una trottola con il suo codice, e questo è un set di parti.
+
 ## Ancora da migliorare
 
 - **UX-00 Glory Valkyrie LF** (750 px, foto del partner): l'unica foto ufficiale della scatola

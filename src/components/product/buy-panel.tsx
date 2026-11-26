@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Heart, Hourglass, Truck, XCircle } from "lucide-react";
+import { CheckCircle2, Heart, Hourglass, Send, Truck, XCircle } from "lucide-react";
+import { TelegramJoin } from "@/components/home/telegram-join";
 import { AddToCartButton } from "@/components/product/add-to-cart-button";
 import { QuantityStepper } from "@/components/product/quantity-stepper";
 import { RestockForm } from "@/components/product/restock-form";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClass } from "@/components/ui/button";
 import { useWishlist } from "@/lib/store/wishlist";
 import { MAX_QUANTITY_PER_LINE } from "@/lib/store/cart";
 import { PREORDER_DELIVERY, bundleNoun, deliveryClause, isPurchasable, shownShelf, stockHint, stockLabel } from "@/lib/labels";
@@ -101,7 +102,20 @@ export function BuyPanel({ product }: { product: Product }) {
       ) : null}
 
       {product.stock === "esaurito" ? (
-        <RestockForm slug={product.slug} name={product.name} {...(product.releasePreorder ? { releasePreorder: true } : {})} />
+        <>
+          <RestockForm slug={product.slug} name={product.name} {...(product.releasePreorder ? { releasePreorder: true } : {})} />
+          {/* Owner, 2026-11-26: on the shop with "Avvisami" while its pre-order pieces are taken on the channel. */}
+          {product.channelOnly === "avvisami" ? (
+            <div data-testid="telegram-preorder-hint" className="mt-4 border border-violet/40 bg-violet/10 p-4">
+              <p className="gd-display text-small font-extrabold tracking-[0.04em] text-graphite">Pre-ordine sul canale Telegram</p>
+              <p className="mt-1 text-small leading-relaxed text-grey-600">Alcuni pezzi si pre-ordinano solo sul canale, prima dell&apos;arrivo in magazzino.</p>
+              <TelegramJoin placement="product" className={buttonClass({ variant: "secondary", size: "sm", className: "mt-3" })}>
+                <Send className="size-4" aria-hidden="true" />
+                Apri il canale
+              </TelegramJoin>
+            </div>
+          ) : null}
+        </>
       ) : (
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="flex-1">

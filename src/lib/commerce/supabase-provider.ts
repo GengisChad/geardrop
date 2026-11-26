@@ -29,7 +29,8 @@ import type {
 
 // The catalogue is small: one page holds it all, so nobody lands on a page with two cards.
 // 48 since 2026-10-24: the two-colour deck cases made 25 cards, one past the old 24.
-const DEFAULT_PER_PAGE = 48;
+// Kept equal to the mock provider's: one page holds the whole shop.
+const DEFAULT_PER_PAGE = 60;
 
 type Ordered = { readonly sort_order: number };
 type RawProduct = {

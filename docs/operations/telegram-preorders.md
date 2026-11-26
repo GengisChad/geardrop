@@ -42,6 +42,22 @@ Si appoggia al bot delle news: vedi [`telegram-news-bot.md`](telegram-news-bot.m
    il pre-ordine dal prodotto: compare sul sito da solo e il bot ti propone `NUOVO ARRIVO //`.
    I pre-ordini pagati con PayPal.me li spedisci dalla lista di `/preordini`.
 
+## Sul sito con «Avvisami», in pre-ordine su Telegram
+
+Dal 26/11/2026 (proprietario, per il CX-20: "mettili sul sito con avvisami e solo 8 in pre order
+per telegram"). Con `channelOnly: "avvisami"` al posto di `true` il prodotto non è nascosto:
+
+- il negozio, la ricerca, la sua pagina e Google lo mostrano **esaurito, con «Avvisami»**, e sotto
+  il modulo c'è il rimando al canale Telegram;
+- i pezzi messi da parte (`preorder_allocation`, 8 su 20 per il CX-20) si vendono solo dal carrello
+  che apre il post del canale, o dal bot con PayPal.me;
+- quando la merce arriva carichi a magazzino quello che resta e togli il pre-ordine: il prodotto
+  diventa disponibile e chi ha lasciato l'email con «Avvisami» viene avvisato come sempre.
+
+Le pagine del negozio leggono il prodotto con `shopView()` (`src/lib/commerce/channel-only.ts`); il
+preventivo del carrello no, ed è per questo che il carrello può venderlo. Nel catalogo la voce si
+scrive esaurita (`stock: "esaurito"`): i pezzi del pre-ordine stanno solo nel database.
+
 ## Dove si contano i pezzi
 
 In un posto solo: `products.preorder_allocation`, lo stesso numero che usa il checkout del sito.
@@ -75,9 +91,10 @@ fai tu direttamente tramite il sito", mandate sul canale "con i link per pre-ord
 1. **Leggi la frase.** Prodotto, pezzi, prezzo, come si paga. Se manca il prezzo o non è chiaro
    quale edizione sia, chiedilo: non si inventa. Se non dice come si paga, lo sceglie lui sulla
    bozza.
-2. **Prodotto a catalogo** (`src/data/catalog.ts`): la voce completa, con `channelOnly: true`,
-   `stock: "pre-ordine"` e, se ha detto come si paga, `channelPayment` (`"stripe"`, `"paypal"` o
-   `"both"`). Le foto sono solo quelle ufficiali Hasbro o Takara Tomy, con la fonte scritta in
+2. **Prodotto a catalogo** (`src/data/catalog.ts`): la voce completa, con `channelOnly: true` e
+   `stock: "pre-ordine"` se deve restare nascosto, oppure `channelOnly: "avvisami"` e
+   `stock: "esaurito"` se lo vuole sul sito con «Avvisami». Se ha detto come si paga,
+   `channelPayment` (`"stripe"`, `"paypal"` o `"both"`). Le foto sono solo quelle ufficiali Hasbro o Takara Tomy, con la fonte scritta in
    [`../product-photo-sources.md`](../product-photo-sources.md); card e scontorno si fanno con gli
    script di quel file.
 3. **Clip.** Aggiungi il prodotto a `CLIP_SPECS` (`scripts/clips/clip-data.ts`) e a `productClips`
@@ -86,7 +103,9 @@ fai tu direttamente tramite il sito", mandate sul canale "con i link per pre-ord
 4. **Database.** Una migrazione con la riga in `products`: pubblicato,
    `availability_override = 'preorder'`, `preorder_allocation` = i pezzi che ha detto. Si applica
    in produzione solo con il suo OK.
-5. **PR, CI, unione con il suo OK.** Il sito si pubblica da solo.
+5. **PR, CI, unione con il suo OK.** Il sito si pubblica da solo. Per un prodotto nuovo, dopo
+   l'unione serve anche `pnpm stripe:products --apply`, sempre con il suo OK: senza il prodotto
+   su Stripe il checkout del sito non lo fa pagare.
 6. **Bozza.** Al primo sguardo allo shop (un salvataggio nel gestionale, le 9 del mattino, o
    `/controlla`) il bot gli manda `PRE-ORDINE // solo sul canale` con clip, prezzo, pezzi e tempi
    letti dallo shop, e il solo tasto del pagamento che ha chiesto. Sul canale esce con il suo
