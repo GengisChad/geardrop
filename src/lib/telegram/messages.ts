@@ -1,9 +1,10 @@
 import type { Product } from "@/lib/commerce/types";
 import { discountPercent, formatPrice } from "@/lib/format";
-import { bundleNoun, stockHint, stockLabel } from "@/lib/labels";
+import { bundleNoun, preorderDelivery, stockHint, stockLabel } from "@/lib/labels";
 import { monthLabel } from "@/lib/meta/types";
 import { absoluteUrl } from "@/lib/seo";
 import type { NewsPayload } from "./news";
+import { startPayload } from "./preorder-rules";
 
 /**
  * The words of the channel's posts.
@@ -56,7 +57,7 @@ const HEADLINE = {
   back_in_stock: { disponibile: "DI NUOVO DISPONIBILE", "in-arrivo": "DI NUOVO IN ARRIVO", "pre-ordine": "PRE-ORDINI RIAPERTI" },
 } as const;
 
-type ProductPayload = Extract<NewsPayload, { readonly slugs: readonly string[] }>;
+type ProductPayload = Extract<NewsPayload, { readonly kind: "new_product" | "back_in_stock" | "price_drop" }>;
 
 /**
  * The post for a product, or for the colours of one item, from the catalogue as it is now.
@@ -65,7 +66,9 @@ type ProductPayload = Extract<NewsPayload, { readonly slugs: readonly string[] }
 export function productPost(payload: ProductPayload, catalogue: readonly Product[]): PostResult {
   const named = payload.slugs.flatMap((slug) => catalogue.filter((product) => product.slug === slug));
   if (named.length === 0) return { ok: false, reason: "il prodotto non è più a catalogo" };
-  const onSale = named.filter((product) => product.stock !== "esaurito");
+  // A Telegram-only pre-order has no place in the shop to send the reader to.
+  if (named.every((product) => product.channelOnly)) return { ok: false, reason: `${named[0]!.name} non è ancora in vendita sul sito` };
+  const onSale = named.filter((product) => product.stock !== "esaurito" && !product.channelOnly);
   const first = onSale[0];
   if (!first) return { ok: false, reason: `${named[0]!.variant?.familyName ?? named[0]!.name} è di nuovo esaurito` };
 
@@ -100,6 +103,37 @@ export function productPost(payload: ProductPayload, catalogue: readonly Product
       text: lines.join("\n"),
       ...(image ? { photoUrl: absoluteUrl(image.src) } : {}),
       link: { label: "Vedi nello shop", url: shopLink(`/prodotto/${first.slug}`) },
+    },
+  };
+}
+
+/**
+ * The post that opens a pre-order taken on Telegram only: the piece is not in the shop yet, so the
+ * one button opens the bot, which takes the reservation and the payment (see preorders.ts).
+ */
+export function channelPreorderPost(payload: { readonly slugs: readonly string[] }, catalogue: readonly Product[], botUsername: string): PostResult {
+  const product = catalogue.find((candidate) => candidate.slug === payload.slugs[0]);
+  if (!product) return { ok: false, reason: "il prodotto non è più a catalogo" };
+  if (!product.channelOnly) return { ok: false, reason: `${product.name} è già in vendita sul sito` };
+  if (product.stock === "esaurito") return { ok: false, reason: `i pezzi di ${product.name} sono finiti` };
+  const start = startPayload(product.slug);
+  if (!start) return { ok: false, reason: `il codice di ${product.name} è troppo lungo per il tasto di Telegram` };
+
+  const left = product.availableQuantity;
+  const lines = [
+    "PRE-ORDINE // solo sul canale",
+    `<b>${escapeTelegram(product.name)}</b>`,
+    `<b>${formatPrice(product.price)}</b>${left === undefined ? "" : ` · ${left === 1 ? "1 pezzo" : `${left} pezzi`}`}`,
+    escapeTelegram(preorderDelivery(product.releasePreorder)),
+    "Si prenota e si paga qui. Sul sito arriva quando è in magazzino.",
+  ];
+  const image = product.images[0];
+  return {
+    ok: true,
+    post: {
+      text: lines.join("\n"),
+      ...(image ? { photoUrl: absoluteUrl(image.src) } : {}),
+      link: { label: "Pre-ordina", url: `https://t.me/${botUsername}?start=${start}` },
     },
   };
 }

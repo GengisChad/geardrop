@@ -82,6 +82,11 @@ momento della pubblicazione, mai scritti a mano.
 
 Regole dei post, sicurezza e passi completi: [`docs/operations/telegram-news-bot.md`](docs/operations/telegram-news-bot.md).
 
+Lo stesso bot prende i **pre-ordini solo su Telegram**: un prodotto con `channelOnly: true` resta
+fuori dal negozio finché non è in magazzino, il canale lo annuncia e chi compra lo riserva nel bot,
+pagando con PayPal.me (conferma a mano del proprietario) o dal checkout del sito. Vedi
+[`docs/operations/telegram-preorders.md`](docs/operations/telegram-preorders.md).
+
 ## Asset
 
 Gli originali stanno in `assets-source/` e non si toccano. Tutto ciò che sta in `public/` è

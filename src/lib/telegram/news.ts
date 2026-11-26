@@ -10,12 +10,14 @@ import type { Product, StockStatus } from "@/lib/commerce/types";
  * in a message is read again from the catalogue when the message is written.
  */
 
-export const NEWS_KINDS = ["new_product", "back_in_stock", "price_drop", "meta_update", "new_video"] as const;
+export const NEWS_KINDS = ["new_product", "back_in_stock", "price_drop", "channel_preorder", "meta_update", "new_video"] as const;
 export type NewsKind = (typeof NEWS_KINDS)[number];
 
 /** What a draft needs to be written again from the shop's data at the moment it is published. */
 export type NewsPayload =
   | { readonly kind: "new_product" | "back_in_stock"; readonly slugs: readonly string[] }
+  /** A pre-order taken on Telegram only: the post's button opens the bot, not the shop. */
+  | { readonly kind: "channel_preorder"; readonly slugs: readonly string[] }
   | { readonly kind: "price_drop"; readonly slugs: readonly string[]; readonly price: number; readonly previousPrice: number }
   | { readonly kind: "meta_update"; readonly month: string }
   | { readonly kind: "new_video"; readonly videoId: string; readonly title: string; readonly url: string };
@@ -36,6 +38,8 @@ export type ProductMemory = {
   readonly prices: readonly SeenPrice[];
   /** Entered the catalogue sold out: its first day on the shelf is an arrival, not a return. */
   readonly unannounced?: true;
+  /** A pre-order taken on Telegram only, not in the shop yet (Product.channelOnly). */
+  readonly channelOnly?: true;
 };
 
 const DAY_MS = 86_400_000;
@@ -119,6 +123,7 @@ export function scanProducts(
   const memory = new Map<string, ProductMemory>();
   const arrivals = new Map<string, string[]>();
   const returns = new Map<string, string[]>();
+  const preorders: string[] = [];
   const drops = new Map<string, { slugs: string[]; price: number; previousPrice: number }>();
   const push = (groups: Map<string, string[]>, product: Product) => {
     const subject = subjectOf(product);
@@ -129,26 +134,37 @@ export function scanProducts(
     const before = remembered.get(product.slug);
     const price = product.price.amount;
     const onSale = sellable(product.stock);
+    // Not in the shop yet: its news is the pre-order on the channel, and nothing else about it is.
+    const hidden = product.channelOnly === true;
+    const flag = hidden ? { channelOnly: true as const } : {};
 
     if (!before) {
       if (firstLook || onSale) {
-        memory.set(product.slug, { stock: product.stock, prices: withPrice([], price, now) });
-        if (!firstLook) push(arrivals, product);
+        memory.set(product.slug, { stock: product.stock, prices: withPrice([], price, now), ...flag });
+        if (!firstLook) {
+          if (hidden) preorders.push(product.slug);
+          else push(arrivals, product);
+        }
       } else {
-        memory.set(product.slug, { stock: product.stock, prices: withPrice([], price, now), unannounced: true });
+        memory.set(product.slug, { stock: product.stock, prices: withPrice([], price, now), unannounced: true, ...flag });
       }
       continue;
     }
 
     const back = !sellable(before.stock) && onSale;
-    if (back) {
-      if (before.unannounced) push(arrivals, product);
+    // The pieces of a Telegram pre-order reached the shelf: for the shop that is its arrival.
+    const landed = before.channelOnly === true && !hidden && onSale;
+    if (hidden) {
+      if (back) preorders.push(product.slug);
+    } else if (landed || (back && before.unannounced)) {
+      push(arrivals, product);
+    } else if (back && !product.bundleOf) {
       // A kit comes back because one of its pieces did: the piece is the news, not every kit it is in.
-      else if (!product.bundleOf) push(returns, product);
+      push(returns, product);
     }
 
     const current = before.prices[before.prices.length - 1]?.amount;
-    if (current !== undefined && price < current && onSale && !back) {
+    if (current !== undefined && price < current && onSale && !back && !hidden && !landed) {
       const reference = referencePrice(before.prices, now);
       if (reference !== undefined && price < reference) {
         const subject = subjectOf(product);
@@ -161,14 +177,20 @@ export function scanProducts(
 
     const prices = withPrice(before.prices, price, now);
     const stillUnannounced = before.unannounced === true && !onSale;
-    if (before.stock !== product.stock || !samePrices(prices, before.prices) || (before.unannounced === true) !== stillUnannounced) {
-      memory.set(product.slug, { stock: product.stock, prices, ...(stillUnannounced ? { unannounced: true as const } : {}) });
+    if (
+      before.stock !== product.stock ||
+      !samePrices(prices, before.prices) ||
+      (before.unannounced === true) !== stillUnannounced ||
+      (before.channelOnly === true) !== hidden
+    ) {
+      memory.set(product.slug, { stock: product.stock, prices, ...(stillUnannounced ? { unannounced: true as const } : {}), ...flag });
     }
   }
 
   const events: NewsEvent[] = [
     ...[...arrivals].map(([subject, slugs]) => ({ eventKey: `new:${subject}`, payload: { kind: "new_product" as const, slugs } })),
     ...[...returns].map(([subject, slugs]) => ({ eventKey: `stock:${subject}:${day(now)}`, payload: { kind: "back_in_stock" as const, slugs } })),
+    ...preorders.map((slug) => ({ eventKey: `preorder:${slug}:${day(now)}`, payload: { kind: "channel_preorder" as const, slugs: [slug] } })),
     ...[...drops].map(([subject, drop]) => ({
       eventKey: `price:${subject}:${drop.price}:${day(now)}`,
       payload: { kind: "price_drop" as const, slugs: drop.slugs, price: drop.price, previousPrice: drop.previousPrice },
@@ -234,6 +256,7 @@ export function isNewsPayload(value: unknown): value is NewsPayload {
   switch (payload["kind"]) {
     case "new_product":
     case "back_in_stock":
+    case "channel_preorder":
       return slugs;
     case "price_drop":
       return slugs && Number.isSafeInteger(payload["price"]) && Number.isSafeInteger(payload["previousPrice"]);

@@ -3576,6 +3576,75 @@ export type Database = {
         }
         Relationships: []
       }
+      telegram_preorders: {
+        Row: {
+          buyer_name: string | null
+          chat_id: number
+          code: string
+          created_at: string
+          email: string | null
+          expires_at: string | null
+          id: number
+          locker: Json | null
+          locker_options: Json
+          phone: string | null
+          product_name: string
+          product_slug: string
+          quantity: number
+          shipping_cents: number
+          status: string
+          step: string
+          total_cents: number
+          unit_cents: number
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          buyer_name?: string | null
+          chat_id: number
+          code: string
+          created_at?: string
+          email?: string | null
+          expires_at?: string | null
+          id?: never
+          locker?: Json | null
+          locker_options?: Json
+          phone?: string | null
+          product_name: string
+          product_slug: string
+          quantity?: number
+          shipping_cents?: number
+          status?: string
+          step?: string
+          total_cents?: number
+          unit_cents?: number
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          buyer_name?: string | null
+          chat_id?: number
+          code?: string
+          created_at?: string
+          email?: string | null
+          expires_at?: string | null
+          id?: never
+          locker?: Json | null
+          locker_options?: Json
+          phone?: string | null
+          product_name?: string
+          product_slug?: string
+          quantity?: number
+          shipping_cents?: number
+          status?: string
+          step?: string
+          total_cents?: number
+          unit_cents?: number
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       inventory_valuation: {
@@ -4191,6 +4260,10 @@ export type Database = {
       swap_media_asset_associations: {
         Args: { p_new_media_asset_id: number; p_old_media_asset_id: number }
         Returns: Json
+      }
+      telegram_preorder_hold: {
+        Args: { p_quantity: number; p_slug: string }
+        Returns: number
       }
       track_storefront_event: {
         Args: { p_event: string; p_organization_id?: number }

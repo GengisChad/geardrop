@@ -45,7 +45,9 @@ insert into expected_tiers (table_name, tier) values
   ('newsletter_subscribers', 'G'),
   -- The Telegram news bot's memory and drafts (20261126120000) belong to the Gear Drop storefront too:
   -- only the service role reaches them, and they hold nothing about a buyer or a company.
-  ('telegram_news_memory', 'G'), ('telegram_news_drafts', 'G');
+  ('telegram_news_memory', 'G'), ('telegram_news_drafts', 'G'),
+  -- Pre-orders taken in the bot's chat (20261126130000): the same storefront, the same key.
+  ('telegram_preorders', 'G');
 
 select set_eq(
   $$select c.relname::text from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind = 'r'$$,

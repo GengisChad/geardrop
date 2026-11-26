@@ -8,9 +8,14 @@ import type { Product } from "@/lib/commerce/types";
 import { getSnapshotRowByMonth, listArchive, listRankingRows } from "@/lib/meta/repository";
 import { createPrivilegedSupabaseClient } from "@/lib/supabase/admin";
 import { createSupabasePublicClient } from "@/lib/supabase/public";
-import { createTelegramGateway, readTelegramConfig, type TelegramConfig } from "./api";
+import { createInpostClient, inpostConfig } from "@/lib/shipping/inpost";
+import { lockerLabel } from "@/lib/shipping/locker";
+import { callTelegram, createTelegramGateway, readTelegramConfig, type TelegramConfig } from "./api";
 import { scanNews, scanSummary, type NewsDeps, type ScanReport } from "./bot";
 import { parseYoutubeFeed } from "./news";
+import { isPaypalHandle, newPreorderCode } from "./preorder-rules";
+import type { PreorderDeps } from "./preorders";
+import { createSupabasePreorderStore } from "./supabase-preorder-store";
 import { createSupabaseNewsStore } from "./supabase-store";
 
 /**
@@ -22,12 +27,39 @@ import { createSupabaseNewsStore } from "./supabase-store";
 const YOUTUBE_CHANNEL_ID = "UCMMABcKm2rdcHlFIj6SWzRw";
 const YOUTUBE_FEED = `https://www.youtube.com/feeds/videos.xml?channel_id=${YOUTUBE_CHANNEL_ID}`;
 
+/** The bot's own @name never changes while the server runs: asked of Telegram once. */
+let botName: Promise<string | null> | undefined;
+
+function createPreorderDeps(config: TelegramConfig, client: ReturnType<typeof createPrivilegedSupabaseClient>): PreorderDeps {
+  const handle = process.env["PAYPAL_ME_HANDLE"]?.trim();
+  return {
+    store: createSupabasePreorderStore(client),
+    paypalHandle: isPaypalHandle(handle) ? handle : null,
+    newCode: () => newPreorderCode(),
+    botUsername: () =>
+      (botName ??= callTelegram<{ readonly username?: string }>(config.token, "getMe", {}).then((me) => {
+        const name = me.ok ? (me.result.username ?? null) : null;
+        // A failed answer is not remembered: the next post asks again.
+        if (!name) botName = undefined;
+        return name;
+      })),
+    // The same Locker search the checkout uses, with the shop's own InPost credentials.
+    searchLockers: async (postalCode) => {
+      const inpost = inpostConfig();
+      if (!inpost) throw new Error("InPost is not configured");
+      return (await createInpostClient(inpost).searchLockers({ postalCode })).map((locker) => ({ id: locker.id, label: lockerLabel(locker) }));
+    },
+  };
+}
+
 export function createNewsDeps(config: TelegramConfig): NewsDeps {
   // One read of the catalogue per request: a run that writes eight drafts reads it once.
   let catalogue: Promise<readonly Product[]> | undefined;
+  const client = createPrivilegedSupabaseClient();
 
   return {
-    store: createSupabaseNewsStore(createPrivilegedSupabaseClient()),
+    store: createSupabaseNewsStore(client),
+    preorders: createPreorderDeps(config, client),
     telegram: createTelegramGateway(config),
     ownerChatId: config.ownerChatId,
     channelId: config.channelId,

@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { BRANDS, BUNDLES, CATEGORIES, PRODUCTS, brandOf } from "@/data/catalog";
+import { loadLiveCatalogue } from "@/lib/commerce/live-stock";
 import { LEGAL_PAGES, SUPPORT_PAGES } from "@/data/pages";
 import { oneCardPerFamily } from "@/lib/commerce/variants";
 import { absoluteUrl } from "@/lib/seo";
@@ -19,6 +20,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // months from it for one fetch.
   const metaMonths = await getStorefrontMetaArchive().catch(() => []);
   const hasTakaraProducts = PRODUCTS.some((p) => brandOf(p) === "takara-tomy");
+  // A Telegram-only pre-order stays out until its pieces are on the shelf (Product.channelOnly).
+  // loadLiveCatalogue never throws: without the database it answers with the catalogue's own flags.
+  const channelOnly = new Set((await loadLiveCatalogue()).filter((product) => product.channelOnly).map((product) => product.slug as string));
 
   return [
     { url: absoluteUrl("/"), lastModified, changeFrequency: "daily", priority: 1 },
@@ -37,7 +41,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     })),
     // An item sold in several colours is listed once: its other colours point here as canonical.
-    ...oneCardPerFamily([...BUNDLES, ...PRODUCTS]).map((product) => ({
+    ...oneCardPerFamily([...BUNDLES, ...PRODUCTS].filter((product) => !channelOnly.has(product.slug))).map((product) => ({
       url: absoluteUrl(`/prodotto/${product.slug}`),
       lastModified,
       changeFrequency: "daily" as const,

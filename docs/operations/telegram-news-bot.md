@@ -35,6 +35,7 @@ La prima volta non annuncia niente: ricorda quello che c'è già in vendita.
 | Nuovo arrivo | prodotto che lo shop non aveva; se entra a catalogo esaurito, al primo giorno in vendita | `NUOVO ARRIVO //`, `NUOVO KIT //`, `NUOVO IN PRE-ORDINE //` |
 | Tornato disponibile | da esaurito a vendibile (i kit no: la notizia è il pezzo) | `DI NUOVO DISPONIBILE //`, `PRE-ORDINI RIAPERTI //` |
 | Prezzo ribassato | prezzo sotto il più basso degli ultimi 30 giorni | `PREZZO RIBASSATO //` |
+| Pre-ordine sul canale | prodotto `channelOnly` con pezzi, non ancora in negozio ([`telegram-preorders.md`](telegram-preorders.md)) | `PRE-ORDINE // solo sul canale` |
 | Tier list | un mese pubblicato per la prima volta | `META // novembre 2026` |
 | Video | un caricamento nuovo sul canale | `NUOVO VIDEO // @GengisChad` |
 

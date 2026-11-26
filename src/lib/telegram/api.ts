@@ -65,7 +65,7 @@ export async function callTelegram<T>(
 export type TelegramGateway = {
   /** Sends a post and answers with its message id, or null if Telegram refused it. */
   sendPost(chatId: string, post: TelegramPost, keyboard: InlineKeyboard): Promise<number | null>;
-  sendText(chatId: string, html: string): Promise<number | null>;
+  sendText(chatId: string, html: string, keyboard?: InlineKeyboard): Promise<number | null>;
   setKeyboard(chatId: string, messageId: number, keyboard: InlineKeyboard): Promise<boolean>;
   deleteMessage(chatId: string, messageId: number): Promise<boolean>;
   answerCallback(callbackId: string, text: string): Promise<void>;
@@ -98,8 +98,14 @@ export function createTelegramGateway(config: TelegramConfig, fetcher: typeof fe
       log("sendMessage", message);
       return message.ok ? message.result.message_id : null;
     },
-    async sendText(chatId, html) {
-      const message = await call<SentMessage>("sendMessage", { chat_id: chatId, text: html, parse_mode: "HTML", link_preview_options: { is_disabled: true } });
+    async sendText(chatId, html, keyboard) {
+      const message = await call<SentMessage>("sendMessage", {
+        chat_id: chatId,
+        text: html,
+        parse_mode: "HTML",
+        link_preview_options: { is_disabled: true },
+        ...(keyboard ? { reply_markup: { inline_keyboard: keyboard } } : {}),
+      });
       log("sendMessage", message);
       return message.ok ? message.result.message_id : null;
     },

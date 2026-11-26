@@ -1,7 +1,9 @@
 import type { Product } from "@/lib/commerce/types";
 import { channelPostUrl, type TelegramGateway } from "./api";
-import { asDraft, draftKeyboard, metaPost, parseDraftAction, postKeyboard, productPost, videoPost, type MetaSummary, type PostResult } from "./messages";
+import { asDraft, channelPreorderPost, draftKeyboard, metaPost, parseDraftAction, postKeyboard, productPost, videoPost, type MetaSummary, type PostResult } from "./messages";
 import { isProductMemory, scanMeta, scanProducts, scanVideos, type ChannelVideo, type NewsEvent, type NewsPayload, type ProductMemory } from "./news";
+import { slugFromStart } from "./preorder-rules";
+import { expirePreorders, preorderReport, preorderTap, preorderText, startPreorder, type PreorderContext, type PreorderDeps } from "./preorders";
 
 /**
  * The news bot's two jobs (owner, 2026-11-26: "bozza + tuo OK").
@@ -56,7 +58,15 @@ export type NewsDeps = {
   readonly loadMeta: (month: string) => Promise<MetaSummary | null>;
   readonly loadVideos: () => Promise<readonly ChannelVideo[]>;
   readonly now: () => Date;
+  /** Pre-orders taken in the bot's chat (preorders.ts). Without it the bot only publishes news. */
+  readonly preorders?: PreorderDeps;
 };
+
+function preorderContext(deps: NewsDeps): PreorderContext | null {
+  return deps.preorders
+    ? { telegram: deps.telegram, ownerChatId: deps.ownerChatId, loadProducts: deps.loadProducts, now: deps.now, preorders: deps.preorders }
+    : null;
+}
 
 /** How many drafts one run shows the owner: a price list changed in one go must not bury his chat. */
 export const DRAFTS_PER_RUN = 8;
@@ -98,6 +108,10 @@ export async function scanNews(deps: NewsDeps, options: { readonly videos?: bool
   const events: NewsEvent[] = [];
   const unread: string[] = [];
   let firstLook = false;
+
+  // Pieces reserved on Telegram and never paid go back before the shop is looked at.
+  const preorders = preorderContext(deps);
+  if (preorders) await attempt("pre-ordini", unread, () => expirePreorders(preorders));
 
   const products = await attempt("catalogo", unread, deps.loadProducts);
   if (products) {
@@ -151,6 +165,11 @@ async function writePost(payload: NewsPayload, deps: NewsDeps): Promise<Written>
       case "back_in_stock":
       case "price_drop":
         return productPost(payload, await deps.loadProducts());
+      case "channel_preorder": {
+        const botUsername = await deps.preorders?.botUsername();
+        if (!botUsername) return { ok: false, reason: "non riesco a leggere il nome del bot", retry: true };
+        return channelPreorderPost(payload, await deps.loadProducts(), botUsername);
+      }
       case "meta_update": {
         const meta = await deps.loadMeta(payload.month);
         return meta ? { ok: true, post: metaPost(meta) } : { ok: false, reason: "quella tier list non è più pubblicata" };
@@ -235,6 +254,7 @@ const HELP = [
   "",
   "/controlla  guarda lo shop adesso",
   "/bozze  mostra di nuovo le bozze in attesa",
+  "/preordini  chi ha pre-ordinato su Telegram, pagato o in attesa",
 ].join("\n");
 
 export function scanSummary(report: ScanReport): string {
@@ -246,8 +266,17 @@ export function scanSummary(report: ScanReport): string {
 
 /** The parts of a Telegram update the bot reads. Everything else in it is ignored. */
 type Update = {
-  readonly callback_query?: { readonly id?: unknown; readonly from?: { readonly id?: unknown }; readonly data?: unknown };
-  readonly message?: { readonly chat?: { readonly id?: unknown; readonly type?: unknown }; readonly from?: { readonly id?: unknown }; readonly text?: unknown };
+  readonly callback_query?: {
+    readonly id?: unknown;
+    readonly from?: { readonly id?: unknown };
+    readonly data?: unknown;
+    readonly message?: { readonly message_id?: unknown };
+  };
+  readonly message?: {
+    readonly chat?: { readonly id?: unknown; readonly type?: unknown };
+    readonly from?: { readonly id?: unknown; readonly username?: unknown };
+    readonly text?: unknown;
+  };
 };
 
 /**
@@ -256,10 +285,22 @@ type Update = {
  */
 export async function handleUpdate(input: unknown, deps: NewsDeps): Promise<string> {
   const update = (typeof input === "object" && input !== null ? input : {}) as Update;
-  const isOwner = (id: unknown) => (typeof id === "number" || typeof id === "string") && String(id) === deps.ownerChatId;
+  const account = (id: unknown) => (typeof id === "number" || typeof id === "string" ? String(id) : null);
+  const isOwner = (id: unknown) => account(id) === deps.ownerChatId;
+  const preorders = preorderContext(deps);
 
   const tap = update.callback_query;
   if (tap && typeof tap.id === "string") {
+    // A pre-order's buttons belong to its buyer, or to the owner: preorderTap checks which.
+    const from = account(tap.from?.id);
+    if (preorders && from) {
+      const messageId = typeof tap.message?.message_id === "number" ? tap.message.message_id : null;
+      const answer = await preorderTap(preorders, { from, data: typeof tap.data === "string" ? tap.data : undefined, messageId });
+      if (answer !== null) {
+        await deps.telegram.answerCallback(tap.id, answer);
+        return "preorder";
+      }
+    }
     if (!isOwner(tap.from?.id)) {
       await deps.telegram.answerCallback(tap.id, "Solo il proprietario può farlo.");
       return "refused";
@@ -277,6 +318,14 @@ export async function handleUpdate(input: unknown, deps: NewsDeps): Promise<stri
   const message = update.message;
   if (!message || message.chat?.type !== "private" || typeof message.text !== "string") return "ignored";
   const command = /^\/([a-z]+)(?:@\w+)?(?:\s|$)/i.exec(message.text.trim())?.[1]?.toLowerCase();
+  // Anyone may pre-order, the owner included (it is how he tries the flow): the channel post's
+  // button arrives here as "/start pre-<slug>", and what follows is the buyer answering the bot.
+  const chatId = account(message.chat.id);
+  if (preorders && chatId && chatId === account(message.from?.id)) {
+    const slug = slugFromStart(message.text);
+    if (slug) return startPreorder(preorders, { id: chatId, username: typeof message.from?.username === "string" ? message.from.username : null }, slug);
+    if (!command && (await preorderText(preorders, chatId, message.text))) return "preorder";
+  }
   if (!isOwner(message.from?.id)) {
     // A stranger gets the one thing he can use: where the news comes out.
     if (command === "start" && deps.channelId?.startsWith("@") && (typeof message.chat.id === "number" || typeof message.chat.id === "string")) {
@@ -295,6 +344,15 @@ export async function handleUpdate(input: unknown, deps: NewsDeps): Promise<stri
       if (sent === 0 && (await deps.store.forgetSent()) > 0) sent = await showWaitingDrafts(deps);
       if (sent === 0) await deps.telegram.sendText(deps.ownerChatId, "Nessuna bozza in attesa.");
       return "drafts";
+    }
+    case "preordini": {
+      if (!preorders) {
+        await deps.telegram.sendText(deps.ownerChatId, "I pre-ordini su Telegram non sono attivi.");
+        return "preorders";
+      }
+      await expirePreorders(preorders);
+      for (const text of await preorderReport(preorders)) await deps.telegram.sendText(deps.ownerChatId, text);
+      return "preorders";
     }
     default:
       await deps.telegram.sendText(deps.ownerChatId, HELP);
