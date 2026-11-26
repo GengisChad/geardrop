@@ -37,3 +37,17 @@ Dal 2026-10-29 il proprietario vuole motion design anche nello shop, alle regole
 - tutto si ferma con "riduci movimento";
 - totali e quanto manca alla spedizione gratuita vengono dal preventivo del server, mai calcolati
   nel browser.
+
+## Telegram: solo lo shop, e le offerte a richiesta
+
+Regole del proprietario, dal 2026-11-26. Il canale `t.me/geardropshop` è dello shop: nuovi arrivi,
+pezzi tornati, prezzi ribassati, kit, pre-ordini e tier list del sito. Niente video del suo canale
+YouTube ("non roba del mio youtube").
+
+Quello che va sul canale sono clip o immagini fatte con gli strumenti del sito (`pnpm clips`, le
+card e gli scontorni), con i link per pre-ordinare e pagare. Lui chiede un'offerta con una frase
+("ho in arrivo 20 CX-20, fammi il post pre-order solo su Telegram, si paga con Stripe sul sito";
+"ho 3 Battle Pass a 80 euro, solo PayPal.me"): i passi per arrivare dalla frase alla bozza sono in
+[`docs/operations/telegram-preorders.md`](docs/operations/telegram-preorders.md), "Da una frase al
+post". Prezzo e pezzi li dice lui e li legge il bot dallo shop; sul canale esce solo quello su cui
+tocca «Pubblica».

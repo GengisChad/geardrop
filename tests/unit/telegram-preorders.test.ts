@@ -180,7 +180,7 @@ describe("the rules of a pre-order", () => {
 
 type Sent = { chatId: string; text: string; keyboard?: InlineKeyboard | undefined };
 
-function world(options: { left?: number; paypal?: string | null; mode?: PaymentMode; draft?: boolean } = {}) {
+function world(options: { left?: number; paypal?: string | null; mode?: PaymentMode; draft?: boolean; fixed?: PaymentMode } = {}) {
   const state = { left: options.left ?? 30, now: new Date("2026-11-26T09:00:00.000Z"), lockersDown: false };
   const rows: Preorder[] = [];
   const sent: Sent[] = [];
@@ -274,7 +274,8 @@ function world(options: { left?: number; paypal?: string | null; mode?: PaymentM
     ownerChatId: OWNER,
     channelId: "@geardropnews",
     now: () => state.now,
-    loadProducts: async () => [hidden(state.left)],
+    // `fixed`: the catalogue says how this pre-order is paid (Product.channelPayment).
+    loadProducts: async () => [{ ...hidden(state.left), ...(options.fixed ? { channelPayment: options.fixed } : {}) }],
     loadMetaMonths: async () => [],
     loadMeta: async () => null,
     preorders: {
@@ -526,6 +527,33 @@ describe("the owner decides how each pre-order is paid", () => {
     await tap("gd:p:1:s");
     expect(answers.at(-1)).toBe("Solo il proprietario può farlo.");
     expect(drafted.status).toBe("draft");
+  });
+
+  it("offers only the way of paying the owner asked for with the post", async () => {
+    const { deps, last } = world({ draft: true, fixed: "paypal" });
+    await scanNews(deps);
+    expect(last(OWNER).keyboard?.slice(0, 2)).toEqual([
+      [{ text: "Pubblica · solo PayPal.me", callback_data: "gd:p:1:p" }],
+      [{ text: "Scarta", callback_data: "gd:x:1" }],
+    ]);
+    expect(last(OWNER).text).toContain("Si prenota e si paga qui.");
+  });
+
+  it("keeps to it even when an older draft's button says otherwise", async () => {
+    const { deps, tap, modes, drafted } = world({ draft: true, fixed: "stripe" });
+    await scanNews(deps);
+    await tap("gd:p:1:b", OWNER);
+    expect(drafted.status).toBe("published");
+    expect(modes.get(SLUG)).toBe("stripe");
+  });
+
+  it("falls back to the site when PayPal.me was asked for but has no name set", async () => {
+    const { deps, last } = world({ draft: true, fixed: "paypal", paypal: null });
+    await scanNews(deps);
+    expect(last(OWNER).keyboard?.slice(0, 2)).toEqual([
+      [{ text: "Pubblica · solo Stripe", callback_data: "gd:p:1:s" }],
+      [{ text: "Scarta", callback_data: "gd:x:1" }],
+    ]);
   });
 
   it("reads the way of paying off the button, and ignores one on Scarta", () => {

@@ -108,6 +108,12 @@ export type Product = {
    * longer holds the product as a pre-order, so the product shows up by itself when it arrives.
    */
   readonly channelOnly?: true;
+  /**
+   * How a Telegram-only pre-order is paid, when the owner said it as he asked for the post ("si
+   * paga con Stripe sul sito", "solo con PayPal.me"): the site's checkout, PayPal.me in the bot's
+   * chat, or the buyer's choice. Its draft then offers that one way. Absent, he picks on the draft.
+   */
+  readonly channelPayment?: "stripe" | "paypal" | "both";
   readonly tags: readonly PromoTag[];
   readonly rating: number;
   readonly reviewCount: number;
