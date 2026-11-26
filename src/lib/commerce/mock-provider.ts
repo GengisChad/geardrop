@@ -30,6 +30,7 @@ import type {
   StockStatus,
 } from "./types";
 import { separatePreorders } from "./separate-preorders";
+import { hiddenFromShop, shopView } from "./channel-only";
 
 // The catalogue is small: one page holds it all, so nobody lands on a page with two cards.
 // 48 since 2026-10-24: the two-colour deck cases made 25 cards, one past the old 24.
@@ -120,10 +121,13 @@ export function createMockProvider(
   // Coupons live in the database: only the server, which can read them, passes this in.
   findCoupon: FindSiteCoupon = async () => ({ status: "unknown" }),
 ): CommerceProvider {
+  // The products as they really are: what the cart's quote prices and sells.
   const bySlug = new Map(catalogue.map((product) => [product.slug as string, product]));
-  // A Telegram-only pre-order is in the catalogue but not in the shop (Product.channelOnly): no
-  // list, search or filter shows it, while its slug still resolves for the cart its link fills.
-  const shelf = catalogue.filter((product) => !product.channelOnly);
+  // The products as the shop's pages show them (lib/commerce/channel-only.ts). A pre-order taken on
+  // Telegram is either in no list, search or filter at all, or listed as sold out with "Avvisami";
+  // its slug still resolves for the cart its link fills.
+  const shown = new Map(catalogue.map((product) => [product.slug as string, shopView(product)]));
+  const shelf = catalogue.filter((product) => !hiddenFromShop(product)).map(shopView);
 
   // Lists show an item sold in several colours once (see variants.ts); its product page still
   // finds every colour by slug.
@@ -133,11 +137,11 @@ export function createMockProvider(
     name: "mock",
 
     async getProduct(slug) {
-      return bySlug.get(slug) ?? null;
+      return shown.get(slug) ?? null;
     },
 
     async getProductsBySlugs(slugs) {
-      return slugs.map((slug) => bySlug.get(slug)).filter((p): p is Product => p !== undefined);
+      return slugs.map((slug) => shown.get(slug)).filter((p): p is Product => p !== undefined);
     },
 
     async listProducts(query = {}) {

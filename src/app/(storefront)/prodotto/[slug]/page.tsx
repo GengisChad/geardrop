@@ -17,6 +17,7 @@ import { GaEvent } from "@/components/analytics/ga-event";
 import { TrackPageView } from "@/components/funnel/track-page-view";
 import { gaItem } from "@/lib/analytics/google";
 import { productClips } from "@/data/assets";
+import { hiddenFromShop } from "@/lib/commerce/channel-only";
 import { BUNDLES, DECK_CASE_PRICE, DECK_CASE_WITH_KIT, KEPT_OFF_GOOGLE, PRODUCTS, brandLabel } from "@/data/catalog";
 import { bundlesContaining } from "@/lib/commerce/bundles";
 import { getCommerceProvider } from "@/lib/commerce/provider";
@@ -51,7 +52,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
     openGraph: { type: "website", url: `/prodotto/${product.slug}`, title, description, images },
     twitter: { card: "summary_large_image", title, description, images: images.map((item) => item.url) },
     // A Telegram-only pre-order has a page only for whoever holds its link: search engines stay out.
-    ...(product.channelOnly ? { robots: { index: false, follow: false } } : {}),
+    ...(hiddenFromShop(product) ? { robots: { index: false, follow: false } } : {}),
   };
 }
 
@@ -80,7 +81,7 @@ export default async function ProdottoPage({ params }: { params: Promise<Params>
   // Product structured data: price, live availability, shipping and returns make the page
   // eligible for Google's product results, and it tracks the catalogue rather than hand-written copy.
   // The two-colour deck cases stay off Google (KEPT_OFF_GOOGLE): no product markup for them.
-  const productData = KEPT_OFF_GOOGLE.has(product.slug) || product.channelOnly ? null : productJsonLd(product);
+  const productData = KEPT_OFF_GOOGLE.has(product.slug) || hiddenFromShop(product) ? null : productJsonLd(product);
   const breadcrumbData = breadcrumbJsonLd([
     { name: "Home", path: "/" },
     { name: "Negozio", path: "/negozio" },

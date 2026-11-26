@@ -142,9 +142,14 @@ export function channelPreorderPost(
     `<b>${escapeTelegram(product.name)}</b>`,
     `<b>${formatPrice(product.price)}</b>${left === undefined ? "" : ` · ${left === 1 ? "1 pezzo" : `${left} pezzi`}`}`,
     escapeTelegram(preorderDelivery(product.releasePreorder)),
-    mode === "stripe"
-      ? "Si paga sul sito, con carta, PayPal o Revolut. In negozio arriva quando è in magazzino."
-      : "Si prenota e si paga qui. Sul sito arriva quando è in magazzino.",
+    // On the shop with "Avvisami": the reader may know its page, where it cannot be ordered.
+    `${mode === "stripe" ? "Si paga sul sito, con carta, PayPal o Revolut." : "Si prenota e si paga qui."} ${
+      product.channelOnly === "avvisami"
+        ? "Questi pezzi sono solo per il canale: sul sito si ordina quando arriva in magazzino."
+        : mode === "stripe"
+          ? "In negozio arriva quando è in magazzino."
+          : "Sul sito arriva quando è in magazzino."
+    }`,
   ];
   return {
     ok: true,

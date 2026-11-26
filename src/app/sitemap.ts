@@ -5,6 +5,7 @@ import { LEGAL_PAGES, SUPPORT_PAGES } from "@/data/pages";
 import { oneCardPerFamily } from "@/lib/commerce/variants";
 import { absoluteUrl } from "@/lib/seo";
 import { getStorefrontMetaArchive } from "@/lib/storefront/meta-repository";
+import { hiddenFromShop } from "@/lib/commerce/channel-only";
 
 /**
  * /sitemap.xml: every page a shopper can land on from Google. Cart, checkout, account and
@@ -20,9 +21,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // months from it for one fetch.
   const metaMonths = await getStorefrontMetaArchive().catch(() => []);
   const hasTakaraProducts = PRODUCTS.some((p) => brandOf(p) === "takara-tomy");
-  // A Telegram-only pre-order stays out until its pieces are on the shelf (Product.channelOnly).
+  // A Telegram-only pre-order kept out of the shop stays out until its pieces are on the shelf
+  // (Product.channelOnly). One the shop lists with "Avvisami" has a page like any sold-out product.
   // loadLiveCatalogue never throws: without the database it answers with the catalogue's own flags.
-  const channelOnly = new Set((await loadLiveCatalogue()).filter((product) => product.channelOnly).map((product) => product.slug as string));
+  const channelOnly = new Set((await loadLiveCatalogue()).filter(hiddenFromShop).map((product) => product.slug as string));
 
   return [
     { url: absoluteUrl("/"), lastModified, changeFrequency: "daily", priority: 1 },

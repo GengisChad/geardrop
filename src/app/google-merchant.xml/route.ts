@@ -4,6 +4,7 @@ import type { CategorySlug, Product } from "@/lib/commerce/types";
 import { CATEGORY_LABEL } from "@/lib/labels";
 import { availabilityDate } from "@/lib/merchant-availability";
 import { absoluteUrl, productTitle, SITE_NAME } from "@/lib/seo";
+import { hiddenFromShop } from "@/lib/commerce/channel-only";
 
 /**
  * /google-merchant.xml: the catalogue as a Google Merchant Center feed, so Shopping reads the
@@ -106,8 +107,9 @@ export async function GET(): Promise<Response> {
   const commerce = await getCommerceProvider();
   // The two-colour deck cases are sold on the site only (KEPT_OFF_GOOGLE, owner 2026-10-24).
   const slugs = [...BUNDLES, ...PRODUCTS].map((product) => product.slug).filter((slug) => !KEPT_OFF_GOOGLE.has(slug));
-  // A Telegram-only pre-order is not in the shop yet (Product.channelOnly), so it is not on Google either.
-  const products = (await commerce.getProductsBySlugs(slugs)).filter((product) => !product.channelOnly);
+  // A pre-order kept out of the shop (Product.channelOnly) is not on Google either. One the shop lists
+  // with "Avvisami" is, as the sold-out product the provider answers with.
+  const products = (await commerce.getProductsBySlugs(slugs)).filter((product) => !hiddenFromShop(product));
 
   const body = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
