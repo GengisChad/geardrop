@@ -76,6 +76,8 @@ describe("reviewed catalogue", () => {
       { slug: "suppress-superion-0-70lp", price: 2500, stock: "pre-ordine", availableQuantity: 5, rating: 0, reviewCount: 0 },
       { slug: "strike-dran-4-50ff", price: 2300, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
       { slug: "tread-croc-tq-5-50gn", price: 2500, stock: "pre-ordine", availableQuantity: 9, rating: 0, reviewCount: 0 },
+      // Three Beybattle Pass, pre-ordered on Telegram only and paid with PayPal.me (owner, 2026-11-26): hidden from the shop.
+      { slug: "bx-09-beybattle-pass", price: 8000, stock: "pre-ordine", availableQuantity: 3, rating: 0, reviewCount: 0 },
       // On the shop with "Avvisami" while eight pieces are pre-ordered on Telegram (owner, 2026-11-26).
       // The catalogue reads sold out; the eight pieces are in the database only.
       { slug: "cx-20-customize-set-c", price: 14000, stock: "esaurito", availableQuantity: 0, rating: 0, reviewCount: 0 },

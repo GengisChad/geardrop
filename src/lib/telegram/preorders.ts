@@ -5,6 +5,7 @@ import type { TelegramGateway } from "./api";
 import { escapeTelegram, shopLink, type InlineKeyboard } from "./messages";
 import {
   HOLD_HOURS,
+  UNPAID_DATA_DAYS,
   parseBuyerName,
   parseEmail,
   parsePhone,
@@ -81,6 +82,12 @@ export type PreorderStore = {
   hold(slug: string, quantity: number): Promise<number | null>;
   /** Reserved pieces whose 24 hours ran out without a payment. */
   overdue(now: Date): Promise<readonly Preorder[]>;
+  /**
+   * Strips what identifies the buyer (Telegram account, name, email, phone, Locker) from the
+   * reservations that never became an order and were last touched before `before`. One left
+   * half-way is closed with it. Answers how many were stripped.
+   */
+  forget(before: Date): Promise<number>;
   list(statuses: readonly PreorderStatus[]): Promise<readonly Preorder[]>;
   /** How the owner said this product's pre-order is paid, or null if he has not published it yet. */
   paymentMode(slug: string): Promise<PaymentMode | null>;
@@ -182,6 +189,8 @@ export async function preorderTap(context: PreorderContext, tap: { readonly from
       if (tap.messageId !== null) await telegram.setKeyboard(context.ownerChatId, tap.messageId, []);
     };
     if (parsed.verb === "paid") {
+      // Past the days the privacy notice gives an unpaid reservation, who made it is gone: nobody to ship to.
+      if (preorder.status === "expired" && !preorder.buyerName) return "Scaduto da più di 30 giorni: i dati di chi aveva prenotato sono stati cancellati.";
       if (preorder.status === "expired") {
         // Paid after the 24 hours: the pieces went back, so they are taken again if any are left.
         if ((await store.hold(preorder.slug, preorder.quantity)) === null) return "Scaduto, e i pezzi non ci sono più: rimborsalo o aggiungi pezzi.";
@@ -398,6 +407,13 @@ export async function expirePreorders(context: PreorderContext): Promise<number>
     await context.telegram.sendText(context.ownerChatId, ownerCard(preorder, "SCADUTO SENZA PAGAMENTO"), [
       [{ text: "È stato pagato", callback_data: action(preorder.id, "paid") }],
     ]);
+  }
+  // What the privacy notice promises: a reservation that was never paid does not keep its buyer.
+  // A failure here is logged and tried again at the next look; it never stops the bot.
+  try {
+    await store.forget(new Date(context.now().getTime() - UNPAID_DATA_DAYS * 86_400_000));
+  } catch (error) {
+    console.error("[telegram-preorders] forget:", error instanceof Error ? error.message : error);
   }
   return expired;
 }

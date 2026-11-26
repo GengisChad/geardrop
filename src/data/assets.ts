@@ -489,6 +489,9 @@ export const productImages = {
     takaraImage("cx-20-customize-set-c-cx20_08", "Ratchet M-65 rosso, con la parte in metallo"),
     takaraImage("cx-20-customize-set-c-cx20_09", "Bit MT (Metal Taper) rosso, con la punta in metallo"),
   ],
+  // Owner, 2026-11-26: Takara Tomy's own render of the BX-09 Beybattle Pass. The second render on its
+  // page shows a launcher, a top and a phone, none of which is in the box: it is not used.
+  "bx-09-beybattle-pass": [takaraImage("bx-09-beybattle-pass", "Beybattle Pass BX-09 Takara Tomy Beyblade X, nero e bianco con il logo Beyblade X")],
 } as const satisfies Record<string, readonly ProductImage[]>;
 
 export type ProductSlug = keyof typeof productImages;

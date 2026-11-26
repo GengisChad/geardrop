@@ -62,6 +62,8 @@ const eur = (amount: number) => ({ amount, currency: "EUR" }) as const;
 const BX53_PRICE = 15990;
 /** CX-20 Customize Set C (owner, 2026-11-26: "lo rivendiamo a 140 euro"). */
 const CX20_PRICE = 14000;
+/** BX-09 Beybattle Pass (owner, 2026-11-26: "3 battlepass a 80 euro"). */
+const BX09_PRICE = 8000;
 
 /**
  * What a deck case costs on its own, in every colour and both families (owner, 2026-10-24: €18,
@@ -500,6 +502,18 @@ export const PRODUCTS: readonly Product[] = [
     features: [{ title: "Blade in quattro pezzi", description: "Lock chip e blade scomponibili per assetti su misura" }, { title: "Linea CX", description: "Combina i pezzi con le altre trottole Custom Line" }, { title: "Starter completo", description: "Include il lanciatore" }, { title: "Compatibile Beyblade X", description: "Blade, Ratchet e Bit intercambiabili con la serie" }],
     boxContents: ["1 × Trottola Tread Croc TQ 5-50GN", "1 × Lanciatore con ripcord", "Manuale"],
     relatedSlugs: ["hurricane-enlil-is-7-55t", "strike-dran-4-50ff", "cobalt-drake-4-60f"],
+  },
+  {
+    // Owner, 2026-11-26: three Beybattle Pass, pre-ordered on Telegram only and paid with PayPal.me only
+    // ("Bx-09 solo paypal.me"). Kept out of the shop until the back office drops the pre-order.
+    slug: "bx-09-beybattle-pass", name: "BX-09 Beybattle Pass", tagline: "Misura la forza del tuo lancio e la registra.",
+    description: "BX-09 è il Beybattle Pass di Takara Tomy: uno strumento che misura e registra la potenza del lancio. Collegato all'app dedicata di Takara Tomy, trasforma i dati dei tuoi lanci in Bey Point, i punti dell'app. Per usarlo servono una trottola, un lanciatore e uno stadio Beyblade X, venduti a parte: nella confezione non ci sono, come non ci sono il launcher grip e lo smartphone. Funziona con 2 pile alcaline AAA, non incluse. L'app è di Takara Tomy: prima di acquistare controlla che sia disponibile per il tuo telefono. Prodotto originale giapponese, confezione e istruzioni in giapponese.",
+    price: eur(BX09_PRICE), category: "accessori", brand: "takara-tomy", stock: "pre-ordine", availableQuantity: 3, channelOnly: true, channelPayment: "paypal", tags: [], rating: 0, reviewCount: 0,
+    images: productImages["bx-09-beybattle-pass"],
+    specs: [{ label: "Tipo", value: "Strumento che misura il lancio" }, { label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codice prodotto", value: "BX-09" }, { label: "Alimentazione", value: "2 pile alcaline AAA, non incluse" }, { label: "App", value: "App dedicata di Takara Tomy" }, { label: "Non inclusi", value: "Trottola, lanciatore, launcher grip, stadio, smartphone" }, { label: "Confezione", value: "In giapponese" }],
+    features: [{ title: "Misura il lancio", description: "Registra la potenza di ogni lancio" }, { title: "Si collega all'app", description: "I dati dei lanci diventano Bey Point nell'app di Takara Tomy" }, { title: "Originale Takara Tomy", description: "Prodotto giapponese della linea BX" }],
+    boxContents: ["1 × Beybattle Pass", "Istruzioni in giapponese"],
+    relatedSlugs: ["custom-grip-takara-tomy", "winder-launcher-takara-tomy", "string-launcher-takara-tomy"],
   },
   {
     // Owner, 2026-11-26: "arrivano 20 cx-20. mettili sul sito con avvisami e solo 8 in pre order per

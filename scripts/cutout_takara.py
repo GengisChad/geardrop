@@ -75,6 +75,8 @@ STAGED: dict[str, tuple[tuple[str, int, int, int], ...]] = {
     # Owner, 2026-11-26: the CX-20 Customize Set C, shown by Takara Tomy's render of its four blades,
     # three ratchets and six bits.
     "cx-20-customize-set-c": (("CX20", 500, 500, 920),),
+    # Owner, 2026-11-26: the BX-09 Beybattle Pass, the tool alone as Takara Tomy renders it.
+    "bx-09-beybattle-pass": (("BX09", 500, 500, 900),),
 }
 
 #: Further photos of the gallery, one render each, written as <slug>-<render in lower case>.webp.

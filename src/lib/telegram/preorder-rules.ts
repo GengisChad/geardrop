@@ -29,6 +29,12 @@ export const MAX_PREORDER_PIECES = 3;
 /** How long reserved pieces wait for a PayPal.me payment before going back to the others. */
 export const HOLD_HOURS = 24;
 
+/**
+ * How long the bot keeps what identifies the buyer of a reservation that never became an order
+ * (left half-way, cancelled, expired). The site's privacy notice says the same number: change both.
+ */
+export const UNPAID_DATA_DAYS = 30;
+
 /** A pre-order someone can take right now. */
 export function preorderOpen(product: Product | undefined | null): product is Product {
   return Boolean(product?.channelOnly) && product!.stock !== "esaurito";

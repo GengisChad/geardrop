@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createMockProvider, STOREFRONT_CATALOGUE } from "@/lib/commerce/mock-provider";
+import { createMockProvider, SHOP_CATALOGUE } from "@/lib/commerce/mock-provider";
 import { oneCardPerFamily } from "@/lib/commerce/variants";
 import { FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_FLAT_RATE } from "@/data/catalog";
 
@@ -83,7 +83,7 @@ describe("listProducts", () => {
     expect(page.items).toHaveLength(3);
     expect(page.page).toBe(2);
     // An item sold in several colours is one card, so pages count cards, not products.
-    expect(page.pageCount).toBe(Math.ceil(oneCardPerFamily(STOREFRONT_CATALOGUE).length / 3));
+    expect(page.pageCount).toBe(Math.ceil(oneCardPerFamily(SHOP_CATALOGUE).length / 3));
   });
 
   it("clamps an out-of-range page instead of returning an empty list", async () => {
@@ -143,7 +143,7 @@ describe("getFacets", () => {
     // Since 2026-11-26 a piece on its way with its pre-order on Telegram (the CX-20) is counted under "In arrivo".
     const arriving = facets.stock.find((f) => f.value === "in-arrivo");
     expect(arriving?.count).toBe(1);
-    expect((available?.count ?? 0) + (preorder?.count ?? 0) + (soldOut?.count ?? 0) + (arriving?.count ?? 0)).toBe(oneCardPerFamily(STOREFRONT_CATALOGUE).length);
+    expect((available?.count ?? 0) + (preorder?.count ?? 0) + (soldOut?.count ?? 0) + (arriving?.count ?? 0)).toBe(oneCardPerFamily(SHOP_CATALOGUE).length);
     expect(available?.count).toBeGreaterThan(0);
     expect(preorder?.count).toBeGreaterThan(0);
   });
@@ -163,8 +163,8 @@ describe("getFacets", () => {
   it("exposes the real price range", async () => {
     const facets = await provider.getFacets();
     // Bundles are sold like any other card, so the range has to cover them too.
-    expect(facets.priceRange.min).toBe(Math.min(...STOREFRONT_CATALOGUE.map((p) => p.price.amount)));
-    expect(facets.priceRange.max).toBe(Math.max(...STOREFRONT_CATALOGUE.map((p) => p.price.amount)));
+    expect(facets.priceRange.min).toBe(Math.min(...SHOP_CATALOGUE.map((p) => p.price.amount)));
+    expect(facets.priceRange.max).toBe(Math.max(...SHOP_CATALOGUE.map((p) => p.price.amount)));
   });
 });
 

@@ -111,6 +111,24 @@ export function createSupabasePreorderStore(client: Client): PreorderStore {
       check(result.error, "overdue");
       return (result.data ?? []).map(preorderOf);
     },
+    async forget(before) {
+      const blank = {
+        chat_id: 0,
+        username: null,
+        buyer_name: null,
+        email: null,
+        phone: null,
+        locker: null,
+        locker_options: [] as unknown as Json,
+        updated_at: new Date().toISOString(),
+      };
+      // chat_id 0 marks a row already stripped, so it is never counted twice.
+      const abandoned = await table().update({ ...blank, status: "cancelled" }).eq("status", "collecting").lt("updated_at", before.toISOString()).select("id");
+      check(abandoned.error, "forget abandoned");
+      const closed = await table().update(blank).in("status", ["cancelled", "expired"]).neq("chat_id", 0).lt("updated_at", before.toISOString()).select("id");
+      check(closed.error, "forget closed");
+      return (abandoned.data?.length ?? 0) + (closed.data?.length ?? 0);
+    },
     async list(statuses) {
       const result = await table().select("*").in("status", [...statuses]).order("product_slug").order("id").limit(500);
       check(result.error, "list");

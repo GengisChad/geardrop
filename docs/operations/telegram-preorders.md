@@ -79,12 +79,18 @@ vendere lo stesso pezzo, e il numero che resta è quello da caricare a magazzino
 - Un rimborso PayPal.me lo fai tu su PayPal: «Annulla» libera solo i pezzi.
 - PayPal.me nel bot solo per i pezzi che viaggiano in Locker; uno stadio o un pezzo in conto
   vendita passa dal checkout del sito, anche se avevi scelto «solo PayPal.me».
+- Il prodotto nascosto è nascosto dal negozio che il sito usa oggi (catalogo con le giacenze sopra).
+  Il provider che legge tutto dal database (`supabase-provider.ts`, non in uso in produzione) non
+  conosce `channelOnly`: prima di passare a quello, il segno va portato nel database.
 - «Solo PayPal.me» vale per quello che il bot offre: il sito non rifiuta il pezzo a chi arrivasse
   al carrello con il suo link, che però in quel caso non viene pubblicato da nessuna parte.
 - Una prenotazione non pagata tiene fermi i pezzi fino a 24 ore (un po' di più se nel frattempo
   il bot non viene usato: la scadenza scatta al primo sguardo allo shop o a `/preordini`).
 - **Privacy**: il bot raccoglie nome, email, cellulare e Locker su Telegram. L'informativa del sito
-  (`/legale/privacy`) va aggiornata dal titolare prima di usarlo con i clienti.
+  (`/legale/privacy`) lo dice dal 26/11/2026, con Telegram e PayPal tra chi riceve i dati. Dice
+  anche che di una prenotazione non pagata o annullata si cancella dopo 30 giorni tutto ciò che
+  identifica chi l'ha fatta: lo fa il bot a ogni sguardo allo shop (`forget` nello store,
+  `UNPAID_DATA_DAYS` in `preorder-rules.ts`). Se cambi il numero, cambialo in tutti e due i posti.
 
 ## Da una frase al post
 
