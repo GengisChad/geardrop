@@ -1,4 +1,4 @@
-import { productClips } from "@/data/assets";
+import { productClips, telegramPostImages } from "@/data/assets";
 import type { Product } from "@/lib/commerce/types";
 import { discountPercent, formatPrice } from "@/lib/format";
 import { bundleNoun, preorderDelivery, stockHint, stockLabel } from "@/lib/labels";
@@ -50,8 +50,13 @@ export function shopLink(path: string): string {
   return url.toString();
 }
 
-/** What a post about one product shows: its clip when the shop made one, and its packshot. */
+/**
+ * What a post about one product shows: the picture made for its post when there is one, otherwise
+ * its clip when the shop made one, and its packshot.
+ */
 function media(product: Product): Pick<TelegramPost, "videoUrl" | "photoUrl"> {
+  const poster = telegramPostImages[product.slug];
+  if (poster) return { photoUrl: absoluteUrl(poster) };
   const clip = productClips[product.slug];
   const image = product.images[0];
   return { ...(clip ? { videoUrl: absoluteUrl(clip.src) } : {}), ...(image ? { photoUrl: absoluteUrl(image.src) } : {}) };

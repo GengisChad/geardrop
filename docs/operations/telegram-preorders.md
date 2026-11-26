@@ -103,7 +103,13 @@ fai tu direttamente tramite il sito", mandate sul canale "con i link per pre-ord
    `channelPayment` (`"stripe"`, `"paypal"` o `"both"`). Le foto sono solo quelle ufficiali Hasbro o Takara Tomy, con la fonte scritta in
    [`../product-photo-sources.md`](../product-photo-sources.md); card e scontorno si fanno con gli
    script di quel file.
-3. **Clip.** Aggiungi il prodotto a `CLIP_SPECS` (`scripts/clips/clip-data.ts`) e a `productClips`
+3. **Immagine o clip.** Per un post curato il proprietario vuole un'immagine fatta con Codex
+   (26/11/2026: "fai dei bei post anche usando codex per fare le immagini del post"): 4:5,
+   1080×1350, sfondo nero, il pezzo vero in grande, testo pulito, viola per i pre-ordini e lime per
+   il disponibile, niente fulmini, scintille o neon. I riferimenti sono solo i render ufficiali; il
+   pezzo generato si confronta con il render e, se è cambiato, ci va sopra lo scontorno ufficiale;
+   il logo vero lo si appoggia a mano; ogni parola si rilegge. Il file va in `public/telegram/` e
+   in `telegramPostImages` (`src/data/assets.ts`). In alternativa, la clip: aggiungi il prodotto a `CLIP_SPECS` (`scripts/clips/clip-data.ts`) e a `productClips`
    (`src/data/assets.ts`), poi `pnpm clips`. Il post esce con la clip e, se Telegram non la
    prende, con la foto. Una clip non mostra mai prezzo o disponibilità: li porta il testo sotto.
 4. **Database.** Una migrazione con la riga in `products`: pubblicato,

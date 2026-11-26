@@ -539,6 +539,16 @@ export const productClips: Readonly<Partial<Record<string, ProductClip>>> = {
   "soar-phoenix-9-60gf": clip("soar-phoenix-9-60gf"),
 };
 
+/**
+ * The picture a product's Telegram post goes out with, when one was made for it (owner, 2026-11-26:
+ * "fai dei bei post anche usando codex per fare le immagini del post"). It shows the real piece on
+ * the official render and, like a clip, no price, count or date: a picture cannot follow the
+ * catalogue, so the post's words carry those, read from the shop. Files live in public/telegram.
+ */
+export const telegramPostImages: Readonly<Partial<Record<string, string>>> = {
+  "cx-20-customize-set-c": "/telegram/cx-20-customize-set-c.jpg",
+};
+
 /** The loose spinning top cropped from each Infinity Starter tile, launched in the homepage Arena. */
 export const productTops: Readonly<Partial<Record<string, string>>> = {
   "cobalt-drake-4-60f": "/products/tops/cobalt-drake-4-60f.webp",

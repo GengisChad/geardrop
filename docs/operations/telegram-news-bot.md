@@ -44,6 +44,9 @@ La prima volta non annuncia niente: ricorda quello che c'è già in vendita.
 - I colori di un articolo (porta deck) sono un post solo.
 - Un prodotto che ha una clip (`productClips`, fatta con `pnpm clips`) esce con la clip; gli altri
   con la foto. La clip non mostra prezzo o disponibilità: li porta il testo, letto dallo shop.
+- Un prodotto che ha un'immagine fatta apposta per il post (`telegramPostImages` in
+  `src/data/assets.ts`, file in `public/telegram/`) esce con quella, al posto di clip e foto.
+  Vale la stessa regola: niente prezzo, pezzi o date nell'immagine.
 - Un pezzo che non parte subito dice i tempi con le parole della scheda prodotto.
 - Il prezzo ribassato si confronta con il prezzo più basso dei 30 giorni prima (art. 17-bis del
   Codice del consumo); se la scheda mostra un prezzo barrato, il post mostra quello. Un prezzo che

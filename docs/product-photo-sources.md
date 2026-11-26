@@ -129,6 +129,22 @@ Scythe versione 2.0; ratchet M-65, 8-80, 1-70; bit MT, UF, K, LR, LO, HN. La sch
 lanciatore e stadio non sono inclusi e che la vernice può consumarsi. Il set non ha una clip: le
 clip mostrano una trottola con il suo codice, e questo è un set di parti.
 
+## Immagini dei post Telegram, dal 2026-11-26
+
+Il proprietario: "fai dei bei post anche usando codex per fare le immagini del post che verrà
+pubblicato su telegram". Stanno in `public/telegram/<slug>.jpg` (1080×1350) e il bot le allega al
+post del prodotto (`telegramPostImages` in `src/data/assets.ts`).
+
+- Fondo nero, luce e scritte sono generati con Codex, a cui si danno come riferimento solo i render
+  ufficiali del prodotto.
+- Il pezzo che si vede è lo scontorno del render ufficiale, appoggiato sopra quello generato, che
+  cambia sempre qualche dettaglio (il disegno del chip, le smussature).
+- Il logo è il vero `public/brand/lockup.png`. Nell'immagine non ci sono prezzo, pezzi o date.
+
+| Prodotto | File | Pezzo mostrato |
+| --- | --- | --- |
+| CX-20 Customize Set C | `cx-20-customize-set-c.jpg` | Phoenix Force WHM-65MT, render `CX20_01` |
+
 ## Ancora da migliorare
 
 - **UX-00 Glory Valkyrie LF** (750 px, foto del partner): l'unica foto ufficiale della scatola

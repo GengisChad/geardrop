@@ -178,7 +178,8 @@ describe("what the bot makes of it", () => {
       label: "Pre-ordina",
       url: `https://geardropshop.it/carrello?preordine=${SLUG}&utm_source=telegram&utm_medium=social&utm_campaign=news`,
     });
-    expect(result.post.photoUrl).toBe(`https://geardropshop.it/products/${SLUG}.webp`);
+    // The picture made for this post, not the packshot.
+    expect(result.post.photoUrl).toBe(`https://geardropshop.it/telegram/${SLUG}.jpg`);
   });
 
   it("announces the arrival, not a pre-order, when the pieces reach the shelf", () => {
