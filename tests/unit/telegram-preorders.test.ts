@@ -249,7 +249,7 @@ function world(options: { left?: number; paypal?: string | null; mode?: PaymentM
   const draft = { id: 1, payload: { kind: "channel_preorder" as const, slugs: [SLUG] } };
   const drafted = { status: (options.draft ? "draft" : "discarded") as DraftStatus, ownerMessageId: null as number | null };
   const news: NewsStore = {
-    readMemory: async () => new Map<string, unknown>([["products", {}], ["meta", { months: [] }], ["videos", { ids: [] }]]),
+    readMemory: async () => new Map<string, unknown>([["products", {}], ["meta", { months: [] }]]),
     writeMemory: async () => {},
     addDrafts: async () => 0,
     unsentDrafts: async () => (drafted.status === "draft" && drafted.ownerMessageId === null ? [{ ...draft, ...drafted }] : []),
@@ -277,7 +277,6 @@ function world(options: { left?: number; paypal?: string | null; mode?: PaymentM
     loadProducts: async () => [hidden(state.left)],
     loadMetaMonths: async () => [],
     loadMeta: async () => null,
-    loadVideos: async () => [],
     preorders: {
       store,
       botUsername: async () => "GearDropNewsBot",

@@ -1,7 +1,7 @@
 import type { Product } from "@/lib/commerce/types";
 import { channelPostUrl, type TelegramGateway } from "./api";
-import { asDraft, channelPreorderPost, draftKeyboard, metaPost, parseDraftAction, postKeyboard, productPost, videoPost, type MetaSummary, type PostResult } from "./messages";
-import { isProductMemory, scanMeta, scanProducts, scanVideos, type ChannelVideo, type NewsEvent, type NewsPayload, type ProductMemory } from "./news";
+import { asDraft, channelPreorderPost, draftKeyboard, metaPost, parseDraftAction, postKeyboard, productPost, type MetaSummary, type PostResult } from "./messages";
+import { isProductMemory, scanMeta, scanProducts, type NewsEvent, type NewsPayload, type ProductMemory } from "./news";
 import { slugFromStart, type PaymentMode } from "./preorder-rules";
 import { expirePreorders, preorderReport, preorderTap, preorderText, startPreorder, type PreorderContext, type PreorderDeps } from "./preorders";
 
@@ -56,7 +56,6 @@ export type NewsDeps = {
   readonly loadMetaMonths: () => Promise<readonly string[]>;
   /** Null when that month is not published (any more). */
   readonly loadMeta: (month: string) => Promise<MetaSummary | null>;
-  readonly loadVideos: () => Promise<readonly ChannelVideo[]>;
   readonly now: () => Date;
   /** Pre-orders taken in the bot's chat (preorders.ts). Without it the bot only publishes news. */
   readonly preorders?: PreorderDeps;
@@ -70,12 +69,10 @@ function preorderContext(deps: NewsDeps): PreorderContext | null {
 
 /** How many drafts one run shows the owner: a price list changed in one go must not bury his chat. */
 export const DRAFTS_PER_RUN = 8;
-const REMEMBERED_VIDEOS = 60;
 
 const PRODUCTS_MARKER = "products";
 const PRODUCT_PREFIX = "product:";
 const META_KEY = "meta";
-const VIDEOS_KEY = "videos";
 
 function stringList(value: unknown, key: string): readonly string[] | null {
   const list = typeof value === "object" && value !== null ? (value as Record<string, unknown>)[key] : undefined;
@@ -101,7 +98,7 @@ async function attempt<T>(name: string, unread: string[], load: () => Promise<T>
   }
 }
 
-export async function scanNews(deps: NewsDeps, options: { readonly videos?: boolean } = {}): Promise<ScanReport> {
+export async function scanNews(deps: NewsDeps): Promise<ScanReport> {
   const now = deps.now();
   const memory = await deps.store.readMemory();
   const writes = new Map<string, unknown>();
@@ -137,16 +134,6 @@ export async function scanNews(deps: NewsDeps, options: { readonly videos?: bool
     if (seen === null || scan.seen.length > 0) writes.set(META_KEY, { months: [...(seen ?? []), ...scan.seen] });
   }
 
-  if (options.videos !== false) {
-    const videos = await attempt("video", unread, deps.loadVideos);
-    if (videos) {
-      const seen = stringList(memory.get(VIDEOS_KEY), "ids");
-      const scan = scanVideos(new Set(seen ?? []), videos, seen === null);
-      events.push(...scan.events);
-      if (seen === null || scan.seen.length > 0) writes.set(VIDEOS_KEY, { ids: [...(seen ?? []), ...scan.seen].slice(-REMEMBERED_VIDEOS) });
-    }
-  }
-
   // Drafts first, memory second: if the second write fails the next look finds the same events
   // again, and their keys keep them from being drafted twice.
   const found = events.length > 0 ? await deps.store.addDrafts(events) : 0;
@@ -179,8 +166,6 @@ async function writePost(payload: NewsPayload, deps: NewsDeps, mode?: PaymentMod
         const meta = await deps.loadMeta(payload.month);
         return meta ? { ok: true, post: metaPost(meta) } : { ok: false, reason: "quella tier list non è più pubblicata" };
       }
-      case "new_video":
-        return { ok: true, post: videoPost(payload) };
     }
   } catch (error) {
     console.error("[telegram-news] write:", error instanceof Error ? error.message : error);
@@ -272,7 +257,7 @@ export async function discardDraft(draftId: number, deps: NewsDeps): Promise<str
 
 const HELP = [
   "<b>GEAR//DROP news</b>",
-  "Guardo lo shop e ti mando qui le novità come bozze: nuovi arrivi, pezzi tornati disponibili, prezzi ribassati, nuova tier list, nuovi video.",
+  "Guardo lo shop e ti mando qui le novità come bozze: nuovi arrivi, pezzi tornati disponibili, prezzi ribassati, nuova tier list.",
   "Ogni bozza ha due tasti: <b>Pubblica</b> la manda sul canale con prezzo e disponibilità riletti in quel momento, <b>Scarta</b> la elimina.",
   "",
   "/controlla  guarda lo shop adesso",

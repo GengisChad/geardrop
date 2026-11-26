@@ -156,13 +156,6 @@ export function metaPost(meta: MetaSummary): TelegramPost {
   return { text: lines.join("\n"), link: { label: "Apri la tier list", url: shopLink(`/meta/${meta.month}`) } };
 }
 
-export function videoPost(video: { readonly title: string; readonly url: string }): TelegramPost {
-  return {
-    text: `NUOVO VIDEO // @GengisChad\n<b>${escapeTelegram(video.title)}</b>`,
-    link: { label: "Guarda su YouTube", url: video.url },
-  };
-}
-
 export type InlineButton = { readonly text: string; readonly url: string } | { readonly text: string; readonly callback_data: string };
 export type InlineKeyboard = readonly (readonly InlineButton[])[];
 
