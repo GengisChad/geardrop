@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { STOREFRONT_CATALOGUE } from "../../src/lib/commerce/mock-provider";
+import { SHOP_CATALOGUE } from "../../src/lib/commerce/mock-provider";
 import { oneCardPerFamily } from "../../src/lib/commerce/variants";
 import { homepagePlan } from "../../src/lib/home/product-selection";
 
@@ -19,7 +19,8 @@ const VIEWPORTS = [
 ] as const;
 
 /** Every card of the storefront: an item sold in several colours (the deck case) is one card. */
-const STOREFRONT_CARDS = oneCardPerFamily(STOREFRONT_CATALOGUE);
+// What the shop lists: a Telegram-only pre-order is in the catalogue but on no page of the shop.
+const STOREFRONT_CARDS = oneCardPerFamily(SHOP_CATALOGUE);
 /**
  * The promotions and bundles on sale (owner, 2026-11-13), the spotlight's row (2026-11-06), then the order of
  * 2026-10-05: the best sellers, the new arrivals, the pre-order drop, what ships now, the rest.

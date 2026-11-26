@@ -2,6 +2,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
 import { BULKY_SHIPPING_METHOD, BUNDLES, CATEGORIES, FREE_SHIPPING_THRESHOLD, PRODUCTS, SHIPPING_FLAT_RATE, SHIPPING_METHODS } from "@/data/catalog";
+import { hiddenFromShop } from "@/lib/commerce/channel-only";
 import { oneCardPerFamily } from "@/lib/commerce/variants";
 import { breadcrumbJsonLd, jsonLd, productDescription, productJsonLd, productTitle, siteJsonLd } from "@/lib/seo";
 
@@ -32,7 +33,11 @@ describe("sitemap", () => {
     expect(urls).toContain("https://geardropshop.it/");
     expect(urls).toContain("https://geardropshop.it/negozio");
     for (const category of CATEGORIES) expect(urls).toContain(`https://geardropshop.it/negozio/${category.slug}`);
-    for (const product of oneCardPerFamily([...BUNDLES, ...PRODUCTS])) expect(urls).toContain(`https://geardropshop.it/prodotto/${product.slug}`);
+    // A pre-order kept out of the shop (the BX-09 on Telegram, 2026-11-26) is not in the sitemap either.
+    const hidden = [...BUNDLES, ...PRODUCTS].filter(hiddenFromShop);
+    expect(hidden.map((product) => product.slug)).toEqual(["bx-09-beybattle-pass"]);
+    for (const product of hidden) expect(urls).not.toContain(`https://geardropshop.it/prodotto/${product.slug}`);
+    for (const product of oneCardPerFamily([...BUNDLES, ...PRODUCTS].filter((item) => !hiddenFromShop(item)))) expect(urls).toContain(`https://geardropshop.it/prodotto/${product.slug}`);
     // The other colours of the deck case name the first as canonical, so only it is listed.
     expect(urls).toContain("https://geardropshop.it/prodotto/porta-deck-giallo");
     expect(urls).not.toContain("https://geardropshop.it/prodotto/porta-deck-blu");

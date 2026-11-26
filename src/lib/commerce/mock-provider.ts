@@ -122,6 +122,12 @@ function countBy<T extends string>(products: readonly Product[], pick: (p: Produ
 /** The reviewed catalogue with its bundles, priced on the catalogue's own stock. */
 export const STOREFRONT_CATALOGUE: readonly Product[] = withBundles(PRODUCTS, BUNDLES);
 
+/**
+ * The same catalogue as the shop's own pages list it: without what is kept out of the shop
+ * (a Telegram-only pre-order), and each product as shopView() shows it.
+ */
+export const SHOP_CATALOGUE: readonly Product[] = STOREFRONT_CATALOGUE.filter((product) => !hiddenFromShop(product)).map(shopView);
+
 export function createMockProvider(
   catalogue: readonly Product[] = STOREFRONT_CATALOGUE,
   // Coupons live in the database: only the server, which can read them, passes this in.

@@ -186,6 +186,8 @@ function world(options: { left?: number; paypal?: string | null; mode?: PaymentM
   const sent: Sent[] = [];
   const answers: string[] = [];
   const cleared: number[] = [];
+  // When each reservation was last written, as the table's updated_at.
+  const touched = new Map<number, number>();
   const modes = new Map<string, PaymentMode>(options.mode ? [[SLUG, options.mode]] : []);
   let nextMessage = 900;
 
@@ -211,6 +213,7 @@ function world(options: { left?: number; paypal?: string | null; mode?: PaymentM
   const patchRow = (id: number, patch: Partial<Preorder>) => {
     const index = rows.findIndex((row) => row.id === id);
     rows[index] = { ...rows[index]!, ...patch };
+    touched.set(id, state.now.getTime());
   };
   const store: PreorderStore = {
     open: async (input) => {
@@ -221,6 +224,7 @@ function world(options: { left?: number; paypal?: string | null; mode?: PaymentM
         status: "collecting", step: "quantity", expiresAt: null,
       };
       rows.push(row);
+      touched.set(row.id, state.now.getTime());
       return row;
     },
     get: async (id) => rows.find((row) => row.id === id) ?? null,
@@ -239,6 +243,17 @@ function world(options: { left?: number; paypal?: string | null; mode?: PaymentM
     },
     overdue: async (now) => rows.filter((row) => row.status === "awaiting_payment" && row.expiresAt !== null && Date.parse(row.expiresAt) < now.getTime()),
     list: async (statuses) => rows.filter((row) => (statuses as readonly PreorderStatus[]).includes(row.status)),
+    // What the table's forget does: unpaid reservations lose their buyer, a half-filled one is closed.
+    forget: async (before) => {
+      let stripped = 0;
+      for (const row of [...rows]) {
+        const unpaid = row.status === "collecting" || row.status === "cancelled" || row.status === "expired";
+        if (!unpaid || row.chatId === "0" || (touched.get(row.id) ?? 0) >= before.getTime()) continue;
+        patchRow(row.id, { chatId: "0", username: null, buyerName: null, email: null, phone: null, locker: null, lockerOptions: [], status: row.status === "collecting" ? "cancelled" : row.status });
+        stripped += 1;
+      }
+      return stripped;
+    },
     paymentMode: async (slug) => modes.get(slug) ?? null,
     setPaymentMode: async (slug, mode) => {
       modes.set(slug, mode);
@@ -307,7 +322,7 @@ function world(options: { left?: number; paypal?: string | null; mode?: PaymentM
     await tap(`gd:o:${id}:ok`);
     return id;
   };
-  return { state, rows, sent, answers, cleared, modes, drafted, deps, write, tap, last, reserve };
+  return { state, rows, sent, answers, cleared, modes, drafted, deps, store, write, tap, last, reserve };
 }
 
 describe("pre-ordering in the bot's chat", () => {
@@ -605,6 +620,49 @@ describe("the owner and a reservation", () => {
     expect(state.left).toBe(30);
     expect(last(BUYER).text).toContain("è scaduto senza pagamento");
     expect(last(OWNER).text).toContain("SCADUTO SENZA PAGAMENTO // GDT-7K3Q9A");
+  });
+
+  it("forgets who made a reservation that was never paid, thirty days on", async () => {
+    const { reserve, state, rows, deps, tap, answers } = world();
+    const id = await reserve(1);
+    // Thirty days after it expired its buyer is still there...
+    state.now = new Date("2026-11-27T10:00:00.000Z");
+    await scanNews(deps);
+    expect(rows[id - 1]).toMatchObject({ status: "expired", buyerName: "Mario Rossi", chatId: BUYER });
+    state.now = new Date("2026-12-26T10:00:00.000Z");
+    await scanNews(deps);
+    expect(rows[id - 1]!.buyerName).toBe("Mario Rossi");
+    // ...and a day later it is not: the product, the quantity and the outcome stay, nothing else.
+    state.now = new Date("2026-12-28T10:00:00.000Z");
+    await scanNews(deps);
+    expect(rows[id - 1]).toMatchObject({
+      status: "expired", slug: SLUG, quantity: 1, chatId: "0", username: null, buyerName: null, email: null, phone: null, locker: null, lockerOptions: [],
+    });
+    // Nobody is left to ship to, so a late "paid" is refused.
+    await tap(`gd:o:${id}:paid`, OWNER);
+    expect(answers.at(-1)).toBe("Scaduto da più di 30 giorni: i dati di chi aveva prenotato sono stati cancellati.");
+    expect(rows[id - 1]!.status).toBe("expired");
+  });
+
+  it("keeps a paid pre-order whole: it is an order, and its parcel needs the buyer", async () => {
+    const { reserve, state, rows, deps, tap } = world();
+    const id = await reserve(1);
+    await tap(`gd:o:${id}:paid`, OWNER);
+    state.now = new Date("2027-03-01T10:00:00.000Z");
+    await scanNews(deps);
+    expect(rows[id - 1]).toMatchObject({ status: "paid", buyerName: "Mario Rossi", email: "mario@example.it", chatId: BUYER });
+  });
+
+  it("closes and forgets a reservation left half-way", async () => {
+    const { write, tap, state, rows, deps } = world();
+    await write(`/start pre-${SLUG}`);
+    await tap("gd:o:1:q:1");
+    await tap("gd:o:1:pp");
+    await write("Mario Rossi");
+    expect(rows[0]).toMatchObject({ status: "collecting", buyerName: "Mario Rossi" });
+    state.now = new Date("2026-12-27T09:00:00.000Z");
+    await scanNews(deps);
+    expect(rows[0]).toMatchObject({ status: "cancelled", buyerName: null, chatId: "0", username: null });
   });
 
   it("can still mark a late payment paid while pieces are left, and says so when they are not", async () => {

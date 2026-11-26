@@ -156,14 +156,14 @@ select results_eq(
 );
 select results_eq(
   $$select count(*)::bigint from public.products$$,
-  array[55::bigint],
+  array[56::bigint],
   'double seed keeps the catalogue products'
 );
 select results_eq(
   $$select count(*)::bigint from public.product_images$$,
   -- 76 since 2026-11-24: the grip listing became the BX-11, three photos instead of the Custom Grip's five.
-  -- 83 since 2026-11-26: the CX-20 Customize Set C and its seven photos.
-  array[83::bigint],
+  -- 84 since 2026-11-26: the CX-20 Customize Set C and its seven photos, the BX-09 Beybattle Pass and its one.
+  array[84::bigint],
   'double seed keeps every catalogue image'
 );
 select results_eq(

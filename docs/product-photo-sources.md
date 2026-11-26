@@ -129,6 +129,22 @@ Scythe versione 2.0; ratchet M-65, 8-80, 1-70; bit MT, UF, K, LR, LO, HN. La sch
 lanciatore e stadio non sono inclusi e che la vernice può consumarsi. Il set non ha una clip: le
 clip mostrano una trottola con il suo codice, e questo è un set di parti.
 
+## BX-09 Beybattle Pass, 2026-11-26
+
+Il proprietario: tre Beybattle Pass, in pre-ordine solo su Telegram, "Bx-09 solo paypal.me". Render
+ufficiale Takara Tomy, senza watermark, preso da
+`beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX09@2.png` (1172×1418) e salvato intatto in
+`assets-source/takara-tomy/BX09.png`. Lo scontorno è di
+`python scripts/cutout_takara.py bx-09-beybattle-pass`.
+
+| Prodotto | File | Pagina ufficiale | Fedeltà |
+| --- | --- | --- | --- |
+| BX-09 Beybattle Pass | `BX09` (card) | `lineup/bx09.html` | Lo strumento da solo, nero e bianco. |
+
+`BX09_01`, il Beybattle Pass in uso con un lanciatore, una trottola e uno smartphone, non è usato:
+nessuno dei tre è incluso. I testi vengono dalla stessa pagina (uscita 15/7/2023): misura e registra
+la potenza del lancio, con l'app dedicata dà Bey Point, vuole 2 pile alcaline AAA non incluse;
+trottola, lanciatore, launcher grip e smartphone non sono nella confezione.
 ## Immagini dei post Telegram, dal 2026-11-26
 
 Il proprietario: "fai dei bei post anche usando codex per fare le immagini del post che verrà
@@ -144,6 +160,7 @@ post del prodotto (`telegramPostImages` in `src/data/assets.ts`).
 | Prodotto | File | Pezzo mostrato |
 | --- | --- | --- |
 | CX-20 Customize Set C | `cx-20-customize-set-c.jpg` | Phoenix Force WHM-65MT, render `CX20_01` |
+| BX-09 Beybattle Pass | `bx-09-beybattle-pass.jpg` | Il Beybattle Pass, render `BX09` |
 
 ## Ancora da migliorare
 
