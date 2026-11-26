@@ -37,11 +37,18 @@ export function buildMainNav({ hasTakara = false }: { hasTakara?: boolean } = {}
 export const MAIN_NAV: readonly NavItem[] = buildMainNav();
 
 /**
- * The row under the footer columns. The shop's own account comes first; the channel is
- * where the catalogue is actually explained, so it earns its place beside it.
+ * The shop's public Telegram channel (owner, 2026-11-26): the pre-orders taken on Telegram only
+ * open there, and the shop's news comes out there (docs/operations/telegram-news-bot.md).
+ */
+export const TELEGRAM_CHANNEL_URL = "https://t.me/geardropshop";
+
+/**
+ * The row under the footer columns. The shop's own accounts come first; the YouTube channel is
+ * where the catalogue is actually explained, so it earns its place beside them.
  */
 export const SOCIAL_LINKS: readonly { readonly key: string; readonly label: string; readonly href: string }[] = [
   { key: "instagram", label: "Instagram", href: "https://www.instagram.com/geardropshop/" },
+  { key: "telegram", label: "Telegram", href: TELEGRAM_CHANNEL_URL },
   { key: "youtube", label: "YouTube", href: "https://www.youtube.com/@GengisChadBBX" },
 ];
 

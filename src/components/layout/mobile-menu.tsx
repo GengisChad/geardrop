@@ -5,9 +5,11 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import type { Route } from "next";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { Menu, Send, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { TelegramJoin } from "@/components/home/telegram-join";
 import { Emblem } from "@/components/layout/logo";
+import { buttonClass } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import type { StorefrontNavItem } from "@/lib/content/types";
 
@@ -112,6 +114,14 @@ export function MobileMenu({ navigation }: { readonly navigation: readonly Store
                 ))}
               </ul>
             </nav>
+
+            {/* Owner, 2026-11-26: the Telegram channel one tap away on a phone, where most visitors are. */}
+            <div className="border-t border-white/10 px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4">
+              <TelegramJoin placement="menu" className={buttonClass({ variant: "secondary", fullWidth: true })}>
+                <Send className="size-4" aria-hidden="true" />
+                Canale Telegram
+              </TelegramJoin>
+            </div>
           </motion.div>
         </>
       ) : null}

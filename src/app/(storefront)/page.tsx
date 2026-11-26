@@ -4,6 +4,7 @@ import { Arsenal } from "@/components/home/arsenal";
 import { HERO_CARDS, Hero } from "@/components/home/hero";
 import { PROMOS_HERO_TITLE, SPOTLIGHT_HERO_TITLE } from "@/lib/home/hero-title";
 import { ProductShelf } from "@/components/home/product-shelf";
+import { TelegramBand } from "@/components/home/telegram-band";
 import { TrustBandDark } from "@/components/home/trust";
 import { Reveal } from "@/components/ui/reveal";
 import { ManagedHomepage, type ManagedHomepageFallback } from "@/components/content/managed-homepage";
@@ -145,6 +146,8 @@ export default async function HomePage() {
       />
       {/* Violet means "on its way" across the shop: the pre-order drop sits on its own band. */}
       <ProductShelf testId="preorder-drop" tone="violet" title="Pre-ordini aperti" note={RELEASE_DELIVERY} products={plan.drop} />
+      {/* Owner, 2026-11-26: the way into the Telegram channel, where the pre-orders taken on Telegram only open. */}
+      <TelegramBand />
       <ProductShelf testId="ready-to-ship" title="Pronti da spedire" note={STANDARD_DELIVERY} products={plan.ready} />
       <Arsenal products={plan.rest} title="Tutto il resto" />
       <Reveal>
