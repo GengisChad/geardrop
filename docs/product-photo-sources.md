@@ -160,6 +160,7 @@ post del prodotto (`telegramPostImages` in `src/data/assets.ts`).
 | Prodotto | File | Pezzo mostrato |
 | --- | --- | --- |
 | CX-20 Customize Set C | `cx-20-customize-set-c.jpg` | Phoenix Force WHM-65MT, render `CX20_01` |
+| BX-09 Beybattle Pass | `bx-09-beybattle-pass.jpg` | Il Beybattle Pass, render `BX09` |
 
 ## Ancora da migliorare
 

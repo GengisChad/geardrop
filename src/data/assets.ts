@@ -550,6 +550,7 @@ export const productClips: Readonly<Partial<Record<string, ProductClip>>> = {
  */
 export const telegramPostImages: Readonly<Partial<Record<string, string>>> = {
   "cx-20-customize-set-c": "/telegram/cx-20-customize-set-c.jpg",
+  "bx-09-beybattle-pass": "/telegram/bx-09-beybattle-pass.jpg",
 };
 
 /** The loose spinning top cropped from each Infinity Starter tile, launched in the homepage Arena. */

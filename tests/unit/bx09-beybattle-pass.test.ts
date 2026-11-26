@@ -84,7 +84,8 @@ describe("pre-ordered in the bot with PayPal.me", () => {
       "Si prenota e si paga qui. Sul sito arriva quando è in magazzino.",
     ]);
     expect(result.post.link).toEqual({ label: "Pre-ordina", url: `https://t.me/GearDropNewsBot?start=pre-${SLUG}` });
-    expect(result.post.photoUrl).toBe(`https://geardropshop.it/products/${SLUG}.webp`);
+    // The picture made for this post, not the packshot.
+    expect(result.post.photoUrl).toBe(`https://geardropshop.it/telegram/${SLUG}.jpg`);
     expect(result.post.videoUrl).toBeUndefined();
   });
 });
