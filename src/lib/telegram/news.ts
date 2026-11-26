@@ -2,7 +2,8 @@ import type { Product, StockStatus } from "@/lib/commerce/types";
 
 /**
  * What counts as news for the shop's Telegram channel (owner, 2026-11-26): a new arrival, a piece
- * back on the shelf, a lower price, a new tier list on /meta, a new video on the channel.
+ * back on the shelf, a lower price, a new tier list on /meta. Only the shop: that evening he saw a
+ * draft of one of his own YouTube uploads and ruled them out ("non roba del mio youtube").
  *
  * Nothing here knows about Telegram or the database. The bot looks at the catalogue the shop itself
  * serves (stock and prices from the back office, laid over src/data/catalog.ts) and compares it with
@@ -10,7 +11,7 @@ import type { Product, StockStatus } from "@/lib/commerce/types";
  * in a message is read again from the catalogue when the message is written.
  */
 
-export const NEWS_KINDS = ["new_product", "back_in_stock", "price_drop", "channel_preorder", "meta_update", "new_video"] as const;
+export const NEWS_KINDS = ["new_product", "back_in_stock", "price_drop", "channel_preorder", "meta_update"] as const;
 export type NewsKind = (typeof NEWS_KINDS)[number];
 
 /** What a draft needs to be written again from the shop's data at the moment it is published. */
@@ -19,8 +20,7 @@ export type NewsPayload =
   /** A pre-order taken on Telegram only: the post's button opens the bot, not the shop. */
   | { readonly kind: "channel_preorder"; readonly slugs: readonly string[] }
   | { readonly kind: "price_drop"; readonly slugs: readonly string[]; readonly price: number; readonly previousPrice: number }
-  | { readonly kind: "meta_update"; readonly month: string }
-  | { readonly kind: "new_video"; readonly videoId: string; readonly title: string; readonly url: string };
+  | { readonly kind: "meta_update"; readonly month: string };
 
 export type NewsEvent = {
   /** The same event found twice has the same key, so it is drafted once. */
@@ -213,42 +213,6 @@ export function scanMeta(seenMonths: ReadonlySet<string>, publishedMonths: reado
   return { events, seen: unseen };
 }
 
-export type ChannelVideo = { readonly id: string; readonly title: string; readonly url: string; readonly publishedAt: string };
-
-/** How many unseen uploads one look may announce: a feed read after a long silence is not news. */
-const MAX_VIDEOS_PER_SCAN = 3;
-
-export function scanVideos(seenIds: ReadonlySet<string>, videos: readonly ChannelVideo[], firstLook = false): { readonly events: readonly NewsEvent[]; readonly seen: readonly string[] } {
-  const unseen = videos.filter((video) => !seenIds.has(video.id));
-  if (firstLook) return { events: [], seen: unseen.map((video) => video.id) };
-  const newest = [...unseen].sort((a, b) => a.publishedAt.localeCompare(b.publishedAt)).slice(-MAX_VIDEOS_PER_SCAN);
-  return {
-    events: newest.map((video) => ({ eventKey: `video:${video.id}`, payload: { kind: "new_video" as const, videoId: video.id, title: video.title, url: video.url } })),
-    seen: unseen.map((video) => video.id),
-  };
-}
-
-const decodeXml = (text: string) =>
-  text
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;|&apos;/g, "'")
-    .replace(/&amp;/g, "&");
-
-/** The uploads in a channel's public Atom feed (youtube.com/feeds/videos.xml), which needs no key. */
-export function parseYoutubeFeed(xml: string): readonly ChannelVideo[] {
-  const videos: ChannelVideo[] = [];
-  for (const [, entry] of xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)) {
-    const id = /<yt:videoId>([A-Za-z0-9_-]{6,20})<\/yt:videoId>/.exec(entry!)?.[1];
-    const title = /<title>([\s\S]*?)<\/title>/.exec(entry!)?.[1];
-    const publishedAt = /<published>([^<]+)<\/published>/.exec(entry!)?.[1];
-    if (!id || !title || !publishedAt) continue;
-    videos.push({ id, title: decodeXml(title).trim(), url: `https://www.youtube.com/watch?v=${id}`, publishedAt });
-  }
-  return videos;
-}
-
 export function isNewsPayload(value: unknown): value is NewsPayload {
   if (typeof value !== "object" || value === null) return false;
   const payload = value as Record<string, unknown>;
@@ -262,8 +226,6 @@ export function isNewsPayload(value: unknown): value is NewsPayload {
       return slugs && Number.isSafeInteger(payload["price"]) && Number.isSafeInteger(payload["previousPrice"]);
     case "meta_update":
       return typeof payload["month"] === "string";
-    case "new_video":
-      return typeof payload["videoId"] === "string" && typeof payload["title"] === "string" && typeof payload["url"] === "string";
     default:
       return false;
   }

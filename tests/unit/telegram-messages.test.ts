@@ -3,7 +3,7 @@ import { BUNDLES, PRODUCTS } from "@/data/catalog";
 import type { Product } from "@/lib/commerce/types";
 import { RELEASE_DELIVERY } from "@/lib/labels";
 import { channelPostUrl, readTelegramConfig } from "@/lib/telegram/api";
-import { asDraft, draftKeyboard, metaPost, parseDraftAction, postKeyboard, productPost, shopLink, videoPost, type TelegramPost } from "@/lib/telegram/messages";
+import { asDraft, draftKeyboard, metaPost, parseDraftAction, postKeyboard, productPost, shopLink, type TelegramPost } from "@/lib/telegram/messages";
 
 const find = (slug: string): Product => {
   const product = [...PRODUCTS, ...BUNDLES].find((candidate) => candidate.slug === slug);
@@ -105,23 +105,18 @@ describe("a draft that stopped being true", () => {
   });
 });
 
-describe("tier list and video posts", () => {
+describe("tier list posts", () => {
   it("names the month, the title and the first three blades, and no source", () => {
     const post = metaPost({ month: "2026-11", title: "Il meta di novembre", topBlades: ["Shark Scale", "Aero Pegasus", "Knight Shield V2", "Cobalt Dragoon"] });
     expect(post.text).toBe("META // novembre 2026\n<b>Il meta di novembre</b>\nTop blade: 1. Shark Scale · 2. Aero Pegasus · 3. Knight Shield V2");
     expect(post.link).toEqual({ label: "Apri la tier list", url: "https://geardropshop.it/meta/2026-11?utm_source=telegram&utm_medium=social&utm_campaign=news" });
     expect(post.photoUrl).toBeUndefined();
   });
-
-  it("links a new upload", () => {
-    const post = videoPost({ title: "Knight Shield V2 <test>", url: "https://www.youtube.com/watch?v=ugcBV-vcyuQ" });
-    expect(post.text).toBe("NUOVO VIDEO // @GengisChad\n<b>Knight Shield V2 &lt;test&gt;</b>");
-    expect(post.link).toEqual({ label: "Guarda su YouTube", url: "https://www.youtube.com/watch?v=ugcBV-vcyuQ" });
-  });
 });
 
 describe("drafts and their buttons", () => {
-  const post = videoPost({ title: "Video", url: "https://www.youtube.com/watch?v=ugcBV-vcyuQ" });
+  const post = metaPost({ month: "2026-11", title: "Il meta di novembre", topBlades: [] });
+  const link = { text: "Apri la tier list", url: "https://geardropshop.it/meta/2026-11?utm_source=telegram&utm_medium=social&utm_campaign=news" };
 
   it("marks a draft as a draft and says where it would go", () => {
     expect(asDraft(post, "@geardropnews").text).toBe(`<i>Bozza per @geardropnews: esce solo se tocchi Pubblica.</i>\n\n${post.text}`);
@@ -133,9 +128,9 @@ describe("drafts and their buttons", () => {
         { text: "Pubblica", callback_data: "gd:p:12" },
         { text: "Scarta", callback_data: "gd:x:12" },
       ],
-      [{ text: "Guarda su YouTube", url: "https://www.youtube.com/watch?v=ugcBV-vcyuQ" }],
+      [link],
     ]);
-    expect(postKeyboard(post)).toEqual([[{ text: "Guarda su YouTube", url: "https://www.youtube.com/watch?v=ugcBV-vcyuQ" }]]);
+    expect(postKeyboard(post)).toEqual([[link]]);
   });
 
   it("reads back only its own buttons", () => {

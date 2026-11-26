@@ -4,11 +4,11 @@ import { runNewsScan } from "@/lib/telegram/runtime";
 /**
  * GET /api/cron/telegram-news — run by Vercel Cron (vercel.json), once a day.
  *
- * Looks at the shop for news (arrivals, restocks, lower prices, a new tier list, a new video) and
+ * Looks at the shop for news (arrivals, restocks, lower prices, a new tier list) and
  * sends the owner a draft of each in his private chat with the bot. Nothing reaches the channel
  * from here: only his tap on "Pubblica" does. The back office also asks for a look after a save
  * that can be news; this daily one catches what never passes through it, such as a price list
- * applied by a migration or a new upload on the channel.
+ * applied by a migration.
  *
  * Vercel sends `Authorization: Bearer $CRON_SECRET`; without the secret set the route refuses
  * everyone, like the InPost one.

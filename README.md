@@ -69,7 +69,7 @@ reidratazione sarebbe un hydration mismatch.
 ## Bot Telegram delle news
 
 Un bot propone al proprietario, nella sua chat privata, le novità dello shop (nuovi arrivi, pezzi
-tornati disponibili, prezzi ribassati, nuova tier list, nuovi video) e pubblica sul canale solo
+tornati disponibili, prezzi ribassati, nuova tier list) e pubblica sul canale solo
 quelle su cui lui tocca «Pubblica». Prezzo e disponibilità di ogni post sono riletti dallo shop al
 momento della pubblicazione, mai scritti a mano.
 

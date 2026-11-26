@@ -1,14 +1,17 @@
 # Il bot Telegram delle news
 
 Dal 26/11/2026 (proprietario: "creare bot telegram per news su geardrop ecc"). Le sue scelte:
-news su **nuovi arrivi, pezzi tornati disponibili, offerte e prezzi ribassati, tier list e video**;
+news su **nuovi arrivi, pezzi tornati disponibili, offerte e prezzi ribassati e tier list**;
 escono su un **canale pubblico**; il bot le prepara e lui decide (**bozza + OK**).
+
+Solo cose dello shop: la sera stessa, vista la bozza di un suo video, ha tolto i video di
+YouTube ("deve pubblicare sito, bundle ecc., non roba del mio youtube"). Il bot non legge più
+il canale YouTube.
 
 ## Come funziona
 
 1. Il bot guarda lo shop: il catalogo che il sito serve (prezzi e disponibilità del gestionale sopra
-   `src/data/catalog.ts`, letti senza cache), le tier list pubblicate su `/meta` e il feed pubblico
-   dei video del canale YouTube.
+   `src/data/catalog.ts`, letti senza cache) e le tier list pubblicate su `/meta`.
 2. Confronta con quello che aveva visto l'ultima volta (`telegram_news_memory`) e per ogni novità
    crea una bozza (`telegram_news_drafts`).
 3. Manda la bozza al proprietario, nella sua chat privata con il bot, con due tasti.
@@ -23,7 +26,7 @@ Quando guarda:
 - dopo un salvataggio del gestionale che può essere una notizia (movimento di magazzino, carico,
   conteggio, reso, prezzo, scheda prodotto, tier list);
 - una volta al giorno (`/api/cron/telegram-news`, Vercel Cron alle 08:00 UTC), per quello che non
-  passa dal gestionale: un listino applicato con una migrazione, un video nuovo;
+  passa dal gestionale, come un listino applicato con una migrazione;
 - quando il proprietario scrive `/controlla` al bot.
 
 La prima volta non annuncia niente: ricorda quello che c'è già in vendita.
@@ -37,7 +40,6 @@ La prima volta non annuncia niente: ricorda quello che c'è già in vendita.
 | Prezzo ribassato | prezzo sotto il più basso degli ultimi 30 giorni | `PREZZO RIBASSATO //` |
 | Pre-ordine sul canale | prodotto `channelOnly` con pezzi, non ancora in negozio ([`telegram-preorders.md`](telegram-preorders.md)) | `PRE-ORDINE // solo sul canale` |
 | Tier list | un mese pubblicato per la prima volta | `META // novembre 2026` |
-| Video | un caricamento nuovo sul canale | `NUOVO VIDEO // @GengisChad` |
 
 - I colori di un articolo (porta deck) sono un post solo.
 - Un pezzo che non parte subito dice i tempi con le parole della scheda prodotto.

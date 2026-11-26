@@ -4,7 +4,7 @@ import type { Product } from "@/lib/commerce/types";
 import type { TelegramGateway } from "@/lib/telegram/api";
 import { DRAFTS_PER_RUN, handleUpdate, scanNews, type DraftStatus, type NewsDeps, type NewsStore } from "@/lib/telegram/bot";
 import type { InlineKeyboard, TelegramPost } from "@/lib/telegram/messages";
-import type { ChannelVideo, NewsPayload } from "@/lib/telegram/news";
+import type { NewsPayload } from "@/lib/telegram/news";
 
 const OWNER = "111222333";
 const CHANNEL = "@geardropnews";
@@ -92,11 +92,10 @@ function fakeTelegram(options: { readonly refuse?: (chatId: string) => boolean }
 
 const base = PRODUCTS.find((product) => product.slug === "soar-phoenix-9-60gf-solo-trottola")!;
 const phoenix = (stock: Product["stock"], amount = 1690): Product => ({ ...base, stock, price: { amount, currency: "EUR" } });
-const VIDEO: ChannelVideo = { id: "ugcBV-vcyuQ", title: "Knight Shield V2", url: "https://www.youtube.com/watch?v=ugcBV-vcyuQ", publishedAt: "2026-11-23T16:00:00+00:00" };
 
-/** A shop whose catalogue, tier lists and uploads the test changes between looks. */
-function shop(initial: { products: readonly Product[]; months?: readonly string[]; videos?: readonly ChannelVideo[]; channelId?: string | null }) {
-  const world = { products: initial.products, months: initial.months ?? ["2026-11"], videos: initial.videos ?? [], down: false };
+/** A shop whose catalogue and tier lists the test changes between looks. */
+function shop(initial: { products: readonly Product[]; months?: readonly string[]; channelId?: string | null }) {
+  const world = { products: initial.products, months: initial.months ?? ["2026-11"], down: false };
   const { store, rows, memory } = memoryStore();
   const telegram = fakeTelegram();
   const deps: NewsDeps = {
@@ -111,7 +110,6 @@ function shop(initial: { products: readonly Product[]; months?: readonly string[
     },
     loadMetaMonths: async () => world.months,
     loadMeta: async (month) => (world.months.includes(month) ? { month, title: "Il meta del mese", topBlades: ["Shark Scale", "Aero Pegasus", "Knight Shield V2"] } : null),
-    loadVideos: async () => world.videos,
   };
   return { world, deps, rows, memory, ...telegram };
 }
@@ -121,7 +119,7 @@ const write = (text: string, from: number | string = Number(OWNER)) => ({ messag
 
 describe("looking at the shop", () => {
   it("sends nothing on the first look", async () => {
-    const { deps, sent, rows } = shop({ products: [phoenix("disponibile")], videos: [VIDEO] });
+    const { deps, sent, rows } = shop({ products: [phoenix("disponibile")] });
     const report = await scanNews(deps);
     expect(report).toEqual({ firstLook: true, found: 0, sent: 0, unread: [] });
     expect(rows).toEqual([]);
@@ -156,14 +154,13 @@ describe("looking at the shop", () => {
     expect(sent).toHaveLength(1);
   });
 
-  it("drafts a new tier list and a new upload", async () => {
+  it("drafts a new tier list", async () => {
     const { world, deps, sent } = shop({ products: [phoenix("disponibile")] });
     await scanNews(deps);
     world.months = ["2026-11", "2026-12"];
-    world.videos = [VIDEO];
     const report = await scanNews(deps);
-    expect(report.found).toBe(2);
-    expect(sent.map((message) => message.text.split("\n\n")[1]!.split("\n")[0])).toEqual(["META // dicembre 2026", "NUOVO VIDEO // @GengisChad"]);
+    expect(report.found).toBe(1);
+    expect(sent.map((message) => message.text.split("\n\n")[1]!.split("\n")[0])).toEqual(["META // dicembre 2026"]);
   });
 
   it("finds nothing and forgets nothing when the shop cannot be read", async () => {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { BUNDLES, PRODUCTS } from "@/data/catalog";
 import type { Product } from "@/lib/commerce/types";
-import { isNewsPayload, parseYoutubeFeed, referencePrice, scanMeta, scanProducts, scanVideos, type ProductMemory } from "@/lib/telegram/news";
+import { isNewsPayload, referencePrice, scanMeta, scanProducts, type ProductMemory } from "@/lib/telegram/news";
 
 const find = (slug: string): Product => {
   const product = [...PRODUCTS, ...BUNDLES].find((candidate) => candidate.slug === slug);
@@ -152,51 +152,16 @@ describe("tier lists", () => {
   });
 });
 
-const FEED = `<?xml version="1.0" encoding="UTF-8"?>
-<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns="http://www.w3.org/2005/Atom">
- <title>GengisChad</title>
- <entry>
-  <id>yt:video:ugcBV-vcyuQ</id>
-  <yt:videoId>ugcBV-vcyuQ</yt:videoId>
-  <title>Knight Shield V2 &amp; il meta: &quot;vale&quot; davvero?</title>
-  <published>2026-11-23T16:00:00+00:00</published>
- </entry>
- <entry>
-  <id>yt:video:d4iSLDa8Dxw</id>
-  <yt:videoId>d4iSLDa8Dxw</yt:videoId>
-  <title>Meteor Dragoon 7-60 Level</title>
-  <published>2026-11-22T16:00:00+00:00</published>
- </entry>
-</feed>`;
-
-describe("channel uploads", () => {
-  it("reads the uploads out of the channel's feed", () => {
-    expect(parseYoutubeFeed(FEED)).toEqual([
-      { id: "ugcBV-vcyuQ", title: 'Knight Shield V2 & il meta: "vale" davvero?', url: "https://www.youtube.com/watch?v=ugcBV-vcyuQ", publishedAt: "2026-11-23T16:00:00+00:00" },
-      { id: "d4iSLDa8Dxw", title: "Meteor Dragoon 7-60 Level", url: "https://www.youtube.com/watch?v=d4iSLDa8Dxw", publishedAt: "2026-11-22T16:00:00+00:00" },
-    ]);
-    expect(parseYoutubeFeed("<html>not a feed</html>")).toEqual([]);
-  });
-
-  it("remembers what is already up, then announces only what is new", () => {
-    const videos = parseYoutubeFeed(FEED);
-    expect(scanVideos(new Set(), videos, true)).toEqual({ events: [], seen: ["ugcBV-vcyuQ", "d4iSLDa8Dxw"] });
-    const scan = scanVideos(new Set(["d4iSLDa8Dxw"]), videos);
-    expect(scan.events).toEqual([
-      { eventKey: "video:ugcBV-vcyuQ", payload: { kind: "new_video", videoId: "ugcBV-vcyuQ", title: 'Knight Shield V2 & il meta: "vale" davvero?', url: "https://www.youtube.com/watch?v=ugcBV-vcyuQ" } },
-    ]);
-  });
-});
-
 describe("draft payloads read back from the database", () => {
-  it("accepts the five kinds and nothing else", () => {
+  it("accepts the shop's kinds and nothing else", () => {
     expect(isNewsPayload({ kind: "new_product", slugs: ["a"] })).toBe(true);
     expect(isNewsPayload({ kind: "price_drop", slugs: ["a"], price: 1690, previousPrice: 2190 })).toBe(true);
     expect(isNewsPayload({ kind: "meta_update", month: "2026-11" })).toBe(true);
-    expect(isNewsPayload({ kind: "new_video", videoId: "x", title: "t", url: "https://www.youtube.com/watch?v=x" })).toBe(true);
     expect(isNewsPayload({ kind: "price_drop", slugs: ["a"] })).toBe(false);
     expect(isNewsPayload({ kind: "back_in_stock", slugs: [] })).toBe(false);
     expect(isNewsPayload({ kind: "new_order", slugs: ["a"] })).toBe(false);
+    // The owner's YouTube uploads are not the shop's news: a video draft left in the table is not read back.
+    expect(isNewsPayload({ kind: "new_video", videoId: "x", title: "t", url: "https://www.youtube.com/watch?v=x" })).toBe(false);
     expect(isNewsPayload(null)).toBe(false);
   });
 });
