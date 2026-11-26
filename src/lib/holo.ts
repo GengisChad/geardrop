@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import type { BladeType, CategorySlug, Product } from "@/lib/commerce/types";
-import { BLADE_TYPE_LABEL, STOCK_LABEL, bundleNoun } from "@/lib/labels";
+import { BLADE_TYPE_LABEL, STOCK_LABEL, bundleNoun, stockLabel } from "@/lib/labels";
 
 /**
  * Presentation helpers for the Holo Drop cards: foil colours, the short labels a card
@@ -59,6 +59,8 @@ const BY_SLUG: Readonly<Record<string, HoloPalette>> = {
   "bx-52-luster-dragoon-6-60lc": palette("#eadcff", "#8a4dff", "#e5384a", "#e8ecf5", "rgba(138, 77, 255, 0.35)"),
   "ux-08-silver-wolf-3-80fb": palette("#d9fff3", "#1fc8b4", "#b9bcc4", "#e8ecf5", "rgba(31, 200, 180, 0.35)"),
   "bx-53-all-in-one-set": palette("#d6f0ff", "#2fb5ff", "#2fcf63", "#f2e21c", "rgba(47, 181, 255, 0.35)"),
+  // 2026-11-26: Phoenix Force's red, Wizard Rod's blue and Shark Scale's orange.
+  "cx-20-customize-set-c": palette("#ffdcdc", "#e5384a", "#2f8fff", "#ff9a3d", "rgba(229, 56, 74, 0.35)"),
   "duo-luster-enlil": palette("#eadcff", "#8a4dff", "#3cf0ff", "#c9fbff", "rgba(138, 77, 255, 0.35)"),
   "pack-meta-luster": palette("#eadcff", "#8a4dff", "#ff7a3d", "#c6ff00", "rgba(138, 77, 255, 0.35)"),
   "pack-meta-silver-wolf": palette("#d9fff3", "#1fc8b4", "#ff7a3d", "#c6ff00", "rgba(31, 200, 180, 0.35)"),
@@ -106,9 +108,10 @@ export function productLine(product: Pick<Product, "specs">): string | null {
  * Scarcity line: what is left when the number is small, the plain status otherwise. A pre-order
  * says so, so its allocation is never mistaken for pieces on the shelf.
  */
-export function availabilityLine(product: Pick<Product, "stock" | "availableQuantity" | "bundleOf" | "releasePreorder">): string {
-  // A sold-out drop keeps its name: it reopens, and the card offers the notice, not the cart.
-  if (product.stock === "esaurito") return product.releasePreorder ? "Pre-ordine esaurito" : STOCK_LABEL.esaurito;
+export function availabilityLine(product: Pick<Product, "stock" | "availableQuantity" | "bundleOf" | "releasePreorder" | "channelOnly">): string {
+  // A sold-out drop keeps its name: it reopens, and the card offers the notice, not the cart. A
+  // piece on its way with its pre-order on Telegram reads "In arrivo".
+  if (product.stock === "esaurito") return stockLabel(product);
   const left = product.availableQuantity;
   if (left !== undefined && left > 0 && left <= 10) {
     if (product.stock === "pre-ordine") return `Solo ${left} in pre-ordine`;

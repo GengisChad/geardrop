@@ -8,7 +8,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { AddToCartButton } from "@/components/product/add-to-cart-button";
 import { StockBadge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/format";
-import { BLADE_TYPE_LABEL, stockLabel } from "@/lib/labels";
+import { BLADE_TYPE_LABEL, stockLabel, stockTone } from "@/lib/labels";
 import type { Product } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
 
@@ -81,7 +81,7 @@ export function StickyBuyBar({ product }: { product: Product }) {
                 </p>
                 <p className="flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-[0.6875rem] text-grey-600">
                   {product.bladeType ? <span className="hidden sm:inline">{BLADE_TYPE_LABEL[product.bladeType]}</span> : null}
-                  <StockBadge status={product.stock} label={stockLabel(product)} />
+                  <StockBadge status={stockTone(product)} label={stockLabel(product)} />
                 </p>
               </div>
             </div>

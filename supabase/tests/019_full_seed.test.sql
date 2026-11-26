@@ -31,9 +31,9 @@ create trigger legacy_mirror_staff_membership after insert or update of role, ac
   for each row execute function private.legacy_mirror_staff_membership();
 select plan(18);
 
-select results_eq($$select count(*)::integer from public.products$$, array[54], 'seed has the reviewed products');
+select results_eq($$select count(*)::integer from public.products$$, array[55], 'seed has the reviewed products');
 select results_eq($$select count(*)::integer from public.categories$$, array[4], 'seed has the four reviewed categories');
-select results_eq($$select count(*)::integer from public.product_images where is_primary and published$$, array[54], 'seed has one reviewed primary image per product');
+select results_eq($$select count(*)::integer from public.product_images where is_primary and published$$, array[55], 'seed has one reviewed primary image per product');
 select results_eq($$select count(*)::integer from public.bundles$$, array[1], 'seed has the reviewed bundle');
 select results_eq($$select count(*)::integer from public.homepage_sections$$, array[8], 'seed has the current homepage sections');
 select results_eq($$select count(*)::integer from public.content_pages$$, array[5], 'seed has only reviewed public informational pages');
@@ -52,8 +52,10 @@ select results_eq($$select count(*)::integer from public.products where publicat
   )$$, array[0], 'every published product sells from stock or an allocation, or is honestly sold out');
 select results_eq($$select slug from public.products
   where publication_status = 'published' and stock_status = 'esaurito'::public.stock_status order by slug$$,
-  $$values ('blast-pegasus-a-tr'::text)$$,
-  'only Blast Pegasus opens sold out: the owner has none on the shelf (2026-10-09)');
+  -- The CX-20 Customize Set C (2026-11-26) is on its way: the seed gives it an empty shelf and no
+  -- pre-order, because its eight Telegram pieces are a row of the live database only.
+  $$values ('blast-pegasus-a-tr'::text), ('cx-20-customize-set-c')$$,
+  'only Blast Pegasus (none on the shelf, 2026-10-09) and the CX-20 on its way open with an empty shelf');
 select results_eq($$select slug, preorder_allocation from public.products where availability_override = 'preorder'::public.availability_override order by sort_order$$,
   $$values ('cobalt-drake-4-60f',9),('mirage-clock-9-65b',9),('suppress-superion-0-70lp',5),('strike-dran-4-50ff',9),('tread-croc-tq-5-50gn',9)$$,
   'the pre-order drop carries the allocations the owner set');

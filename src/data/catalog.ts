@@ -60,6 +60,8 @@ const eur = (amount: number) => ({ amount, currency: "EUR" }) as const;
  * that covers what the shop paid, with its share of freight and commission.
  */
 const BX53_PRICE = 15990;
+/** CX-20 Customize Set C (owner, 2026-11-26: "lo rivendiamo a 140 euro"). */
+const CX20_PRICE = 14000;
 
 /**
  * What a deck case costs on its own, in every colour and both families (owner, 2026-10-24: €18,
@@ -498,6 +500,21 @@ export const PRODUCTS: readonly Product[] = [
     features: [{ title: "Blade in quattro pezzi", description: "Lock chip e blade scomponibili per assetti su misura" }, { title: "Linea CX", description: "Combina i pezzi con le altre trottole Custom Line" }, { title: "Starter completo", description: "Include il lanciatore" }, { title: "Compatibile Beyblade X", description: "Blade, Ratchet e Bit intercambiabili con la serie" }],
     boxContents: ["1 × Trottola Tread Croc TQ 5-50GN", "1 × Lanciatore con ripcord", "Manuale"],
     relatedSlugs: ["hurricane-enlil-is-7-55t", "strike-dran-4-50ff", "cobalt-drake-4-60f"],
+  },
+  {
+    // Owner, 2026-11-26: "arrivano 20 cx-20. mettili sul sito con avvisami e solo 8 in pre order per
+    // telegram", paid on the site's checkout (his example of the same evening). The shop shows it sold
+    // out with "Avvisami"; the eight pieces are in the database (preorder_allocation) and only the
+    // channel's post opens the cart that sells them. When the pieces arrive the back office drops the
+    // pre-order and it becomes a product of the shop like any other.
+    slug: "cx-20-customize-set-c", name: "CX-20 Customize Set C", tagline: "Quattro blade, tre ratchet, sei bit: 72 combinazioni.",
+    description: "CX-20 è il Customize Set C di Takara Tomy: un set di parti per costruire e cambiare le tue trottole. Dentro ci sono quattro blade, tre ratchet e sei bit, per 72 combinazioni. La trottola del set è Phoenix Force WHM-65MT, bilanciata, della linea CX con Expand Blade: ha metallo nella blade, nel ratchet M-65 e nel Bit MT (Metal Taper), quindi è molto pesante, per colpire forte e incassare. La sua blade si smonta in lock chip Phoenix, metal blade Force, over blade W (Weight) e assist blade H (Heavy). Le altre tre blade sono Shark Scale (UX, attacco), con due lame grandi per colpire dal basso; Wizard Rod in Metal Coat blu (UX, stamina), larga e con il peso verso l'esterno; Hells Scythe versione 2.0 (BX, bilanciata), con quattro lame, nella versione aggiornata da Takara Tomy. I ratchet sono M-65, 8-80 e 1-70. I bit sono MT (Metal Taper), UF (Under Flat), K (Kick), LR (Low Rush), LO (Low Orb) e HN (High Needle). Tutte e quattro le blade girano a destra. Lanciatore e stadio non sono inclusi: servono quelli Beyblade X, venduti a parte. La vernice Metal Coat può consumarsi con l'uso. Prodotto originale giapponese, confezione in giapponese.",
+    price: eur(CX20_PRICE), category: "beyblade-x", brand: "takara-tomy", stock: "esaurito", availableQuantity: 0, channelOnly: "avvisami", channelPayment: "stripe", tags: [], rating: 0, reviewCount: 0,
+    images: productImages["cx-20-customize-set-c"],
+    specs: [{ label: "Tipo", value: "Set di parti da personalizzare" }, { label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codice prodotto", value: "CX-20" }, { label: "Componenti", value: "4 blade, 3 ratchet, 6 bit" }, { label: "Combinazioni", value: "72" }, { label: "Blade incluse", value: "Phoenix Force WH Metal Coat rossa (CX) · Shark Scale (UX) · Wizard Rod Metal Coat blu (UX) · Hells Scythe versione 2.0 (BX)" }, { label: "Ratchet inclusi", value: "M-65 · 8-80 · 1-70" }, { label: "Bit inclusi", value: "MT (Metal Taper) · UF (Under Flat) · K (Kick) · LR (Low Rush) · LO (Low Orb) · HN (High Needle)" }, { label: "Rotazione", value: "Destra, tutte e quattro le blade" }, { label: "Lanciatore e stadio", value: "Non inclusi" }, { label: "Confezione", value: "In giapponese" }],
+    features: [{ title: "72 combinazioni", description: "Quattro blade, tre ratchet e sei bit da montare come vuoi" }, { title: "Phoenix Force WHM-65MT", description: "Metallo in blade, ratchet e bit: una trottola molto pesante" }, { title: "Shark Scale e Wizard Rod", description: "Una blade d'attacco e una di stamina della linea UX" }, { title: "Sei bit", description: "Per attacco, difesa, stamina e gioco bilanciato" }],
+    boxContents: ["1 × Blade Phoenix Force WH Metal Coat rossa (lock chip Phoenix, metal blade Force, over blade W, assist blade H)", "1 × Blade Shark Scale", "1 × Blade Wizard Rod Metal Coat blu", "1 × Blade Hells Scythe versione 2.0", "1 × Ratchet M-65", "1 × Ratchet 8-80", "1 × Ratchet 1-70", "1 × Bit MT (Metal Taper)", "1 × Bit UF (Under Flat)", "1 × Bit K (Kick)", "1 × Bit LR (Low Rush)", "1 × Bit LO (Low Orb)", "1 × Bit HN (High Needle)", "Istruzioni in giapponese"],
+    relatedSlugs: ["cx-18-random-booster-brachio-whip", "bx-52-luster-dragoon-6-60lc", "custom-grip-takara-tomy"],
   },
   {
     slug: "soar-phoenix-9-60gf", name: "Soar Phoenix 9-60GF", tagline: "Upper attack. Colpisci verso l'alto.",

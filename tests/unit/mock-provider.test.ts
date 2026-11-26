@@ -140,7 +140,10 @@ describe("getFacets", () => {
     const available = facets.stock.find((f) => f.value === "disponibile");
     const preorder = facets.stock.find((f) => f.value === "pre-ordine");
     const soldOut = facets.stock.find((f) => f.value === "esaurito");
-    expect((available?.count ?? 0) + (preorder?.count ?? 0) + (soldOut?.count ?? 0)).toBe(oneCardPerFamily(STOREFRONT_CATALOGUE).length);
+    // Since 2026-11-26 a piece on its way with its pre-order on Telegram (the CX-20) is counted under "In arrivo".
+    const arriving = facets.stock.find((f) => f.value === "in-arrivo");
+    expect(arriving?.count).toBe(1);
+    expect((available?.count ?? 0) + (preorder?.count ?? 0) + (soldOut?.count ?? 0) + (arriving?.count ?? 0)).toBe(oneCardPerFamily(STOREFRONT_CATALOGUE).length);
     expect(available?.count).toBeGreaterThan(0);
     expect(preorder?.count).toBeGreaterThan(0);
   });

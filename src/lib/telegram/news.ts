@@ -134,8 +134,9 @@ export function scanProducts(
     const before = remembered.get(product.slug);
     const price = product.price.amount;
     const onSale = sellable(product.stock);
-    // Not in the shop yet: its news is the pre-order on the channel, and nothing else about it is.
-    const hidden = product.channelOnly === true;
+    // Pre-ordered on the channel only, whether the shop hides it or lists it as sold out with
+    // "Avvisami": its news is the pre-order on the channel, and nothing else about it is.
+    const hidden = Boolean(product.channelOnly);
     const flag = hidden ? { channelOnly: true as const } : {};
 
     if (!before) {

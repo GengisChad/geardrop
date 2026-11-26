@@ -72,6 +72,9 @@ STAGED: dict[str, tuple[tuple[str, int, int, int], ...]] = {
     "bx-52-luster-dragoon-6-60lc": (("BX52", 500, 500, 900),),
     "ux-08-silver-wolf-3-80fb": (("UX08", 500, 500, 900),),
     "bx-53-all-in-one-set": (("BX53", 500, 500, 920),),
+    # Owner, 2026-11-26: the CX-20 Customize Set C, shown by Takara Tomy's render of its four blades,
+    # three ratchets and six bits.
+    "cx-20-customize-set-c": (("CX20", 500, 500, 920),),
 }
 
 #: Further photos of the gallery, one render each, written as <slug>-<render in lower case>.webp.
@@ -83,6 +86,8 @@ GALLERY: dict[str, tuple[str, ...]] = {
     "bx-52-luster-dragoon-6-60lc": ("BX52_01", "BX52_02", "BX52_05"),
     "ux-08-silver-wolf-3-80fb": ("UX08_01", "UX08_02", "UX08_05"),
     "bx-53-all-in-one-set": ("BX53_01", "BX53_02", "BX53_03", "BX53_18", "BX53_16", "BX53_17"),
+    # Phoenix Force WHM-65MT assembled, the three other blades, then its metal ratchet and bit.
+    "cx-20-customize-set-c": ("CX20_01", "CX20_10", "CX20_11", "CX20_12", "CX20_08", "CX20_09"),
 }
 
 

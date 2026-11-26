@@ -85,10 +85,11 @@ with seed(category_slug, slug, sku, stock_quantity, availability_override, preor
   ('beyblade-x', 'suppress-superion-0-70lp', 'SUPPRESS-SUPERION-0-70LP', 0, 'preorder'::public.availability_override, 5, false, 'Suppress Superion 0-70LP', 'Bilanciata BX. Tiene il centro.', 'Suppress Superion 0-70LP è una trottola bilanciata della linea BX: la blade con il leone dorato unisce massa e superfici di contatto larghe per assorbire gli urti, mentre il Ratchet 0-70 e il Bit LP (Low Point) la tengono alta sul centro dello stadio, dove l''attacco avversario perde efficacia. Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).', 2500, null, 'bilanciato', 0, 0, 47),
   ('beyblade-x', 'strike-dran-4-50ff', 'STRIKE-DRAN-4-50FF', 0, 'preorder'::public.availability_override, 9, false, 'Strike Dran 4-50FF', 'Attacco BX. Blade interna in metallo.', 'Strike Dran 4-50FF è una trottola d''attacco della linea BX: la blade monta una lama interna in metallo che porta la massa verso il centro, il Ratchet 4-50 la tiene bassa e il Bit FF (Flat Force) la spinge in corse veloci sul bordo, pronte a colpire di taglio. Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).', 2300, null, 'attacco', 0, 0, 48),
   ('beyblade-x', 'tread-croc-tq-5-50gn', 'TREAD-CROC-TQ-5-50GN', 0, 'preorder'::public.availability_override, 9, false, 'Tread Croc TQ 5-50GN', 'Attacco CX. Quattro pezzi da combinare.', 'Tread Croc TQ 5-50GN è una trottola d''attacco della linea CX: la blade si scompone in quattro pezzi — lock chip, main blade, assist blade e il resto dell''assetto — per costruire combinazioni su misura, con Ratchet 5-50 e Bit GN. Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).', 2500, null, 'attacco', 0, 0, 49),
-  ('beyblade-x', 'soar-phoenix-9-60gf', 'SOAR-PHOENIX-9-60GF', 199, null::public.availability_override, 0, false, 'Soar Phoenix 9-60GF', 'Upper attack. Colpisci verso l''alto.', 'Soar Phoenix 9-60GF è una trottola d''attacco a tre lame che salgono verso l''alto per un Upper Attack capace di sollevare l''avversario, unito allo Smash che lo spinge fuori arena. Tra le blade più pesanti della serie. Lo starter include il lanciatore a corda.', 2190, null, 'attacco', 0, 0, 50),
-  ('beyblade-x', 'cx-00-evangelion-deck-set', 'CX-00-EVANGELION-DECK-SET', 2, null::public.availability_override, 0, false, 'CX-00 Evangelion Deck Set', 'Tre trottole Evangelion per i 30 anni della serie.', 'Il CX-00 Evangelion Deck Set è l''edizione Takara Tomy per i 30 anni di Evangelion: tre trottole Beyblade X ispirate alle Unità 00, 01 e 02 (EvaArc, EvaBrave ed EvaBrush), due lanciatori Winder e il box porta trottole EVA HANGAR. Prodotto originale giapponese, confezione in giapponese. Spedito dal nostro partner.', 13500, null, null, 0, 0, 51),
-  ('beyblade-x', 'ux-00-glory-valkyrie-lf', 'UX-00-GLORY-VALKYRIE-LF', 2, null::public.availability_override, 0, false, 'UX-00 Glory Valkyrie LF', 'B4 Limited, Metal Coat blu.', 'UX-00 Glory Valkyrie LF è l''edizione limitata B4 (Beyblade Battle Base) di Takara Tomy, con la blade in Metal Coat blu e il Bit Low Flat (LF) a punta piatta e bassa per un attacco rapido. Lo starter include il lanciatore a corda. Prodotto originale giapponese, confezione in giapponese. Spedito dal nostro partner.', 20500, null, 'attacco', 0, 0, 52),
-  ('beyblade-x', 'cx-00-tigarage-ft3-60t', 'CX-00-TIGARAGE-FT3-60T', 2, null::public.availability_override, 0, false, 'CX-00 Tigarage FT3-60T', 'B4 Limited, collaborazione Ultraman Tiga.', 'CX-00 Tigarage FT3-60T è l''edizione limitata B4 (Beyblade Battle Base) di Takara Tomy nata dalla collaborazione con Ultraman Tiga. Lo starter include il lanciatore e gli adesivi della collaborazione. Prodotto originale giapponese, confezione in giapponese. Spedito dal nostro partner.', 10399, null, null, 0, 0, 53)
+  ('beyblade-x', 'cx-20-customize-set-c', 'CX-20-CUSTOMIZE-SET-C', 0, null::public.availability_override, 0, false, 'CX-20 Customize Set C', 'Quattro blade, tre ratchet, sei bit: 72 combinazioni.', 'CX-20 è il Customize Set C di Takara Tomy: un set di parti per costruire e cambiare le tue trottole. Dentro ci sono quattro blade, tre ratchet e sei bit, per 72 combinazioni. La trottola del set è Phoenix Force WHM-65MT, bilanciata, della linea CX con Expand Blade: ha metallo nella blade, nel ratchet M-65 e nel Bit MT (Metal Taper), quindi è molto pesante, per colpire forte e incassare. La sua blade si smonta in lock chip Phoenix, metal blade Force, over blade W (Weight) e assist blade H (Heavy). Le altre tre blade sono Shark Scale (UX, attacco), con due lame grandi per colpire dal basso; Wizard Rod in Metal Coat blu (UX, stamina), larga e con il peso verso l''esterno; Hells Scythe versione 2.0 (BX, bilanciata), con quattro lame, nella versione aggiornata da Takara Tomy. I ratchet sono M-65, 8-80 e 1-70. I bit sono MT (Metal Taper), UF (Under Flat), K (Kick), LR (Low Rush), LO (Low Orb) e HN (High Needle). Tutte e quattro le blade girano a destra. Lanciatore e stadio non sono inclusi: servono quelli Beyblade X, venduti a parte. La vernice Metal Coat può consumarsi con l''uso. Prodotto originale giapponese, confezione in giapponese.', 14000, null, null, 0, 0, 50),
+  ('beyblade-x', 'soar-phoenix-9-60gf', 'SOAR-PHOENIX-9-60GF', 199, null::public.availability_override, 0, false, 'Soar Phoenix 9-60GF', 'Upper attack. Colpisci verso l''alto.', 'Soar Phoenix 9-60GF è una trottola d''attacco a tre lame che salgono verso l''alto per un Upper Attack capace di sollevare l''avversario, unito allo Smash che lo spinge fuori arena. Tra le blade più pesanti della serie. Lo starter include il lanciatore a corda.', 2190, null, 'attacco', 0, 0, 51),
+  ('beyblade-x', 'cx-00-evangelion-deck-set', 'CX-00-EVANGELION-DECK-SET', 2, null::public.availability_override, 0, false, 'CX-00 Evangelion Deck Set', 'Tre trottole Evangelion per i 30 anni della serie.', 'Il CX-00 Evangelion Deck Set è l''edizione Takara Tomy per i 30 anni di Evangelion: tre trottole Beyblade X ispirate alle Unità 00, 01 e 02 (EvaArc, EvaBrave ed EvaBrush), due lanciatori Winder e il box porta trottole EVA HANGAR. Prodotto originale giapponese, confezione in giapponese. Spedito dal nostro partner.', 13500, null, null, 0, 0, 52),
+  ('beyblade-x', 'ux-00-glory-valkyrie-lf', 'UX-00-GLORY-VALKYRIE-LF', 2, null::public.availability_override, 0, false, 'UX-00 Glory Valkyrie LF', 'B4 Limited, Metal Coat blu.', 'UX-00 Glory Valkyrie LF è l''edizione limitata B4 (Beyblade Battle Base) di Takara Tomy, con la blade in Metal Coat blu e il Bit Low Flat (LF) a punta piatta e bassa per un attacco rapido. Lo starter include il lanciatore a corda. Prodotto originale giapponese, confezione in giapponese. Spedito dal nostro partner.', 20500, null, 'attacco', 0, 0, 53),
+  ('beyblade-x', 'cx-00-tigarage-ft3-60t', 'CX-00-TIGARAGE-FT3-60T', 2, null::public.availability_override, 0, false, 'CX-00 Tigarage FT3-60T', 'B4 Limited, collaborazione Ultraman Tiga.', 'CX-00 Tigarage FT3-60T è l''edizione limitata B4 (Beyblade Battle Base) di Takara Tomy nata dalla collaborazione con Ultraman Tiga. Lo starter include il lanciatore e gli adesivi della collaborazione. Prodotto originale giapponese, confezione in giapponese. Spedito dal nostro partner.', 10399, null, null, 0, 0, 54)
 )
 insert into public.products (
   organization_id, category_id, slug, sku, name, tagline, description, price_cents,
@@ -205,6 +206,13 @@ with seed(product_slug, src, width, height, alt, sort_order) as (
   ('suppress-superion-0-70lp', '/products/suppress-superion-0-70lp.webp', 1000, 1000, 'Confezione Beyblade X Suppress Superion 0-70LP con trottola bianca e oro', 0),
   ('strike-dran-4-50ff', '/products/strike-dran-4-50ff.webp', 1000, 1000, 'Confezione Beyblade X Strike Dran 4-50FF con trottola blu e argento', 0),
   ('tread-croc-tq-5-50gn', '/products/tread-croc-tq-5-50gn.webp', 1000, 1000, 'Confezione Beyblade X Tread Croc TQ 5-50GN della linea CX con trottola dorata e verde', 0),
+  ('cx-20-customize-set-c', '/products/cx-20-customize-set-c.webp', 1000, 1000, 'Contenuto del Takara Tomy Beyblade X CX-20 Customize Set C: quattro blade, tre ratchet e sei bit', 0),
+  ('cx-20-customize-set-c', '/products/cx-20-customize-set-c-cx20_01.webp', 1000, 1000, 'Phoenix Force WHM-65MT Metal Coat rossa, montata, vista di tre quarti', 1),
+  ('cx-20-customize-set-c', '/products/cx-20-customize-set-c-cx20_10.webp', 1000, 1000, 'Blade Shark Scale, argento e arancione', 2),
+  ('cx-20-customize-set-c', '/products/cx-20-customize-set-c-cx20_11.webp', 1000, 1000, 'Blade Wizard Rod Metal Coat blu', 3),
+  ('cx-20-customize-set-c', '/products/cx-20-customize-set-c-cx20_12.webp', 1000, 1000, 'Blade Hells Scythe versione 2.0, argento e rossa', 4),
+  ('cx-20-customize-set-c', '/products/cx-20-customize-set-c-cx20_08.webp', 1000, 1000, 'Ratchet M-65 rosso, con la parte in metallo', 5),
+  ('cx-20-customize-set-c', '/products/cx-20-customize-set-c-cx20_09.webp', 1000, 1000, 'Bit MT (Metal Taper) rosso, con la punta in metallo', 6),
   ('soar-phoenix-9-60gf', '/products/soar-phoenix-9-60gf.webp', 1000, 1000, 'Confezione Beyblade X Soar Phoenix 9-60GF rossa con lanciatore e trottola', 0),
   ('cx-00-evangelion-deck-set', '/products/cx-00-evangelion-deck-set.webp', 1000, 1000, 'Confezione Takara Tomy Beyblade X CX-00 Evangelion Deck Set con tre trottole e i personaggi di Evangelion', 0),
   ('ux-00-glory-valkyrie-lf', '/products/ux-00-glory-valkyrie-lf.webp', 1000, 1000, 'Confezione Takara Tomy Beyblade X UX-00 Glory Valkyrie LF B4 Limited con trottola blu metallizzata', 0),
@@ -578,6 +586,18 @@ with seed(product_slug, label, value, sort_order) as (
   ('tread-croc-tq-5-50gn', 'Codice', 'TQ 5-50GN', 4),
   ('tread-croc-tq-5-50gn', 'Componenti', '1 trottola, 1 lanciatore', 5),
   ('tread-croc-tq-5-50gn', 'Nota', 'Richiede un Beystadium (venduto a parte)', 6),
+  ('cx-20-customize-set-c', 'Tipo', 'Set di parti da personalizzare', 0),
+  ('cx-20-customize-set-c', 'Produttore', 'Takara Tomy (prodotto originale giapponese)', 1),
+  ('cx-20-customize-set-c', 'Sistema', 'Beyblade X', 2),
+  ('cx-20-customize-set-c', 'Codice prodotto', 'CX-20', 3),
+  ('cx-20-customize-set-c', 'Componenti', '4 blade, 3 ratchet, 6 bit', 4),
+  ('cx-20-customize-set-c', 'Combinazioni', '72', 5),
+  ('cx-20-customize-set-c', 'Blade incluse', 'Phoenix Force WH Metal Coat rossa (CX) · Shark Scale (UX) · Wizard Rod Metal Coat blu (UX) · Hells Scythe versione 2.0 (BX)', 6),
+  ('cx-20-customize-set-c', 'Ratchet inclusi', 'M-65 · 8-80 · 1-70', 7),
+  ('cx-20-customize-set-c', 'Bit inclusi', 'MT (Metal Taper) · UF (Under Flat) · K (Kick) · LR (Low Rush) · LO (Low Orb) · HN (High Needle)', 8),
+  ('cx-20-customize-set-c', 'Rotazione', 'Destra, tutte e quattro le blade', 9),
+  ('cx-20-customize-set-c', 'Lanciatore e stadio', 'Non inclusi', 10),
+  ('cx-20-customize-set-c', 'Confezione', 'In giapponese', 11),
   ('soar-phoenix-9-60gf', 'Tipo', 'Attacco', 0),
   ('soar-phoenix-9-60gf', 'Produttore', 'Hasbro (prodotto originale)', 1),
   ('soar-phoenix-9-60gf', 'Sistema', 'Beyblade X', 2),
@@ -814,6 +834,10 @@ with seed(product_slug, title, description, sort_order) as (
   ('tread-croc-tq-5-50gn', 'Linea CX', 'Combina i pezzi con le altre trottole Custom Line', 1),
   ('tread-croc-tq-5-50gn', 'Starter completo', 'Include il lanciatore', 2),
   ('tread-croc-tq-5-50gn', 'Compatibile Beyblade X', 'Blade, Ratchet e Bit intercambiabili con la serie', 3),
+  ('cx-20-customize-set-c', '72 combinazioni', 'Quattro blade, tre ratchet e sei bit da montare come vuoi', 0),
+  ('cx-20-customize-set-c', 'Phoenix Force WHM-65MT', 'Metallo in blade, ratchet e bit: una trottola molto pesante', 1),
+  ('cx-20-customize-set-c', 'Shark Scale e Wizard Rod', 'Una blade d''attacco e una di stamina della linea UX', 2),
+  ('cx-20-customize-set-c', 'Sei bit', 'Per attacco, difesa, stamina e gioco bilanciato', 3),
   ('soar-phoenix-9-60gf', 'Upper Attack', 'Le tre lame sollevano l''avversario da terra', 0),
   ('soar-phoenix-9-60gf', 'Peso elevato', 'Massa che domina i confronti d''attacco', 1),
   ('soar-phoenix-9-60gf', 'Starter completo', 'Include il lanciatore a corda', 2),
@@ -944,6 +968,20 @@ with seed(product_slug, content, sort_order) as (
   ('tread-croc-tq-5-50gn', '1 × Trottola Tread Croc TQ 5-50GN', 0),
   ('tread-croc-tq-5-50gn', '1 × Lanciatore con ripcord', 1),
   ('tread-croc-tq-5-50gn', 'Manuale', 2),
+  ('cx-20-customize-set-c', '1 × Blade Phoenix Force WH Metal Coat rossa (lock chip Phoenix, metal blade Force, over blade W, assist blade H)', 0),
+  ('cx-20-customize-set-c', '1 × Blade Shark Scale', 1),
+  ('cx-20-customize-set-c', '1 × Blade Wizard Rod Metal Coat blu', 2),
+  ('cx-20-customize-set-c', '1 × Blade Hells Scythe versione 2.0', 3),
+  ('cx-20-customize-set-c', '1 × Ratchet M-65', 4),
+  ('cx-20-customize-set-c', '1 × Ratchet 8-80', 5),
+  ('cx-20-customize-set-c', '1 × Ratchet 1-70', 6),
+  ('cx-20-customize-set-c', '1 × Bit MT (Metal Taper)', 7),
+  ('cx-20-customize-set-c', '1 × Bit UF (Under Flat)', 8),
+  ('cx-20-customize-set-c', '1 × Bit K (Kick)', 9),
+  ('cx-20-customize-set-c', '1 × Bit LR (Low Rush)', 10),
+  ('cx-20-customize-set-c', '1 × Bit LO (Low Orb)', 11),
+  ('cx-20-customize-set-c', '1 × Bit HN (High Needle)', 12),
+  ('cx-20-customize-set-c', 'Istruzioni in giapponese', 13),
   ('soar-phoenix-9-60gf', '1 × Trottola Soar Phoenix 9-60GF', 0),
   ('soar-phoenix-9-60gf', '1 × Lanciatore a corda', 1),
   ('soar-phoenix-9-60gf', 'Manuale', 2),
@@ -1139,6 +1177,9 @@ with seed(product_slug, related_slug, sort_order) as (
   ('tread-croc-tq-5-50gn', 'hurricane-enlil-is-7-55t', 0),
   ('tread-croc-tq-5-50gn', 'strike-dran-4-50ff', 1),
   ('tread-croc-tq-5-50gn', 'cobalt-drake-4-60f', 2),
+  ('cx-20-customize-set-c', 'cx-18-random-booster-brachio-whip', 0),
+  ('cx-20-customize-set-c', 'bx-52-luster-dragoon-6-60lc', 1),
+  ('cx-20-customize-set-c', 'custom-grip-takara-tomy', 2),
   ('soar-phoenix-9-60gf', 'cobalt-dragoon-2-60c', 0),
   ('soar-phoenix-9-60gf', 'blast-pegasus-a-tr', 1),
   ('soar-phoenix-9-60gf', 'saber-samurai-2-70l', 2),
@@ -1317,7 +1358,9 @@ Apple Pay e Google Pay compaiono sui dispositivi dove li hai attivati. I dati de
 
 ## Cosa significa “in arrivo”?
 
-La disponibilità è in aggiornamento. Contattaci prima dell''ordine per conoscere lo stato corrente.
+Il prodotto sta arrivando in magazzino. Se sulla scheda c''è «Avvisami», lascia la tua email e ti scriviamo quando si può ordinare; alcuni pezzi in arrivo si pre-ordinano prima sul nostro canale Telegram.
+
+Se invece il prodotto si può già mettere nel carrello, la disponibilità è in aggiornamento: contattaci prima dell''ordine per conoscere lo stato corrente.
 
 ## Cosa significa “pre-ordine”?
 

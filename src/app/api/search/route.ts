@@ -3,6 +3,7 @@ import { getCommerceProvider } from "@/lib/commerce/provider";
 import { cutoutSrc } from "@/data/assets";
 import { availabilityLine } from "@/lib/holo";
 import { formatPrice } from "@/lib/format";
+import { stockTone } from "@/lib/labels";
 
 /**
  * GET /api/search?q=<term>
@@ -46,7 +47,8 @@ export async function GET(request: NextRequest) {
       name: product.name,
       price: formatPrice(product.price),
       ...(product.compareAtPrice ? { compareAt: formatPrice(product.compareAtPrice) } : {}),
-      stock: product.stock,
+      // The status it wears: a piece on its way reads "In arrivo", not sold out.
+      stock: stockTone(product),
       availability: availabilityLine(product),
       image: image && imageSrc ? { src: imageSrc, alt: image.alt } : null,
     };

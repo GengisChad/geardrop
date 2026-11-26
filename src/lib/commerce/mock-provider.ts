@@ -30,10 +30,12 @@ import type {
   StockStatus,
 } from "./types";
 import { separatePreorders } from "./separate-preorders";
+import { hiddenFromShop, isArriving, shopView } from "./channel-only";
 
 // The catalogue is small: one page holds it all, so nobody lands on a page with two cards.
 // 48 since 2026-10-24: the two-colour deck cases made 25 cards, one past the old 24.
-const DEFAULT_PER_PAGE = 48;
+// 60 since 2026-11-26: the CX-20 Customize Set C made 49 cards, one past 48.
+const DEFAULT_PER_PAGE = 60;
 
 // No module-level shipping constants: shipping options are derived per-cart from whose
 // warehouse the pieces leave (shippingPlanFor), so the plan is computed inside quoteCart.
@@ -80,7 +82,7 @@ function rank(query: ProductQuery, sorter: (a: Product, b: Product) => number) {
 
 function matches(product: Product, query: ProductQuery): boolean {
   if (query.category && product.category !== query.category) return false;
-  if (query.stock?.length && !query.stock.includes(product.stock)) return false;
+  if (query.stock?.length && !query.stock.includes(listedStock(product))) return false;
   if (query.bladeType?.length && (!product.bladeType || !query.bladeType.includes(product.bladeType))) return false;
   if (query.minPrice !== undefined && product.price.amount < query.minPrice) return false;
   if (query.maxPrice !== undefined && product.price.amount > query.maxPrice) return false;
@@ -102,6 +104,11 @@ function omit<T extends object, K extends keyof T>(source: T, keys: readonly K[]
   return copy as Omit<T, K>;
 }
 
+/** The availability a product is filtered under: one on its way is found under "In arrivo", as it reads. */
+function listedStock(product: Product): StockStatus {
+  return isArriving(product) ? "in-arrivo" : product.stock;
+}
+
 /** Facet counts ignore the facet being counted, so a filter never zeroes its own siblings. */
 function countBy<T extends string>(products: readonly Product[], pick: (p: Product) => T | undefined) {
   const counts = new Map<T, number>();
@@ -120,10 +127,13 @@ export function createMockProvider(
   // Coupons live in the database: only the server, which can read them, passes this in.
   findCoupon: FindSiteCoupon = async () => ({ status: "unknown" }),
 ): CommerceProvider {
+  // The products as they really are: what the cart's quote prices and sells.
   const bySlug = new Map(catalogue.map((product) => [product.slug as string, product]));
-  // A Telegram-only pre-order is in the catalogue but not in the shop (Product.channelOnly): no
-  // list, search or filter shows it, while its slug still resolves for the cart its link fills.
-  const shelf = catalogue.filter((product) => !product.channelOnly);
+  // The products as the shop's pages show them (lib/commerce/channel-only.ts). A pre-order taken on
+  // Telegram is either in no list, search or filter at all, or listed as sold out with "Avvisami";
+  // its slug still resolves for the cart its link fills.
+  const shown = new Map(catalogue.map((product) => [product.slug as string, shopView(product)]));
+  const shelf = catalogue.filter((product) => !hiddenFromShop(product)).map(shopView);
 
   // Lists show an item sold in several colours once (see variants.ts); its product page still
   // finds every colour by slug.
@@ -133,11 +143,11 @@ export function createMockProvider(
     name: "mock",
 
     async getProduct(slug) {
-      return bySlug.get(slug) ?? null;
+      return shown.get(slug) ?? null;
     },
 
     async getProductsBySlugs(slugs) {
-      return slugs.map((slug) => bySlug.get(slug)).filter((p): p is Product => p !== undefined);
+      return slugs.map((slug) => shown.get(slug)).filter((p): p is Product => p !== undefined);
     },
 
     async listProducts(query = {}) {
@@ -163,7 +173,7 @@ export function createMockProvider(
       const forType = oneCardPerFamily(shelf.filter((p) => matches(p, omit(query, ["bladeType"]))));
 
       const categoryCounts = countBy<CategorySlug>(forCategories, (p) => p.category);
-      const stockCounts = countBy<StockStatus>(forStock, (p) => p.stock);
+      const stockCounts = countBy<StockStatus>(forStock, listedStock);
       const typeCounts = countBy<BladeType>(forType, (p) => p.bladeType);
       const prices = shelf.map((p) => p.price.amount);
 

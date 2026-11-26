@@ -12,6 +12,8 @@ type RestockFormProps = {
   name: string;
   /** A drop that sold its pieces reopens: the notice says so. */
   releasePreorder?: boolean;
+  /** On its way and never sold here yet: nothing "comes back", and nothing is sold out. */
+  arriving?: boolean;
 };
 
 const initial: RestockNoticeState = { ok: false, message: "" };
@@ -22,7 +24,7 @@ const initial: RestockNoticeState = { ok: false, message: "" };
  * live feedback without a page reload when JS is available.
  * Exposed as id="restock-form" so the sticky bar can scroll/focus it.
  */
-export function RestockForm({ slug, name, releasePreorder }: RestockFormProps) {
+export function RestockForm({ slug, name, releasePreorder, arriving }: RestockFormProps) {
   const emailId = useId();
   const [state, formAction, pending] = useActionState(requestRestockNoticeAction, initial);
 
@@ -35,14 +37,18 @@ export function RestockForm({ slug, name, releasePreorder }: RestockFormProps) {
       id="restock-form"
       action={formAction}
       noValidate
-      className="flex flex-col gap-3 rounded-xl border border-soldout/20 bg-soldout-bg px-4 py-4"
+      className={cn("flex flex-col gap-3 rounded-xl border px-4 py-4", arriving ? "border-incoming-solid/40 bg-incoming-bg/40" : "border-soldout/20 bg-soldout-bg")}
     >
       <input type="hidden" name="slug" value={slug} />
 
       <div className="flex items-center gap-2">
-        <Bell className="size-4 shrink-0 text-soldout" aria-hidden="true" />
-        <p className="gd-display text-small font-bold text-soldout">
-          {releasePreorder ? `Avvisami quando riaprono i pre-ordini di ${name}` : `Avvisami quando ${name} torna disponibile`}
+        <Bell className={cn("size-4 shrink-0", arriving ? "text-incoming" : "text-soldout")} aria-hidden="true" />
+        <p className={cn("gd-display text-small font-bold", arriving ? "text-incoming" : "text-soldout")}>
+          {arriving
+            ? `Avvisami quando ${name} si può ordinare`
+            : releasePreorder
+              ? `Avvisami quando riaprono i pre-ordini di ${name}`
+              : `Avvisami quando ${name} torna disponibile`}
         </p>
       </div>
 

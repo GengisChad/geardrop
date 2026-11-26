@@ -1,5 +1,6 @@
+import { existsSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { productClips } from "@/data/assets";
+import { productClips, telegramPostImages } from "@/data/assets";
 import { PRODUCTS } from "@/data/catalog";
 import type { Product } from "@/lib/commerce/types";
 import { createTelegramGateway } from "@/lib/telegram/api";
@@ -41,6 +42,25 @@ describe("what a post shows", () => {
     if (!result.ok) throw new Error(result.reason);
     expect(result.post.videoUrl).toBe("https://geardropshop.it/video/products/glory-valkerion-lf.mp4");
     expect(asDraft(result.post, "@geardropshop").videoUrl).toBe(result.post.videoUrl);
+  });
+});
+
+describe("a picture made for the post", () => {
+  it("goes out in place of the clip and of the packshot", () => {
+    const [slug, path] = Object.entries(telegramPostImages)[0]!;
+    const product = PRODUCTS.find((candidate) => candidate.slug === slug)!;
+    const result = channelPreorderPost({ slugs: [slug] }, [{ ...product, stock: "pre-ordine", availableQuantity: 8 }], "GearDropNewsBot", "stripe");
+    if (!result.ok) throw new Error(result.reason);
+    expect(result.post.photoUrl).toBe(`https://geardropshop.it${path}`);
+    expect(result.post.videoUrl).toBeUndefined();
+  });
+
+  it("is a file the site really serves, for a product of the catalogue", () => {
+    for (const [slug, path] of Object.entries(telegramPostImages)) {
+      expect(PRODUCTS.some((product) => product.slug === slug), slug).toBe(true);
+      expect(path, slug).toMatch(/^\/telegram\/[a-z0-9-]+\.jpg$/);
+      expect(existsSync(`public${path}`), path).toBe(true);
+    }
   });
 });
 

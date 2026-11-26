@@ -7,6 +7,7 @@
 
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_FLAT_RATE } from "@/data/catalog";
 import { formatPrice } from "@/lib/format";
+import { isArriving } from "@/lib/commerce/channel-only";
 import type { BladeType, CategorySlug, PromoTag, SortKey, StockStatus } from "@/lib/commerce/types";
 
 /** "€100" for a round figure, "€4,90" otherwise: the copy never writes a pointless ",00". */
@@ -135,7 +136,7 @@ export function isPurchasable(stock: StockStatus): boolean {
   return stock !== "esaurito";
 }
 
-type Availability = { readonly stock: StockStatus; readonly releasePreorder?: boolean };
+type Availability = { readonly stock: StockStatus; readonly releasePreorder?: boolean; readonly channelOnly?: true | "avvisami" };
 
 /**
  * A drop that has sold its pieces is out of pieces, not out of the catalogue: it keeps saying
@@ -143,11 +144,24 @@ type Availability = { readonly stock: StockStatus; readonly releasePreorder?: bo
  * reopens (owner, 2026-09-22). Everything else keeps its own word.
  */
 export function stockLabel(product: Availability): string {
+  // On its way with its pre-order on Telegram: the owner's word for it is "In arrivo" (2026-11-26).
+  if (isArriving(product)) return STOCK_LABEL["in-arrivo"];
   return product.stock === "esaurito" && product.releasePreorder ? "Pre-ordine esaurito" : STOCK_LABEL[product.stock];
+}
+
+/**
+ * The status a product wears: its colour and its icon. A sold-out drop wears the pre-order's, it
+ * is waiting, not gone; a piece on its way wears "In arrivo". Never use it to decide whether a
+ * product can be bought: that is `stock`.
+ */
+export function stockTone(product: Availability): StockStatus {
+  if (isArriving(product)) return "in-arrivo";
+  return product.stock === "esaurito" && product.releasePreorder ? "pre-ordine" : product.stock;
 }
 
 /** The sub-line under the status: the wait while it sells, the promise of a notice once it cannot. */
 export function stockHint(product: Availability): string {
+  if (isArriving(product)) return "Lascia la tua email: ti avvisiamo quando si può ordinare";
   if (product.stock === "pre-ordine") return preorderDelivery(product.releasePreorder);
   if (product.stock === "esaurito" && product.releasePreorder) return "Pre-ordini chiusi: ti avvisiamo appena riaprono";
   return STOCK_HINT[product.stock];

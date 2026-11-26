@@ -102,12 +102,14 @@ export type Product = {
    */
   readonly releasePreorder?: true;
   /**
-   * Pre-ordered on the Telegram channel only (owner, 2026-11-26): the product is loaded in the
-   * catalogue but kept out of the shop, the search, the sitemap and Google until its pieces are
-   * on the shelf. The catalogue sets it; the live overlay drops it as soon as the back office no
-   * longer holds the product as a pre-order, so the product shows up by itself when it arrives.
+   * Pre-ordered on the Telegram channel only (owner, 2026-11-26). The catalogue sets it; the live
+   * overlay drops it as soon as the back office no longer holds the product as a pre-order, so
+   * it becomes a product of the shop like any other by itself when its pieces arrive. Until then:
+   * - `true`: loaded in the catalogue but kept out of the shop, the search, the sitemap and Google;
+   * - `"avvisami"`: on the shop as a sold-out product with "Avvisami", while the pieces the owner
+   *   set aside are pre-ordered on the channel. See lib/commerce/channel-only.ts.
    */
-  readonly channelOnly?: true;
+  readonly channelOnly?: true | "avvisami";
   /**
    * How a Telegram-only pre-order is paid, when the owner said it as he asked for the post ("si
    * paga con Stripe sul sito", "solo con PayPal.me"): the site's checkout, PayPal.me in the bot's
