@@ -5,6 +5,7 @@ import { z } from "zod";
 import { parseReturnForm, returnFailure } from "@/lib/admin/returns";
 import { requireStaffRole, requireUser } from "@/lib/auth/guards";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { scanNewsAfterChange } from "@/lib/telegram/runtime";
 
 export type ReturnActionState = { readonly ok: boolean; readonly message: string };
 
@@ -43,6 +44,7 @@ export async function recordOrderReturnAction(_previous: ReturnActionState, form
     revalidateTag("dashboard", "max");
     revalidatePath(`/admin/ordini/${orderId}`);
     revalidatePath("/admin/inventario");
+    scanNewsAfterChange();
     const pieces = lines.reduce((sum, line) => sum + line.quantity, 0);
     return {
       ok: true,

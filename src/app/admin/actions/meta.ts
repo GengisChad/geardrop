@@ -10,6 +10,7 @@ import {
 import { requireStaffRole, requireUser } from "@/lib/auth/guards";
 import { STAFF_ROLES } from "@/lib/auth/roles";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { scanNewsAfterChange } from "@/lib/telegram/runtime";
 
 export type MetaActionState = { readonly ok: boolean; readonly message: string; readonly id?: number };
 
@@ -34,6 +35,8 @@ function refreshMeta(month?: string): void {
   revalidatePath("/meta");
   if (month) revalidatePath(`/meta/${month}`);
   revalidatePath("/sitemap.xml");
+  // A tier list published for the first time is news for the Telegram channel.
+  scanNewsAfterChange();
 }
 
 export async function saveMetaSnapshotAction(_state: MetaActionState, formData: FormData): Promise<MetaActionState> {

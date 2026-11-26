@@ -10,6 +10,7 @@ import { askCopilot, type CopilotTurn } from "@/lib/ai/copilot";
 import { copilotActionSchema, executeCopilotAction, type CopilotAction } from "@/lib/ai/copilot-actions";
 import { runPricingAgent } from "@/lib/ai/pricing-agent";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { scanNewsAfterChange } from "@/lib/telegram/runtime";
 import { STOREFRONT_CACHE_TAGS } from "@/lib/storefront/cache";
 
 export type PricingActionState = { readonly ok: boolean; readonly message: string };
@@ -199,6 +200,7 @@ export async function decideProposalAction(_previous: PricingActionState, formDa
       revalidateTag(STOREFRONT_CACHE_TAGS.products, { expire: 0 });
       revalidateTag("products", "max");
       revalidatePath("/admin/prodotti");
+      scanNewsAfterChange();
       return { ok: true, message: `Prezzo applicato: €${((data ?? 0) / 100).toFixed(2).replace(".", ",")}.` };
     }
     return { ok: true, message: "Proposta rifiutata." };

@@ -3522,6 +3522,60 @@ export type Database = {
           },
         ]
       }
+      telegram_news_drafts: {
+        Row: {
+          channel_message_id: number | null
+          created_at: string
+          event_key: string
+          id: number
+          kind: string
+          owner_message_id: number | null
+          payload: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          channel_message_id?: number | null
+          created_at?: string
+          event_key: string
+          id?: never
+          kind: string
+          owner_message_id?: number | null
+          payload: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          channel_message_id?: number | null
+          created_at?: string
+          event_key?: string
+          id?: never
+          kind?: string
+          owner_message_id?: number | null
+          payload?: Json
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      telegram_news_memory: {
+        Row: {
+          state: Json
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          state?: Json
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          state?: Json
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       inventory_valuation: {

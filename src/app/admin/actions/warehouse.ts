@@ -15,6 +15,7 @@ import {
   supplierSchema,
 } from "@/lib/admin/warehouse";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { scanNewsAfterChange } from "@/lib/telegram/runtime";
 import type { Json } from "@/lib/supabase/database.types";
 
 export type WarehouseActionState = { readonly ok: boolean; readonly message: string; readonly id?: number };
@@ -74,6 +75,8 @@ function refreshWarehouse(): void {
   revalidatePath("/admin/inventario");
   revalidatePath("/admin/listino");
   revalidatePath("/admin/prodotti");
+  // A confirmed load can put a sold-out piece back on sale: the Telegram bot looks for news.
+  scanNewsAfterChange();
 }
 
 // ---------------------------------------------------------------------------------------

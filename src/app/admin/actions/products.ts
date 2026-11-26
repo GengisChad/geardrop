@@ -18,6 +18,7 @@ import { associateMediaSchema } from "@/lib/admin/media";
 import { formatEuro, netOfVat, parseEuroCents } from "@/lib/admin/warehouse";
 import { bundlePartnersOf, bundlesLosingTheirSaving } from "@/lib/admin/bundle-saving-guard";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { scanNewsAfterChange } from "@/lib/telegram/runtime";
 import type { Database, Json } from "@/lib/supabase/database.types";
 import { BUNDLES, PRODUCTS } from "@/data/catalog";
 import { changedContentFields, mergeStorefrontFields, type StorefrontField } from "@/lib/commerce/storefront-content";
@@ -233,6 +234,8 @@ function refreshProductCache(slug?: string): void {
   revalidatePath("/admin/prodotti");
   revalidatePath("/catalogo");
   if (slug) revalidatePath(`/prodotto/${slug}`);
+  // A new price or availability can be news for the Telegram channel: the bot drafts it for the owner.
+  scanNewsAfterChange();
 }
 
 function safeFailure(error: unknown): ProductActionState {

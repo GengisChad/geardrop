@@ -10,6 +10,7 @@ import { sendEmail } from "@/lib/email/resend";
 import { restockNotificationEmail } from "@/lib/orders/restock-email";
 import type { Database } from "@/lib/supabase/database.types";
 import * as supabaseServer from "@/lib/supabase/server";
+import { scanNewsAfterChange } from "@/lib/telegram/runtime";
 
 export type InventoryActionState = {
   readonly ok: boolean;
@@ -77,6 +78,8 @@ export async function adjustInventoryAction(
     revalidatePath("/admin");
     revalidatePath("/admin/inventario");
     revalidatePath("/admin/prodotti");
+    // A piece back on the shelf is news for the Telegram channel: the bot drafts it for the owner.
+    scanNewsAfterChange();
     return { ok: true, message: `Movimento registrato. Stock attuale: ${data}.`, newStock: data };
   } catch (error) {
     return safeInventoryFailure(error);

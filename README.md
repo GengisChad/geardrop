@@ -66,6 +66,22 @@ fino al round-trip del server.
 server rende sempre un carrello vuoto, quindi mostrare un conteggio persistito prima della
 reidratazione sarebbe un hydration mismatch.
 
+## Bot Telegram delle news
+
+Un bot propone al proprietario, nella sua chat privata, le novità dello shop (nuovi arrivi, pezzi
+tornati disponibili, prezzi ribassati, nuova tier list, nuovi video) e pubblica sul canale solo
+quelle su cui lui tocca «Pubblica». Prezzo e disponibilità di ogni post sono riletti dallo shop al
+momento della pubblicazione, mai scritti a mano.
+
+1. Crea il bot con @BotFather e metti il token in `.env.local` (`TELEGRAM_BOT_TOKEN`).
+2. Scrivi `/start` al bot, poi `pnpm telegram link` (salva `TELEGRAM_OWNER_CHAT_ID`).
+3. Prova in locale: `pnpm dev` e `pnpm telegram poll`, poi `/controlla` dal telefono. Senza
+   `TELEGRAM_CHANNEL_ID` «Pubblica» manda il post nella tua chat.
+4. In produzione: migrazione `20261126120000`, le quattro variabili `TELEGRAM_*` su Vercel,
+   `pnpm telegram webhook set`.
+
+Regole dei post, sicurezza e passi completi: [`docs/operations/telegram-news-bot.md`](docs/operations/telegram-news-bot.md).
+
 ## Asset
 
 Gli originali stanno in `assets-source/` e non si toccano. Tutto ciò che sta in `public/` è
