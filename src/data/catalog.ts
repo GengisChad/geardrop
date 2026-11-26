@@ -15,7 +15,7 @@ import type { Brand, BrandSlug, Bundle, Category, Product, ShippingLockReason, S
  * The one consignment partner we work with: NerdPoint holds Takara Tomy stock and ships it
  * himself. His email comes from the env so it can be overridden in tests or staging without
  * touching the code. He is owed the list price minus the commission whatever the buyer paid,
- * which is why a cart holding his pieces takes no promotion code (lib/payments/stripe-checkout.ts).
+ * which is why no code ever discounts his pieces (lib/commerce/cart-code.ts).
  */
 export const CONSIGNMENT_PARTNER = {
   key: "nerdpoint",

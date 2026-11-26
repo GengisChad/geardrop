@@ -2,7 +2,7 @@ import "server-only";
 import type { VisitSource } from "@/lib/attribution";
 
 import { createHash } from "node:crypto";
-import { PRODUCTS, SHIPPING_METHODS, shippingMethodByCode } from "@/data/catalog";
+import { SHIPPING_METHODS, shippingMethodByCode } from "@/data/catalog";
 import type { PlaceOrderInput } from "@/lib/checkout-schema";
 import type { CartQuote } from "@/lib/commerce/types";
 import { preorderDelivery, preorderUnits } from "@/lib/labels";
@@ -105,7 +105,7 @@ function truncate(value: string, limit: number): string {
  *
  * The buyer's address and phone are collected by Stripe on its hosted page, so no
  * contact is pre-filled. Only the idempotency key (for the session reference) and the
- * line slugs (for the allow_promotion_codes rule and metadata) are needed server-side.
+ * line slugs (for the metadata) are needed server-side.
  */
 export type ExpressOrderRef = {
   readonly idempotencyKey: string;
@@ -146,8 +146,6 @@ export type CheckoutSessionInput =
  * (a pre-order drop sells out in an hour). Stripe accepts 30 minutes to 24 hours; the margin
  * keeps a slow clock from asking for less than 30.
  */
-/** The partner's consignment pieces: no promotion code applies to a cart that holds one. */
-const CONSIGNMENT_SLUGS: ReadonlySet<string> = new Set(PRODUCTS.filter((product) => product.consignment).map((product) => product.slug));
 
 export const CHECKOUT_SESSION_MINUTES = 35;
 
@@ -177,10 +175,11 @@ export function buildCheckoutSessionFields(
     expires_at: Math.floor(now / 1000) + CHECKOUT_SESSION_MINUTES * 60,
     // No consent_collection or after_expiration recovery: Stripe refuses promotions consent for
     // Italian accounts ("not available in your country") and fails the whole session, and
-    // recovery emails need that consent. Manual promotion codes are fine, except on a cart with
-    // a partner's consignment piece: the partner is owed his price whatever the buyer paid, so a
-    // code there would come entirely out of the shop's few euros of commission.
-    "allow_promotion_codes": clubCode || quote.lines.some((line) => CONSIGNMENT_SLUGS.has(line.slug)) ? "false" : "true",
+    // recovery emails need that consent.
+    // No promotion field either: every code is a coupon typed in the cart (owner, 2026-11-26).
+    // Stripe does not know the shop's coupons, so a buyer who typed a voucher on its page read
+    // "codice promozionale non valido" (25/11). The clubs' Stripe promotion codes are site coupons too.
+    "allow_promotion_codes": "false",
     "metadata[order_ref]": reference,
     "metadata[lines]": truncate(quote.lines.map((line) => `${line.slug} x${line.quantity}`).join(", "), METADATA_LIMIT),
     "metadata[shipping_method]": method.code,

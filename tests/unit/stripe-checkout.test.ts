@@ -166,11 +166,12 @@ describe("stripe checkout session", () => {
     expect(Object.keys(fields).some((key) => key.includes("unit_amount"))).toBe(false);
   });
 
-  it("accepts promotion codes and never asks Stripe for what it refuses in Italy", async () => {
+  it("leaves codes to the cart and never asks Stripe for what it refuses in Italy", async () => {
     const quote = await quoteFor([{ slug: "cobalt-dragoon-2-60c", quantity: 1 }]);
     const fields = buildCheckoutSessionFields({ quote, order, origin: ORIGIN }, matchStripePrices(quote, catalogPrices)!);
 
-    expect(fields["allow_promotion_codes"]).toBe("true");
+    // Stripe does not know the shop's coupons: a voucher typed on its page would read "non valido".
+    expect(fields["allow_promotion_codes"]).toBe("false");
     // Stripe answers 400 "consent_collection.promotions is not available in your country" and no
     // one can pay: this field (and the recovery that depends on it) must never come back.
     expect(Object.keys(fields).some((key) => key.startsWith("consent_collection"))).toBe(false);
