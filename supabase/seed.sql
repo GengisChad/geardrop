@@ -1477,8 +1477,8 @@ from seed join public.footer_columns as column_row on column_row.column_key = se
 insert into public.social_links(organization_id, platform_key, label, href, publication_status, published_at, active, sort_order)
 values
   ((select id from public.organizations where slug = 'geardrop'), 'instagram', 'Instagram', 'https://www.instagram.com/geardropshop/', 'published'::public.publication_status, now(), true, 0),
-  ((select id from public.organizations where slug = 'geardrop'), 'telegram', 'Telegram', 'https://t.me/geardropshop', 'published'::public.publication_status, now(), true, 1),
-  ((select id from public.organizations where slug = 'geardrop'), 'youtube', 'YouTube', 'https://www.youtube.com/@GengisChadBBX', 'published'::public.publication_status, now(), true, 2)
+  ((select id from public.organizations where slug = 'geardrop'), 'youtube', 'YouTube', 'https://www.youtube.com/@GengisChadBBX', 'published'::public.publication_status, now(), true, 1),
+  ((select id from public.organizations where slug = 'geardrop'), 'telegram', 'Telegram', 'https://t.me/geardropshop', 'published'::public.publication_status, now(), true, 2)
 -- Only the wording and the address are refreshed. Whether a link is published and visible
 -- is operational state the owner sets from the panel, and the seed never takes it back.
 on conflict (organization_id, platform_key) do update set

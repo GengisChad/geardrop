@@ -23,7 +23,8 @@ describe("the way into the Telegram channel", () => {
   });
 
   it("stands in the footer beside the shop's other accounts", () => {
-    expect(SOCIAL_LINKS.map((link) => link.label)).toEqual(["Instagram", "Telegram", "YouTube"]);
+    // Last on purpose: its place in the list is its unique sort_order in the generated seed.
+    expect(SOCIAL_LINKS.map((link) => link.label)).toEqual(["Instagram", "YouTube", "Telegram"]);
     expect(SOCIAL_LINKS.find((link) => link.key === "telegram")?.href).toBe(TELEGRAM_CHANNEL_URL);
   });
 

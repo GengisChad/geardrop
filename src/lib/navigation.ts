@@ -43,13 +43,17 @@ export const MAIN_NAV: readonly NavItem[] = buildMainNav();
 export const TELEGRAM_CHANNEL_URL = "https://t.me/geardropshop";
 
 /**
- * The row under the footer columns. The shop's own accounts come first; the YouTube channel is
- * where the catalogue is actually explained, so it earns its place beside them.
+ * The row under the footer columns. The shop's own account comes first; the YouTube channel is
+ * where the catalogue is actually explained, so it earns its place beside it.
+ *
+ * A new link goes last. The generated seed writes each link's place in this list as its
+ * `sort_order`, which is unique in `social_links` and is not rewritten for a link the database
+ * already has: one put in the middle takes the place of the link after it and the seed fails.
  */
 export const SOCIAL_LINKS: readonly { readonly key: string; readonly label: string; readonly href: string }[] = [
   { key: "instagram", label: "Instagram", href: "https://www.instagram.com/geardropshop/" },
-  { key: "telegram", label: "Telegram", href: TELEGRAM_CHANNEL_URL },
   { key: "youtube", label: "YouTube", href: "https://www.youtube.com/@GengisChadBBX" },
+  { key: "telegram", label: "Telegram", href: TELEGRAM_CHANNEL_URL },
 ];
 
 export const ANNOUNCEMENTS = [
