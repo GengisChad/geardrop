@@ -44,10 +44,28 @@ Regole del proprietario, dal 2026-11-26. Il canale `t.me/geardropshop` è dello 
 pezzi tornati, prezzi ribassati, kit, pre-ordini e tier list del sito. Niente video del suo canale
 YouTube ("non roba del mio youtube").
 
-Quello che va sul canale sono clip o immagini fatte con gli strumenti del sito (`pnpm clips`, le
-card e gli scontorni), con i link per pre-ordinare e pagare. Lui chiede un'offerta con una frase
+Quello che va sul canale sono clip o immagini, con i link per pre-ordinare e pagare. Per un post
+curato l'immagine si fa con Codex ("fai dei bei post anche usando codex per fare le immagini del
+post", 2026-11-26), nell'aspetto che ha approvato sui primi due post:
+- 4:5, 1080×1350, fondo nero, un solo pezzo grandissimo in primo piano, testo grande e pulito;
+- viola per i pre-ordini e lime per il disponibile, niente fulmini, scintille, anelli HUD o neon;
+- a Codex si danno come riferimento solo i render ufficiali Hasbro o Takara Tomy;
+- il pezzo generato si confronta con il render e ci si appoggia sopra lo scontorno ufficiale,
+  perché il modello cambia sempre qualche dettaglio; il logo vero si appoggia a mano;
+- ogni parola si rilegge, e nell'immagine non vanno prezzo, pezzi rimasti o date: li porta il
+  testo del post, letto dallo shop.
+
+Il file va in `public/telegram/` e in `telegramPostImages` (`src/data/assets.ts`): il bot lo allega
+al post. Senza immagine il post esce con la clip del prodotto (`pnpm clips`) o con la sua foto.
+
+Lui chiede un'offerta con una frase
 ("ho in arrivo 20 CX-20, fammi il post pre-order solo su Telegram, si paga con Stripe sul sito";
 "ho 3 Battle Pass a 80 euro, solo PayPal.me"): i passi per arrivare dalla frase alla bozza sono in
 [`docs/operations/telegram-preorders.md`](docs/operations/telegram-preorders.md), "Da una frase al
 post". Prezzo e pezzi li dice lui e li legge il bot dallo shop; sul canale esce solo quello su cui
 tocca «Pubblica».
+
+Prima di fargli arrivare la bozza di un prodotto nuovo, il link del post si prova sul sito vero.
+Il sito legge le giacenze da una cache di 5 minuti, che sopravvive a una pubblicazione: subito dopo
+la migrazione il carrello può ancora dire «Esaurito» (successo con il CX-20, 2026-11-26). Un post
+pubblicato in quei minuti porta chi lo tocca a un carrello che non vende.

@@ -121,16 +121,23 @@ fai tu direttamente tramite il sito", mandate sul canale "con i link per pre-ord
 4. **Database.** Una migrazione con la riga in `products`: pubblicato,
    `availability_override = 'preorder'`, `preorder_allocation` = i pezzi che ha detto. Si applica
    in produzione solo con il suo OK.
-5. **PR, CI, unione con il suo OK.** Il sito si pubblica da solo. Per un prodotto nuovo, dopo
-   l'unione serve anche `pnpm stripe:products --apply`, sempre con il suo OK: senza il prodotto
-   su Stripe il checkout del sito non lo fa pagare.
-6. **Bozza.** Al primo sguardo allo shop (un salvataggio nel gestionale, le 9 del mattino, o
-   `/controlla`) il bot gli manda `PRE-ORDINE // solo sul canale` con clip, prezzo, pezzi e tempi
-   letti dallo shop, e il solo tasto del pagamento che ha chiesto. Sul canale esce con il suo
-   tocco: nessuno pubblica al posto suo.
-7. **Controlla.** Il prodotto non compare in negozio, ricerca e sitemap; la sua pagina si apre solo
-   con il link ed è `noindex`; il tasto del post porta al carrello con il pezzo dentro (Stripe) o
-   al bot (PayPal.me).
+5. **PR, CI, unione con il suo OK.** Il sito si pubblica da solo. Per un prodotto che si paga con
+   Stripe, dopo l'unione serve anche `pnpm stripe:products --apply <slug>`, sempre con il suo OK:
+   senza il prodotto su Stripe il checkout del sito non lo fa pagare. Con lo slug si crea solo
+   quello, e gli altri prodotti restano come sono.
+6. **Prova il carrello sul sito vero, prima della bozza.** Il sito legge le giacenze da una cache
+   di 5 minuti (`cacheStorefrontRead`, tag `products`), che sopravvive a una pubblicazione: subito
+   dopo la migrazione il carrello può ancora dire «Esaurito». Apri
+   `/carrello?preordine=<slug>` e aspetta di leggere «Pre-ordine» con i pezzi giusti. Solo allora
+   fai guardare lo shop al bot.
+7. **Bozza.** Al primo sguardo allo shop (un salvataggio nel gestionale, le 9 del mattino, o
+   `/controlla`) il bot gli manda `PRE-ORDINE // solo sul canale` con immagine, prezzo, pezzi e
+   tempi letti dallo shop, e il solo tasto del pagamento che ha chiesto. Sul canale esce con il
+   suo tocco: nessuno pubblica al posto suo.
+8. **Controlla.** Un prodotto nascosto non compare in negozio, ricerca e sitemap, e la sua pagina
+   si apre solo con il link ed è `noindex`; uno «In arrivo» si vede con «Avvisami». Il tasto del
+   post porta al carrello con il pezzo dentro (Stripe) o al bot (PayPal.me). Un prodotto solo
+   PayPal.me non va creato su Stripe: così il checkout del sito non può venderlo.
 
 Un pezzo già in vendita sul sito non può essere «solo su Telegram»: per quello basta la notizia
 normale del bot. Un'offerta solo Telegram di pezzi già in casa, da spedire subito, non c'è ancora:
