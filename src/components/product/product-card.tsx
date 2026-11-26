@@ -16,16 +16,18 @@ import type { Product } from "@/lib/commerce/types";
 import { familyColours } from "@/lib/commerce/variants";
 import type { QuickViewProduct } from "@/lib/store/quick-view";
 import { cn } from "@/lib/cn";
+import { stockTone } from "@/lib/labels";
 
 /**
  * Availability speaks in the shop's status colours, never the product's palette: a red
  * "Disponibile" read as a problem and a lime "Esaurito" read as in stock (critique, 2026-10-11).
  * A sold-out release keeps the pre-order colour, as on its product page.
  */
-function availabilityTone(product: Pick<Product, "stock" | "releasePreorder">): string {
-  if (product.stock === "disponibile") return "text-available";
-  if (product.stock === "esaurito") return product.releasePreorder ? "text-preorder" : "text-soldout";
-  return "text-preorder";
+function availabilityTone(product: Pick<Product, "stock" | "releasePreorder" | "channelOnly">): string {
+  // A piece on its way (pre-order on Telegram) is waiting too: violet, never the sold-out red.
+  const tone = stockTone(product);
+  if (tone === "disponibile") return "text-available";
+  return tone === "esaurito" ? "text-soldout" : "text-preorder";
 }
 
 type ProductCardProps = {

@@ -30,7 +30,7 @@ import type {
   StockStatus,
 } from "./types";
 import { separatePreorders } from "./separate-preorders";
-import { hiddenFromShop, shopView } from "./channel-only";
+import { hiddenFromShop, isArriving, shopView } from "./channel-only";
 
 // The catalogue is small: one page holds it all, so nobody lands on a page with two cards.
 // 48 since 2026-10-24: the two-colour deck cases made 25 cards, one past the old 24.
@@ -82,7 +82,7 @@ function rank(query: ProductQuery, sorter: (a: Product, b: Product) => number) {
 
 function matches(product: Product, query: ProductQuery): boolean {
   if (query.category && product.category !== query.category) return false;
-  if (query.stock?.length && !query.stock.includes(product.stock)) return false;
+  if (query.stock?.length && !query.stock.includes(listedStock(product))) return false;
   if (query.bladeType?.length && (!product.bladeType || !query.bladeType.includes(product.bladeType))) return false;
   if (query.minPrice !== undefined && product.price.amount < query.minPrice) return false;
   if (query.maxPrice !== undefined && product.price.amount > query.maxPrice) return false;
@@ -102,6 +102,11 @@ function omit<T extends object, K extends keyof T>(source: T, keys: readonly K[]
   const copy = { ...source } as Record<string, unknown>;
   for (const key of keys) delete copy[key as string];
   return copy as Omit<T, K>;
+}
+
+/** The availability a product is filtered under: one on its way is found under "In arrivo", as it reads. */
+function listedStock(product: Product): StockStatus {
+  return isArriving(product) ? "in-arrivo" : product.stock;
 }
 
 /** Facet counts ignore the facet being counted, so a filter never zeroes its own siblings. */
@@ -168,7 +173,7 @@ export function createMockProvider(
       const forType = oneCardPerFamily(shelf.filter((p) => matches(p, omit(query, ["bladeType"]))));
 
       const categoryCounts = countBy<CategorySlug>(forCategories, (p) => p.category);
-      const stockCounts = countBy<StockStatus>(forStock, (p) => p.stock);
+      const stockCounts = countBy<StockStatus>(forStock, listedStock);
       const typeCounts = countBy<BladeType>(forType, (p) => p.bladeType);
       const prices = shelf.map((p) => p.price.amount);
 

@@ -1358,7 +1358,9 @@ Apple Pay e Google Pay compaiono sui dispositivi dove li hai attivati. I dati de
 
 ## Cosa significa “in arrivo”?
 
-La disponibilità è in aggiornamento. Contattaci prima dell''ordine per conoscere lo stato corrente.
+Il prodotto sta arrivando in magazzino. Se sulla scheda c''è «Avvisami», lascia la tua email e ti scriviamo quando si può ordinare; alcuni pezzi in arrivo si pre-ordinano prima sul nostro canale Telegram.
+
+Se invece il prodotto si può già mettere nel carrello, la disponibilità è in aggiornamento: contattaci prima dell''ordine per conoscere lo stato corrente.
 
 ## Cosa significa “pre-ordine”?
 

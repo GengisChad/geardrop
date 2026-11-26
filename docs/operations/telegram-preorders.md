@@ -42,13 +42,15 @@ Si appoggia al bot delle news: vedi [`telegram-news-bot.md`](telegram-news-bot.m
    il pre-ordine dal prodotto: compare sul sito da solo e il bot ti propone `NUOVO ARRIVO //`.
    I pre-ordini pagati con PayPal.me li spedisci dalla lista di `/preordini`.
 
-## Sul sito con «Avvisami», in pre-ordine su Telegram
+## Sul sito «In arrivo» con «Avvisami», in pre-ordine su Telegram
 
 Dal 26/11/2026 (proprietario, per il CX-20: "mettili sul sito con avvisami e solo 8 in pre order
-per telegram"). Con `channelOnly: "avvisami"` al posto di `true` il prodotto non è nascosto:
+per telegram", e subito dopo: "sul sito devi mettere «in arrivo»", non esaurito). Con
+`channelOnly: "avvisami"` al posto di `true` il prodotto non è nascosto:
 
-- il negozio, la ricerca, la sua pagina e Google lo mostrano **esaurito, con «Avvisami»**, e sotto
-  il modulo c'è il rimando al canale Telegram;
+- il negozio, la ricerca e la sua pagina lo mostrano **«In arrivo», con «Avvisami»** al posto del
+  carrello, e sotto il modulo c'è il rimando al canale Telegram. Nei filtri si trova sotto
+  «In arrivo». A Google resta non acquistabile (`OutOfStock`), perché sul sito non si può ordinare;
 - i pezzi messi da parte (`preorder_allocation`, 8 su 20 per il CX-20) si vendono solo dal carrello
   che apre il post del canale, o dal bot con PayPal.me;
 - quando la merce arriva carichi a magazzino quello che resta e togli il pre-ordine: il prodotto
@@ -56,7 +58,11 @@ per telegram"). Con `channelOnly: "avvisami"` al posto di `true` il prodotto non
 
 Le pagine del negozio leggono il prodotto con `shopView()` (`src/lib/commerce/channel-only.ts`); il
 preventivo del carrello no, ed è per questo che il carrello può venderlo. Nel catalogo la voce si
-scrive esaurita (`stock: "esaurito"`): i pezzi del pre-ordine stanno solo nel database.
+scrive `stock: "esaurito"`: i pezzi del pre-ordine stanno solo nel database. Quel campo decide solo
+se si può comprare dal sito; la parola e il colore che il cliente vede li danno `stockLabel()` e
+`stockTone()` (`src/lib/labels.ts`), che per questi prodotti dicono «In arrivo». Non si usa lo
+stato `in-arrivo` vero, né l'override `incoming` nel database: quello stato si può mettere nel
+carrello, e l'override toglierebbe il pre-ordine a Telegram.
 
 ## Dove si contano i pezzi
 
@@ -93,7 +99,7 @@ fai tu direttamente tramite il sito", mandate sul canale "con i link per pre-ord
    bozza.
 2. **Prodotto a catalogo** (`src/data/catalog.ts`): la voce completa, con `channelOnly: true` e
    `stock: "pre-ordine"` se deve restare nascosto, oppure `channelOnly: "avvisami"` e
-   `stock: "esaurito"` se lo vuole sul sito con «Avvisami». Se ha detto come si paga,
+   `stock: "esaurito"` se lo vuole sul sito, dove si legge «In arrivo» con «Avvisami». Se ha detto come si paga,
    `channelPayment` (`"stripe"`, `"paypal"` o `"both"`). Le foto sono solo quelle ufficiali Hasbro o Takara Tomy, con la fonte scritta in
    [`../product-photo-sources.md`](../product-photo-sources.md); card e scontorno si fanno con gli
    script di quel file.

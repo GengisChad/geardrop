@@ -2,8 +2,9 @@
  * The CX-20 Customize Set C (owner, 2026-11-26): "arrivano 20 cx-20. mettili sul sito con avvisami
  * e solo 8 in pre order per telegram", resold at 140 euro and paid on the site's checkout.
  *
- * The shop shows it sold out with "Avvisami"; the eight pieces live in the database and are sold
- * only through the cart the channel's post opens.
+ * The shop shows it "In arrivo" with "Avvisami" (his correction the same evening: "sul sito devi
+ * mettere «in arrivo»", not sold out); the eight pieces live in the database and are sold only
+ * through the cart the channel's post opens.
  */
 import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -11,10 +12,12 @@ import { describe, expect, it } from "vitest";
 import { BuyPanel } from "@/components/product/buy-panel";
 import { Providers } from "@/components/providers";
 import { PRODUCTS, brandOf, fitsLocker } from "@/data/catalog";
-import { hiddenFromShop, shopView } from "@/lib/commerce/channel-only";
+import { ProductCard } from "@/components/product/product-card";
+import { hiddenFromShop, isArriving, shopView } from "@/lib/commerce/channel-only";
 import { applyLiveStock } from "@/lib/commerce/live-stock-overlay";
 import { createMockProvider } from "@/lib/commerce/mock-provider";
-import { PREORDER_DELIVERY } from "@/lib/labels";
+import { availabilityLine } from "@/lib/holo";
+import { PREORDER_DELIVERY, isPurchasable, stockHint, stockLabel, stockTone } from "@/lib/labels";
 import { channelPreorderPost } from "@/lib/telegram/messages";
 import { scanProducts } from "@/lib/telegram/news";
 import { preorderOpen } from "@/lib/telegram/preorder-rules";
@@ -66,15 +69,16 @@ describe("the CX-20 in the catalogue", () => {
   });
 });
 
-describe("on the shop with Avvisami while Telegram takes its pre-orders", () => {
+describe("on the shop, In arrivo with Avvisami, while Telegram takes its pre-orders", () => {
   it("keeps its eight pieces for the channel", () => {
     expect(live).toMatchObject({ stock: "pre-ordine", availableQuantity: 8, channelOnly: "avvisami" });
     expect(hiddenFromShop(live)).toBe(false);
     expect(preorderOpen(live)).toBe(true);
   });
 
-  it("reads sold out, with nothing to count, on the shop's own pages", async () => {
+  it("cannot be bought from the shop's own pages", async () => {
     expect(shopView(live)).toMatchObject({ slug: SLUG, stock: "esaurito", availableQuantity: 0, channelOnly: "avvisami" });
+    expect(isPurchasable(shopView(live).stock)).toBe(false);
     const provider = createMockProvider([live, other]);
     const listed = (await provider.listProducts({ perPage: 100 })).items.find((product) => product.slug === SLUG);
     expect(listed).toMatchObject({ stock: "esaurito", availableQuantity: 0 });
@@ -82,6 +86,36 @@ describe("on the shop with Avvisami while Telegram takes its pre-orders", () => 
     expect(await provider.getProduct(SLUG)).toMatchObject({ stock: "esaurito", availableQuantity: 0 });
     expect((await provider.getProductsBySlugs([SLUG]))[0]).toMatchObject({ stock: "esaurito" });
     expect((await provider.getFacets()).stock.find((facet) => facet.value === "pre-ordine")?.count).toBe(0);
+  });
+
+  it("reads In arrivo there, never Esaurito", async () => {
+    const shown = shopView(live);
+    expect(isArriving(shown)).toBe(true);
+    expect(stockLabel(shown)).toBe("In arrivo");
+    expect(stockTone(shown)).toBe("in-arrivo");
+    expect(stockHint(shown)).toBe("Lascia la tua email: ti avvisiamo quando si può ordinare");
+    expect(availabilityLine(shown)).toBe("In arrivo");
+    // A product that is simply sold out keeps its own word.
+    expect(stockLabel({ ...other, stock: "esaurito" })).toBe("Esaurito");
+    expect(stockTone({ ...other, stock: "esaurito" })).toBe("esaurito");
+
+    // The filter finds it under the word it reads, and counts it there.
+    const provider = createMockProvider([live, other]);
+    expect((await provider.listProducts({ stock: ["in-arrivo"] })).items.map((product) => product.slug)).toEqual([SLUG]);
+    expect((await provider.listProducts({ stock: ["esaurito"] })).total).toBe(0);
+    const facets = (await provider.getFacets()).stock;
+    expect(facets.find((facet) => facet.value === "in-arrivo")?.count).toBe(1);
+    expect(facets.find((facet) => facet.value === "esaurito")?.count).toBe(0);
+
+    const card = renderToStaticMarkup(
+      <Providers>
+        <ProductCard product={shown} />
+      </Providers>,
+    );
+    expect(card).toContain("In arrivo");
+    expect(card).not.toContain("Esaurito");
+    expect(card).toContain('data-testid="notify-me"');
+    expect(card).not.toContain('data-testid="add-to-cart"');
   });
 
   it("is still sold by the cart, up to the pieces set aside", async () => {
@@ -100,6 +134,9 @@ describe("on the shop with Avvisami while Telegram takes its pre-orders", () => 
     );
     expect(html).toContain('id="restock-form"');
     expect(html).not.toContain('data-testid="add-to-cart"');
+    expect(html).toContain("In arrivo");
+    expect(html).not.toContain("Esaurito");
+    expect(html).toContain("Avvisami quando CX-20 Customize Set C si può ordinare");
     expect(html).toContain('data-testid="telegram-preorder-hint"');
     expect(html).toContain('href="https://t.me/geardropshop"');
 

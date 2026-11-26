@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { formatPrice } from "@/lib/format";
-import { STOCK_CHIP, STOCK_LABEL } from "@/lib/labels";
+import { STOCK_CHIP, stockLabel, stockTone } from "@/lib/labels";
 import {
   isMetaTrend,
   META_TIERS,
@@ -72,8 +72,8 @@ function PieceRow({ entry }: { readonly entry: MetaEntry }) {
               <span className="text-grey-600">Non ce l&rsquo;abbiamo a catalogo.</span>
             )}
             {entry.product ? (
-              <span className={`rounded-full px-2.5 py-0.5 text-caption font-semibold ${STOCK_CHIP[entry.product.stock]}`}>
-                {STOCK_LABEL[entry.product.stock]}
+              <span className={`rounded-full px-2.5 py-0.5 text-caption font-semibold ${STOCK_CHIP[stockTone(entry.product)]}`}>
+                {stockLabel(entry.product)}
               </span>
             ) : null}
             {entry.video_url ? (

@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { CheckCircle2, Heart, Hourglass, Send, Truck, XCircle } from "lucide-react";
 import { TelegramJoin } from "@/components/home/telegram-join";
+import { isArriving } from "@/lib/commerce/channel-only";
 import { AddToCartButton } from "@/components/product/add-to-cart-button";
 import { QuantityStepper } from "@/components/product/quantity-stepper";
 import { RestockForm } from "@/components/product/restock-form";
 import { Button, buttonClass } from "@/components/ui/button";
 import { useWishlist } from "@/lib/store/wishlist";
 import { MAX_QUANTITY_PER_LINE } from "@/lib/store/cart";
-import { PREORDER_DELIVERY, bundleNoun, deliveryClause, isPurchasable, shownShelf, stockHint, stockLabel } from "@/lib/labels";
+import { PREORDER_DELIVERY, bundleNoun, deliveryClause, isPurchasable, shownShelf, stockHint, stockLabel, stockTone } from "@/lib/labels";
 import type { Product, StockStatus } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
 
@@ -41,8 +42,8 @@ export function BuyPanel({ product }: { product: Product }) {
   const hydrated = useWishlist((s) => s.hydrated);
   const saved = useWishlist((s) => s.slugs.includes(product.slug));
   const isSaved = hydrated && saved;
-  // A sold-out drop wears the pre-order's own icon and colour: it is waiting, not gone.
-  const tone: StockStatus = product.stock === "esaurito" && product.releasePreorder ? "pre-ordine" : product.stock;
+  // A sold-out drop wears the pre-order's own icon and colour, a piece on its way "In arrivo"'s.
+  const tone: StockStatus = stockTone(product);
   const Icon = STATUS_ICON[tone];
   // A product that sells past its stock is capped only by the per-line limit.
   const quantityCap = product.autoPreorder
@@ -103,7 +104,12 @@ export function BuyPanel({ product }: { product: Product }) {
 
       {product.stock === "esaurito" ? (
         <>
-          <RestockForm slug={product.slug} name={product.name} {...(product.releasePreorder ? { releasePreorder: true } : {})} />
+          <RestockForm
+            slug={product.slug}
+            name={product.name}
+            {...(product.releasePreorder ? { releasePreorder: true } : {})}
+            {...(isArriving(product) ? { arriving: true } : {})}
+          />
           {/* Owner, 2026-11-26: on the shop with "Avvisami" while its pre-order pieces are taken on the channel. */}
           {product.channelOnly === "avvisami" ? (
             <div data-testid="telegram-preorder-hint" className="mt-4 border border-violet/40 bg-violet/10 p-4">

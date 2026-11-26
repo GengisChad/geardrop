@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import type { BladeType, CategorySlug, Product } from "@/lib/commerce/types";
-import { BLADE_TYPE_LABEL, STOCK_LABEL, bundleNoun } from "@/lib/labels";
+import { BLADE_TYPE_LABEL, STOCK_LABEL, bundleNoun, stockLabel } from "@/lib/labels";
 
 /**
  * Presentation helpers for the Holo Drop cards: foil colours, the short labels a card
@@ -108,9 +108,10 @@ export function productLine(product: Pick<Product, "specs">): string | null {
  * Scarcity line: what is left when the number is small, the plain status otherwise. A pre-order
  * says so, so its allocation is never mistaken for pieces on the shelf.
  */
-export function availabilityLine(product: Pick<Product, "stock" | "availableQuantity" | "bundleOf" | "releasePreorder">): string {
-  // A sold-out drop keeps its name: it reopens, and the card offers the notice, not the cart.
-  if (product.stock === "esaurito") return product.releasePreorder ? "Pre-ordine esaurito" : STOCK_LABEL.esaurito;
+export function availabilityLine(product: Pick<Product, "stock" | "availableQuantity" | "bundleOf" | "releasePreorder" | "channelOnly">): string {
+  // A sold-out drop keeps its name: it reopens, and the card offers the notice, not the cart. A
+  // piece on its way with its pre-order on Telegram reads "In arrivo".
+  if (product.stock === "esaurito") return stockLabel(product);
   const left = product.availableQuantity;
   if (left !== undefined && left > 0 && left <= 10) {
     if (product.stock === "pre-ordine") return `Solo ${left} in pre-ordine`;
