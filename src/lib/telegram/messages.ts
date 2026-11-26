@@ -1,3 +1,4 @@
+import { productClips } from "@/data/assets";
 import type { Product } from "@/lib/commerce/types";
 import { discountPercent, formatPrice } from "@/lib/format";
 import { bundleNoun, preorderDelivery, stockHint, stockLabel } from "@/lib/labels";
@@ -20,7 +21,12 @@ import { startPayload, type PaymentMode } from "./preorder-rules";
 
 export type TelegramPost = {
   readonly text: string;
-  /** The packshot, when the post is about one item. */
+  /**
+   * The product's clip (scripts/clips, `productClips`), when it has one. A clip shows no price and
+   * no availability, because a video cannot follow the catalogue: the caption under it carries them.
+   */
+  readonly videoUrl?: string;
+  /** The packshot, when the post is about one item. It also goes out when Telegram cannot take the clip. */
   readonly photoUrl?: string;
   /** The one place the post sends the reader. */
   readonly link: { readonly label: string; readonly url: string };
@@ -42,6 +48,13 @@ export function shopLink(path: string): string {
   url.searchParams.set("utm_medium", "social");
   url.searchParams.set("utm_campaign", "news");
   return url.toString();
+}
+
+/** What a post about one product shows: its clip when the shop made one, and its packshot. */
+function media(product: Product): Pick<TelegramPost, "videoUrl" | "photoUrl"> {
+  const clip = productClips[product.slug];
+  const image = product.images[0];
+  return { ...(clip ? { videoUrl: absoluteUrl(clip.src) } : {}), ...(image ? { photoUrl: absoluteUrl(image.src) } : {}) };
 }
 
 /** "€18,90 invece di €21,90 (-14%)", or the price alone when nothing is struck through. */
@@ -96,12 +109,11 @@ export function productPost(payload: ProductPayload, catalogue: readonly Product
   // A piece that does not ship now says how long it takes, in the product page's own words.
   if (stock !== "disponibile") lines.push(escapeTelegram(stockHint(first)));
 
-  const image = first.images[0];
   return {
     ok: true,
     post: {
       text: lines.join("\n"),
-      ...(image ? { photoUrl: absoluteUrl(image.src) } : {}),
+      ...media(first),
       link: { label: "Vedi nello shop", url: shopLink(`/prodotto/${first.slug}`) },
     },
   };
@@ -134,12 +146,11 @@ export function channelPreorderPost(
       ? "Si paga sul sito, con carta, PayPal o Revolut. In negozio arriva quando è in magazzino."
       : "Si prenota e si paga qui. Sul sito arriva quando è in magazzino.",
   ];
-  const image = product.images[0];
   return {
     ok: true,
     post: {
       text: lines.join("\n"),
-      ...(image ? { photoUrl: absoluteUrl(image.src) } : {}),
+      ...media(product),
       // Paid on Stripe only, there is nothing to ask in the bot: the button is the cart with the piece in it.
       link: { label: "Pre-ordina", url: mode === "stripe" ? shopLink(`/carrello?preordine=${product.slug}`) : `https://t.me/${botUsername}?start=${start}` },
     },

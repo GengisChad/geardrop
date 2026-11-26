@@ -82,6 +82,19 @@ export function createTelegramGateway(config: TelegramConfig, fetcher: typeof fe
   return {
     async sendPost(chatId, post, keyboard) {
       const reply_markup = { inline_keyboard: keyboard };
+      if (post.videoUrl) {
+        const video = await call<SentMessage>("sendVideo", {
+          chat_id: chatId,
+          video: post.videoUrl,
+          caption: post.text,
+          parse_mode: "HTML",
+          supports_streaming: true,
+          reply_markup,
+        });
+        if (video.ok) return video.result.message_id;
+        // Telegram could not fetch or read the clip: the packshot goes out in its place.
+        log("sendVideo", video);
+      }
       if (post.photoUrl) {
         const photo = await call<SentMessage>("sendPhoto", { chat_id: chatId, photo: post.photoUrl, caption: post.text, parse_mode: "HTML", reply_markup });
         if (photo.ok) return photo.result.message_id;

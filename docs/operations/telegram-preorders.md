@@ -64,6 +64,41 @@ vendere lo stesso pezzo, e il numero che resta è quello da caricare a magazzino
 - **Privacy**: il bot raccoglie nome, email, cellulare e Locker su Telegram. L'informativa del sito
   (`/legale/privacy`) va aggiornata dal titolare prima di usarlo con i clienti.
 
+## Da una frase al post
+
+Dal 26/11/2026 il proprietario chiede un'offerta con una frase, e chi lavora per lui la prepara
+fino alla bozza. Le sue parole: "ti dico «ho in arrivo 20 CX-20, fammi il post pre-order solo su
+Telegram dove la gente deve pagare tramite Stripe sul sito» oppure «ho 3 Battle Pass a 80 euro che
+possono pagare solo con PayPal.me»". E ancora: quello che va su Telegram sono "clip o immagini che
+fai tu direttamente tramite il sito", mandate sul canale "con i link per pre-ordinare e pagare".
+
+1. **Leggi la frase.** Prodotto, pezzi, prezzo, come si paga. Se manca il prezzo o non è chiaro
+   quale edizione sia, chiedilo: non si inventa. Se non dice come si paga, lo sceglie lui sulla
+   bozza.
+2. **Prodotto a catalogo** (`src/data/catalog.ts`): la voce completa, con `channelOnly: true`,
+   `stock: "pre-ordine"` e, se ha detto come si paga, `channelPayment` (`"stripe"`, `"paypal"` o
+   `"both"`). Le foto sono solo quelle ufficiali Hasbro o Takara Tomy, con la fonte scritta in
+   [`../product-photo-sources.md`](../product-photo-sources.md); card e scontorno si fanno con gli
+   script di quel file.
+3. **Clip.** Aggiungi il prodotto a `CLIP_SPECS` (`scripts/clips/clip-data.ts`) e a `productClips`
+   (`src/data/assets.ts`), poi `pnpm clips`. Il post esce con la clip e, se Telegram non la
+   prende, con la foto. Una clip non mostra mai prezzo o disponibilità: li porta il testo sotto.
+4. **Database.** Una migrazione con la riga in `products`: pubblicato,
+   `availability_override = 'preorder'`, `preorder_allocation` = i pezzi che ha detto. Si applica
+   in produzione solo con il suo OK.
+5. **PR, CI, unione con il suo OK.** Il sito si pubblica da solo.
+6. **Bozza.** Al primo sguardo allo shop (un salvataggio nel gestionale, le 9 del mattino, o
+   `/controlla`) il bot gli manda `PRE-ORDINE // solo sul canale` con clip, prezzo, pezzi e tempi
+   letti dallo shop, e il solo tasto del pagamento che ha chiesto. Sul canale esce con il suo
+   tocco: nessuno pubblica al posto suo.
+7. **Controlla.** Il prodotto non compare in negozio, ricerca e sitemap; la sua pagina si apre solo
+   con il link ed è `noindex`; il tasto del post porta al carrello con il pezzo dentro (Stripe) o
+   al bot (PayPal.me).
+
+Un pezzo già in vendita sul sito non può essere «solo su Telegram»: per quello basta la notizia
+normale del bot. Un'offerta solo Telegram di pezzi già in casa, da spedire subito, non c'è ancora:
+il prodotto nascosto oggi è un pre-ordine, con i tempi di un pre-ordine.
+
 ## Configurazione
 
 - `PAYPAL_ME_HANDLE` in `.env.local` e su Vercel: il nome dopo `paypal.me/`. Senza, il bot offre
@@ -72,6 +107,7 @@ vendere lo stesso pezzo, e il numero che resta è quello da caricare a magazzino
 - Un pre-ordine nuovo: voce nel catalogo (`src/data/catalog.ts`) con `channelOnly: true` e
   `stock: "pre-ordine"`, e la riga in `products` con `availability_override = 'preorder'` e
   `preorder_allocation` = pezzi ordinati. Senza la riga nel database il prodotto resta nascosto.
+  Con `channelPayment` nella voce del catalogo la bozza offre un solo modo di pagare.
 
 ## Comandi al bot
 
