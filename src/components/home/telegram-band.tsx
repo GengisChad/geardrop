@@ -7,8 +7,9 @@ import { buttonClass } from "@/components/ui/button";
  * per entrare nella community telegram per pre-orders, news ecc").
  *
  * Violet, because violet is "on its way" across the shop and the channel is where the pre-orders
- * open. It stands where the home deals with pre-orders, after their shelf, as a card with the
- * sticker's keyline so it does not read as one more shelf. It is still: nothing here moves but
+ * open. It stands high on the home, right after the first shelf (he asked for it to be seen sooner
+ * than where it first stood, after the pre-orders), as a card with the sticker's keyline so it does
+ * not read as one more shelf. It is still: nothing here moves but
  * the slab's one cut of light, and it says only what the channel really carries.
  */
 export function TelegramBand() {

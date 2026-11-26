@@ -136,6 +136,10 @@ export default async function HomePage() {
           tile={{ href: "/negozio/takara-tomy", kicker: "Originali giapponesi", title: "Tutto Takara Tomy" }}
         />
       ) : null}
+      {/* Owner, 2026-11-26: the way into the Telegram channel, where the pre-orders taken on Telegram only
+          open. It stood after the pre-order shelf; he asked for it to be seen sooner, so it comes right
+          after the first shelf. The order of the product shelves is his and does not change. */}
+      <TelegramBand />
       <ProductShelf testId="best-sellers" title="I più venduti" note={STANDARD_DELIVERY} products={plan.bestsellers} />
       <ProductShelf
         testId="new-arrivals"
@@ -146,8 +150,6 @@ export default async function HomePage() {
       />
       {/* Violet means "on its way" across the shop: the pre-order drop sits on its own band. */}
       <ProductShelf testId="preorder-drop" tone="violet" title="Pre-ordini aperti" note={RELEASE_DELIVERY} products={plan.drop} />
-      {/* Owner, 2026-11-26: the way into the Telegram channel, where the pre-orders taken on Telegram only open. */}
-      <TelegramBand />
       <ProductShelf testId="ready-to-ship" title="Pronti da spedire" note={STANDARD_DELIVERY} products={plan.ready} />
       <Arsenal products={plan.rest} title="Tutto il resto" />
       <Reveal>
