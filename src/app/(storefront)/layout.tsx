@@ -7,6 +7,7 @@ import { ScanObserver } from "@/components/ui/scan-observer";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
 import { PageCut } from "@/components/layout/page-cut";
+import { TelegramStrip } from "@/components/layout/telegram-strip";
 import { QuickView } from "@/components/product/quick-view";
 import { storefrontContent } from "@/lib/content/provider";
 import { getPublicStoreSettings } from "@/lib/storefront/settings-repository";
@@ -20,6 +21,8 @@ export default async function StorefrontLayout({ children }: { children: React.R
   const googleAnalyticsEnabled = analyticsEnabled || process.env["COOKIE_BANNER_PREVIEW"] === "1";
   return (
     <>
+      {/* Owner, 2026-11-26: the Telegram channel at the very top of the shop, above the header. */}
+      <TelegramStrip />
       <Header navigation={chrome.desktopNavigation} mobileNavigation={chrome.mobileNavigation} />
       {settings?.maintenance_mode&&settings.maintenance_message?<aside className="bg-violet px-4 py-2 text-center text-small font-bold text-white" role="status">{settings.maintenance_message}</aside>:null}
       <main id="contenuto">

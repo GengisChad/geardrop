@@ -14,7 +14,7 @@ export function TelegramJoin({
   className,
   children,
 }: {
-  readonly placement: "home" | "menu" | "product";
+  readonly placement: "top" | "home" | "menu" | "product";
   readonly className?: string;
   readonly children: ReactNode;
 }) {

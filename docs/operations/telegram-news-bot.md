@@ -125,9 +125,13 @@ Poi `/controlla` dal telefono dopo un cambio di stock o di prezzo.
 ## Ingresso dal sito
 
 Dal 26/11/2026 (proprietario: "un bel pulsante su geardropshop per entrare nella community
-telegram per pre-orders, news ecc") il sito porta al canale `t.me/geardropshop` da tre punti:
+telegram per pre-orders, news ecc", e la sera stessa: "serve che il banner telegram sia più
+visibile, anche in alto nel sito") il sito porta al canale `t.me/geardropshop` da quattro punti:
 
-- la fascia viola in home, dopo i pre-ordini (`src/components/home/telegram-band.tsx`);
+- la striscia viola in cima a ogni pagina del negozio, sopra l'header
+  (`src/components/layout/telegram-strip.tsx`); non compare su carrello, checkout, account e
+  accesso, dove non deve esserci niente tra il cliente e il pagamento;
+- la fascia viola in home, subito dopo il primo scaffale (`src/components/home/telegram-band.tsx`);
 - il tasto in fondo al menu del telefono (`src/components/layout/mobile-menu.tsx`);
 - la riga dei social nel footer (`SOCIAL_LINKS` in `src/lib/navigation.ts`, dove un link nuovo va
   in fondo: vedi il commento lì).
