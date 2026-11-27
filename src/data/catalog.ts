@@ -64,6 +64,8 @@ const BX53_PRICE = 15990;
 const CX20_PRICE = 14000;
 /** BX-09 Beybattle Pass (owner, 2026-11-26: "3 battlepass a 80 euro"). */
 const BX09_PRICE = 8000;
+/** UX-00 Scorpio Spear 0-70Z Metal Coat: Magenta (owner, 2026-11-27: "al vendita al prezzo di 100euro"). */
+const UX00_SS_MAGENTA_PRICE = 10000;
 
 /**
  * What a deck case costs on its own, in every colour and both families (owner, 2026-10-24: €18,
@@ -514,6 +516,19 @@ export const PRODUCTS: readonly Product[] = [
     features: [{ title: "Misura il lancio", description: "Registra la potenza di ogni lancio" }, { title: "Si collega all'app", description: "I dati dei lanci diventano Bey Point nell'app di Takara Tomy" }, { title: "Originale Takara Tomy", description: "Prodotto giapponese della linea BX" }],
     boxContents: ["1 × Beybattle Pass", "Istruzioni in giapponese"],
     relatedSlugs: ["custom-grip-takara-tomy", "winder-launcher-takara-tomy", "string-launcher-takara-tomy"],
+  },
+  {
+    // Owner, 2026-11-27: two UX-00 Scorpio Spear 0-70Z Metal Coat Magenta at 100 euro, pre-ordered
+    // on Telegram only and paid with PayPal.me only ("metti pre-order due scorpion spear ma quello
+    // magenta, al vendita al prezzo di 100euro", "Telegram, PayPal.me"). Kept out of the shop.
+    slug: "ux-00-scorpio-spear-0-70z-magenta", name: "UX-00 Scorpio Spear 0-70Z Metal Coat: Magenta", tagline: "Esclusiva app/eventi. Sei lame, Metal Coat Magenta.",
+    description: "UX-00 Scorpio Spear 0-70Z è il Booster di Takara Tomy in edizione esclusiva app/eventi: la trottola Scorpio Spear in Metal Coat Magenta, con ratchet 0-70 e bit Z (Zap). La blade ha sei lame in assetto difensivo che durante l'X-Dash si trasformano in tre lame in assetto d'attacco. Booster: nella confezione c'è solo la trottola, lanciatore e stadio non sono inclusi: servono quelli Beyblade X, venduti a parte. La vernice Metal Coat può consumarsi con l'uso. Prodotto originale giapponese, confezione in giapponese.",
+    price: eur(UX00_SS_MAGENTA_PRICE), category: "beyblade-x", brand: "takara-tomy", stock: "pre-ordine", availableQuantity: 2, channelOnly: true, channelPayment: "paypal", tags: [], rating: 0, reviewCount: 0,
+    images: productImages["ux-00-scorpio-spear-0-70z-magenta"],
+    specs: [{ label: "Tipo", value: "Booster (edizione esclusiva app/eventi)" }, { label: "Produttore", value: "Takara Tomy (prodotto originale giapponese)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Codice prodotto", value: "UX-00" }, { label: "Componenti", value: "Blade Scorpio Spear + Ratchet 0-70 + Bit Z (Zap)" }, { label: "Colore", value: "Metal Coat: Magenta" }, { label: "Non inclusi", value: "Lanciatore, stadio" }, { label: "Confezione", value: "In giapponese" }],
+    features: [{ title: "Trasformazione X-Dash", description: "Sei lame difensive diventano tre lame d'attacco durante l'X-Dash" }, { title: "Metal Coat Magenta", description: "Finitura esclusiva app/eventi; la vernice può consumarsi con l'uso" }, { title: "Originale Takara Tomy", description: "Edizione esclusiva app e eventi della linea UX" }],
+    boxContents: ["1 × Trottola Scorpio Spear 0-70Z Metal Coat Magenta", "Istruzioni in giapponese"],
+    relatedSlugs: ["bx-52-luster-dragoon-6-60lc", "ux-08-silver-wolf-3-80fb", "cx-20-customize-set-c"],
   },
   {
     // Owner, 2026-11-26: "arrivano 20 cx-20. mettili sul sito con avvisami e solo 8 in pre order per
