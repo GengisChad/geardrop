@@ -4,7 +4,13 @@
  * components (pricing-forms.tsx) and the server action (actions/pricing.ts).
  */
 
-import { PRICING_BATCH_SIZE } from "./pricing-agent";
+/**
+ * Products per batch of "Analizza tutto il catalogo": each batch searches every approved source
+ * (about 12 web calls per product), and three keep the analyst well inside the 300 s action.
+ * Defined here, not in pricing-agent.ts, because the client form imports this file and the agent
+ * is server-only.
+ */
+export const PRICING_BATCH_SIZE = 3;
 
 /** State managed by the "Analizza tutto il catalogo" client loop. */
 export type AnalyseAllState = {

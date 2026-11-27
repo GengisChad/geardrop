@@ -6,6 +6,7 @@ import type { Database, Json } from "@/lib/supabase/database.types";
 import { brandOf, PRODUCTS } from "@/data/catalog";
 import type { Product } from "@/lib/commerce/types";
 import { runAgent, type ClientTool } from "./agent-loop";
+import { PRICING_BATCH_SIZE } from "./pricing-actions-types";
 import {
   CLAUDE_MODELS,
   emptyUsage,
@@ -43,11 +44,8 @@ import { listMarketSources, listObservations, loadPricingPolicy, type PricingPol
 
 type Client = SupabaseClient<Database>;
 
-/**
- * Products per batch. With 6 potential sources the analyst issues up to 12 web calls per
- * product; 3 × 12 = 36 max, keeping the batch inside the 220 s analyst deadline.
- */
-export const PRICING_BATCH_SIZE = 3;
+/** Products per batch: defined with the client form's state, re-exported for the server side. */
+export { PRICING_BATCH_SIZE };
 
 /** Milliseconds the analyst is allowed before the batch deadline cuts it off. */
 const ANALYST_DEADLINE_MS = 220_000;
