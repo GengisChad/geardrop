@@ -122,6 +122,33 @@ Poi `/controlla` dal telefono dopo un cambio di stock o di prezzo.
 - `src/app/api/telegram/webhook/route.ts`, `src/app/api/cron/telegram-news/route.ts`.
 - Test: `tests/unit/telegram-*.test.ts`, `supabase/tests/054_telegram_news_bot.test.sql`.
 
+## Dai post Instagram al canale
+
+Dal 27/11/2026 (proprietario: "tutto quello che pubblichi su IG mandalo anche su telegram con
+collegamento al pagamento del sito"). Un'immagine o un video pubblicato su Instagram diventa una
+bozza per il canale:
+
+```
+pnpm telegram social <file> --prodotto=<slug> [--testo="..."]
+pnpm telegram social <file> --testo="..." [--pagina=/negozio]
+```
+
+1. Il comando carica il file nella chat del proprietario con il bot, senza notifica: così Telegram
+   lo tiene e ne dà l'id.
+2. Chiede al sito (`POST /api/telegram/social`, con `TELEGRAM_WEBHOOK_SECRET`) di scrivere la
+   bozza. Il sito la mostra al proprietario come ogni altra, con «Pubblica» e «Scarta», poi il
+   caricamento viene cancellato.
+3. Sopra ci sono le parole di `--testo`, poi le righe dello shop lette al momento: nome, prezzo
+   (barrato se c'è un'offerta) e disponibilità. Il tasto mette il pezzo nel carrello del sito
+   (`/carrello?aggiungi=<slug>`): «Compra sul sito», o «Pre-ordina sul sito».
+4. Un pezzo in pre-ordine solo su Telegram ha il tasto del suo pre-ordine (carrello o bot, come ha
+   scelto il proprietario). Senza prodotto il tasto apre la pagina dello shop indicata.
+5. Esce sul canale solo con il suo tocco. Se nel frattempo il pezzo è esaurito, non esce e il bot
+   dice perché.
+
+Va lanciato dalla cartella che ha `.env.local` (token, chat del proprietario, segreto del webhook).
+Telegram accetta immagini fino a 10 MB e video fino a 50 MB.
+
 ## Ingresso dal sito
 
 Dal 26/11/2026 (proprietario: "un bel pulsante su geardropshop per entrare nella community

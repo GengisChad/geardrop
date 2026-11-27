@@ -1,6 +1,19 @@
 import type { Product } from "@/lib/commerce/types";
 import { channelPostUrl, type TelegramGateway } from "./api";
-import { asDraft, channelPreorderPost, draftKeyboard, metaPost, parseDraftAction, postKeyboard, productPost, type MetaSummary, type PostResult } from "./messages";
+import {
+  asDraft,
+  asSocial,
+  channelPreorderPost,
+  draftKeyboard,
+  metaPost,
+  parseDraftAction,
+  postKeyboard,
+  productPost,
+  shopPagePost,
+  shopProductPost,
+  type MetaSummary,
+  type PostResult,
+} from "./messages";
 import { isProductMemory, scanMeta, scanProducts, type NewsEvent, type NewsPayload, type ProductMemory } from "./news";
 import { slugFromStart, type PaymentMode } from "./preorder-rules";
 import { expirePreorders, preorderReport, preorderTap, preorderText, startPreorder, type PreorderContext, type PreorderDeps } from "./preorders";
@@ -179,6 +192,24 @@ async function writePost(payload: NewsPayload, deps: NewsDeps, mode?: PaymentMod
       case "meta_update": {
         const meta = await deps.loadMeta(payload.month);
         return meta ? { ok: true, post: metaPost(meta) } : { ok: false, reason: "quella tier list non è più pubblicata" };
+      }
+      case "social_post": {
+        if (!payload.slug) return { ok: true, post: asSocial(shopPagePost(payload.path), payload) };
+        const catalogue = await deps.loadProducts();
+        const product = catalogue.find((candidate) => candidate.slug === payload.slug);
+        if (!product) return { ok: false, reason: "il prodotto non è più a catalogo" };
+        let base: PostResult;
+        if (product.channelOnly) {
+          // Its pre-order is taken on Telegram: the button is the one its own pre-order post has.
+          const botUsername = await deps.preorders?.botUsername();
+          if (!botUsername) return { ok: false, reason: "non riesco a leggere il nome del bot", retry: true };
+          const allowed = await draftModes({ slugs: [product.slug] }, deps);
+          const chosen = await deps.preorders?.store.paymentMode(product.slug);
+          base = channelPreorderPost({ slugs: [product.slug] }, catalogue, botUsername, chosen && allowed.includes(chosen) ? chosen : allowed.at(-1)!);
+        } else {
+          base = shopProductPost(product);
+        }
+        return base.ok ? { ok: true, post: asSocial(base.post, payload) } : base;
       }
     }
   } catch (error) {
