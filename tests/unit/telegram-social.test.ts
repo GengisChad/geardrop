@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { PRODUCTS } from "@/data/catalog";
 import type { Product } from "@/lib/commerce/types";
 import type { TelegramGateway } from "@/lib/telegram/api";
-import { handleUpdate, showWaitingDrafts, type DraftStatus, type NewsDeps, type NewsStore } from "@/lib/telegram/bot";
+import { handleUpdate, publishSocialNow, showWaitingDrafts, type DraftStatus, type NewsDeps, type NewsStore } from "@/lib/telegram/bot";
 import type { InlineKeyboard, TelegramPost } from "@/lib/telegram/messages";
 import { isNewsPayload, type NewsPayload } from "@/lib/telegram/news";
 import { preorderFromCartLink } from "@/lib/telegram/preorder-rules";
@@ -25,14 +25,17 @@ const onOffer: Product = { ...glory, stock: "disponibile", availableQuantity: 5,
 type Row = { id: number; eventKey: string; payload: NewsPayload; status: DraftStatus; ownerMessageId: number | null };
 type Sent = { chatId: string; text: string; photoUrl?: string | undefined; videoUrl?: string | undefined; keyboard: InlineKeyboard };
 
-function world(products: readonly Product[]) {
+function world(products: readonly Product[], channelId: string | null = CHANNEL) {
   const rows: Row[] = [];
+  const memory = new Map<string, unknown>();
   const sent: Sent[] = [];
   const answers: string[] = [];
   let nextId = 700;
   const store: NewsStore = {
-    readMemory: async () => new Map(),
-    writeMemory: async () => {},
+    readMemory: async () => new Map(memory),
+    writeMemory: async (entries) => {
+      for (const [key, value] of entries) memory.set(key, value);
+    },
     addDrafts: async (events) => {
       const fresh = events.filter((event) => !rows.some((row) => row.eventKey === event.eventKey));
       for (const event of fresh) rows.push({ id: rows.length + 1, eventKey: event.eventKey, payload: event.payload, status: "draft", ownerMessageId: null });
@@ -59,7 +62,10 @@ function world(products: readonly Product[]) {
       sent.push({ chatId, text: post.text, photoUrl: post.photoUrl, videoUrl: post.videoUrl, keyboard });
       return (nextId += 1);
     },
-    sendText: async () => (nextId += 1),
+    sendText: async (chatId, html) => {
+      sent.push({ chatId, text: html, keyboard: [] });
+      return (nextId += 1);
+    },
     setKeyboard: async () => true,
     deleteMessage: async () => true,
     answerCallback: async (_id, text) => {
@@ -70,7 +76,7 @@ function world(products: readonly Product[]) {
     store,
     telegram,
     ownerChatId: OWNER,
-    channelId: CHANNEL,
+    channelId,
     now: () => new Date("2026-11-27T10:00:00.000Z"),
     loadProducts: async () => products,
     loadMetaMonths: async () => [],
@@ -83,8 +89,14 @@ function world(products: readonly Product[]) {
     await store.addDrafts([parsed.event]);
     return showWaitingDrafts(deps);
   };
+  /** What the route does with a request that says publish: straight to the channel. */
+  const publishNow = async (body: unknown) => {
+    const parsed = parseSocialRequest({ ...(body as object), publish: true });
+    if (!parsed.ok || !parsed.publish) throw new Error("not a publish request");
+    return publishSocialNow(parsed.event, deps);
+  };
   const publish = (id: number, from = Number(OWNER)) => handleUpdate({ callback_query: { id: "cb", from: { id: from }, data: `gd:p:${id}`, message: { message_id: 1 } } }, deps);
-  return { rows, sent, answers, submit, publish };
+  return { rows, sent, answers, submit, publish, publishNow };
 }
 
 describe("a picture published on Instagram, as a draft for the channel", () => {
@@ -160,6 +172,42 @@ describe("a picture published on Instagram, as a draft for the channel", () => {
   });
 });
 
+describe("a post that already went out on Instagram, straight to the channel", () => {
+  it("goes out at once with the shop's lines and the pay button, and the owner is told where", async () => {
+    const { publishNow, sent, rows } = world([onOffer]);
+    const result = await publishNow({ slug: glory.slug, note: "Offerta del weekend", media: VIDEO });
+    expect(result).toMatchObject({ ok: true, url: expect.stringMatching(/^https:\/\/t\.me\/geardropshop\/\d+$/) });
+    expect(rows).toHaveLength(0);
+    const post = sent.find((message) => message.chatId === CHANNEL)!;
+    expect(post.videoUrl).toBe(VIDEO.fileId);
+    expect(post.text).toBe("Offerta del weekend\n\n<b>Glory Valkerion LF</b>\n<b>€17,99</b> invece di <s>€19,99</s> (-10%) · Disponibile");
+    expect(post.keyboard).toEqual([[{ text: "Compra sul sito", url: expect.stringContaining("/carrello?aggiungi=glory-valkerion-lf") }]]);
+    expect(sent.at(-1)).toMatchObject({ chatId: OWNER, text: expect.stringMatching(/^Uscito anche sul canale: https:\/\/t\.me\/geardropshop\/\d+$/) });
+  });
+
+  it("is sent once, however often the publisher retries", async () => {
+    const { publishNow, sent } = world([onOffer]);
+    const first = await publishNow({ slug: glory.slug, media: PHOTO });
+    const again = await publishNow({ slug: glory.slug, media: PHOTO });
+    expect(again).toMatchObject({ ok: true, already: true });
+    if (first.ok && again.ok) expect(again.messageId).toBe(first.messageId);
+    expect(sent.filter((message) => message.chatId === CHANNEL)).toHaveLength(1);
+  });
+
+  it("does not go out for a piece that sold out, and tells the owner why", async () => {
+    const { publishNow, sent } = world([{ ...onOffer, stock: "esaurito", availableQuantity: 0 }]);
+    expect(await publishNow({ slug: glory.slug, media: PHOTO })).toEqual({ ok: false, reason: "Glory Valkerion LF è esaurito" });
+    expect(sent.filter((message) => message.chatId === CHANNEL)).toHaveLength(0);
+    expect(sent.at(-1)).toMatchObject({ chatId: OWNER, text: "Non uscito sul canale: Glory Valkerion LF è esaurito." });
+  });
+
+  it("refuses without a channel rather than posting in the owner's chat", async () => {
+    const { publishNow, sent } = world([onOffer], null);
+    expect(await publishNow({ slug: glory.slug, media: PHOTO })).toEqual({ ok: false, reason: "nessun canale configurato" });
+    expect(sent).toHaveLength(0);
+  });
+});
+
 describe("what the site accepts from the command", () => {
   it("needs a product or some words, and a picture or clip Telegram holds", () => {
     expect(parseSocialRequest({ media: PHOTO })).toEqual({ ok: false, reason: "senza prodotto serve un testo" });
@@ -176,6 +224,7 @@ describe("what the site accepts from the command", () => {
     expect(parsed).toEqual({
       ok: true,
       event: { eventKey: `social:${PHOTO.uniqueId}:${glory.slug}`, payload: { kind: "social_post", slug: glory.slug, path: null, note: null, media: PHOTO } },
+      publish: false,
     });
     if (parsed.ok) expect(isNewsPayload(parsed.event.payload)).toBe(true);
     expect(isNewsPayload({ kind: "social_post", slug: null, path: null, note: "x", media: { type: "audio", fileId: "a", uniqueId: "b" } })).toBe(false);

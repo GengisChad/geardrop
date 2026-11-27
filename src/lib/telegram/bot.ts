@@ -84,6 +84,8 @@ function preorderContext(deps: NewsDeps): PreorderContext | null {
 export const DRAFTS_PER_RUN = 8;
 
 const PRODUCTS_MARKER = "products";
+/** One memory row per post sent straight to the channel, so a retry never sends it twice. */
+const SOCIAL_SENT_PREFIX = "social-sent:";
 const PRODUCT_PREFIX = "product:";
 const META_KEY = "meta";
 
@@ -288,6 +290,35 @@ export async function publishDraft(draftId: number, deps: NewsDeps, mode?: Payme
     ]);
   }
   return deps.channelId ? "Pubblicato sul canale." : "Pubblicato qui: nessun canale configurato.";
+}
+
+/**
+ * A post that already went out on Instagram, sent straight to the channel (owner, 2026-11-27:
+ * "vorrei che li programmi e pubblichi tu, sennò io mi scordo. Deve essere un meccanismo automatico").
+ * The scheduled Instagram publisher calls it once the post is live there, so the owner's approval
+ * of the Instagram post is this post's approval too. It is written from the shop like any other:
+ * a piece that sold out meanwhile does not go out. The same post is sent once, however often the
+ * publisher retries, and the owner is told where it went.
+ */
+export async function publishSocialNow(
+  event: NewsEvent & { readonly payload: Extract<NewsPayload, { readonly kind: "social_post" }> },
+  deps: NewsDeps,
+): Promise<{ readonly ok: true; readonly messageId: number; readonly url: string | null; readonly already?: true } | { readonly ok: false; readonly reason: string }> {
+  if (!deps.channelId) return { ok: false, reason: "nessun canale configurato" };
+  const key = `${SOCIAL_SENT_PREFIX}${event.eventKey}`;
+  const before = (await deps.store.readMemory()).get(key) as { readonly messageId?: unknown } | undefined;
+  if (typeof before?.messageId === "number") return { ok: true, messageId: before.messageId, url: channelPostUrl(deps.channelId, before.messageId), already: true };
+  const written = await writePost(event.payload, deps);
+  if (!written.ok) {
+    await deps.telegram.sendText(deps.ownerChatId, `Non uscito sul canale: ${written.reason}.`);
+    return { ok: false, reason: written.reason };
+  }
+  const messageId = await deps.telegram.sendPost(deps.channelId, written.post, postKeyboard(written.post));
+  if (messageId === null) return { ok: false, reason: "Telegram non ha accettato il post" };
+  await deps.store.writeMemory(new Map([[key, { messageId, at: deps.now().toISOString() }]]));
+  const url = channelPostUrl(deps.channelId, messageId);
+  await deps.telegram.sendText(deps.ownerChatId, url ? `Uscito anche sul canale: ${url}` : "Uscito anche sul canale.");
+  return { ok: true, messageId, url };
 }
 
 /** "Scarta": the draft leaves the chat and is never proposed again. */

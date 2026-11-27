@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { readTelegramConfig } from "@/lib/telegram/api";
-import { showWaitingDrafts } from "@/lib/telegram/bot";
+import { publishSocialNow, showWaitingDrafts } from "@/lib/telegram/bot";
 import { createNewsDeps } from "@/lib/telegram/runtime";
 import { parseSocialRequest } from "@/lib/telegram/social";
 
@@ -12,7 +12,9 @@ import { parseSocialRequest } from "@/lib/telegram/social";
  *
  * The script has already put the media in the owner's chat, so Telegram holds it; this stores the
  * draft and shows it to the owner with «Pubblica» and «Scarta», like every other piece of news.
- * Nothing reaches the channel from here.
+ * Nothing reaches the channel from here, unless the request says `publish`: the scheduled
+ * Instagram publisher sends that once the same post is live on Instagram, and the post goes
+ * straight to the channel (bot.ts, publishSocialNow).
  *
  * The caller sends the bot's own secret (TELEGRAM_WEBHOOK_SECRET) as a bearer token: without it set,
  * the route refuses everyone.
@@ -41,6 +43,10 @@ export async function POST(request: NextRequest) {
   try {
     if (slug && !(await deps.loadProducts()).some((product) => product.slug === slug)) {
       return NextResponse.json({ error: `${slug} non è nel catalogo` }, { status: 404 });
+    }
+    if (parsed.publish) {
+      const sent = await publishSocialNow(parsed.event, deps);
+      return sent.ok ? NextResponse.json({ ok: true, published: true, url: sent.url, already: sent.already === true }) : NextResponse.json({ error: sent.reason }, { status: 409 });
     }
     const added = await deps.store.addDrafts([parsed.event]);
     const sent = await showWaitingDrafts(deps);

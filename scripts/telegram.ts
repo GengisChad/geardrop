@@ -16,6 +16,9 @@ import { PRODUCTION_ORIGIN } from "../src/lib/site-url";
  *   pnpm telegram poll [url]        local trial: hands Telegram's updates to a dev server
  *   pnpm telegram social <file> --prodotto=<slug> [--testo="..."]
  *   pnpm telegram social <file> --testo="..." [--pagina=/negozio]
+ *   pnpm telegram social <file> --prodotto=<slug> --pubblica
+ *                                   straight to the channel: for the scheduled Instagram publisher,
+ *                                   once the same post is live on Instagram
  *                                   a picture or clip published on Instagram becomes a draft for the
  *                                   channel, in the owner's chat, with the button to pay on the site
  *
@@ -180,6 +183,7 @@ async function social(argv: readonly string[]): Promise<void> {
   const path = option(argv, "pagina") ?? null;
   const note = option(argv, "testo") ?? null;
   if (!slug && !note) fail('Senza --prodotto serve almeno --testo="...".');
+  const publish = argv.includes("--pubblica");
   const origin = option(argv, "origin") ?? PRODUCTION_ORIGIN;
   if (!/^https:\/\//.test(origin) && !/^http:\/\/localhost(:\d+)?$/.test(origin)) fail("L'indirizzo del sito deve essere https.");
 
@@ -205,11 +209,25 @@ async function social(argv: readonly string[]): Promise<void> {
   const answer = await fetch(`${origin}/api/telegram/social`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${config.webhookSecret}` },
-    body: JSON.stringify({ slug, path, note, media: { type, fileId: media.file_id, uniqueId: media.file_unique_id } }),
+    body: JSON.stringify({ slug, path, note, publish, media: { type, fileId: media.file_id, uniqueId: media.file_unique_id } }),
   }).catch(() => null);
-  const result = answer ? ((await answer.json().catch(() => ({}))) as { readonly ok?: boolean; readonly added?: number; readonly sent?: number; readonly error?: string }) : {};
+  const result = answer
+    ? ((await answer.json().catch(() => ({}))) as {
+        readonly ok?: boolean;
+        readonly added?: number;
+        readonly sent?: number;
+        readonly published?: boolean;
+        readonly url?: string | null;
+        readonly already?: boolean;
+        readonly error?: string;
+      })
+    : {};
   await forget();
   if (!answer?.ok || !result.ok) fail(`Il sito non ha creato la bozza: ${result.error ?? `HTTP ${answer?.status ?? "nessuna risposta"}`}.`);
+  if (result.published) {
+    console.log(result.already ? `Era già sul canale: ${result.url ?? ""}` : `Pubblicato sul canale: ${result.url ?? ""}`);
+    return;
+  }
   console.log(result.added === 0 ? "Questa bozza c'era già: nessuna nuova." : `Bozza mandata nella chat del proprietario (${result.sent ?? 0} mostrate). Esce sul canale solo con «Pubblica».`);
 }
 

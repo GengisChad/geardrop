@@ -146,6 +146,14 @@ pnpm telegram social <file> --testo="..." [--pagina=/negozio]
 5. Esce sul canale solo con il suo tocco. Se nel frattempo il pezzo è esaurito, non esce e il bot
    dice perché.
 
+Con `--pubblica` il post non passa dalla bozza: va subito sul canale. Serve al pubblicatore
+automatico di Instagram, che lo lancia appena lo stesso post è uscito su Instagram, così il
+proprietario non deve ricordarsi niente (27/11/2026: "vorrei che li programmi e pubblichi tu,
+sennò io mi scordo. Deve essere un meccanismo automatico ed efficiente"). L'OK al post Instagram
+vale anche per la sua copia sul canale. Il testo e il tasto vengono comunque dallo shop: un pezzo
+esaurito non esce, e il proprietario riceve una riga nella chat con il bot. Lo stesso post esce
+una volta sola anche se il comando viene rilanciato.
+
 Va lanciato dalla cartella che ha `.env.local` (token, chat del proprietario, segreto del webhook).
 Telegram accetta immagini fino a 10 MB e video fino a 50 MB.
 

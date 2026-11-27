@@ -22,6 +22,8 @@ const request = z.object({
   slug: z.string().regex(SLUG).nullish(),
   path: z.string().regex(PATH).nullish(),
   note: z.string().max(2000).nullish(),
+  /** Straight to the channel instead of a draft: the post already went out on Instagram. */
+  publish: z.boolean().optional(),
   media: z.object({
     type: z.enum(["photo", "video"]),
     fileId: z.string().regex(FILE_ID),
@@ -29,7 +31,9 @@ const request = z.object({
   }),
 });
 
-export type SocialRequest = { readonly ok: true; readonly event: NewsEvent & { readonly payload: SocialPayload } } | { readonly ok: false; readonly reason: string };
+export type SocialRequest =
+  | { readonly ok: true; readonly event: NewsEvent & { readonly payload: SocialPayload }; readonly publish: boolean }
+  | { readonly ok: false; readonly reason: string };
 
 export function parseSocialRequest(body: unknown): SocialRequest {
   const parsed = request.safeParse(body);
@@ -40,5 +44,5 @@ export function parseSocialRequest(body: unknown): SocialRequest {
   if (!slug && !note) return { ok: false, reason: "senza prodotto serve un testo" };
   const payload: SocialPayload = { kind: "social_post", slug: slug ?? null, path: slug ? null : (path ?? null), note, media };
   // The same picture sent twice for the same product is one draft.
-  return { ok: true, event: { eventKey: `social:${media.uniqueId}:${slug ?? path ?? "shop"}`, payload } };
+  return { ok: true, event: { eventKey: `social:${media.uniqueId}:${slug ?? path ?? "shop"}`, payload }, publish: parsed.data.publish === true };
 }
