@@ -1,8 +1,27 @@
 import type { Product } from "@/lib/commerce/types";
 import { channelPostUrl, type TelegramGateway } from "./api";
-import { asDraft, channelPreorderPost, draftKeyboard, metaPost, parseDraftAction, postKeyboard, productPost, type MetaSummary, type PostResult } from "./messages";
+import {
+  asDraft,
+  asSocial,
+  channelPreorderPost,
+  draftKeyboard,
+  metaPost,
+  parseDraftAction,
+  postKeyboard,
+  productPost,
+  shopPagePost,
+  shopProductPost,
+  type MetaSummary,
+  type PostResult,
+} from "./messages";
 import { isProductMemory, scanMeta, scanProducts, type NewsEvent, type NewsPayload, type ProductMemory } from "./news";
 import { slugFromStart, type PaymentMode } from "./preorder-rules";
+import { advisorQuestion, advisorResult, parseAdvisorAction, type AdvisorMeta } from "./bey-advisor";
+import { searchInline } from "./inline-search";
+import { followTap, startFollow, type FollowContext } from "./order-follow";
+import { draftPoll, pollReport, pollTap, pollUpdate, type PollContext } from "./polls";
+import type { OwnerMessage } from "./owner-alerts";
+import { notifyRestocks, restockTap, slugFromRestockStart, startRestock, type RestockContext, type RestockStore } from "./restock";
 import { expirePreorders, preorderReport, preorderTap, preorderText, startPreorder, type PreorderContext, type PreorderDeps } from "./preorders";
 
 /**
@@ -59,6 +78,16 @@ export type NewsDeps = {
   readonly now: () => Date;
   /** Pre-orders taken in the bot's chat (preorders.ts). Without it the bot only publishes news. */
   readonly preorders?: PreorderDeps;
+  /** «Avvisami» on Telegram (restock.ts). Without it the bot keeps no such request. */
+  readonly restock?: RestockStore;
+  /** The owner's evening summary on demand (owner-alerts.ts), as the 21:00 cron sends it. */
+  readonly summary?: () => Promise<OwnerMessage>;
+  /** The month's tier list for «Che bey compro?» (bey-advisor.ts). Without it /bey is off. */
+  readonly loadRankings?: () => Promise<AdvisorMeta | null>;
+  /** «Segui su Telegram» from an order's email (order-follow.ts). Without it the link does nothing. */
+  readonly follows?: FollowContext;
+  /** Channel polls (polls.ts): /sondaggio drafts one, his tap publishes it. */
+  readonly polls?: PollContext;
 };
 
 function preorderContext(deps: NewsDeps): PreorderContext | null {
@@ -67,10 +96,27 @@ function preorderContext(deps: NewsDeps): PreorderContext | null {
     : null;
 }
 
+/** «Che bey compro?»: the next question, or the build once the three answers are in. */
+async function sendAdvice(deps: NewsDeps, chatId: string, answers: NonNullable<ReturnType<typeof parseAdvisorAction>>): Promise<void> {
+  const question = advisorQuestion(answers);
+  const message =
+    question ??
+    advisorResult({ style: answers.style ?? "x", budget: answers.budget ?? "3", needsLauncher: answers.needsLauncher ?? false }, await deps.loadProducts(), (await deps.loadRankings?.()) ?? null);
+  await deps.telegram.sendText(chatId, message.text, message.keyboard);
+}
+
+function restockContext(deps: NewsDeps): RestockContext | null {
+  return deps.restock
+    ? { telegram: deps.telegram, loadProducts: deps.loadProducts, now: deps.now, store: deps.restock, channelId: deps.channelId }
+    : null;
+}
+
 /** How many drafts one run shows the owner: a price list changed in one go must not bury his chat. */
 export const DRAFTS_PER_RUN = 8;
 
 const PRODUCTS_MARKER = "products";
+/** One memory row per post sent straight to the channel, so a retry never sends it twice. */
+const SOCIAL_SENT_PREFIX = "social-sent:";
 const PRODUCT_PREFIX = "product:";
 const META_KEY = "meta";
 
@@ -120,6 +166,9 @@ export async function scanNews(deps: NewsDeps): Promise<ScanReport> {
     const scan = scanProducts(remembered, products, now, first);
     events.push(...scan.events);
     for (const [slug, state] of scan.memory) writes.set(`${PRODUCT_PREFIX}${slug}`, state);
+    // The chats that asked to be told when a piece can be bought again: a private message each.
+    const restock = restockContext(deps);
+    if (restock) await attempt("avvisi", unread, () => notifyRestocks(restock, products));
     if (first) {
       writes.set(PRODUCTS_MARKER, { since: now.toISOString() });
       firstLook = true;
@@ -179,6 +228,24 @@ async function writePost(payload: NewsPayload, deps: NewsDeps, mode?: PaymentMod
       case "meta_update": {
         const meta = await deps.loadMeta(payload.month);
         return meta ? { ok: true, post: metaPost(meta) } : { ok: false, reason: "quella tier list non è più pubblicata" };
+      }
+      case "social_post": {
+        if (!payload.slug) return { ok: true, post: asSocial(shopPagePost(payload.path), payload) };
+        const catalogue = await deps.loadProducts();
+        const product = catalogue.find((candidate) => candidate.slug === payload.slug);
+        if (!product) return { ok: false, reason: "il prodotto non è più a catalogo" };
+        let base: PostResult;
+        if (product.channelOnly) {
+          // Its pre-order is taken on Telegram: the button is the one its own pre-order post has.
+          const botUsername = await deps.preorders?.botUsername();
+          if (!botUsername) return { ok: false, reason: "non riesco a leggere il nome del bot", retry: true };
+          const allowed = await draftModes({ slugs: [product.slug] }, deps);
+          const chosen = await deps.preorders?.store.paymentMode(product.slug);
+          base = channelPreorderPost({ slugs: [product.slug] }, catalogue, botUsername, chosen && allowed.includes(chosen) ? chosen : allowed.at(-1)!);
+        } else {
+          base = shopProductPost(product);
+        }
+        return base.ok ? { ok: true, post: asSocial(base.post, payload) } : base;
       }
     }
   } catch (error) {
@@ -259,6 +326,35 @@ export async function publishDraft(draftId: number, deps: NewsDeps, mode?: Payme
   return deps.channelId ? "Pubblicato sul canale." : "Pubblicato qui: nessun canale configurato.";
 }
 
+/**
+ * A post that already went out on Instagram, sent straight to the channel (owner, 2026-11-27:
+ * "vorrei che li programmi e pubblichi tu, sennò io mi scordo. Deve essere un meccanismo automatico").
+ * The scheduled Instagram publisher calls it once the post is live there, so the owner's approval
+ * of the Instagram post is this post's approval too. It is written from the shop like any other:
+ * a piece that sold out meanwhile does not go out. The same post is sent once, however often the
+ * publisher retries, and the owner is told where it went.
+ */
+export async function publishSocialNow(
+  event: NewsEvent & { readonly payload: Extract<NewsPayload, { readonly kind: "social_post" }> },
+  deps: NewsDeps,
+): Promise<{ readonly ok: true; readonly messageId: number; readonly url: string | null; readonly already?: true } | { readonly ok: false; readonly reason: string }> {
+  if (!deps.channelId) return { ok: false, reason: "nessun canale configurato" };
+  const key = `${SOCIAL_SENT_PREFIX}${event.eventKey}`;
+  const before = (await deps.store.readMemory()).get(key) as { readonly messageId?: unknown } | undefined;
+  if (typeof before?.messageId === "number") return { ok: true, messageId: before.messageId, url: channelPostUrl(deps.channelId, before.messageId), already: true };
+  const written = await writePost(event.payload, deps);
+  if (!written.ok) {
+    await deps.telegram.sendText(deps.ownerChatId, `Non uscito sul canale: ${written.reason}.`);
+    return { ok: false, reason: written.reason };
+  }
+  const messageId = await deps.telegram.sendPost(deps.channelId, written.post, postKeyboard(written.post));
+  if (messageId === null) return { ok: false, reason: "Telegram non ha accettato il post" };
+  await deps.store.writeMemory(new Map([[key, { messageId, at: deps.now().toISOString() }]]));
+  const url = channelPostUrl(deps.channelId, messageId);
+  await deps.telegram.sendText(deps.ownerChatId, url ? `Uscito anche sul canale: ${url}` : "Uscito anche sul canale.");
+  return { ok: true, messageId, url };
+}
+
 /** "Scarta": the draft leaves the chat and is never proposed again. */
 export async function discardDraft(draftId: number, deps: NewsDeps): Promise<string> {
   const draft = await deps.store.claimDecision(draftId);
@@ -278,6 +374,11 @@ const HELP = [
   "/controlla  guarda lo shop adesso",
   "/bozze  mostra di nuovo le bozze in attesa",
   "/preordini  chi ha pre-ordinato su Telegram, pagato o in attesa",
+  "/riepilogo  ordini di oggi, scorte basse, pagamenti senza ordine",
+  "/bey  «Che bey compro?», come lo vede un cliente",
+  "/sondaggio cx-21  prepara un sondaggio per il canale; /sondaggi i voti",
+  "",
+  "Ti scrivo anche da solo: a ogni ordine pagato, se Stripe incassa senza che l'ordine entri nel gestionale, e alle 21 col riepilogo.",
 ].join("\n");
 
 export function scanSummary(report: ScanReport): string {
@@ -289,6 +390,8 @@ export function scanSummary(report: ScanReport): string {
 
 /** The parts of a Telegram update the bot reads. Everything else in it is ignored. */
 type Update = {
+  readonly poll?: { readonly id?: unknown; readonly options?: unknown; readonly total_voter_count?: unknown; readonly is_closed?: unknown };
+  readonly inline_query?: { readonly id?: unknown; readonly query?: unknown };
   readonly callback_query?: {
     readonly id?: unknown;
     readonly from?: { readonly id?: unknown };
@@ -311,9 +414,53 @@ export async function handleUpdate(input: unknown, deps: NewsDeps): Promise<stri
   const account = (id: unknown) => (typeof id === "number" || typeof id === "string" ? String(id) : null);
   const isOwner = (id: unknown) => account(id) === deps.ownerChatId;
   const preorders = preorderContext(deps);
+  const restock = restockContext(deps);
+
+  // The votes of a poll the bot published: Telegram reports the counts, never who voted.
+  if (update.poll && deps.polls) return (await pollUpdate(deps.polls, update.poll)) ? "poll votes" : "ignored";
+
+  // "@GearDropNewsBot dran" typed in any chat, by anyone: the shop's pieces that match.
+  const inline = update.inline_query;
+  if (inline && typeof inline.id === "string") {
+    const query = typeof inline.query === "string" ? inline.query.slice(0, 256) : "";
+    await deps.telegram.answerInline(inline.id, searchInline(query, await deps.loadProducts()));
+    return "inline";
+  }
 
   const tap = update.callback_query;
   if (tap && typeof tap.id === "string") {
+    // «Non avvisarmi più» belongs to the chat that asked for the notice.
+    const tapper = account(tap.from?.id);
+    if (restock && tapper) {
+      const answer = await restockTap(restock, { from: tapper, data: typeof tap.data === "string" ? tap.data : undefined });
+      if (answer !== null) {
+        await deps.telegram.answerCallback(tap.id, answer);
+        return "restock";
+      }
+    }
+    // A poll's buttons are the owner's: pollTap checks it.
+    if (deps.polls && tapper) {
+      const answer = await pollTap(deps.polls, { from: tapper, data: typeof tap.data === "string" ? tap.data : undefined });
+      if (answer !== null) {
+        await deps.telegram.answerCallback(tap.id, answer);
+        return "poll";
+      }
+    }
+    // «Non seguire più» belongs to the chat that follows the order.
+    if (deps.follows && tapper) {
+      const answer = await followTap(deps.follows, { from: tapper, data: typeof tap.data === "string" ? tap.data : undefined });
+      if (answer !== null) {
+        await deps.telegram.answerCallback(tap.id, answer);
+        return "follow";
+      }
+    }
+    // «Che bey compro?»: the answers so far are in the button, so any chat may tap it.
+    const advice = parseAdvisorAction(typeof tap.data === "string" ? tap.data : undefined);
+    if (advice && tapper && deps.loadRankings) {
+      await deps.telegram.answerCallback(tap.id, "");
+      await sendAdvice(deps, tapper, advice);
+      return "advisor";
+    }
     // A pre-order's buttons belong to its buyer, or to the owner: preorderTap checks which.
     const from = account(tap.from?.id);
     if (preorders && from) {
@@ -344,6 +491,21 @@ export async function handleUpdate(input: unknown, deps: NewsDeps): Promise<stri
   // Anyone may pre-order, the owner included (it is how he tries the flow): the channel post's
   // button arrives here as "/start pre-<slug>", and what follows is the buyer answering the bot.
   const chatId = account(message.chat.id);
+  // «Segui su Telegram» from an order's email arrives as "/start or-<order>-<signature>".
+  if (deps.follows && chatId && chatId === account(message.from?.id)) {
+    const followed = await startFollow(deps.follows, chatId, message.text);
+    if (followed) return followed;
+  }
+  // «Avvisami su Telegram» from a product page arrives as "/start av-<slug>", from anyone.
+  if (restock && chatId && chatId === account(message.from?.id)) {
+    const wanted = slugFromRestockStart(message.text);
+    if (wanted) return startRestock(restock, chatId, wanted);
+  }
+  // «Che bey compro?»: /bey, or "/start bey" from a link, from anyone.
+  if (deps.loadRankings && chatId && chatId === account(message.from?.id) && (command === "bey" || /^\/start\s+bey$/i.test(message.text.trim()))) {
+    await sendAdvice(deps, chatId, {});
+    return "advisor";
+  }
   if (preorders && chatId && chatId === account(message.from?.id)) {
     const slug = slugFromStart(message.text);
     if (slug) return startPreorder(preorders, { id: chatId, username: typeof message.from?.username === "string" ? message.from.username : null }, slug);
@@ -352,7 +514,8 @@ export async function handleUpdate(input: unknown, deps: NewsDeps): Promise<stri
   if (!isOwner(message.from?.id)) {
     // A stranger gets the one thing he can use: where the news comes out.
     if (command === "start" && deps.channelId?.startsWith("@") && (typeof message.chat.id === "number" || typeof message.chat.id === "string")) {
-      await deps.telegram.sendText(String(message.chat.id), `Le news di GEAR//DROP escono sul canale ${deps.channelId}.`);
+      const advisor = deps.loadRankings ? "\nNon sai cosa comprare? Scrivi /bey." : "";
+      await deps.telegram.sendText(String(message.chat.id), `Le news di GEAR//DROP escono sul canale ${deps.channelId}.${advisor}`);
     }
     return "stranger";
   }
@@ -376,6 +539,26 @@ export async function handleUpdate(input: unknown, deps: NewsDeps): Promise<stri
       await expirePreorders(preorders);
       for (const text of await preorderReport(preorders)) await deps.telegram.sendText(deps.ownerChatId, text);
       return "preorders";
+    }
+    case "sondaggio": {
+      if (!deps.polls) {
+        await deps.telegram.sendText(deps.ownerChatId, "I sondaggi non sono attivi.");
+        return "poll";
+      }
+      return draftPoll(deps.polls, message.text.trim().replace(/^\/sondaggio(?:@\w+)?/i, ""));
+    }
+    case "sondaggi": {
+      await deps.telegram.sendText(deps.ownerChatId, deps.polls ? await pollReport(deps.polls) : "I sondaggi non sono attivi.");
+      return "polls";
+    }
+    case "riepilogo": {
+      if (!deps.summary) {
+        await deps.telegram.sendText(deps.ownerChatId, "Il riepilogo non è attivo.");
+        return "summary";
+      }
+      const summary = await deps.summary();
+      await deps.telegram.sendText(deps.ownerChatId, summary.text, summary.keyboard);
+      return "summary";
     }
     default:
       await deps.telegram.sendText(deps.ownerChatId, HELP);

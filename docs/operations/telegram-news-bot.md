@@ -93,7 +93,7 @@ La prima volta non annuncia niente: ricorda quello che c'è già in vendita.
 | `pnpm telegram poll` | Prova in locale: passa a `pnpm dev` i tasti e i comandi (senza webhook attivo) |
 
 Al bot, in chat privata: `/controlla` (guarda lo shop adesso), `/bozze` (mostra di nuovo le bozze in
-attesa).
+attesa), `/preordini`, `/riepilogo` (il riepilogo della sera, adesso).
 
 ## Prova in locale
 
@@ -119,8 +119,141 @@ Poi `/controlla` dal telefono dopo un cambio di stock o di prezzo.
 - `src/lib/telegram/messages.ts`: i testi dei post e i tasti.
 - `src/lib/telegram/bot.ts`: guarda, bozza, pubblica, scarta, comandi.
 - `src/lib/telegram/api.ts`, `supabase-store.ts`, `runtime.ts`: Telegram, tabelle, collegamento allo shop.
-- `src/app/api/telegram/webhook/route.ts`, `src/app/api/cron/telegram-news/route.ts`.
+- `src/lib/telegram/owner-alerts.ts`, `owner-runtime.ts`: gli avvisi per il proprietario.
+- `src/app/api/telegram/webhook/route.ts`, `src/app/api/cron/telegram-news/route.ts`, `src/app/api/cron/telegram-summary/route.ts`.
 - Test: `tests/unit/telegram-*.test.ts`, `supabase/tests/054_telegram_news_bot.test.sql`.
+
+## Dai post Instagram al canale
+
+Dal 27/11/2026 (proprietario: "tutto quello che pubblichi su IG mandalo anche su telegram con
+collegamento al pagamento del sito"). Un'immagine o un video pubblicato su Instagram diventa una
+bozza per il canale:
+
+```
+pnpm telegram social <file> --prodotto=<slug> [--testo="..."]
+pnpm telegram social <file> --testo="..." [--pagina=/negozio]
+```
+
+1. Il comando carica il file nella chat del proprietario con il bot, senza notifica: così Telegram
+   lo tiene e ne dà l'id.
+2. Chiede al sito (`POST /api/telegram/social`, con `TELEGRAM_WEBHOOK_SECRET`) di scrivere la
+   bozza. Il sito la mostra al proprietario come ogni altra, con «Pubblica» e «Scarta», poi il
+   caricamento viene cancellato.
+3. Sopra ci sono le parole di `--testo`, poi le righe dello shop lette al momento: nome, prezzo
+   (barrato se c'è un'offerta) e disponibilità. Il tasto mette il pezzo nel carrello del sito
+   (`/carrello?aggiungi=<slug>`): «Compra sul sito», o «Pre-ordina sul sito».
+4. Un pezzo in pre-ordine solo su Telegram ha il tasto del suo pre-ordine (carrello o bot, come ha
+   scelto il proprietario). Senza prodotto il tasto apre la pagina dello shop indicata.
+5. Esce sul canale solo con il suo tocco. Se nel frattempo il pezzo è esaurito, non esce e il bot
+   dice perché.
+
+Con `--pubblica` il post non passa dalla bozza: va subito sul canale. Serve al pubblicatore
+automatico di Instagram, che lo lancia appena lo stesso post è uscito su Instagram, così il
+proprietario non deve ricordarsi niente (27/11/2026: "vorrei che li programmi e pubblichi tu,
+sennò io mi scordo. Deve essere un meccanismo automatico ed efficiente"). L'OK al post Instagram
+vale anche per la sua copia sul canale. Il testo e il tasto vengono comunque dallo shop: un pezzo
+esaurito non esce, e il proprietario riceve una riga nella chat con il bot. Lo stesso post esce
+una volta sola anche se il comando viene rilanciato.
+
+Va lanciato dalla cartella che ha `.env.local` (token, chat del proprietario, segreto del webhook).
+Telegram accetta immagini fino a 10 MB e video fino a 50 MB.
+
+## «Avvisami» su Telegram
+
+Dal 27/11/2026. Sulla scheda di un prodotto esaurito o in arrivo, sotto il modulo email, c'è
+«Oppure avvisami su Telegram»: apre il bot con `/start av-<slug>`.
+
+- Il bot tiene la chat nella stessa lista «Avvisami» delle email (`restock_requests`, colonna
+  `telegram_chat_id`), così il conteggio delle richieste nel gestionale le include.
+- Se il pezzo si può già comprare, il bot lo dice subito e dà il tasto **Compra**.
+- Appena il pezzo torna acquistabile sul sito, a ogni sguardo allo shop (salvataggio nel
+  gestionale, le 9 del mattino, `/controlla`) il bot manda un messaggio privato con prezzo,
+  disponibilità e **Compra**, che apre il carrello con il pezzo dentro. Poi cancella la richiesta.
+- Un pre-ordine solo Telegram non conta come acquistabile: si aspetta che arrivi sul sito.
+- «Non avvisarmi più» toglie la richiesta; dopo sei mesi si cancella da sola, come quelle email.
+- Il tasto «Invia avvisi» del gestionale manda solo le email: quelle Telegram partono da sole.
+- Un salvataggio nel gestionale fa scadere subito la cache dei prodotti dello shop, così il carrello
+  vende già quello che il messaggio annuncia. Un pezzo rimesso in vendita con una migrazione non
+  passa da lì: prima di `/controlla` aspetta 5 minuti, come per le bozze.
+
+## Ricerca inline
+
+Dal 27/11/2026, in qualunque chat Telegram: `@GearDropNewsBot dran` mostra i pezzi dello shop che
+corrispondono, con prezzo e disponibilità. Un tocco manda il pezzo in quella chat con il tasto
+«Compra sul sito» (o «Pre-ordina sul sito»); un pezzo esaurito ha «Avvisami su Telegram» e «Vedi sul
+sito». Senza parole elenca quello che si compra adesso.
+
+- I dati sono quelli dello shop in quel momento (Telegram tiene la risposta 60 secondi). Un
+  pre-ordine solo Telegram non compare mai; uno «In arrivo» compare come sullo shop.
+- Il bot non salva né la ricerca né chi l'ha fatta.
+- Da fare una volta, a mano: su @BotFather `/setinline`, scegli @GearDropNewsBot, come testo
+  d'esempio `Cerca un pezzo, es. dran`. Poi `pnpm telegram webhook set`, perché il webhook chieda a
+  Telegram anche le ricerche (`inline_query`).
+
+## «Che bey compro?»
+
+Dal 27/11/2026, chiunque in chat privata col bot: `/bey` (o il link `t.me/GearDropNewsBot?start=bey`).
+Tre domande a tasti: come vuoi giocare (attacco, difesa, stamina, «non so»), quanto spendere in
+tutto (25 €, 50 €, di più), se hai già un lanciatore. Poi una sola scelta:
+
+- la lama meglio piazzata nella tier list del mese (`/meta`) che lo shop vende adesso e che va con
+  le risposte (il prodotto collegato in classifica);
+- il pezzo che completa la combo con cui vince sui podi (la colonna «archetipo», es. «1-60 Hexa»),
+  preso dal prodotto collegato a quella punta o a quel ratchet, se il primo non lo ha già;
+- il lanciatore più economico, se serve. Tutto dentro il budget.
+
+Il tasto «Metti tutto nel carrello» apre `/carrello?aggiungi=a,b,c` con un pezzo di ciascuno. Il
+testo dice solo «sui podi di <mese>»: non nomina mai da dove vengono i dati. Le risposte stanno nei
+tasti (`gd:b:<risposte>`): il bot non salva niente di chi chiede, quindi l'informativa non cambia.
+
+## «Segui su Telegram»
+
+Dal 27/11/2026 l'email di conferma (se `ORDER_CUSTOMER_EMAILS=true`) e quella di spedizione hanno
+il tasto «Segui su Telegram»: apre il bot con `/start or-<ordine>-<firma>`. La firma è un HMAC
+dell'ordine con `TELEGRAM_WEBHOOK_SECRET`: chi indovina un numero d'ordine non può seguirlo.
+
+- Il bot salva chat e ordine in `telegram_order_follows` e risponde con lo stato: pagato, spedito
+  (con tracking e «Traccia il pacco»), consegnato.
+- Poi scrive da solo, una volta per passaggio: quando il gestionale segna la spedizione, ai passaggi
+  InPost che contano per chi aspetta (in consegna, pronto nel Locker o al punto, spostato,
+  promemoria, non ritirato, ritardo; letti dal cron delle 17 o dal webhook InPost), e alla consegna.
+- Alla consegna la riga si cancella; anche con «Non seguire più», o dopo 90 giorni.
+- I messaggi li ha chiesti il cliente, come le email, quindi partono senza il tocco del proprietario.
+
+## Sondaggi sul canale
+
+Dal 27/11/2026, per capire quanti pezzi ordinare prima di ordinarli. Il proprietario scrive al bot
+`/sondaggio cx-21` (lo slug o le parole del nome; anche un pezzo che lo shop non ha ancora):
+
+- il bot prepara la bozza in chat privata: «<pezzo>: lo prendereste?» con tre risposte (sì appena
+  arriva / forse, dipende dal prezzo / no) e i tasti **Pubblica sul canale** e **Scarta**;
+- solo il suo tocco la pubblica sul canale, con «Vedi sul sito» se il pezzo è sullo shop;
+- i voti sono anonimi (un sondaggio in un canale lo è sempre): Telegram manda al bot solo i conteggi
+  (`poll`), salvati in `telegram_polls`;
+- **Chiudi sondaggio** lo ferma e manda i risultati; `/sondaggi` mostra gli ultimi;
+- nel gestionale, **Previsioni** ha la tabella «Sondaggi del canale Telegram» e, sulla riga del
+  prodotto collegato, «Sondaggio Telegram: 12 sì su 20» (funzione `get_telegram_poll_results`, solo
+  owner e admin).
+
+Dopo il deploy va rifatto `pnpm telegram webhook set`, perché Telegram mandi anche i voti (`poll`).
+
+## Avvisi per te
+
+Dal 27/11/2026 il bot scrive al proprietario, in privato, anche senza che lui chieda:
+
+- **Ordine pagato**: appena il webhook Stripe registra un ordine nuovo. Numero, totale, pezzi,
+  spedizione, codice sconto e canale della visita, le scorte basse che l'ordine ha lasciato, il
+  tasto «Apri l'ordine». Un solo messaggio per ordine: i tentativi ripetuti di Stripe tacciono.
+- **Allarme**: se il webhook non riesce a leggere o registrare un pagamento, una volta per sessione
+  Stripe (memoria `alarm:paid-without-order:<sessione>`). Stripe riprova per tre giorni.
+- **Riepilogo delle 21** (cron `/api/cron/telegram-summary`, 20:00 UTC: 21 d'inverno, 22 d'estate):
+  ordini e incasso del giorno, ordini pagati non spediti, pre-ordini Telegram da pagare, Avvisami in
+  attesa, scorte basse, e i pagamenti Stripe delle ultime 26 ore senza ordine. Se la chiave Stripe
+  non può leggere le sessioni, il riepilogo lo dice invece di tacere.
+
+Nessuno di questi messaggi porta dati del cliente (nome, indirizzo, email, telefono): restano nel
+gestionale e nell'email dell'ordine. Non servono variabili nuove: `CRON_SECRET` e
+`STRIPE_SECRET_KEY` ci sono già.
 
 ## Ingresso dal sito
 

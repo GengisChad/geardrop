@@ -2,10 +2,11 @@
 
 import { useActionState, useId } from "react";
 import Link from "next/link";
-import { Bell, Check } from "lucide-react";
+import { Bell, Check, Send } from "lucide-react";
 import { requestRestockNoticeAction } from "@/app/actions/restock-notice";
 import type { RestockNoticeState } from "@/app/actions/restock-notice";
 import { cn } from "@/lib/cn";
+import { restockTelegramUrl } from "@/lib/telegram/restock-link";
 
 type RestockFormProps = {
   slug: string;
@@ -26,6 +27,7 @@ const initial: RestockNoticeState = { ok: false, message: "" };
  */
 export function RestockForm({ slug, name, releasePreorder, arriving }: RestockFormProps) {
   const emailId = useId();
+  const telegram = restockTelegramUrl(slug);
   const [state, formAction, pending] = useActionState(requestRestockNoticeAction, initial);
 
   if (state.ok) {
@@ -100,6 +102,20 @@ export function RestockForm({ slug, name, releasePreorder, arriving }: RestockFo
         >
           {state.message}
         </p>
+      ) : null}
+
+      {telegram ? (
+        // Owner, 2026-11-27: the same notice on Telegram, a private message from the shop's bot.
+        <a
+          href={telegram}
+          target="_blank"
+          rel="noopener noreferrer"
+          data-testid="restock-telegram"
+          className="gd-display inline-flex min-h-11 items-center gap-2 self-start text-small font-bold tracking-[0.04em] text-violet-soft underline decoration-2 underline-offset-4 hover:text-white"
+        >
+          <Send className="size-4" aria-hidden="true" />
+          Oppure avvisami su Telegram
+        </a>
       ) : null}
 
       <p className="text-[0.6875rem] text-grey-600">

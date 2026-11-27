@@ -2989,27 +2989,30 @@ export type Database = {
       restock_requests: {
         Row: {
           created_at: string
-          email: string
+          email: string | null
           id: number
           notified_at: string | null
           organization_id: number
           product_slug: string
+          telegram_chat_id: number | null
         }
         Insert: {
           created_at?: string
-          email: string
+          email?: string | null
           id?: never
           notified_at?: string | null
           organization_id: number
           product_slug: string
+          telegram_chat_id?: number | null
         }
         Update: {
           created_at?: string
-          email?: string
+          email?: string | null
           id?: never
           notified_at?: string | null
           organization_id?: number
           product_slug?: string
+          telegram_chat_id?: number | null
         }
         Relationships: [
           {
@@ -3576,6 +3579,99 @@ export type Database = {
         }
         Relationships: []
       }
+      telegram_order_follows: {
+        Row: {
+          chat_id: number
+          created_at: string
+          id: number
+          last_told: string | null
+          order_id: number
+          updated_at: string
+        }
+        Insert: {
+          chat_id: number
+          created_at?: string
+          id?: never
+          last_told?: string | null
+          order_id: number
+          updated_at?: string
+        }
+        Update: {
+          chat_id?: number
+          created_at?: string
+          id?: never
+          last_told?: string | null
+          order_id?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_order_follows_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order_profit"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "telegram_order_follows_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      telegram_polls: {
+        Row: {
+          channel_message_id: number | null
+          closed_at: string | null
+          counts: Json
+          created_at: string
+          id: number
+          opened_at: string | null
+          options: Json
+          poll_id: string | null
+          product_slug: string | null
+          question: string
+          status: string
+          subject: string
+          total_voters: number
+          updated_at: string
+        }
+        Insert: {
+          channel_message_id?: number | null
+          closed_at?: string | null
+          counts?: Json
+          created_at?: string
+          id?: never
+          opened_at?: string | null
+          options: Json
+          poll_id?: string | null
+          product_slug?: string | null
+          question: string
+          status?: string
+          subject: string
+          total_voters?: number
+          updated_at?: string
+        }
+        Update: {
+          channel_message_id?: number | null
+          closed_at?: string | null
+          counts?: Json
+          created_at?: string
+          id?: never
+          opened_at?: string | null
+          options?: Json
+          poll_id?: string | null
+          product_slug?: string | null
+          question?: string
+          status?: string
+          subject?: string
+          total_voters?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       telegram_preorders: {
         Row: {
           buyer_name: string | null
@@ -3916,6 +4012,22 @@ export type Database = {
           preorder_units: number
           ready: boolean
           waiting: Json
+        }[]
+      }
+      get_telegram_poll_results: {
+        Args: { p_organization_id: number }
+        Returns: {
+          closed_at: string
+          counts: Json
+          id: number
+          opened_at: string
+          options: Json
+          product_id: number
+          product_slug: string
+          question: string
+          status: string
+          subject: string
+          total_voters: number
         }[]
       }
       get_warehouse_summary: {

@@ -11,7 +11,7 @@ import type { Product, StockStatus } from "@/lib/commerce/types";
  * in a message is read again from the catalogue when the message is written.
  */
 
-export const NEWS_KINDS = ["new_product", "back_in_stock", "price_drop", "channel_preorder", "meta_update"] as const;
+export const NEWS_KINDS = ["new_product", "back_in_stock", "price_drop", "channel_preorder", "meta_update", "social_post"] as const;
 export type NewsKind = (typeof NEWS_KINDS)[number];
 
 /** What a draft needs to be written again from the shop's data at the moment it is published. */
@@ -20,7 +20,27 @@ export type NewsPayload =
   /** A pre-order taken on Telegram only: the post's button opens the bot, not the shop. */
   | { readonly kind: "channel_preorder"; readonly slugs: readonly string[] }
   | { readonly kind: "price_drop"; readonly slugs: readonly string[]; readonly price: number; readonly previousPrice: number }
-  | { readonly kind: "meta_update"; readonly month: string };
+  | { readonly kind: "meta_update"; readonly month: string }
+  /**
+   * A picture or clip the shop published on Instagram, sent to the channel too (owner, 2026-11-27:
+   * "tutto quello che pubblichi su IG mandalo anche su telegram con collegamento al pagamento del
+   * sito"). The media is Telegram's own copy (a file_id); the words about the product and the
+   * button to pay are written from the shop when the post goes out, like every other post.
+   */
+  | SocialPayload;
+
+export type SocialMedia = { readonly type: "photo" | "video"; readonly fileId: string; readonly uniqueId: string };
+
+export type SocialPayload = {
+  readonly kind: "social_post";
+  /** The product the post sells, or null for a post about the shop. */
+  readonly slug: string | null;
+  /** The shop page the button opens when no product is named. */
+  readonly path: string | null;
+  /** The words that went with it on Instagram, printed above the shop's own lines. */
+  readonly note: string | null;
+  readonly media: SocialMedia;
+};
 
 export type NewsEvent = {
   /** The same event found twice has the same key, so it is drafted once. */
@@ -227,6 +247,20 @@ export function isNewsPayload(value: unknown): value is NewsPayload {
       return slugs && Number.isSafeInteger(payload["price"]) && Number.isSafeInteger(payload["previousPrice"]);
     case "meta_update":
       return typeof payload["month"] === "string";
+    case "social_post": {
+      const media = payload["media"] as Record<string, unknown> | null | undefined;
+      const optional = (key: string) => payload[key] === null || typeof payload[key] === "string";
+      return (
+        optional("slug") &&
+        optional("path") &&
+        optional("note") &&
+        typeof media === "object" &&
+        media !== null &&
+        (media["type"] === "photo" || media["type"] === "video") &&
+        typeof media["fileId"] === "string" &&
+        typeof media["uniqueId"] === "string"
+      );
+    }
     default:
       return false;
   }

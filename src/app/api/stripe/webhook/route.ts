@@ -9,6 +9,7 @@ import { createSupabaseOrderStore, createSupabaseRefundStore } from "@/lib/order
 import { createStripeClient } from "@/lib/payments/stripe-api";
 import { parseStripeEvent, verifyStripeSignature } from "@/lib/payments/stripe-webhook";
 import { STOREFRONT_CACHE_TAGS } from "@/lib/storefront/cache";
+import { alarmOwnerPaidWithoutOrder, alertOwnerOfPaidOrder } from "@/lib/telegram/owner-runtime";
 
 /**
  * Stripe → shop. Register https://geardropshop.it/api/stripe/webhook in Stripe with the events
@@ -72,10 +73,13 @@ export async function POST(request: Request) {
     store: createSupabaseOrderStore(),
     sendEmail: (message) => sendEmail(message),
     paymentFee: (checkout) => (checkout.paymentIntentId ? stripePaymentFee(stripe, checkout.paymentIntentId) : Promise.resolve(null)),
+    alertOwner: alertOwnerOfPaidOrder,
   });
 
   if (result.status === "failed") {
     console.error(`[stripe-webhook] ${event.id} failed at ${result.step}: ${result.detail}`);
+    // Paid, and no order yet: the owner hears it on Telegram now, not when the buyer writes.
+    if (result.step !== "notify") alarmOwnerPaidWithoutOrder(event.data.object.id);
     return NextResponse.json({ error: result.step }, { status: 500 });
   }
 

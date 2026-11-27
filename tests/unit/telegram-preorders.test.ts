@@ -211,6 +211,9 @@ function world(
       return true;
     },
     deleteMessage: async () => true,
+    answerInline: async () => true,
+    sendPoll: async () => null,
+    stopPoll: async () => null,
     answerCallback: async (_id, text) => {
       answers.push(text);
     },
