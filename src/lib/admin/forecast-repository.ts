@@ -37,6 +37,39 @@ export async function loadInventoryForecast(client: Client, organizationId: numb
   return data ?? [];
 }
 
+/** A channel poll's votes (get_telegram_poll_results, 20261127160000), for the forecast page. */
+export type PollResult = {
+  readonly id: number;
+  readonly productId: number | null;
+  readonly subject: string;
+  readonly status: string;
+  readonly options: readonly string[];
+  readonly counts: readonly number[];
+  readonly totalVoters: number;
+  readonly openedAt: string | null;
+};
+
+/** The published polls; an empty list when the function is not there yet or answers nothing. */
+export async function loadPollResults(client: Client, organizationId: number): Promise<readonly PollResult[]> {
+  const { data, error } = await client.rpc("get_telegram_poll_results", { p_organization_id: organizationId });
+  if (error) return [];
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    productId: row.product_id ?? null,
+    subject: row.subject,
+    status: row.status,
+    options: Array.isArray(row.options) ? row.options.filter((item): item is string => typeof item === "string") : [],
+    counts: Array.isArray(row.counts) ? row.counts.map((item) => (typeof item === "number" ? item : 0)) : [],
+    totalVoters: row.total_voters,
+    openedAt: row.opened_at ?? null,
+  }));
+}
+
+/** "12 sì su 20": the first answer is the yes. */
+export function pollSignal(poll: Pick<PollResult, "counts" | "totalVoters">): string {
+  return `${poll.counts[0] ?? 0} sì su ${poll.totalVoters}`;
+}
+
 export type ForecastUrgency = "esaurito" | "sotto-scorta" | "da-riordinare" | "ok" | "fermo";
 
 /** How urgent a row is: out of stock, below the reorder point, reorder advised, fine, or not selling. */

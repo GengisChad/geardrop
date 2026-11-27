@@ -220,6 +220,23 @@ dell'ordine con `TELEGRAM_WEBHOOK_SECRET`: chi indovina un numero d'ordine non p
 - Alla consegna la riga si cancella; anche con «Non seguire più», o dopo 90 giorni.
 - I messaggi li ha chiesti il cliente, come le email, quindi partono senza il tocco del proprietario.
 
+## Sondaggi sul canale
+
+Dal 27/11/2026, per capire quanti pezzi ordinare prima di ordinarli. Il proprietario scrive al bot
+`/sondaggio cx-21` (lo slug o le parole del nome; anche un pezzo che lo shop non ha ancora):
+
+- il bot prepara la bozza in chat privata: «<pezzo>: lo prendereste?» con tre risposte (sì appena
+  arriva / forse, dipende dal prezzo / no) e i tasti **Pubblica sul canale** e **Scarta**;
+- solo il suo tocco la pubblica sul canale, con «Vedi sul sito» se il pezzo è sullo shop;
+- i voti sono anonimi (un sondaggio in un canale lo è sempre): Telegram manda al bot solo i conteggi
+  (`poll`), salvati in `telegram_polls`;
+- **Chiudi sondaggio** lo ferma e manda i risultati; `/sondaggi` mostra gli ultimi;
+- nel gestionale, **Previsioni** ha la tabella «Sondaggi del canale Telegram» e, sulla riga del
+  prodotto collegato, «Sondaggio Telegram: 12 sì su 20» (funzione `get_telegram_poll_results`, solo
+  owner e admin).
+
+Dopo il deploy va rifatto `pnpm telegram webhook set`, perché Telegram mandi anche i voti (`poll`).
+
 ## Avvisi per te
 
 Dal 27/11/2026 il bot scrive al proprietario, in privato, anche senza che lui chieda:

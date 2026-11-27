@@ -80,6 +80,8 @@ describe("the bot answering an inline search", () => {
       setKeyboard: async () => true,
       deleteMessage: async () => true,
       answerCallback: async () => {},
+      sendPoll: async () => null,
+      stopPoll: async () => null,
       answerInline: async (id, results) => {
         answered.push({ id, results });
         return true;
@@ -115,6 +117,6 @@ describe("the bot answering an inline search", () => {
   });
 
   it("is among the updates the webhook asks Telegram for", () => {
-    expect(readFileSync(join(process.cwd(), "scripts/telegram.ts"), "utf8")).toContain('const UPDATES = ["message", "callback_query", "inline_query"];');
+    expect(readFileSync(join(process.cwd(), "scripts/telegram.ts"), "utf8")).toContain('const UPDATES = ["message", "callback_query", "inline_query", "poll"];');
   });
 });

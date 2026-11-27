@@ -69,6 +69,8 @@ function world(products: readonly Product[], channelId: string | null = CHANNEL)
     setKeyboard: async () => true,
     deleteMessage: async () => true,
     answerInline: async () => true,
+    sendPoll: async () => null,
+    stopPoll: async () => null,
     answerCallback: async (_id, text) => {
       answers.push(text);
     },

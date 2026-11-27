@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import styles from "@/components/admin/warehouse/warehouse.module.css";
 import { requireAdminAccess } from "@/lib/admin/access";
-import { forecastUrgency, loadInventoryForecast, normalizeForecastWindow, type ForecastUrgency } from "@/lib/admin/forecast-repository";
+import { forecastUrgency, loadInventoryForecast, loadPollResults, normalizeForecastWindow, pollSignal, type ForecastUrgency } from "@/lib/admin/forecast-repository";
 import { formatEuro } from "@/lib/admin/warehouse";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -36,7 +36,10 @@ export default async function ForecastPage({
   const client = await createSupabaseServerClient();
   const principal = await requireAdminAccess(client);
   if (principal.role === "editor") redirect("/admin");
-  const rows = await loadInventoryForecast(client, principal.organization.id, window);
+  const [rows, polls] = await Promise.all([loadInventoryForecast(client, principal.organization.id, window), loadPollResults(client, principal.organization.id)]);
+  // The latest poll of each product, shown on its row.
+  const pollByProduct = new Map<number, (typeof polls)[number]>();
+  for (const poll of polls) if (poll.productId !== null && !pollByProduct.has(poll.productId)) pollByProduct.set(poll.productId, poll);
 
   const urgent = rows.filter((row) => ["esaurito", "sotto-scorta"].includes(forecastUrgency(row)) && Number(row.daily_rate) > 0);
   const toReorder = rows.filter((row) => row.suggested_reorder > 0);
@@ -92,6 +95,31 @@ export default async function ForecastPage({
         </div>
       </form>
 
+      {polls.length > 0 ? (
+        <section className={styles.panel} aria-label="Sondaggi del canale" data-testid="forecast-polls">
+          <h2>Sondaggi del canale Telegram</h2>
+          <p className={styles.hint}>Voti anonimi dei sondaggi pubblicati con /sondaggio: la domanda di chi segue il canale, prima di ordinare.</p>
+          <div className={styles.tableWrap}>
+            <table>
+              <thead>
+                <tr><th>Pezzo</th><th>Stato</th>{polls[0]!.options.map((option) => <th key={option} className={styles.numeric}>{option}</th>)}<th className={styles.numeric}>Voti</th><th>Aperto il</th></tr>
+              </thead>
+              <tbody>
+                {polls.map((poll) => (
+                  <tr key={poll.id}>
+                    <td>{poll.productId !== null ? <Link href={`/admin/prodotti/${poll.productId}`}>{poll.subject}</Link> : poll.subject}</td>
+                    <td><span className={styles.status} data-status={poll.status === "open" ? "draft" : "confirmed"}>{poll.status === "open" ? "Aperto" : "Chiuso"}</span></td>
+                    {poll.options.map((option, index) => <td key={option} className={styles.numeric}>{poll.counts[index] ?? 0}</td>)}
+                    <td className={styles.numeric}><strong>{poll.totalVoters}</strong></td>
+                    <td>{poll.openedAt ? date.format(new Date(poll.openedAt)) : "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+
       {rows.length === 0 ? (
         <section className={`${styles.panel} ${styles.empty}`}><strong>Nessun prodotto</strong><p>Le previsioni arrivano con il catalogo e le prime vendite.</p></section>
       ) : (
@@ -115,6 +143,7 @@ export default async function ForecastPage({
                       <small className={styles.mono}>{row.sku}</small>
                       {row.preorder_backlog > 0 ? <small>{row.preorder_backlog} in pre-ordine da servire</small> : null}
                       {row.incoming_quantity > 0 ? <small>{row.incoming_quantity} in arrivo (bozze)</small> : null}
+                      {pollByProduct.has(row.product_id) ? <small>Sondaggio Telegram: {pollSignal(pollByProduct.get(row.product_id)!)}</small> : null}
                     </td>
                     <td><span className={styles.status} data-status={urgency.status}>{urgency.label}</span></td>
                     <td className={styles.numeric}>{row.unlimited_stock ? "su ordinazione" : row.stock_quantity}</td>

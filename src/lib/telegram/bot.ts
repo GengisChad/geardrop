@@ -19,6 +19,7 @@ import { slugFromStart, type PaymentMode } from "./preorder-rules";
 import { advisorQuestion, advisorResult, parseAdvisorAction, type AdvisorMeta } from "./bey-advisor";
 import { searchInline } from "./inline-search";
 import { followTap, startFollow, type FollowContext } from "./order-follow";
+import { draftPoll, pollReport, pollTap, pollUpdate, type PollContext } from "./polls";
 import type { OwnerMessage } from "./owner-alerts";
 import { notifyRestocks, restockTap, slugFromRestockStart, startRestock, type RestockContext, type RestockStore } from "./restock";
 import { expirePreorders, preorderReport, preorderTap, preorderText, startPreorder, type PreorderContext, type PreorderDeps } from "./preorders";
@@ -85,6 +86,8 @@ export type NewsDeps = {
   readonly loadRankings?: () => Promise<AdvisorMeta | null>;
   /** «Segui su Telegram» from an order's email (order-follow.ts). Without it the link does nothing. */
   readonly follows?: FollowContext;
+  /** Channel polls (polls.ts): /sondaggio drafts one, his tap publishes it. */
+  readonly polls?: PollContext;
 };
 
 function preorderContext(deps: NewsDeps): PreorderContext | null {
@@ -373,6 +376,7 @@ const HELP = [
   "/preordini  chi ha pre-ordinato su Telegram, pagato o in attesa",
   "/riepilogo  ordini di oggi, scorte basse, pagamenti senza ordine",
   "/bey  «Che bey compro?», come lo vede un cliente",
+  "/sondaggio cx-21  prepara un sondaggio per il canale; /sondaggi i voti",
   "",
   "Ti scrivo anche da solo: a ogni ordine pagato, se Stripe incassa senza che l'ordine entri nel gestionale, e alle 21 col riepilogo.",
 ].join("\n");
@@ -386,6 +390,7 @@ export function scanSummary(report: ScanReport): string {
 
 /** The parts of a Telegram update the bot reads. Everything else in it is ignored. */
 type Update = {
+  readonly poll?: { readonly id?: unknown; readonly options?: unknown; readonly total_voter_count?: unknown; readonly is_closed?: unknown };
   readonly inline_query?: { readonly id?: unknown; readonly query?: unknown };
   readonly callback_query?: {
     readonly id?: unknown;
@@ -411,6 +416,9 @@ export async function handleUpdate(input: unknown, deps: NewsDeps): Promise<stri
   const preorders = preorderContext(deps);
   const restock = restockContext(deps);
 
+  // The votes of a poll the bot published: Telegram reports the counts, never who voted.
+  if (update.poll && deps.polls) return (await pollUpdate(deps.polls, update.poll)) ? "poll votes" : "ignored";
+
   // "@GearDropNewsBot dran" typed in any chat, by anyone: the shop's pieces that match.
   const inline = update.inline_query;
   if (inline && typeof inline.id === "string") {
@@ -428,6 +436,14 @@ export async function handleUpdate(input: unknown, deps: NewsDeps): Promise<stri
       if (answer !== null) {
         await deps.telegram.answerCallback(tap.id, answer);
         return "restock";
+      }
+    }
+    // A poll's buttons are the owner's: pollTap checks it.
+    if (deps.polls && tapper) {
+      const answer = await pollTap(deps.polls, { from: tapper, data: typeof tap.data === "string" ? tap.data : undefined });
+      if (answer !== null) {
+        await deps.telegram.answerCallback(tap.id, answer);
+        return "poll";
       }
     }
     // «Non seguire più» belongs to the chat that follows the order.
@@ -523,6 +539,17 @@ export async function handleUpdate(input: unknown, deps: NewsDeps): Promise<stri
       await expirePreorders(preorders);
       for (const text of await preorderReport(preorders)) await deps.telegram.sendText(deps.ownerChatId, text);
       return "preorders";
+    }
+    case "sondaggio": {
+      if (!deps.polls) {
+        await deps.telegram.sendText(deps.ownerChatId, "I sondaggi non sono attivi.");
+        return "poll";
+      }
+      return draftPoll(deps.polls, message.text.trim().replace(/^\/sondaggio(?:@\w+)?/i, ""));
+    }
+    case "sondaggi": {
+      await deps.telegram.sendText(deps.ownerChatId, deps.polls ? await pollReport(deps.polls) : "I sondaggi non sono attivi.");
+      return "polls";
     }
     case "riepilogo": {
       if (!deps.summary) {

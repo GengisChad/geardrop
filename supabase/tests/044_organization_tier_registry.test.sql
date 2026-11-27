@@ -49,7 +49,9 @@ insert into expected_tiers (table_name, tier) values
   -- Pre-orders taken in the bot's chat (20261126130000): the same storefront, the same key.
   ('telegram_preorders', 'G'),
   -- Chats following an order (20261127150000): the same storefront, through the order's own row.
-  ('telegram_order_follows', 'G');
+  ('telegram_order_follows', 'G'),
+  -- Channel polls (20261127160000): anonymous counts on the storefront's own channel.
+  ('telegram_polls', 'G');
 
 select set_eq(
   $$select c.relname::text from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind = 'r'$$,
