@@ -492,6 +492,9 @@ export const productImages = {
   // Owner, 2026-11-26: Takara Tomy's own render of the BX-09 Beybattle Pass. The second render on its
   // page shows a launcher, a top and a phone, none of which is in the box: it is not used.
   "bx-09-beybattle-pass": [takaraImage("bx-09-beybattle-pass", "Beybattle Pass BX-09 Takara Tomy Beyblade X, nero e bianco con il logo Beyblade X")],
+  // Owner, 2026-11-27: Takara Tomy's own render of the UX-00 Scorpio Spear 0-70Z Metal Coat: Magenta
+  // (BXG61@2.png from the official lineup page), app/event exclusive.
+  "ux-00-scorpio-spear-0-70z-magenta": [takaraImage("ux-00-scorpio-spear-0-70z-magenta", "Trottola Takara Tomy UX-00 Scorpio Spear 0-70Z Metal Coat Magenta, edizione esclusiva app/eventi")],
 } as const satisfies Record<string, readonly ProductImage[]>;
 
 export type ProductSlug = keyof typeof productImages;
@@ -551,6 +554,7 @@ export const productClips: Readonly<Partial<Record<string, ProductClip>>> = {
 export const telegramPostImages: Readonly<Partial<Record<string, string>>> = {
   "cx-20-customize-set-c": "/telegram/cx-20-customize-set-c.jpg",
   "bx-09-beybattle-pass": "/telegram/bx-09-beybattle-pass.jpg",
+  "ux-00-scorpio-spear-0-70z-magenta": "/telegram/ux-00-scorpio-spear-0-70z-magenta.jpg",
 };
 
 /** The loose spinning top cropped from each Infinity Starter tile, launched in the homepage Arena. */
