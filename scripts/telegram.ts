@@ -28,7 +28,7 @@ import { PRODUCTION_ORIGIN } from "../src/lib/site-url";
 
 const ENV_FILE = ".env.local";
 const WEBHOOK_PATH = "/api/telegram/webhook";
-const UPDATES = ["message", "callback_query", "inline_query"];
+const UPDATES = ["message", "callback_query", "inline_query", "poll"];
 
 function fail(message: string): never {
   console.error(message);

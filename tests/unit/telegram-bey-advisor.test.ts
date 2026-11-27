@@ -119,6 +119,8 @@ describe("in the bot", () => {
       setKeyboard: async () => true,
       deleteMessage: async () => true,
       answerInline: async () => true,
+      sendPoll: async () => null,
+      stopPoll: async () => null,
       answerCallback: async () => {},
     };
     const writes: unknown[] = [];

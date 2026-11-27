@@ -72,6 +72,10 @@ export type TelegramGateway = {
   answerCallback(callbackId: string, text: string): Promise<void>;
   /** Answers an inline search ("@GearDropNewsBot dran") with the pieces it found. */
   answerInline(queryId: string, results: readonly InlineArticle[]): Promise<boolean>;
+  /** Sends an anonymous poll (the only kind a channel has); null if Telegram refused it. */
+  sendPoll(chatId: string, question: string, options: readonly string[], keyboard: InlineKeyboard): Promise<{ readonly messageId: number; readonly pollId: string } | null>;
+  /** Closes a poll the bot sent and answers its final counts. */
+  stopPoll(chatId: string, messageId: number): Promise<{ readonly counts: readonly number[]; readonly totalVoters: number } | null>;
 };
 
 type SentMessage = { readonly message_id: number };
@@ -137,6 +141,22 @@ export function createTelegramGateway(config: TelegramConfig, fetcher: typeof fe
     },
     async answerCallback(callbackId, text) {
       log("answerCallbackQuery", await call("answerCallbackQuery", { callback_query_id: callbackId, text }));
+    },
+    async sendPoll(chatId, question, options, keyboard) {
+      const result = await call<SentMessage & { readonly poll?: { readonly id?: string } }>("sendPoll", {
+        chat_id: chatId,
+        question,
+        options: options.map((text) => ({ text })),
+        is_anonymous: true,
+        ...(keyboard.length > 0 ? { reply_markup: { inline_keyboard: keyboard } } : {}),
+      });
+      log("sendPoll", result);
+      return result.ok && typeof result.result.poll?.id === "string" ? { messageId: result.result.message_id, pollId: result.result.poll.id } : null;
+    },
+    async stopPoll(chatId, messageId) {
+      const result = await call<{ readonly options: readonly { readonly voter_count: number }[]; readonly total_voter_count: number }>("stopPoll", { chat_id: chatId, message_id: messageId });
+      log("stopPoll", result);
+      return result.ok ? { counts: result.result.options.map((option) => option.voter_count), totalVoters: result.result.total_voter_count } : null;
     },
     async answerInline(queryId, results) {
       // A short cache: the price and the stock a result shows are the shop's of a minute ago at most.

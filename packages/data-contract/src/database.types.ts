@@ -3621,6 +3621,57 @@ export type Database = {
           },
         ]
       }
+      telegram_polls: {
+        Row: {
+          channel_message_id: number | null
+          closed_at: string | null
+          counts: Json
+          created_at: string
+          id: number
+          opened_at: string | null
+          options: Json
+          poll_id: string | null
+          product_slug: string | null
+          question: string
+          status: string
+          subject: string
+          total_voters: number
+          updated_at: string
+        }
+        Insert: {
+          channel_message_id?: number | null
+          closed_at?: string | null
+          counts?: Json
+          created_at?: string
+          id?: never
+          opened_at?: string | null
+          options: Json
+          poll_id?: string | null
+          product_slug?: string | null
+          question: string
+          status?: string
+          subject: string
+          total_voters?: number
+          updated_at?: string
+        }
+        Update: {
+          channel_message_id?: number | null
+          closed_at?: string | null
+          counts?: Json
+          created_at?: string
+          id?: never
+          opened_at?: string | null
+          options?: Json
+          poll_id?: string | null
+          product_slug?: string | null
+          question?: string
+          status?: string
+          subject?: string
+          total_voters?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       telegram_preorders: {
         Row: {
           buyer_name: string | null
@@ -3943,6 +3994,22 @@ export type Database = {
           preorder_units: number
           ready: boolean
           waiting: Json
+        }[]
+      }
+      get_telegram_poll_results: {
+        Args: { p_organization_id: number }
+        Returns: {
+          closed_at: string
+          counts: Json
+          id: number
+          opened_at: string
+          options: Json
+          product_id: number
+          product_slug: string
+          question: string
+          status: string
+          subject: string
+          total_voters: number
         }[]
       }
       get_warehouse_summary: {

@@ -73,6 +73,8 @@ function world(status = "confirmed") {
     setKeyboard: async () => true,
     deleteMessage: async () => true,
     answerInline: async () => true,
+    sendPoll: async () => null,
+    stopPoll: async () => null,
     answerCallback: async () => {},
   };
   const context: FollowContext = { telegram, store, now: () => state.now, secret: SECRET };

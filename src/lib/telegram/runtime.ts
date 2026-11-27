@@ -19,6 +19,7 @@ import type { PreorderDeps } from "./preorders";
 import { createSupabasePreorderStore } from "./supabase-preorder-store";
 import { loadEveningSummary } from "./owner-runtime";
 import { createSupabaseOrderFollowStore } from "./supabase-order-follow-store";
+import { createSupabasePollStore } from "./supabase-poll-store";
 import { createSupabaseRestockStore } from "./supabase-restock-store";
 import { storefrontOrganizationId } from "@/lib/org/storefront";
 import { createSupabaseNewsStore } from "./supabase-store";
@@ -57,6 +58,7 @@ export function createNewsDeps(config: TelegramConfig): NewsDeps {
   // One read of the catalogue per request: a run that writes eight drafts reads it once.
   let catalogue: Promise<readonly Product[]> | undefined;
   const client = createPrivilegedSupabaseClient();
+  const loadProducts = () => (catalogue ??= loadFreshCatalogue().then((products) => withBundles(products, BUNDLES)));
 
   return {
     store: createSupabaseNewsStore(client),
@@ -85,7 +87,8 @@ export function createNewsDeps(config: TelegramConfig): NewsDeps {
     ownerChatId: config.ownerChatId,
     channelId: config.channelId,
     now: () => new Date(),
-    loadProducts: () => (catalogue ??= loadFreshCatalogue().then((products) => withBundles(products, BUNDLES))),
+    loadProducts,
+    polls: { telegram: createTelegramGateway(config), store: createSupabasePollStore(client), ownerChatId: config.ownerChatId, channelId: config.channelId, loadProducts },
     // Through the public key: row level security is what says which months are published.
     loadMetaMonths: async () => (await listArchive(createSupabasePublicClient())).map((item) => item.month),
     loadMeta: async (month) => {
