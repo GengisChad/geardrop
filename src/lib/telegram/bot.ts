@@ -16,6 +16,7 @@ import {
 } from "./messages";
 import { isProductMemory, scanMeta, scanProducts, type NewsEvent, type NewsPayload, type ProductMemory } from "./news";
 import { slugFromStart, type PaymentMode } from "./preorder-rules";
+import type { OwnerMessage } from "./owner-alerts";
 import { notifyRestocks, restockTap, slugFromRestockStart, startRestock, type RestockContext, type RestockStore } from "./restock";
 import { expirePreorders, preorderReport, preorderTap, preorderText, startPreorder, type PreorderContext, type PreorderDeps } from "./preorders";
 
@@ -75,6 +76,8 @@ export type NewsDeps = {
   readonly preorders?: PreorderDeps;
   /** «Avvisami» on Telegram (restock.ts). Without it the bot keeps no such request. */
   readonly restock?: RestockStore;
+  /** The owner's evening summary on demand (owner-alerts.ts), as the 21:00 cron sends it. */
+  readonly summary?: () => Promise<OwnerMessage>;
 };
 
 function preorderContext(deps: NewsDeps): PreorderContext | null {
@@ -352,6 +355,9 @@ const HELP = [
   "/controlla  guarda lo shop adesso",
   "/bozze  mostra di nuovo le bozze in attesa",
   "/preordini  chi ha pre-ordinato su Telegram, pagato o in attesa",
+  "/riepilogo  ordini di oggi, scorte basse, pagamenti senza ordine",
+  "",
+  "Ti scrivo anche da solo: a ogni ordine pagato, se Stripe incassa senza che l'ordine entri nel gestionale, e alle 21 col riepilogo.",
 ].join("\n");
 
 export function scanSummary(report: ScanReport): string {
@@ -465,6 +471,15 @@ export async function handleUpdate(input: unknown, deps: NewsDeps): Promise<stri
       await expirePreorders(preorders);
       for (const text of await preorderReport(preorders)) await deps.telegram.sendText(deps.ownerChatId, text);
       return "preorders";
+    }
+    case "riepilogo": {
+      if (!deps.summary) {
+        await deps.telegram.sendText(deps.ownerChatId, "Il riepilogo non è attivo.");
+        return "summary";
+      }
+      const summary = await deps.summary();
+      await deps.telegram.sendText(deps.ownerChatId, summary.text, summary.keyboard);
+      return "summary";
     }
     default:
       await deps.telegram.sendText(deps.ownerChatId, HELP);

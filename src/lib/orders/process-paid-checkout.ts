@@ -43,6 +43,8 @@ export type ProcessDependencies = {
   readonly sendEmail: (message: EmailMessage) => Promise<EmailResult>;
   /** The fee kept on this checkout's payment; null while not settled. */
   readonly paymentFee?: (checkout: PaidCheckout) => Promise<number | null>;
+  /** Tells the owner a new order is in (the Telegram bot): only when the order is new, never blocking. */
+  readonly alertOwner?: (checkout: PaidCheckout, order: StoredOrder, lowStock: readonly LowStockProduct[]) => void | Promise<void>;
   readonly env?: Env;
 };
 
@@ -95,6 +97,16 @@ export async function processPaidCheckout(sessionId: string, deps: ProcessDepend
       lowStockItems = await deps.store.lowStock(order.id);
     } catch (error) {
       console.error("[orders] low-stock check failed:", message(error));
+    }
+  }
+
+  // The owner's private alert: once, when this payment created the order. A Stripe retry finds the
+  // order already there and stays quiet; the email below is what is retried until it goes.
+  if (order.created && deps.alertOwner) {
+    try {
+      await deps.alertOwner(checkout, order, lowStockItems);
+    } catch (error) {
+      console.error("[orders] owner alert not sent:", message(error));
     }
   }
 

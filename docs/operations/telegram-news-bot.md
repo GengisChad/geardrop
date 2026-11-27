@@ -93,7 +93,7 @@ La prima volta non annuncia niente: ricorda quello che c'è già in vendita.
 | `pnpm telegram poll` | Prova in locale: passa a `pnpm dev` i tasti e i comandi (senza webhook attivo) |
 
 Al bot, in chat privata: `/controlla` (guarda lo shop adesso), `/bozze` (mostra di nuovo le bozze in
-attesa).
+attesa), `/preordini`, `/riepilogo` (il riepilogo della sera, adesso).
 
 ## Prova in locale
 
@@ -119,7 +119,8 @@ Poi `/controlla` dal telefono dopo un cambio di stock o di prezzo.
 - `src/lib/telegram/messages.ts`: i testi dei post e i tasti.
 - `src/lib/telegram/bot.ts`: guarda, bozza, pubblica, scarta, comandi.
 - `src/lib/telegram/api.ts`, `supabase-store.ts`, `runtime.ts`: Telegram, tabelle, collegamento allo shop.
-- `src/app/api/telegram/webhook/route.ts`, `src/app/api/cron/telegram-news/route.ts`.
+- `src/lib/telegram/owner-alerts.ts`, `owner-runtime.ts`: gli avvisi per il proprietario.
+- `src/app/api/telegram/webhook/route.ts`, `src/app/api/cron/telegram-news/route.ts`, `src/app/api/cron/telegram-summary/route.ts`.
 - Test: `tests/unit/telegram-*.test.ts`, `supabase/tests/054_telegram_news_bot.test.sql`.
 
 ## Dai post Instagram al canale
@@ -174,6 +175,24 @@ Dal 27/11/2026. Sulla scheda di un prodotto esaurito o in arrivo, sotto il modul
 - Un salvataggio nel gestionale fa scadere subito la cache dei prodotti dello shop, così il carrello
   vende già quello che il messaggio annuncia. Un pezzo rimesso in vendita con una migrazione non
   passa da lì: prima di `/controlla` aspetta 5 minuti, come per le bozze.
+
+## Avvisi per te
+
+Dal 27/11/2026 il bot scrive al proprietario, in privato, anche senza che lui chieda:
+
+- **Ordine pagato**: appena il webhook Stripe registra un ordine nuovo. Numero, totale, pezzi,
+  spedizione, codice sconto e canale della visita, le scorte basse che l'ordine ha lasciato, il
+  tasto «Apri l'ordine». Un solo messaggio per ordine: i tentativi ripetuti di Stripe tacciono.
+- **Allarme**: se il webhook non riesce a leggere o registrare un pagamento, una volta per sessione
+  Stripe (memoria `alarm:paid-without-order:<sessione>`). Stripe riprova per tre giorni.
+- **Riepilogo delle 21** (cron `/api/cron/telegram-summary`, 20:00 UTC: 21 d'inverno, 22 d'estate):
+  ordini e incasso del giorno, ordini pagati non spediti, pre-ordini Telegram da pagare, Avvisami in
+  attesa, scorte basse, e i pagamenti Stripe delle ultime 26 ore senza ordine. Se la chiave Stripe
+  non può leggere le sessioni, il riepilogo lo dice invece di tacere.
+
+Nessuno di questi messaggi porta dati del cliente (nome, indirizzo, email, telefono): restano nel
+gestionale e nell'email dell'ordine. Non servono variabili nuove: `CRON_SECRET` e
+`STRIPE_SECRET_KEY` ci sono già.
 
 ## Ingresso dal sito
 

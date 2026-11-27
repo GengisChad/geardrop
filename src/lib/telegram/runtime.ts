@@ -17,6 +17,7 @@ import { scanNews, scanSummary, type NewsDeps, type ScanReport } from "./bot";
 import { isPaypalHandle, newPreorderCode } from "./preorder-rules";
 import type { PreorderDeps } from "./preorders";
 import { createSupabasePreorderStore } from "./supabase-preorder-store";
+import { loadEveningSummary } from "./owner-runtime";
 import { createSupabaseRestockStore } from "./supabase-restock-store";
 import { storefrontOrganizationId } from "@/lib/org/storefront";
 import { createSupabaseNewsStore } from "./supabase-store";
@@ -60,6 +61,7 @@ export function createNewsDeps(config: TelegramConfig): NewsDeps {
     store: createSupabaseNewsStore(client),
     preorders: createPreorderDeps(config, client),
     restock: createSupabaseRestockStore(client, () => storefrontOrganizationId()),
+    summary: () => loadEveningSummary(),
     telegram: createTelegramGateway(config),
     ownerChatId: config.ownerChatId,
     channelId: config.channelId,
