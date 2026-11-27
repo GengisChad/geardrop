@@ -3651,6 +3651,13 @@ export type Database = {
             foreignKeyName: "telegram_preorders_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: true
+            referencedRelation: "order_profit"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "telegram_preorders_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
