@@ -2989,27 +2989,30 @@ export type Database = {
       restock_requests: {
         Row: {
           created_at: string
-          email: string
+          email: string | null
           id: number
           notified_at: string | null
           organization_id: number
           product_slug: string
+          telegram_chat_id: number | null
         }
         Insert: {
           created_at?: string
-          email: string
+          email?: string | null
           id?: never
           notified_at?: string | null
           organization_id: number
           product_slug: string
+          telegram_chat_id?: number | null
         }
         Update: {
           created_at?: string
-          email?: string
+          email?: string | null
           id?: never
           notified_at?: string | null
           organization_id?: number
           product_slug?: string
+          telegram_chat_id?: number | null
         }
         Relationships: [
           {

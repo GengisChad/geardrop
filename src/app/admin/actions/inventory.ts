@@ -123,9 +123,11 @@ export async function sendRestockNoticesAction(
       return { ok: false, message: "Il prodotto non è ancora acquistabile: ricarica lo stock prima di inviare gli avvisi." };
     }
 
-    const requests = await listPendingRestockRequests(client, organizationId, productSlug);
+    // A request made on Telegram is answered by the bot itself, as soon as the piece can be bought:
+    // this button sends the emails.
+    const requests = (await listPendingRestockRequests(client, organizationId, productSlug)).filter((request) => request.email);
     if (requests.length === 0) {
-      return { ok: true, message: "Nessun avviso in attesa per questo prodotto.", sent: 0 };
+      return { ok: true, message: "Nessun avviso email in attesa per questo prodotto.", sent: 0 };
     }
 
     let sent = 0;
@@ -133,6 +135,7 @@ export async function sendRestockNoticesAction(
     const notifiedIds: number[] = [];
 
     for (const request of requests) {
+      if (!request.email) continue;
       const emailContent = restockNotificationEmail({
         productName,
         productSlug,
