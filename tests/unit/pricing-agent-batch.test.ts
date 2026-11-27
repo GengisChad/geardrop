@@ -11,7 +11,7 @@
  */
 
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { PRICING_BATCH_SIZE, fetchEcbRates } from "@/lib/ai/pricing-agent";
+import { PRICING_BATCH_SIZE, catalogueFacts, domainChannel, fetchEcbRates } from "@/lib/ai/pricing-agent";
 import type * as PricingAgentModule from "@/lib/ai/pricing-agent";
 import type * as ClaudeApiModule from "@/lib/ai/claude-api";
 
@@ -92,7 +92,6 @@ function transformForecast(rows: ForecastRow[], boxMap: Map<number, string[]>, o
     .map((r) => ({
       sku: r.sku,
       name: r.name,
-      brand: /^(bx|cx|db|gt|b)-\d/i.test(r.sku) ? "takara-tomy" : "hasbro",
       boxContents: boxMap.get(r.product_id) ?? [],
       priceCents: r.price_cents,
     }));
@@ -149,31 +148,35 @@ describe("productsToAnalyse sort and offset logic", () => {
   });
 });
 
-// ----- Brand derivation from SKU -----
+// ----- Maker and packaging from the catalogue -----
 
-describe("brandFromSku heuristic", () => {
-  const brand = (sku: string) => /^(bx|cx|db|gt|b)-\d/i.test(sku) ? "takara-tomy" : "hasbro";
+describe("catalogueFacts", () => {
+  it("reads a Hasbro starter with its launcher", () => {
+    const facts = catalogueFacts("strike-dran-4-50ff", []);
+    expect(facts.brand).toBe("hasbro");
+    expect(facts.boxContents.join(" ")).toMatch(/Lanciatore/);
+  });
 
-  it("tags BX- codes as takara-tomy", () => { expect(brand("bx-01-top")).toBe("takara-tomy"); });
-  it("tags CX- codes as takara-tomy", () => { expect(brand("cx-20-set")).toBe("takara-tomy"); });
-  it("tags B- codes as takara-tomy",  () => { expect(brand("b-01-layer")).toBe("takara-tomy"); });
-  it("tags Starter Pack SKUs as hasbro", () => { expect(brand("starter-pack-suppress-superion")).toBe("hasbro"); });
-  it("tags Booster Pack SKUs as hasbro", () => { expect(brand("booster-pack-cobalt-drake")).toBe("hasbro"); });
-  it("tags deck cases as hasbro",       () => { expect(brand("porta-deck-lime")).toBe("hasbro"); });
+  it("reads a Hasbro booster without a launcher", () => {
+    const facts = catalogueFacts("cobalt-drake-4-60f", []);
+    expect(facts.brand).toBe("hasbro");
+    expect(facts.boxContents.join(" ")).not.toMatch(/Lanciatore/);
+  });
+
+  it("reads a Takara Tomy piece whatever its SKU looks like", () => {
+    expect(catalogueFacts("cx-20-customize-set-c", []).brand).toBe("takara-tomy");
+  });
+
+  it("keeps the database box when it has one, and defaults an unknown slug to Hasbro", () => {
+    expect(catalogueFacts("strike-dran-4-50ff", ["1 × Trottola"]).boxContents).toEqual(["1 × Trottola"]);
+    expect(catalogueFacts("not-in-the-catalogue", ["x"])).toEqual({ brand: "hasbro", boxContents: ["x"] });
+    expect(catalogueFacts(undefined, []).boxContents).toEqual([]);
+  });
 });
 
 // ----- Advisor brief: channel grouping -----
 
 describe("advisor brief channel grouping", () => {
-  // Reproduce the domainChannel helper inline to test the grouping logic.
-  function domainChannel(domain: string): "amazon" | "italian" | "ebay" | "japan_import" | "other" {
-    if (domain === "amazon.it") return "amazon";
-    if (["nerdpoint.it", "bakutenbox.it"].includes(domain)) return "italian";
-    if (domain === "ebay.it") return "ebay";
-    if (["zenmarket.jp", "beyblade-kingdom.com"].includes(domain)) return "japan_import";
-    return "other";
-  }
-
   const obs = [
     { source_domain: "amazon.it",           price_cents: 2300, item_condition: "new" },
     { source_domain: "nerdpoint.it",         price_cents: 2500, item_condition: "new" },
@@ -294,6 +297,16 @@ describe("runPricingBatchAction state machine", () => {
     expect(b2.observations).toBe(4); // 2 + 2
     expect(b2.proposals).toBe(2);    // 1 + 1
     expect(b2.dollars).toBeCloseTo(0.1, 5);
+  });
+
+  it("starts the totals again when a finished or stopped run restarts from offset 0", async () => {
+    const b1 = await runPricingBatchAction(ANALYSE_ALL_INITIAL, formData(0));
+    const stopped = { ...b1, status: "stopped" as const, errors: ["vecchio errore"] };
+    const restarted = await runPricingBatchAction(stopped, formData(0));
+    expect(restarted.processed).toBe(b1.processed);
+    expect(restarted.observations).toBe(b1.observations);
+    expect(restarted.errors).toEqual([]);
+    expect(restarted.status).toBe("running");
   });
 
   it("propagates batch errors without stopping the loop", async () => {

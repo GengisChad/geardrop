@@ -9,7 +9,7 @@ import { claudeApiKey, ClaudeApiError, createClaudeClient } from "@/lib/ai/claud
 import { askCopilot, type CopilotTurn } from "@/lib/ai/copilot";
 import { copilotActionSchema, executeCopilotAction, type CopilotAction } from "@/lib/ai/copilot-actions";
 import { PRICING_BATCH_SIZE, runPricingAgent, runPricingBatch, type PricingBatchResult } from "@/lib/ai/pricing-agent";
-import { type AnalyseAllState } from "@/lib/ai/pricing-actions-types";
+import { ANALYSE_ALL_INITIAL, type AnalyseAllState } from "@/lib/ai/pricing-actions-types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { scanNewsAfterChange } from "@/lib/telegram/runtime";
 import { STOREFRONT_CACHE_TAGS } from "@/lib/storefront/cache";
@@ -189,16 +189,18 @@ export async function runPricingBatchAction(previous: AnalyseAllState, formData:
   }
 
   const offset = Number(formData.get("offset") ?? previous.nextOffset);
+  // Offset 0 is a fresh start (first click or «Riavvia dall'inizio»): the last run's totals go.
+  const base: AnalyseAllState = offset === 0 ? ANALYSE_ALL_INITIAL : previous;
 
   try {
     const { client, organization } = await authorized(MANAGERS);
     const result: PricingBatchResult = await runPricingBatch(client, createClaudeClient(apiKey), organization, offset);
     refreshPricing();
 
-    const processed = previous.processed + result.batchSize;
+    const processed = base.processed + result.batchSize;
     const total = result.totalProducts;
     const done = processed >= total || result.batchSize === 0;
-    const errors = result.error ? [...previous.errors, `Lotto offset ${offset}: ${result.error}`] : previous.errors;
+    const errors = result.error ? [...base.errors, `Lotto offset ${offset}: ${result.error}`] : base.errors;
 
     return {
       status: done ? "done" : "running",
@@ -206,19 +208,19 @@ export async function runPricingBatchAction(previous: AnalyseAllState, formData:
       totalProducts: total,
       batchSize: PRICING_BATCH_SIZE,
       processed,
-      observations: previous.observations + result.observations,
-      proposals: previous.proposals + result.proposals,
-      dollars: previous.dollars + result.dollars,
-      lastSummary: result.summary || previous.lastSummary,
+      observations: base.observations + result.observations,
+      proposals: base.proposals + result.proposals,
+      dollars: base.dollars + result.dollars,
+      lastSummary: result.summary || base.lastSummary,
       errors,
     };
   } catch (error) {
     // A thrown error is a hard failure (e.g. auth, DB down). Stop the loop.
     refreshPricing();
     return {
-      ...previous,
+      ...base,
       status: "stopped",
-      errors: [...previous.errors, `Errore lotto offset ${offset}: ${detail(error)}`],
+      errors: [...base.errors, `Errore lotto offset ${offset}: ${detail(error)}`],
     };
   }
 }
