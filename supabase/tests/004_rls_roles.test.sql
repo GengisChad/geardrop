@@ -84,7 +84,7 @@ where slug in ('category-hidden', 'draft-hidden', 'inactive-hidden');
 set local role anon;
 select results_eq(
   $$select count(*)::bigint from public.products$$,
-  array[56::bigint],
+  array[57::bigint],
   'anon sees only the published eligible seed products'
 );
 select results_eq(
