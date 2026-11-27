@@ -31,6 +31,8 @@ export type AgentOptions = {
   /** Rerun a refused turn on a fallback model (server side). */
   readonly fallbacks?: "default";
   readonly betas?: readonly string[];
+  /** Cache each request's prefix: worth it in long tool loops that resend fetched pages every turn. */
+  readonly cache?: boolean;
   /**
    * Epoch milliseconds after which no new model call starts, and 50 s past which none may run: the
    * server's own time limit would otherwise cut the request off with nothing to show for it.
@@ -90,6 +92,7 @@ export async function runAgent(client: ClaudeClient, usage: UsageTotals, options
       ...(options.effort ? { output_config: { effort: options.effort } } : {}),
       ...(options.fallbacks ? { fallbacks: options.fallbacks } : {}),
       ...(options.betas?.length ? { betas: options.betas } : {}),
+      ...(options.cache ? { cache_control: { type: "ephemeral" as const } } : {}),
       ...(options.deadline === undefined ? {} : { timeoutMs: Math.max(1_000, Math.min(CALL_TIMEOUT_MS, options.deadline + LAST_CALL_MS - Date.now())) }),
     });
     addUsage(usage, response.model || options.model, response.usage);

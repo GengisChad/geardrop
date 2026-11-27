@@ -42,7 +42,7 @@ describe("createClaudeClient", () => {
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe("https://api.anthropic.com/v1/messages");
     expect(init.headers).toMatchObject({ "x-api-key": "sk-ant-test", "anthropic-version": "2023-06-01", "content-type": "application/json" });
-    expect(JSON.parse(String(init.body))).toMatchObject({ model: "claude-sonnet-5", max_tokens: 10 });
+    expect(JSON.parse(String(init.body))).toMatchObject({ model: "claude-sonnet-5-5", max_tokens: 10 });
   });
 
   it("turns an API error into a ClaudeApiError with its status", async () => {
@@ -82,8 +82,16 @@ describe("usage and cost", () => {
     expect(totals.inputTokens).toBe(1_500_000);
     expect(totals.outputTokens).toBe(100_000);
     expect(totals.webSearches).toBe(10);
-    // 4 + 2 (opus) + 1 (sonnet) + 0.10 (searches)
+    // 4 + 2 (opus) + 1 (sonnet-5-5 at $2/MTok input) + 0.10 (searches)
     expect(totals.dollars).toBeCloseTo(7.1, 6);
+  });
+
+  it("prices cache writes at 1.25 and cache reads at a tenth of the input price", () => {
+    const totals = emptyUsage();
+    addUsage(totals, CLAUDE_MODELS.worker, { input_tokens: 0, output_tokens: 0, cache_creation_input_tokens: 1_000_000, cache_read_input_tokens: 1_000_000 });
+    expect(totals.inputTokens).toBe(2_000_000);
+    // 2 × 1.25 + 2 × 0.1
+    expect(totals.dollars).toBeCloseTo(2.7, 6);
   });
 });
 
@@ -107,6 +115,13 @@ describe("runAgent", () => {
     expect(result).toMatchObject({ text: "Fa 5.", turns: 2, toolCalls: 1, stopReason: "end_turn" });
     expect(requests[1]?.messages.at(-1)).toEqual({ role: "user", content: [{ type: "tool_result", tool_use_id: "t1", content: "{\"risultato\":5}" }] });
     expect(totals.inputTokens).toBe(2000);
+    expect(requests[0]).not.toHaveProperty("cache_control");
+  });
+
+  it("asks the API to cache each turn's prefix when the caller opts in", async () => {
+    const { client, requests } = scripted([{ stop_reason: "end_turn", content: [{ type: "text", text: "Ok" }] }]);
+    await runAgent(client, emptyUsage(), { model: "m", system: "s", messages: [{ role: "user", content: "x" }], cache: true });
+    expect(requests[0]).toMatchObject({ cache_control: { type: "ephemeral" } });
   });
 
   it("reports a failing or unknown tool to the model instead of failing the run", async () => {

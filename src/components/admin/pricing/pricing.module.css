@@ -26,6 +26,11 @@
 .feedback { margin: 0; font-size: 11px; font-weight: 750; color: #1d6b33; }
 .feedback[data-error] { color: #a1283e; }
 
+/* Full-catalogue analysis progress block. */
+.analyseProgress { display: grid; gap: 6px; padding: 10px 0; }
+.analyseProgress p { margin: 0; font-size: 13px; color: #2a2e34; }
+.analyseLastSummary { color: #51565e !important; font-size: 12px !important; white-space: pre-wrap; }
+
 .chat { display: grid; gap: 12px; }
 .messages { display: grid; gap: 10px; max-height: min(62vh, 640px); overflow-y: auto; border: 1px solid #e0e2e6; border-radius: 16px; padding: 14px; background: #fafbfc; }
 .message { max-width: 80ch; border-radius: 14px; padding: 10px 12px; font-size: 13px; line-height: 1.55; white-space: pre-wrap; }

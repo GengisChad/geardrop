@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ProposalCard, RunAgentForm } from "@/components/admin/pricing/pricing-forms";
+import { AnalyseAllForm, ProposalCard, RunAgentForm } from "@/components/admin/pricing/pricing-forms";
 import pricing from "@/components/admin/pricing/pricing.module.css";
 import styles from "@/components/admin/warehouse/warehouse.module.css";
 import { requireAdminAccess } from "@/lib/admin/access";
 import { formatEuro } from "@/lib/admin/warehouse";
 import { claudeApiKey } from "@/lib/ai/claude-api";
+import { productsToAnalyse } from "@/lib/ai/pricing-agent";
 import { listAgentRuns, listMarketSources, listProposals } from "@/lib/ai/pricing-repository";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -22,15 +23,18 @@ export default async function PricingPage() {
   const principal = await requireAdminAccess(client);
   if (principal.role === "editor") redirect("/admin");
   const organizationId = principal.organization.id;
-  const [pending, decided, runs, sources, company] = await Promise.all([
+  const [pending, decided, runs, sources, company, catalogue] = await Promise.all([
     listProposals(client, organizationId, "pending"),
     listProposals(client, organizationId, "decided", 20),
     listAgentRuns(client, organizationId, 10),
     listMarketSources(client, organizationId),
     client.from("organizations").select("default_vat_rate_bp").eq("id", organizationId).single(),
+    // Count published products for the full-catalogue analysis progress display.
+    productsToAnalyse(client, organizationId, 0, 0).catch(() => ({ total: 0, products: [] as never[] })),
   ]);
   const vatRateBp = company.data?.default_vat_rate_bp ?? 2200;
   const activeSources = sources.filter((source) => source.active).length;
+  const totalProducts = catalogue.total;
 
   return (
     <div className={styles.page}>
@@ -43,6 +47,7 @@ export default async function PricingPage() {
         <Link href="/admin/prezzi/osservazioni">Prezzi osservati</Link>
       </header>
 
+      <AnalyseAllForm configured={claudeApiKey() !== null} totalProducts={totalProducts} />
       <RunAgentForm configured={claudeApiKey() !== null} sources={activeSources} />
 
       <section className={pricing.proposals} aria-labelledby="attesa-title">

@@ -2,7 +2,7 @@
  * Minimal Claude Messages API client, dependency-free like the Stripe one: the agent needs one
  * endpoint and a tool loop, not an SDK. It needs the secret key, so it only ever runs on the
  * server. Model ids, server tool versions and prices were checked against the API documentation
- * in September 2026; they live here so a change is one edit.
+ * in November 2026; they live here so a change is one edit.
  */
 
 const CLAUDE_API = "https://api.anthropic.com/v1/messages";
@@ -11,8 +11,8 @@ const API_VERSION = "2023-06-01";
 export const CLAUDE_MODELS = {
   /** Decisions: prices, answers to the partners. */
   orchestrator: "claude-opus-5-5",
-  /** Bulk research and extraction: reading competitor pages. */
-  worker: "claude-sonnet-5",
+  /** Bulk research and extraction: reading competitor pages. The current Sonnet (Sonnet 5 before 27/11/2026). */
+  worker: "claude-sonnet-5-5",
 } as const;
 
 export const WEB_SEARCH_TOOL_TYPE = "web_search_20260318";
@@ -22,6 +22,8 @@ export const WEB_FETCH_TOOL_TYPE = "web_fetch_20260318";
 const PRICES: Readonly<Record<string, { readonly input: number; readonly output: number }>> = {
   [CLAUDE_MODELS.orchestrator]: { input: 4, output: 20 },
   [CLAUDE_MODELS.worker]: { input: 2, output: 10 },
+  // Runs logged before the switch to Sonnet 5.5 name the old model.
+  "claude-sonnet-5": { input: 2, output: 10 },
 };
 const WEB_SEARCH_DOLLARS = 0.01;
 
@@ -71,6 +73,11 @@ export type MessageRequest = {
   readonly output_config?: { readonly effort?: Effort };
   /** On a safety refusal the API reruns the turn on a fallback model it picks; needs SERVER_SIDE_FALLBACK_BETA. */
   readonly fallbacks?: "default";
+  /**
+   * Automatic prompt caching: the API caches the request up to its last block, so the next turn of
+   * a tool loop reads the pages already fetched at a tenth of the price instead of paying them again.
+   */
+  readonly cache_control?: { readonly type: "ephemeral" };
   /** Beta features: sent as the anthropic-beta header, never in the body. */
   readonly betas?: readonly string[];
   /** How long this call may take, 180 s when absent; not sent. */
@@ -137,12 +144,15 @@ export function emptyUsage(): UsageTotals {
 
 export function addUsage(totals: UsageTotals, model: string, usage: Usage): void {
   const price = PRICES[model] ?? PRICES[CLAUDE_MODELS.orchestrator]!;
-  const input = usage.input_tokens + (usage.cache_creation_input_tokens ?? 0) + (usage.cache_read_input_tokens ?? 0);
+  const written = usage.cache_creation_input_tokens ?? 0;
+  const read = usage.cache_read_input_tokens ?? 0;
   const searches = usage.server_tool_use?.web_search_requests ?? 0;
-  totals.inputTokens += input;
+  totals.inputTokens += usage.input_tokens + written + read;
   totals.outputTokens += usage.output_tokens;
   totals.webSearches += searches;
-  totals.dollars += (input * price.input + usage.output_tokens * price.output) / 1_000_000 + searches * WEB_SEARCH_DOLLARS;
+  // A cache write costs 1.25 times the input price, a cache read a tenth of it.
+  const inputDollars = (usage.input_tokens + written * 1.25 + read * 0.1) * price.input;
+  totals.dollars += (inputDollars + usage.output_tokens * price.output) / 1_000_000 + searches * WEB_SEARCH_DOLLARS;
 }
 
 /** The API key, or null when the agent is not configured on this deployment. */
