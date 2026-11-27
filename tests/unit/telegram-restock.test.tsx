@@ -60,6 +60,7 @@ function world(initial: readonly Product[]) {
     },
     setKeyboard: async () => true,
     deleteMessage: async () => true,
+    answerInline: async () => true,
     answerCallback: async (_id, text) => {
       answers.push(text);
     },
