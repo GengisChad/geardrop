@@ -18,6 +18,7 @@ import { isProductMemory, scanMeta, scanProducts, type NewsEvent, type NewsPaylo
 import { slugFromStart, type PaymentMode } from "./preorder-rules";
 import { advisorQuestion, advisorResult, parseAdvisorAction, type AdvisorMeta } from "./bey-advisor";
 import { searchInline } from "./inline-search";
+import { followTap, startFollow, type FollowContext } from "./order-follow";
 import type { OwnerMessage } from "./owner-alerts";
 import { notifyRestocks, restockTap, slugFromRestockStart, startRestock, type RestockContext, type RestockStore } from "./restock";
 import { expirePreorders, preorderReport, preorderTap, preorderText, startPreorder, type PreorderContext, type PreorderDeps } from "./preorders";
@@ -82,6 +83,8 @@ export type NewsDeps = {
   readonly summary?: () => Promise<OwnerMessage>;
   /** The month's tier list for «Che bey compro?» (bey-advisor.ts). Without it /bey is off. */
   readonly loadRankings?: () => Promise<AdvisorMeta | null>;
+  /** «Segui su Telegram» from an order's email (order-follow.ts). Without it the link does nothing. */
+  readonly follows?: FollowContext;
 };
 
 function preorderContext(deps: NewsDeps): PreorderContext | null {
@@ -427,6 +430,14 @@ export async function handleUpdate(input: unknown, deps: NewsDeps): Promise<stri
         return "restock";
       }
     }
+    // «Non seguire più» belongs to the chat that follows the order.
+    if (deps.follows && tapper) {
+      const answer = await followTap(deps.follows, { from: tapper, data: typeof tap.data === "string" ? tap.data : undefined });
+      if (answer !== null) {
+        await deps.telegram.answerCallback(tap.id, answer);
+        return "follow";
+      }
+    }
     // «Che bey compro?»: the answers so far are in the button, so any chat may tap it.
     const advice = parseAdvisorAction(typeof tap.data === "string" ? tap.data : undefined);
     if (advice && tapper && deps.loadRankings) {
@@ -464,6 +475,11 @@ export async function handleUpdate(input: unknown, deps: NewsDeps): Promise<stri
   // Anyone may pre-order, the owner included (it is how he tries the flow): the channel post's
   // button arrives here as "/start pre-<slug>", and what follows is the buyer answering the bot.
   const chatId = account(message.chat.id);
+  // «Segui su Telegram» from an order's email arrives as "/start or-<order>-<signature>".
+  if (deps.follows && chatId && chatId === account(message.from?.id)) {
+    const followed = await startFollow(deps.follows, chatId, message.text);
+    if (followed) return followed;
+  }
   // «Avvisami su Telegram» from a product page arrives as "/start av-<slug>", from anyone.
   if (restock && chatId && chatId === account(message.from?.id)) {
     const wanted = slugFromRestockStart(message.text);

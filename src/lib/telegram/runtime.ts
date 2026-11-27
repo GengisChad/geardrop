@@ -18,6 +18,7 @@ import { isPaypalHandle, newPreorderCode } from "./preorder-rules";
 import type { PreorderDeps } from "./preorders";
 import { createSupabasePreorderStore } from "./supabase-preorder-store";
 import { loadEveningSummary } from "./owner-runtime";
+import { createSupabaseOrderFollowStore } from "./supabase-order-follow-store";
 import { createSupabaseRestockStore } from "./supabase-restock-store";
 import { storefrontOrganizationId } from "@/lib/org/storefront";
 import { createSupabaseNewsStore } from "./supabase-store";
@@ -62,6 +63,12 @@ export function createNewsDeps(config: TelegramConfig): NewsDeps {
     preorders: createPreorderDeps(config, client),
     restock: createSupabaseRestockStore(client, () => storefrontOrganizationId()),
     summary: () => loadEveningSummary(),
+    follows: {
+      telegram: createTelegramGateway(config),
+      store: createSupabaseOrderFollowStore(client, () => storefrontOrganizationId()),
+      now: () => new Date(),
+      secret: config.webhookSecret,
+    },
     // The latest published tier list, through the public key like the /meta page.
     loadRankings: async () => {
       const client = createSupabasePublicClient();

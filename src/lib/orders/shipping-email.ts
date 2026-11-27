@@ -17,6 +17,8 @@ export type ShippedOrder = {
   readonly trackingUrl: string | null;
   readonly shippingAddress: unknown;
   readonly items: readonly { readonly name: string; readonly quantity: number }[];
+  /** «Segui su Telegram», the bot's signed link for this order (lib/telegram/order-follow.ts). */
+  readonly followUrl?: string | null;
 };
 
 export function shippingNotificationEmail(order: ShippedOrder) {
@@ -41,6 +43,11 @@ export function shippingNotificationEmail(order: ShippedOrder) {
         ? `<p style="margin:20px 0 0"><a href="${escapeHtml(link)}" style="display:inline-block;background:#c6ff00;color:#07060b;font-weight:bold;text-decoration:none;padding:14px 20px;border-radius:6px">Segui il pacco</a></p>`
         : ""
     }
+    ${
+      order.followUrl
+        ? `<p style="margin:16px 0 0;font-size:14px;line-height:1.5">Vuoi sapere dove si trova il pacco? <a href="${escapeHtml(order.followUrl)}" style="color:#7b2cff;font-weight:bold">Segui su Telegram</a>: ti scriviamo lì a ogni passaggio.</p>`
+        : ""
+    }
     <h2 style="font-size:16px;margin:24px 0 8px">Nel pacco</h2>
     <ul style="margin:0;padding-left:18px;line-height:1.6">${order.items.map((item) => `<li>${item.quantity} × ${escapeHtml(item.name)}</li>`).join("")}</ul>
     ${address.length ? `<h2 style="font-size:16px;margin:24px 0 8px">${addressHeading}</h2><div style="line-height:1.5">${address.map((line) => `<div>${escapeHtml(line)}</div>`).join("")}</div>` : ""}
@@ -55,6 +62,7 @@ export function shippingNotificationEmail(order: ShippedOrder) {
     order.carrier ? `Corriere: ${order.carrier}` : "Il pacco è stato affidato al corriere.",
     order.trackingCode ? `Codice di tracciamento: ${order.trackingCode}` : null,
     link ? `Segui il pacco: ${link}` : null,
+    order.followUrl ? `Segui su Telegram: ${order.followUrl}` : null,
     "",
     "Nel pacco:",
     ...order.items.map((item) => `- ${item.quantity} × ${item.name}`),

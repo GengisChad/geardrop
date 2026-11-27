@@ -14,6 +14,8 @@ import { refundNotificationEmail } from "@/lib/orders/refund-email";
 import { preorderReadyEmail } from "@/lib/orders/preorder-ready-email";
 import { buyerFirstName } from "@/lib/orders/shipping-email";
 import { shippingNotificationEmail } from "@/lib/orders/shipping-email";
+import { orderFollowUrl } from "@/lib/telegram/order-follow";
+import { tellOrderFollowers } from "@/lib/telegram/order-follow-runtime";
 import { shippingEmailDue } from "@/lib/orders/shipping-notice";
 import { siteRefundKey } from "@/lib/orders/stripe-refund";
 import { PREORDER_SHIPPED_NOTE } from "@/lib/admin/preorders";
@@ -211,6 +213,7 @@ async function sendShipmentEmail(client: SupabaseClient<Database>, organizationI
     trackingUrl: order.data.tracking_url,
     shippingAddress: order.data.shipping_address_snapshot,
     items: (items.data ?? []).map((item) => ({ name: item.product_name_snapshot, quantity: item.quantity })),
+    followUrl: orderFollowUrl(orderId),
   });
   const sent = await sendEmail({
     ...content,
@@ -224,6 +227,8 @@ async function sendShipmentEmail(client: SupabaseClient<Database>, organizationI
   if (!sent.ok) return { ok: false, message: emailFailure(sent.reason, sent.detail) };
 
   const { error } = await client.rpc("mark_order_shipping_notified", { p_order_id: orderId });
+  // A buyer who follows the order on Telegram hears it there too.
+  await tellOrderFollowers(orderId, { kind: "shipped" });
   if (error) return { ok: false, message: "email inviata, ma non sono riuscito a segnarla sull'ordine." };
   return { ok: true };
 }
@@ -573,6 +578,8 @@ export async function deliverOrderAction(_previous: OrderActionState, formData: 
     });
     if (error) return failure(error);
     refresh(parsed.data.orderId);
+    // The chats following it on Telegram are told and forgotten, whatever the email does.
+    await tellOrderFollowers(parsed.data.orderId, { kind: "delivered" });
     if (!parsed.data.notify) return { ok: true, message: "Ordine segnato come consegnato. Nessuna email inviata." };
 
     const email = await sendDeliveryEmail(client, organizationId, parsed.data.orderId);

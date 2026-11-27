@@ -206,6 +206,20 @@ Il tasto «Metti tutto nel carrello» apre `/carrello?aggiungi=a,b,c` con un pez
 testo dice solo «sui podi di <mese>»: non nomina mai da dove vengono i dati. Le risposte stanno nei
 tasti (`gd:b:<risposte>`): il bot non salva niente di chi chiede, quindi l'informativa non cambia.
 
+## «Segui su Telegram»
+
+Dal 27/11/2026 l'email di conferma (se `ORDER_CUSTOMER_EMAILS=true`) e quella di spedizione hanno
+il tasto «Segui su Telegram»: apre il bot con `/start or-<ordine>-<firma>`. La firma è un HMAC
+dell'ordine con `TELEGRAM_WEBHOOK_SECRET`: chi indovina un numero d'ordine non può seguirlo.
+
+- Il bot salva chat e ordine in `telegram_order_follows` e risponde con lo stato: pagato, spedito
+  (con tracking e «Traccia il pacco»), consegnato.
+- Poi scrive da solo, una volta per passaggio: quando il gestionale segna la spedizione, ai passaggi
+  InPost che contano per chi aspetta (in consegna, pronto nel Locker o al punto, spostato,
+  promemoria, non ritirato, ritardo; letti dal cron delle 17 o dal webhook InPost), e alla consegna.
+- Alla consegna la riga si cancella; anche con «Non seguire più», o dopo 90 giorni.
+- I messaggi li ha chiesti il cliente, come le email, quindi partono senza il tocco del proprietario.
+
 ## Avvisi per te
 
 Dal 27/11/2026 il bot scrive al proprietario, in privato, anche senza che lui chieda:
