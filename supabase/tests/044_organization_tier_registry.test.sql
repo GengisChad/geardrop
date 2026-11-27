@@ -47,7 +47,9 @@ insert into expected_tiers (table_name, tier) values
   -- only the service role reaches them, and they hold nothing about a buyer or a company.
   ('telegram_news_memory', 'G'), ('telegram_news_drafts', 'G'),
   -- Pre-orders taken in the bot's chat (20261126130000): the same storefront, the same key.
-  ('telegram_preorders', 'G');
+  ('telegram_preorders', 'G'),
+  -- Chats following an order (20261127150000): the same storefront, through the order's own row.
+  ('telegram_order_follows', 'G');
 
 select set_eq(
   $$select c.relname::text from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind = 'r'$$,

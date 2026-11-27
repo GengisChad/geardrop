@@ -1,5 +1,6 @@
 import { orderNotificationRecipient, SHOP_EMAIL, type EmailMessage, type EmailResult } from "@/lib/email/resend";
 import { customerOrderEmail, ownerOrderEmail } from "./order-email";
+import { orderFollowUrl } from "@/lib/telegram/order-follow";
 import { partnerOrderEmail } from "./partner-email";
 import type { PaidCheckout } from "./stripe-order";
 
@@ -168,7 +169,7 @@ export async function processPaidCheckout(sessionId: string, deps: ProcessDepend
   // already sends the payment receipt; a failure here never holds the order back.
   if (order.created && env["ORDER_CUSTOMER_EMAILS"] === "true") {
     try {
-      const content = customerOrderEmail(checkout, order);
+      const content = customerOrderEmail(checkout, order, orderFollowUrl(order.id, env));
       const sent = await deps.sendEmail({
         to: checkout.email,
         replyTo: SHOP_EMAIL,

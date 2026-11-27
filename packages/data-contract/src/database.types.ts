@@ -3579,6 +3579,48 @@ export type Database = {
         }
         Relationships: []
       }
+      telegram_order_follows: {
+        Row: {
+          chat_id: number
+          created_at: string
+          id: number
+          last_told: string | null
+          order_id: number
+          updated_at: string
+        }
+        Insert: {
+          chat_id: number
+          created_at?: string
+          id?: never
+          last_told?: string | null
+          order_id: number
+          updated_at?: string
+        }
+        Update: {
+          chat_id?: number
+          created_at?: string
+          id?: never
+          last_told?: string | null
+          order_id?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_order_follows_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order_profit"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "telegram_order_follows_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       telegram_preorders: {
         Row: {
           buyer_name: string | null
