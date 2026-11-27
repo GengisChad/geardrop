@@ -104,7 +104,8 @@ export function slugFromStart(text: string): string | null {
  */
 export function preorderFromCartLink(search: string): { readonly slug: string; readonly quantity: number } | null {
   const params = new URLSearchParams(search);
-  const slug = params.get("preordine") ?? "";
+  // "preordine" from a pre-order's post, "aggiungi" from any other post that sells a piece (2026-11-27).
+  const slug = params.get("preordine") ?? params.get("aggiungi") ?? "";
   if (!/^[a-z0-9-]{1,60}$/.test(slug)) return null;
   const quantity = Math.trunc(Number(params.get("q") ?? "1"));
   return { slug, quantity: Number.isFinite(quantity) ? Math.min(MAX_PREORDER_PIECES, Math.max(1, quantity)) : 1 };

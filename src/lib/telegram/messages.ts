@@ -4,7 +4,7 @@ import { discountPercent, formatPrice } from "@/lib/format";
 import { bundleNoun, preorderDelivery, stockHint, stockLabel } from "@/lib/labels";
 import { monthLabel } from "@/lib/meta/types";
 import { absoluteUrl } from "@/lib/seo";
-import type { NewsPayload } from "./news";
+import type { NewsPayload, SocialPayload } from "./news";
 import { startPayload, type PaymentMode } from "./preorder-rules";
 
 /**
@@ -28,6 +28,7 @@ export type TelegramPost = {
   readonly videoUrl?: string;
   /** The packshot, when the post is about one item. It also goes out when Telegram cannot take the clip. */
   readonly photoUrl?: string;
+  // Either field may also hold a Telegram file_id: a picture or a clip Telegram already has (a social post).
   /** The one place the post sends the reader. */
   readonly link: { readonly label: string; readonly url: string };
 };
@@ -165,6 +166,36 @@ export function channelPreorderPost(
       link: { label: "Pre-ordina", url: mode === "stripe" ? shopLink(`/carrello?preordine=${product.slug}`) : `https://t.me/${botUsername}?start=${start}` },
     },
   };
+}
+
+/**
+ * The shop's lines about a product it sells, for a post made from one of its Instagram pieces: name,
+ * price (struck through when the shop shows an offer), availability, and one button that puts the
+ * piece in the site's cart. A product that cannot be bought is refused, as a stale draft is.
+ */
+export function shopProductPost(product: Product): PostResult {
+  if (product.stock === "esaurito") return { ok: false, reason: `${product.name} è esaurito` };
+  const lines = [`<b>${escapeTelegram(product.name)}</b>`, `${priceLine(product.price.amount, product.compareAtPrice?.amount)} · ${stockLabel(product)}`];
+  if (product.stock !== "disponibile") lines.push(escapeTelegram(stockHint(product)));
+  return {
+    ok: true,
+    post: {
+      text: lines.join("\n"),
+      link: { label: product.stock === "pre-ordine" ? "Pre-ordina sul sito" : "Compra sul sito", url: shopLink(`/carrello?aggiungi=${product.slug}`) },
+    },
+  };
+}
+
+/** A post about the shop rather than one product: the button opens a page of the shop. */
+export function shopPagePost(path: string | null): TelegramPost {
+  return { text: "", link: { label: "Vai allo shop", url: shopLink(path ?? "/negozio") } };
+}
+
+/** The post with the picture or clip that went out on Instagram, and its words above the shop's. */
+export function asSocial(post: TelegramPost, payload: SocialPayload): TelegramPost {
+  const text = [payload.note ? escapeTelegram(payload.note) : "", post.text].filter(Boolean).join("\n\n");
+  const media = payload.media.type === "video" ? { videoUrl: payload.media.fileId } : { photoUrl: payload.media.fileId };
+  return { text, link: post.link, ...media };
 }
 
 export type MetaSummary = { readonly month: string; readonly title: string; readonly topBlades: readonly string[] };

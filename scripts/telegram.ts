@@ -1,6 +1,8 @@
 import { randomBytes } from "node:crypto";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { basename } from "node:path";
 import { callTelegram, readTelegramConfig } from "../src/lib/telegram/api";
+import { SOCIAL_LIMITS, socialMediaType } from "../src/lib/telegram/social-media";
 import { PRODUCTION_ORIGIN } from "../src/lib/site-url";
 
 /**
@@ -12,6 +14,13 @@ import { PRODUCTION_ORIGIN } from "../src/lib/site-url";
  *   pnpm telegram webhook info      where Telegram is calling now, and its last error
  *   pnpm telegram webhook delete    stops the calls (needed before `poll`)
  *   pnpm telegram poll [url]        local trial: hands Telegram's updates to a dev server
+ *   pnpm telegram social <file> --prodotto=<slug> [--testo="..."]
+ *   pnpm telegram social <file> --testo="..." [--pagina=/negozio]
+ *   pnpm telegram social <file> --prodotto=<slug> --pubblica
+ *                                   straight to the channel: for the scheduled Instagram publisher,
+ *                                   once the same post is live on Instagram
+ *                                   a picture or clip published on Instagram becomes a draft for the
+ *                                   channel, in the owner's chat, with the button to pay on the site
  *
  * The token, the chat id and the webhook secret are read from and written to .env.local only.
  * Nothing here prints them: a terminal is shared, pasted and screenshotted more often than a file.
@@ -149,6 +158,79 @@ async function poll(target: string): Promise<void> {
   }
 }
 
+type Media = { readonly file_id: string; readonly file_unique_id: string };
+type Uploaded = { readonly message_id: number; readonly photo?: readonly Media[]; readonly video?: Media };
+
+const option = (argv: readonly string[], name: string) => argv.find((arg) => arg.startsWith(`--${name}=`))?.slice(name.length + 3);
+
+/**
+ * Owner, 2026-11-27: "tutto quello che pubblichi su IG mandalo anche su telegram con collegamento al
+ * pagamento del sito". The file goes to the owner's own chat first, so Telegram holds it; then the
+ * site writes the draft from the shop's data and shows it to him with «Pubblica» and «Scarta». The
+ * upload is deleted once the draft is there. Nothing reaches the channel without his tap.
+ */
+async function social(argv: readonly string[]): Promise<void> {
+  const config = readTelegramConfig();
+  if (!config) fail(`Mancano TELEGRAM_BOT_TOKEN o TELEGRAM_OWNER_CHAT_ID in ${ENV_FILE}.`);
+  if (!config.webhookSecret) fail(`Manca TELEGRAM_WEBHOOK_SECRET in ${ENV_FILE}: è la chiave con cui il sito riconosce questo comando.`);
+  const file = argv.find((arg) => !arg.startsWith("--"));
+  if (!file || !existsSync(file)) fail('Uso: pnpm telegram social <file> --prodotto=<slug> [--testo="..."]');
+  const type = socialMediaType(file);
+  if (!type) fail("Il file deve essere un'immagine (jpg, png, webp) o un video (mp4, mov).");
+  const size = statSync(file).size;
+  if (size > SOCIAL_LIMITS[type]) fail(`Troppo grande per Telegram: ${type === "photo" ? "10" : "50"} MB al massimo.`);
+  const slug = option(argv, "prodotto") ?? null;
+  const path = option(argv, "pagina") ?? null;
+  const note = option(argv, "testo") ?? null;
+  if (!slug && !note) fail('Senza --prodotto serve almeno --testo="...".');
+  const publish = argv.includes("--pubblica");
+  const origin = option(argv, "origin") ?? PRODUCTION_ORIGIN;
+  if (!/^https:\/\//.test(origin) && !/^http:\/\/localhost(:\d+)?$/.test(origin)) fail("L'indirizzo del sito deve essere https.");
+
+  // 1. Into the owner's chat, quietly: Telegram keeps the file and answers with its id.
+  const form = new FormData();
+  form.append("chat_id", config.ownerChatId);
+  form.append(type, new Blob([readFileSync(file)]), basename(file));
+  form.append("caption", "Preparo la bozza…");
+  form.append("disable_notification", "true");
+  if (type === "video") form.append("supports_streaming", "true");
+  const response = await fetch(`https://api.telegram.org/bot${config.token}/send${type === "photo" ? "Photo" : "Video"}`, { method: "POST", body: form }).catch(() => null);
+  const body = response ? ((await response.json().catch(() => ({}))) as { readonly ok?: boolean; readonly result?: Uploaded; readonly description?: string }) : {};
+  if (!body.ok || !body.result) fail(`Telegram non ha preso il file: ${body.description ?? "errore di rete"}.`);
+  const uploaded = body.result;
+  const media = type === "photo" ? uploaded.photo?.at(-1) : uploaded.video;
+  const forget = () => callTelegram(config.token, "deleteMessage", { chat_id: config.ownerChatId, message_id: uploaded.message_id });
+  if (!media) {
+    await forget();
+    fail("Telegram non ha restituito il file caricato.");
+  }
+
+  // 2. The site writes the draft and shows it to the owner.
+  const answer = await fetch(`${origin}/api/telegram/social`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${config.webhookSecret}` },
+    body: JSON.stringify({ slug, path, note, publish, media: { type, fileId: media.file_id, uniqueId: media.file_unique_id } }),
+  }).catch(() => null);
+  const result = answer
+    ? ((await answer.json().catch(() => ({}))) as {
+        readonly ok?: boolean;
+        readonly added?: number;
+        readonly sent?: number;
+        readonly published?: boolean;
+        readonly url?: string | null;
+        readonly already?: boolean;
+        readonly error?: string;
+      })
+    : {};
+  await forget();
+  if (!answer?.ok || !result.ok) fail(`Il sito non ha creato la bozza: ${result.error ?? `HTTP ${answer?.status ?? "nessuna risposta"}`}.`);
+  if (result.published) {
+    console.log(result.already ? `Era già sul canale: ${result.url ?? ""}` : `Pubblicato sul canale: ${result.url ?? ""}`);
+    return;
+  }
+  console.log(result.added === 0 ? "Questa bozza c'era già: nessuna nuova." : `Bozza mandata nella chat del proprietario (${result.sent ?? 0} mostrate). Esce sul canale solo con «Pubblica».`);
+}
+
 async function main(argv: readonly string[]): Promise<void> {
   try {
     process.loadEnvFile(ENV_FILE);
@@ -165,8 +247,10 @@ async function main(argv: readonly string[]): Promise<void> {
       return webhook(rest[0], rest.slice(1));
     case "poll":
       return poll(rest[0] ?? `http://localhost:3000${WEBHOOK_PATH}`);
+    case "social":
+      return social(rest);
     default:
-      fail("Uso: pnpm telegram check | link [--user=<username>] | webhook set|info|delete | poll [url]");
+      fail("Uso: pnpm telegram check | link [--user=<username>] | webhook set|info|delete | poll [url] | social <file> --prodotto=<slug>");
   }
 }
 

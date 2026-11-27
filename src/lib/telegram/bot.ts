@@ -1,6 +1,19 @@
 import type { Product } from "@/lib/commerce/types";
 import { channelPostUrl, type TelegramGateway } from "./api";
-import { asDraft, channelPreorderPost, draftKeyboard, metaPost, parseDraftAction, postKeyboard, productPost, type MetaSummary, type PostResult } from "./messages";
+import {
+  asDraft,
+  asSocial,
+  channelPreorderPost,
+  draftKeyboard,
+  metaPost,
+  parseDraftAction,
+  postKeyboard,
+  productPost,
+  shopPagePost,
+  shopProductPost,
+  type MetaSummary,
+  type PostResult,
+} from "./messages";
 import { isProductMemory, scanMeta, scanProducts, type NewsEvent, type NewsPayload, type ProductMemory } from "./news";
 import { slugFromStart, type PaymentMode } from "./preorder-rules";
 import { expirePreorders, preorderReport, preorderTap, preorderText, startPreorder, type PreorderContext, type PreorderDeps } from "./preorders";
@@ -71,6 +84,8 @@ function preorderContext(deps: NewsDeps): PreorderContext | null {
 export const DRAFTS_PER_RUN = 8;
 
 const PRODUCTS_MARKER = "products";
+/** One memory row per post sent straight to the channel, so a retry never sends it twice. */
+const SOCIAL_SENT_PREFIX = "social-sent:";
 const PRODUCT_PREFIX = "product:";
 const META_KEY = "meta";
 
@@ -180,6 +195,24 @@ async function writePost(payload: NewsPayload, deps: NewsDeps, mode?: PaymentMod
         const meta = await deps.loadMeta(payload.month);
         return meta ? { ok: true, post: metaPost(meta) } : { ok: false, reason: "quella tier list non è più pubblicata" };
       }
+      case "social_post": {
+        if (!payload.slug) return { ok: true, post: asSocial(shopPagePost(payload.path), payload) };
+        const catalogue = await deps.loadProducts();
+        const product = catalogue.find((candidate) => candidate.slug === payload.slug);
+        if (!product) return { ok: false, reason: "il prodotto non è più a catalogo" };
+        let base: PostResult;
+        if (product.channelOnly) {
+          // Its pre-order is taken on Telegram: the button is the one its own pre-order post has.
+          const botUsername = await deps.preorders?.botUsername();
+          if (!botUsername) return { ok: false, reason: "non riesco a leggere il nome del bot", retry: true };
+          const allowed = await draftModes({ slugs: [product.slug] }, deps);
+          const chosen = await deps.preorders?.store.paymentMode(product.slug);
+          base = channelPreorderPost({ slugs: [product.slug] }, catalogue, botUsername, chosen && allowed.includes(chosen) ? chosen : allowed.at(-1)!);
+        } else {
+          base = shopProductPost(product);
+        }
+        return base.ok ? { ok: true, post: asSocial(base.post, payload) } : base;
+      }
     }
   } catch (error) {
     console.error("[telegram-news] write:", error instanceof Error ? error.message : error);
@@ -257,6 +290,35 @@ export async function publishDraft(draftId: number, deps: NewsDeps, mode?: Payme
     ]);
   }
   return deps.channelId ? "Pubblicato sul canale." : "Pubblicato qui: nessun canale configurato.";
+}
+
+/**
+ * A post that already went out on Instagram, sent straight to the channel (owner, 2026-11-27:
+ * "vorrei che li programmi e pubblichi tu, sennò io mi scordo. Deve essere un meccanismo automatico").
+ * The scheduled Instagram publisher calls it once the post is live there, so the owner's approval
+ * of the Instagram post is this post's approval too. It is written from the shop like any other:
+ * a piece that sold out meanwhile does not go out. The same post is sent once, however often the
+ * publisher retries, and the owner is told where it went.
+ */
+export async function publishSocialNow(
+  event: NewsEvent & { readonly payload: Extract<NewsPayload, { readonly kind: "social_post" }> },
+  deps: NewsDeps,
+): Promise<{ readonly ok: true; readonly messageId: number; readonly url: string | null; readonly already?: true } | { readonly ok: false; readonly reason: string }> {
+  if (!deps.channelId) return { ok: false, reason: "nessun canale configurato" };
+  const key = `${SOCIAL_SENT_PREFIX}${event.eventKey}`;
+  const before = (await deps.store.readMemory()).get(key) as { readonly messageId?: unknown } | undefined;
+  if (typeof before?.messageId === "number") return { ok: true, messageId: before.messageId, url: channelPostUrl(deps.channelId, before.messageId), already: true };
+  const written = await writePost(event.payload, deps);
+  if (!written.ok) {
+    await deps.telegram.sendText(deps.ownerChatId, `Non uscito sul canale: ${written.reason}.`);
+    return { ok: false, reason: written.reason };
+  }
+  const messageId = await deps.telegram.sendPost(deps.channelId, written.post, postKeyboard(written.post));
+  if (messageId === null) return { ok: false, reason: "Telegram non ha accettato il post" };
+  await deps.store.writeMemory(new Map([[key, { messageId, at: deps.now().toISOString() }]]));
+  const url = channelPostUrl(deps.channelId, messageId);
+  await deps.telegram.sendText(deps.ownerChatId, url ? `Uscito anche sul canale: ${url}` : "Uscito anche sul canale.");
+  return { ok: true, messageId, url };
 }
 
 /** "Scarta": the draft leaves the chat and is never proposed again. */

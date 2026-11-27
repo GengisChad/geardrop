@@ -58,6 +58,11 @@ post", 2026-11-26), nell'aspetto che ha approvato sui primi due post:
 Il file va in `public/telegram/` e in `telegramPostImages` (`src/data/assets.ts`): il bot lo allega
 al post. Senza immagine il post esce con la clip del prodotto (`pnpm clips`) o con la sua foto.
 
+Tutto quello che esce su Instagram per lo shop va anche sul canale, con il tasto per pagare sul
+sito (2026-11-27): `pnpm telegram social <file> --prodotto=<slug>`, che gli manda la bozza. I
+passi sono in [`docs/operations/telegram-news-bot.md`](docs/operations/telegram-news-bot.md),
+"Dai post Instagram al canale".
+
 Lui chiede un'offerta con una frase
 ("ho in arrivo 20 CX-20, fammi il post pre-order solo su Telegram, si paga con Stripe sul sito";
 "ho 3 Battle Pass a 80 euro, solo PayPal.me"): i passi per arrivare dalla frase alla bozza sono in
