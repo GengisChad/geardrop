@@ -157,6 +157,24 @@ una volta sola anche se il comando viene rilanciato.
 Va lanciato dalla cartella che ha `.env.local` (token, chat del proprietario, segreto del webhook).
 Telegram accetta immagini fino a 10 MB e video fino a 50 MB.
 
+## «Avvisami» su Telegram
+
+Dal 27/11/2026. Sulla scheda di un prodotto esaurito o in arrivo, sotto il modulo email, c'è
+«Oppure avvisami su Telegram»: apre il bot con `/start av-<slug>`.
+
+- Il bot tiene la chat nella stessa lista «Avvisami» delle email (`restock_requests`, colonna
+  `telegram_chat_id`), così il conteggio delle richieste nel gestionale le include.
+- Se il pezzo si può già comprare, il bot lo dice subito e dà il tasto **Compra**.
+- Appena il pezzo torna acquistabile sul sito, a ogni sguardo allo shop (salvataggio nel
+  gestionale, le 9 del mattino, `/controlla`) il bot manda un messaggio privato con prezzo,
+  disponibilità e **Compra**, che apre il carrello con il pezzo dentro. Poi cancella la richiesta.
+- Un pre-ordine solo Telegram non conta come acquistabile: si aspetta che arrivi sul sito.
+- «Non avvisarmi più» toglie la richiesta; dopo sei mesi si cancella da sola, come quelle email.
+- Il tasto «Invia avvisi» del gestionale manda solo le email: quelle Telegram partono da sole.
+- Un salvataggio nel gestionale fa scadere subito la cache dei prodotti dello shop, così il carrello
+  vende già quello che il messaggio annuncia. Un pezzo rimesso in vendita con una migrazione non
+  passa da lì: prima di `/controlla` aspetta 5 minuti, come per le bozze.
+
 ## Ingresso dal sito
 
 Dal 26/11/2026 (proprietario: "un bel pulsante su geardropshop per entrare nella community

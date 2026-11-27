@@ -16,6 +16,7 @@ import {
 } from "./messages";
 import { isProductMemory, scanMeta, scanProducts, type NewsEvent, type NewsPayload, type ProductMemory } from "./news";
 import { slugFromStart, type PaymentMode } from "./preorder-rules";
+import { notifyRestocks, restockTap, slugFromRestockStart, startRestock, type RestockContext, type RestockStore } from "./restock";
 import { expirePreorders, preorderReport, preorderTap, preorderText, startPreorder, type PreorderContext, type PreorderDeps } from "./preorders";
 
 /**
@@ -72,11 +73,19 @@ export type NewsDeps = {
   readonly now: () => Date;
   /** Pre-orders taken in the bot's chat (preorders.ts). Without it the bot only publishes news. */
   readonly preorders?: PreorderDeps;
+  /** «Avvisami» on Telegram (restock.ts). Without it the bot keeps no such request. */
+  readonly restock?: RestockStore;
 };
 
 function preorderContext(deps: NewsDeps): PreorderContext | null {
   return deps.preorders
     ? { telegram: deps.telegram, ownerChatId: deps.ownerChatId, loadProducts: deps.loadProducts, now: deps.now, preorders: deps.preorders }
+    : null;
+}
+
+function restockContext(deps: NewsDeps): RestockContext | null {
+  return deps.restock
+    ? { telegram: deps.telegram, loadProducts: deps.loadProducts, now: deps.now, store: deps.restock, channelId: deps.channelId }
     : null;
 }
 
@@ -135,6 +144,9 @@ export async function scanNews(deps: NewsDeps): Promise<ScanReport> {
     const scan = scanProducts(remembered, products, now, first);
     events.push(...scan.events);
     for (const [slug, state] of scan.memory) writes.set(`${PRODUCT_PREFIX}${slug}`, state);
+    // The chats that asked to be told when a piece can be bought again: a private message each.
+    const restock = restockContext(deps);
+    if (restock) await attempt("avvisi", unread, () => notifyRestocks(restock, products));
     if (first) {
       writes.set(PRODUCTS_MARKER, { since: now.toISOString() });
       firstLook = true;
@@ -373,9 +385,19 @@ export async function handleUpdate(input: unknown, deps: NewsDeps): Promise<stri
   const account = (id: unknown) => (typeof id === "number" || typeof id === "string" ? String(id) : null);
   const isOwner = (id: unknown) => account(id) === deps.ownerChatId;
   const preorders = preorderContext(deps);
+  const restock = restockContext(deps);
 
   const tap = update.callback_query;
   if (tap && typeof tap.id === "string") {
+    // «Non avvisarmi più» belongs to the chat that asked for the notice.
+    const tapper = account(tap.from?.id);
+    if (restock && tapper) {
+      const answer = await restockTap(restock, { from: tapper, data: typeof tap.data === "string" ? tap.data : undefined });
+      if (answer !== null) {
+        await deps.telegram.answerCallback(tap.id, answer);
+        return "restock";
+      }
+    }
     // A pre-order's buttons belong to its buyer, or to the owner: preorderTap checks which.
     const from = account(tap.from?.id);
     if (preorders && from) {
@@ -406,6 +428,11 @@ export async function handleUpdate(input: unknown, deps: NewsDeps): Promise<stri
   // Anyone may pre-order, the owner included (it is how he tries the flow): the channel post's
   // button arrives here as "/start pre-<slug>", and what follows is the buyer answering the bot.
   const chatId = account(message.chat.id);
+  // «Avvisami su Telegram» from a product page arrives as "/start av-<slug>", from anyone.
+  if (restock && chatId && chatId === account(message.from?.id)) {
+    const wanted = slugFromRestockStart(message.text);
+    if (wanted) return startRestock(restock, chatId, wanted);
+  }
   if (preorders && chatId && chatId === account(message.from?.id)) {
     const slug = slugFromStart(message.text);
     if (slug) return startPreorder(preorders, { id: chatId, username: typeof message.from?.username === "string" ? message.from.username : null }, slug);
