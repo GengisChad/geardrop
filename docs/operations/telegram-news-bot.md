@@ -190,6 +190,22 @@ sito». Senza parole elenca quello che si compra adesso.
   d'esempio `Cerca un pezzo, es. dran`. Poi `pnpm telegram webhook set`, perché il webhook chieda a
   Telegram anche le ricerche (`inline_query`).
 
+## «Che bey compro?»
+
+Dal 27/11/2026, chiunque in chat privata col bot: `/bey` (o il link `t.me/GearDropNewsBot?start=bey`).
+Tre domande a tasti: come vuoi giocare (attacco, difesa, stamina, «non so»), quanto spendere in
+tutto (25 €, 50 €, di più), se hai già un lanciatore. Poi una sola scelta:
+
+- la lama meglio piazzata nella tier list del mese (`/meta`) che lo shop vende adesso e che va con
+  le risposte (il prodotto collegato in classifica);
+- il pezzo che completa la combo con cui vince sui podi (la colonna «archetipo», es. «1-60 Hexa»),
+  preso dal prodotto collegato a quella punta o a quel ratchet, se il primo non lo ha già;
+- il lanciatore più economico, se serve. Tutto dentro il budget.
+
+Il tasto «Metti tutto nel carrello» apre `/carrello?aggiungi=a,b,c` con un pezzo di ciascuno. Il
+testo dice solo «sui podi di <mese>»: non nomina mai da dove vengono i dati. Le risposte stanno nei
+tasti (`gd:b:<risposte>`): il bot non salva niente di chi chiede, quindi l'informativa non cambia.
+
 ## Avvisi per te
 
 Dal 27/11/2026 il bot scrive al proprietario, in privato, anche senza che lui chieda:
