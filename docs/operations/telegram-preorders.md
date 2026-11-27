@@ -35,6 +35,10 @@ Si appoggia al bot delle news: vedi [`telegram-news-bot.md`](telegram-news-bot.m
      scrivere nella nota.
 4. **Tu confermi.** Ti arriva la scheda `PRE-ORDINE IN ATTESA` con i dati e due tasti. PayPal.me
    non avvisa nessuno: quando vedi il pagamento tocchi **Pagato** e chi compra riceve la conferma.
+   Dal 27/11/2026 quel tocco crea anche l'ordine nel gestionale (`GD-T` più il codice), come uno
+   pagato con Stripe: pagato, con il Locker scelto nel bot, la riga in pre-ordine, l'email di
+   conferma al cliente (se `ORDER_CUSTOMER_EMAILS` è attivo). Se il gestionale non risponde, il
+   pre-ordine resta pagato e la scheda mostra **Crea l'ordine nel gestionale** per riprovare.
    **Annulla** libera i pezzi. Dopo 24 ore senza «Pagato» la prenotazione scade da sola, i pezzi
    tornano disponibili e il bot lo dice a tutti e due; se il pagamento era arrivato in ritardo,
    «È stato pagato» la riprende finché ci sono pezzi.
@@ -73,9 +77,12 @@ vendere lo stesso pezzo, e il numero che resta è quello da caricare a magazzino
 
 ## Limiti di questo primo passo
 
-- **I pre-ordini PayPal.me non sono ordini del gestionale**: niente etichetta InPost automatica,
-  niente email, niente pagina «il tuo ordine». Li trovi con `/preordini` (nome, email, cellulare,
-  Locker) e li spedisci a mano. Quelli pagati dal checkout del sito invece sono ordini normali.
+- **I pre-ordini PayPal.me pagati sono ordini del gestionale** (dal 27/11/2026,
+  `record_telegram_preorder_order`): li spedisci dalla stazione di magazzino con l'etichetta
+  InPost come gli altri, il cliente li segue su `/ordine` con il numero `GD-T…`, e l'email di
+  spedizione parte quando inserisci il tracking. I pezzi erano già stati tolti dal conteggio alla
+  conferma della prenotazione: l'ordine non li toglie una seconda volta. Un ordine così si annulla
+  dal gestionale, che rimette i pezzi; «Annulla» nel bot lo rifiuta.
 - Un rimborso PayPal.me lo fai tu su PayPal: «Annulla» libera solo i pezzi.
 - PayPal.me nel bot solo per i pezzi che viaggiano in Locker; uno stadio o un pezzo in conto
   vendita passa dal checkout del sito, anche se avevi scelto «solo PayPal.me».

@@ -43,6 +43,7 @@ function preorderOf(row: Row): Preorder {
     status: row.status as PreorderStatus,
     step: row.step as PreorderStep,
     expiresAt: row.expires_at,
+    orderId: row.order_id,
   };
 }
 

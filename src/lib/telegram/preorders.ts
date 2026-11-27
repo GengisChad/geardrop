@@ -60,6 +60,8 @@ export type Preorder = {
   readonly status: PreorderStatus;
   readonly step: PreorderStep;
   readonly expiresAt: string | null;
+  /** The shop's order it became once paid (record_telegram_preorder_order), or null. */
+  readonly orderId: number | null;
 };
 
 export type PreorderPatch = Partial<
@@ -102,6 +104,12 @@ export type PreorderDeps = {
   readonly paypalHandle: string | null;
   readonly searchLockers: (postalCode: string) => Promise<readonly LockerChoice[]>;
   readonly newCode: () => string;
+  /**
+   * Records a paid reservation as an order of the shop, and emails the buyer its confirmation the
+   * first time (owner, 2026-11-27). Answers the order's number; asking again returns the same one.
+   * Throws when the order could not be recorded: the reservation stays paid, and the owner retries.
+   */
+  readonly recordOrder?: (preorder: Preorder) => Promise<{ readonly orderNumber: string; readonly created: boolean }>;
 };
 
 export type PreorderContext = {
@@ -120,7 +128,7 @@ const deadline = new Intl.DateTimeFormat("it-IT", { day: "2-digit", month: "2-di
 
 /** `gd:o:12:q:2` → pre-order 12, verb "q", argument 2. */
 export function parsePreorderAction(data: string | undefined): { readonly id: number; readonly verb: string; readonly argument: number | null } | null {
-  const match = /^gd:o:(\d{1,12}):(q|pp|site|k|ok|no|paid|void)(?::(\d{1,2}))?$/.exec(data ?? "");
+  const match = /^gd:o:(\d{1,12}):(q|pp|site|k|ok|no|paid|void|order)(?::(\d{1,2}))?$/.exec(data ?? "");
   if (!match) return null;
   return { id: Number(match[1]), verb: match[2]!, argument: match[3] === undefined ? null : Number(match[3]) };
 }
@@ -182,12 +190,32 @@ export async function preorderTap(context: PreorderContext, tap: { readonly from
   const preorder = await store.get(parsed.id);
   if (!preorder) return "Pre-ordine non trovato.";
 
-  // The owner's two answers to a reservation waiting for its payment.
-  if (parsed.verb === "paid" || parsed.verb === "void") {
+  // The owner's answers to a reservation waiting for its payment, and the order it becomes once paid.
+  if (parsed.verb === "paid" || parsed.verb === "void" || parsed.verb === "order") {
     if (tap.from !== context.ownerChatId) return "Solo il proprietario può farlo.";
     const clear = async () => {
       if (tap.messageId !== null) await telegram.setKeyboard(context.ownerChatId, tap.messageId, []);
     };
+    /** The paid reservation as an order of the shop: its number, or null when it could not be recorded. */
+    const recordOrder = async (paid: Preorder): Promise<string | null> => {
+      if (!context.preorders.recordOrder) return null;
+      try {
+        return (await context.preorders.recordOrder(paid)).orderNumber;
+      } catch (error) {
+        console.error("[telegram-preorders] order:", error instanceof Error ? error.message : error);
+        return null;
+      }
+    };
+    const retryOrder = async () => {
+      if (tap.messageId !== null) await telegram.setKeyboard(context.ownerChatId, tap.messageId, [[{ text: "Crea l'ordine nel gestionale", callback_data: action(preorder.id, "order") }]]);
+    };
+    if (parsed.verb === "order") {
+      if (preorder.status !== "paid") return "Non risulta pagato.";
+      const number = await recordOrder(preorder);
+      if (!number) return "L'ordine non è stato creato: riprova tra poco.";
+      await clear();
+      return `Ordine ${number} nel gestionale.`;
+    }
     if (parsed.verb === "paid") {
       // Past the days the privacy notice gives an unpaid reservation, who made it is gone: nobody to ship to.
       if (preorder.status === "expired" && !preorder.buyerName) return "Scaduto da più di 30 giorni: i dati di chi aveva prenotato sono stati cancellati.";
@@ -201,10 +229,21 @@ export async function preorderTap(context: PreorderContext, tap: { readonly from
       } else if (!(await store.move(preorder.id, "awaiting_payment", "paid"))) {
         return "Già gestito.";
       }
-      await clear();
-      await telegram.sendText(preorder.chatId, `Pagamento ricevuto. ${preorder.quantity} × <b>${escapeTelegram(preorder.productName)}</b> è tuo: ti scrivo qui quando parte.\nCodice: ${preorder.code}`);
-      return "Segnato come pagato.";
+      // From here it is an order of the shop: InPost label from the station, the buyer's email,
+      // the back office's lists and figures (owner, 2026-11-27).
+      const number = await recordOrder({ ...preorder, status: "paid" });
+      if (number || !context.preorders.recordOrder) await clear();
+      else await retryOrder();
+      await telegram.sendText(
+        preorder.chatId,
+        `Pagamento ricevuto. ${preorder.quantity} × <b>${escapeTelegram(preorder.productName)}</b> è tuo: ti scrivo qui quando parte.\nCodice: ${preorder.code}${number ? `\nNumero d'ordine: ${number}` : ""}`,
+      );
+      if (!context.preorders.recordOrder) return "Segnato come pagato.";
+      return number ? `Segnato come pagato: ordine ${number} nel gestionale.` : "Segnato come pagato, ma l'ordine non è stato creato: tocca «Crea l'ordine».";
     }
+    // An order cancelled in the back office gives its pieces back there: cancelling it here as well
+    // would give them back twice.
+    if (preorder.orderId !== null) return "È già un ordine del gestionale: annullalo da lì, che rimette i pezzi.";
     const from = preorder.status === "paid" ? "paid" : "awaiting_payment";
     if (!(await store.move(preorder.id, from, "cancelled"))) return "Già gestito.";
     await store.hold(preorder.slug, -preorder.quantity);
@@ -438,6 +477,7 @@ export async function preorderReport(context: PreorderContext): Promise<readonly
           `${escapeTelegram(row.buyerName ?? "?")}${row.username ? ` · @${escapeTelegram(row.username)}` : ""}`,
           `${escapeTelegram(row.email ?? "?")} · ${escapeTelegram(row.phone ?? "?")}`,
           `Locker: ${escapeTelegram(row.locker?.label ?? "?")}`,
+          ...(row.status === "paid" ? [row.orderId !== null ? "Nel gestionale: spedisci dalla stazione di magazzino." : "Non ancora nel gestionale."] : []),
         ].join("\n"),
       );
     }

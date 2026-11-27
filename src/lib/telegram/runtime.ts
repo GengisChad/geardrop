@@ -15,6 +15,9 @@ import { scanNews, scanSummary, type NewsDeps, type ScanReport } from "./bot";
 import { isPaypalHandle, newPreorderCode } from "./preorder-rules";
 import type { PreorderDeps } from "./preorders";
 import { createSupabasePreorderStore } from "./supabase-preorder-store";
+import { paidCheckoutFromPreorder } from "./preorder-order";
+import { customerOrderEmail } from "@/lib/orders/order-email";
+import { SHOP_EMAIL, sendEmail } from "@/lib/email/resend";
 import { createSupabaseNewsStore } from "./supabase-store";
 
 /**
@@ -38,6 +41,23 @@ function createPreorderDeps(config: TelegramConfig, client: ReturnType<typeof cr
         if (!name) botName = undefined;
         return name;
       })),
+    // A paid PayPal.me reservation becomes an order of the shop, and the buyer gets the same
+    // confirmation email a Stripe order sends (opt-in, like that one: ORDER_CUSTOMER_EMAILS).
+    recordOrder: async (preorder) => {
+      const result = await client.rpc("record_telegram_preorder_order", { p_preorder_id: preorder.id });
+      const row = result.data?.[0];
+      if (result.error || !row) throw new Error(`record_telegram_preorder_order: ${result.error?.message ?? "no row"}`);
+      if (row.created && process.env["ORDER_CUSTOMER_EMAILS"] === "true" && preorder.email) {
+        const content = customerOrderEmail(paidCheckoutFromPreorder(preorder, row.order_number, new Date()), {
+          id: row.order_id,
+          orderNumber: row.order_number,
+          preorderQuantities: [preorder.quantity],
+        });
+        const sent = await sendEmail({ to: preorder.email, replyTo: SHOP_EMAIL, idempotencyKey: `gd-order-customer-${row.order_id}`, ...content });
+        if (!sent.ok) console.error("[telegram-preorders] confirmation not sent:", sent.reason, sent.detail ?? "");
+      }
+      return { orderNumber: row.order_number, created: row.created };
+    },
     // The same Locker search the checkout uses, with the shop's own InPost credentials.
     searchLockers: async (postalCode) => {
       const inpost = inpostConfig();
