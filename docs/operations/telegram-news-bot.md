@@ -176,6 +176,20 @@ Dal 27/11/2026. Sulla scheda di un prodotto esaurito o in arrivo, sotto il modul
   vende già quello che il messaggio annuncia. Un pezzo rimesso in vendita con una migrazione non
   passa da lì: prima di `/controlla` aspetta 5 minuti, come per le bozze.
 
+## Ricerca inline
+
+Dal 27/11/2026, in qualunque chat Telegram: `@GearDropNewsBot dran` mostra i pezzi dello shop che
+corrispondono, con prezzo e disponibilità. Un tocco manda il pezzo in quella chat con il tasto
+«Compra sul sito» (o «Pre-ordina sul sito»); un pezzo esaurito ha «Avvisami su Telegram» e «Vedi sul
+sito». Senza parole elenca quello che si compra adesso.
+
+- I dati sono quelli dello shop in quel momento (Telegram tiene la risposta 60 secondi). Un
+  pre-ordine solo Telegram non compare mai; uno «In arrivo» compare come sullo shop.
+- Il bot non salva né la ricerca né chi l'ha fatta.
+- Da fare una volta, a mano: su @BotFather `/setinline`, scegli @GearDropNewsBot, come testo
+  d'esempio `Cerca un pezzo, es. dran`. Poi `pnpm telegram webhook set`, perché il webhook chieda a
+  Telegram anche le ricerche (`inline_query`).
+
 ## Avvisi per te
 
 Dal 27/11/2026 il bot scrive al proprietario, in privato, anche senza che lui chieda:

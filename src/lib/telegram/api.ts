@@ -1,4 +1,5 @@
 import type { InlineKeyboard, TelegramPost } from "./messages";
+import type { InlineArticle } from "./inline-search";
 
 /**
  * Telegram's Bot API over plain fetch, without an SDK (the way src/lib/email/resend.ts talks to Resend).
@@ -69,6 +70,8 @@ export type TelegramGateway = {
   setKeyboard(chatId: string, messageId: number, keyboard: InlineKeyboard): Promise<boolean>;
   deleteMessage(chatId: string, messageId: number): Promise<boolean>;
   answerCallback(callbackId: string, text: string): Promise<void>;
+  /** Answers an inline search ("@GearDropNewsBot dran") with the pieces it found. */
+  answerInline(queryId: string, results: readonly InlineArticle[]): Promise<boolean>;
 };
 
 type SentMessage = { readonly message_id: number };
@@ -134,6 +137,12 @@ export function createTelegramGateway(config: TelegramConfig, fetcher: typeof fe
     },
     async answerCallback(callbackId, text) {
       log("answerCallbackQuery", await call("answerCallbackQuery", { callback_query_id: callbackId, text }));
+    },
+    async answerInline(queryId, results) {
+      // A short cache: the price and the stock a result shows are the shop's of a minute ago at most.
+      const result = await call("answerInlineQuery", { inline_query_id: queryId, results, cache_time: 60, is_personal: false });
+      log("answerInlineQuery", result);
+      return result.ok;
     },
   };
 }

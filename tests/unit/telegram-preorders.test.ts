@@ -205,6 +205,7 @@ function world(options: { left?: number; paypal?: string | null; mode?: PaymentM
       return true;
     },
     deleteMessage: async () => true,
+    answerInline: async () => true,
     answerCallback: async (_id, text) => {
       answers.push(text);
     },

@@ -182,6 +182,7 @@ describe("/riepilogo in the bot", () => {
       },
       setKeyboard: async () => true,
       deleteMessage: async () => true,
+      answerInline: async () => true,
       answerCallback: async () => {},
     };
     const store: NewsStore = {

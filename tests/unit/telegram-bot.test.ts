@@ -83,6 +83,7 @@ function fakeTelegram(options: { readonly refuse?: (chatId: string) => boolean }
       deleted.push(messageId);
       return true;
     },
+    answerInline: async () => true,
     answerCallback: async (_id, text) => {
       answers.push(text);
     },

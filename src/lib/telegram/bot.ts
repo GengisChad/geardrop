@@ -16,6 +16,7 @@ import {
 } from "./messages";
 import { isProductMemory, scanMeta, scanProducts, type NewsEvent, type NewsPayload, type ProductMemory } from "./news";
 import { slugFromStart, type PaymentMode } from "./preorder-rules";
+import { searchInline } from "./inline-search";
 import type { OwnerMessage } from "./owner-alerts";
 import { notifyRestocks, restockTap, slugFromRestockStart, startRestock, type RestockContext, type RestockStore } from "./restock";
 import { expirePreorders, preorderReport, preorderTap, preorderText, startPreorder, type PreorderContext, type PreorderDeps } from "./preorders";
@@ -369,6 +370,7 @@ export function scanSummary(report: ScanReport): string {
 
 /** The parts of a Telegram update the bot reads. Everything else in it is ignored. */
 type Update = {
+  readonly inline_query?: { readonly id?: unknown; readonly query?: unknown };
   readonly callback_query?: {
     readonly id?: unknown;
     readonly from?: { readonly id?: unknown };
@@ -392,6 +394,14 @@ export async function handleUpdate(input: unknown, deps: NewsDeps): Promise<stri
   const isOwner = (id: unknown) => account(id) === deps.ownerChatId;
   const preorders = preorderContext(deps);
   const restock = restockContext(deps);
+
+  // "@GearDropNewsBot dran" typed in any chat, by anyone: the shop's pieces that match.
+  const inline = update.inline_query;
+  if (inline && typeof inline.id === "string") {
+    const query = typeof inline.query === "string" ? inline.query.slice(0, 256) : "";
+    await deps.telegram.answerInline(inline.id, searchInline(query, await deps.loadProducts()));
+    return "inline";
+  }
 
   const tap = update.callback_query;
   if (tap && typeof tap.id === "string") {
