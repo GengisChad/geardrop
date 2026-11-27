@@ -42,7 +42,7 @@ describe("createClaudeClient", () => {
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe("https://api.anthropic.com/v1/messages");
     expect(init.headers).toMatchObject({ "x-api-key": "sk-ant-test", "anthropic-version": "2023-06-01", "content-type": "application/json" });
-    expect(JSON.parse(String(init.body))).toMatchObject({ model: "claude-sonnet-5", max_tokens: 10 });
+    expect(JSON.parse(String(init.body))).toMatchObject({ model: "claude-sonnet-5-5", max_tokens: 10 });
   });
 
   it("turns an API error into a ClaudeApiError with its status", async () => {
@@ -82,8 +82,8 @@ describe("usage and cost", () => {
     expect(totals.inputTokens).toBe(1_500_000);
     expect(totals.outputTokens).toBe(100_000);
     expect(totals.webSearches).toBe(10);
-    // 4 + 2 (opus) + 1 (sonnet) + 0.10 (searches)
-    expect(totals.dollars).toBeCloseTo(7.1, 6);
+    // 4 + 2 (opus) + 1.5 (sonnet-5-5 at $3/MTok input) + 0.10 (searches)
+    expect(totals.dollars).toBeCloseTo(7.6, 6);
   });
 });
 

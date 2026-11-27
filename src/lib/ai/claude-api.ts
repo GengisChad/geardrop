@@ -2,7 +2,7 @@
  * Minimal Claude Messages API client, dependency-free like the Stripe one: the agent needs one
  * endpoint and a tool loop, not an SDK. It needs the secret key, so it only ever runs on the
  * server. Model ids, server tool versions and prices were checked against the API documentation
- * in September 2026; they live here so a change is one edit.
+ * in November 2026; they live here so a change is one edit.
  */
 
 const CLAUDE_API = "https://api.anthropic.com/v1/messages";
@@ -11,8 +11,12 @@ const API_VERSION = "2023-06-01";
 export const CLAUDE_MODELS = {
   /** Decisions: prices, answers to the partners. */
   orchestrator: "claude-opus-5-5",
-  /** Bulk research and extraction: reading competitor pages. */
-  worker: "claude-sonnet-5",
+  /**
+   * Bulk research and extraction: reading competitor pages.
+   * Switched from "claude-sonnet-5" (not a stable release ID) to "claude-sonnet-5-5",
+   * which is the production Sonnet in the November 2026 claude-5-5 family.
+   */
+  worker: "claude-sonnet-5-5",
 } as const;
 
 export const WEB_SEARCH_TOOL_TYPE = "web_search_20260318";
@@ -21,7 +25,10 @@ export const WEB_FETCH_TOOL_TYPE = "web_fetch_20260318";
 /** US dollars per million tokens, and per web search. */
 const PRICES: Readonly<Record<string, { readonly input: number; readonly output: number }>> = {
   [CLAUDE_MODELS.orchestrator]: { input: 4, output: 20 },
-  [CLAUDE_MODELS.worker]: { input: 2, output: 10 },
+  // claude-sonnet-5-5: $3 input / $15 output per MTok (November 2026 Sonnet pricing).
+  [CLAUDE_MODELS.worker]: { input: 3, output: 15 },
+  // Legacy key kept so that any run already in the DB that logged "claude-sonnet-5" still maps.
+  "claude-sonnet-5": { input: 2, output: 10 },
 };
 const WEB_SEARCH_DOLLARS = 0.01;
 

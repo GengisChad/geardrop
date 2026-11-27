@@ -8,7 +8,8 @@ import type { StaffRole } from "@/lib/auth/roles";
 import { claudeApiKey, ClaudeApiError, createClaudeClient } from "@/lib/ai/claude-api";
 import { askCopilot, type CopilotTurn } from "@/lib/ai/copilot";
 import { copilotActionSchema, executeCopilotAction, type CopilotAction } from "@/lib/ai/copilot-actions";
-import { runPricingAgent } from "@/lib/ai/pricing-agent";
+import { PRICING_BATCH_SIZE, runPricingAgent, runPricingBatch, type PricingBatchResult } from "@/lib/ai/pricing-agent";
+import { type AnalyseAllState } from "@/lib/ai/pricing-actions-types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { scanNewsAfterChange } from "@/lib/telegram/runtime";
 import { STOREFRONT_CACHE_TAGS } from "@/lib/storefront/cache";
@@ -164,6 +165,61 @@ export async function runPricingAgentAction(_previous: PricingActionState, _form
   } catch (error) {
     refreshPricing();
     return { ok: false, message: `Analisi non completata: ${detail(error)}` };
+  }
+}
+
+/**
+ * Server action for one batch of the full-catalogue analysis.
+ * The client passes `offset` in formData (or `stop` to cancel). After each batch the client
+ * auto-submits the next one until `state.status === "done"` or the user stops it.
+ */
+export async function runPricingBatchAction(previous: AnalyseAllState, formData: FormData): Promise<AnalyseAllState> {
+  // User pressed stop: freeze the state.
+  if (formData.get("stop") === "1") {
+    return { ...previous, status: "stopped" };
+  }
+
+  const apiKey = claudeApiKey();
+  if (!apiKey) {
+    return {
+      ...previous,
+      status: "stopped",
+      errors: [...previous.errors, "Agente non configurato: manca ANTHROPIC_API_KEY sul server."],
+    };
+  }
+
+  const offset = Number(formData.get("offset") ?? previous.nextOffset);
+
+  try {
+    const { client, organization } = await authorized(MANAGERS);
+    const result: PricingBatchResult = await runPricingBatch(client, createClaudeClient(apiKey), organization, offset);
+    refreshPricing();
+
+    const processed = previous.processed + result.batchSize;
+    const total = result.totalProducts;
+    const done = processed >= total || result.batchSize === 0;
+    const errors = result.error ? [...previous.errors, `Lotto offset ${offset}: ${result.error}`] : previous.errors;
+
+    return {
+      status: done ? "done" : "running",
+      nextOffset: offset + result.batchSize,
+      totalProducts: total,
+      batchSize: PRICING_BATCH_SIZE,
+      processed,
+      observations: previous.observations + result.observations,
+      proposals: previous.proposals + result.proposals,
+      dollars: previous.dollars + result.dollars,
+      lastSummary: result.summary || previous.lastSummary,
+      errors,
+    };
+  } catch (error) {
+    // A thrown error is a hard failure (e.g. auth, DB down). Stop the loop.
+    refreshPricing();
+    return {
+      ...previous,
+      status: "stopped",
+      errors: [...previous.errors, `Errore lotto offset ${offset}: ${detail(error)}`],
+    };
   }
 }
 

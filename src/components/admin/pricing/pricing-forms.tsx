@@ -3,17 +3,19 @@
 import Link from "next/link";
 import { DEFAULT_LINK_POLICY, type LinkPolicy } from "@/lib/ai/markdown-lite";
 import { AssistantText, LinkedText } from "./assistant-text";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import {
   askCopilotAction,
   decideProposalAction,
   deleteMarketSourceAction,
   runPricingAgentAction,
+  runPricingBatchAction,
   saveMarketSourceAction,
   savePricingPolicyAction,
   type CopilotState,
   type PricingActionState,
 } from "@/app/admin/actions/pricing";
+import { ANALYSE_ALL_INITIAL } from "@/lib/ai/pricing-actions-types";
 import styles from "./pricing.module.css";
 import warehouse from "@/components/admin/warehouse/warehouse.module.css";
 import { formatEuro, formatEuroInput } from "@/lib/admin/warehouse";
@@ -34,20 +36,109 @@ export function RunAgentForm({ configured, sources }: { readonly configured: boo
       <header className={warehouse.wide}>
         <div>
           <p>Agente IA</p>
-          <h2>Analisi di mercato e prezzi</h2>
+          <h2>Analisi rapida</h2>
           <span>
-            L&apos;analista cerca i prezzi solo sulle {sources} fonti approvate, il consulente propone variazioni.
+            Analizza i prodotti non controllati di recente (fino a {sources > 0 ? `${sources} fonti` : "senza fonti esterne"}).
             Nessun prezzo cambia senza la vostra approvazione.
           </span>
         </div>
       </header>
       <div className={warehouse.actions}>
         <button className={warehouse.primary} disabled={pending || !configured} type="submit">
-          {pending ? "Analisi in corso… (1–3 minuti)" : "Avvia analisi"}
+          {pending ? "Analisi in corso… (1–3 minuti)" : "Avvia analisi rapida"}
         </button>
         <Link className={warehouse.secondary} href="/admin/prezzi/fonti">Fonti e politica</Link>
         {!configured ? <p className={warehouse.error}>Agente non configurato: serve la chiave ANTHROPIC_API_KEY sul server.</p> : null}
         <Feedback state={state} />
+      </div>
+    </form>
+  );
+}
+
+/**
+ * "Analizza tutto il catalogo": client loop that calls runPricingBatchAction batch by batch,
+ * showing live progress and allowing the user to stop at any point.
+ * Respects reduced-motion: progress is text-only, no looping animations.
+ */
+export function AnalyseAllForm({ configured, totalProducts }: { readonly configured: boolean; readonly totalProducts: number }) {
+  const [state, action, pending] = useActionState(runPricingBatchAction, ANALYSE_ALL_INITIAL);
+  const formRef = useRef<HTMLFormElement>(null);
+  const offsetRef = useRef<HTMLInputElement>(null);
+
+  // Auto-advance: when a batch completes and more remain, submit the next one.
+  useEffect(() => {
+    if (!pending && state.status === "running" && state.nextOffset < state.totalProducts) {
+      if (offsetRef.current) offsetRef.current.value = String(state.nextOffset);
+      formRef.current?.requestSubmit();
+    }
+  }, [state, pending]);
+
+  const batches = state.totalProducts > 0 ? Math.ceil(state.totalProducts / state.batchSize) : Math.ceil(totalProducts / state.batchSize);
+  const currentBatch = state.batchSize > 0 ? Math.ceil(state.nextOffset / state.batchSize) : 0;
+  const isActive = state.status === "running" || pending;
+
+  return (
+    <form ref={formRef} action={action} className={`${warehouse.panel} ${warehouse.form}`} data-testid="analyse-all">
+      <input ref={offsetRef} name="offset" type="hidden" value={state.nextOffset} />
+      <header className={warehouse.wide}>
+        <div>
+          <p>Agente IA</p>
+          <h2>Analisi di tutto il catalogo</h2>
+          <span>
+            Analizza tutti i {totalProducts} prodotti pubblicati in lotti da {state.batchSize} · include Amazon, eBay, ZenMarket e altri.
+            Nessun prezzo cambia senza la vostra approvazione.
+          </span>
+        </div>
+      </header>
+
+      {state.status !== "idle" && (
+        <div className={styles.analyseProgress} role="status" aria-live="polite">
+          {state.status === "running" || pending ? (
+            <p>Lotto {currentBatch + 1} di {batches} · {state.processed}/{state.totalProducts || totalProducts} prodotti</p>
+          ) : state.status === "done" ? (
+            <p>Completato: {state.processed} prodotti · {state.observations} osservazioni · {state.proposals} proposte · ${state.dollars.toFixed(2)}</p>
+          ) : (
+            <p>Interrotto a {state.processed} di {state.totalProducts || totalProducts} prodotti · {state.observations} osservazioni · {state.proposals} proposte · ${state.dollars.toFixed(2)}</p>
+          )}
+          {state.lastSummary ? <p className={styles.analyseLastSummary}>{state.lastSummary}</p> : null}
+          {state.errors.length > 0 ? (
+            <ul className={warehouse.error}>
+              {state.errors.map((error, i) => <li key={i}>{error}</li>)}
+            </ul>
+          ) : null}
+        </div>
+      )}
+
+      <div className={warehouse.actions}>
+        {!isActive && state.status !== "done" ? (
+          <button
+            className={warehouse.primary}
+            disabled={!configured}
+            name="offset"
+            onClick={() => { if (offsetRef.current) offsetRef.current.value = "0"; }}
+            type="submit"
+            value="0"
+          >
+            Analizza tutto il catalogo
+          </button>
+        ) : null}
+        {isActive ? (
+          <button className={warehouse.secondary} name="stop" type="submit" value="1">
+            Ferma
+          </button>
+        ) : null}
+        {state.status === "done" || state.status === "stopped" ? (
+          <button
+            className={warehouse.secondary}
+            name="offset"
+            onClick={() => { if (offsetRef.current) offsetRef.current.value = "0"; }}
+            type="submit"
+            value="0"
+          >
+            Riavvia dall&apos;inizio
+          </button>
+        ) : null}
+        {!configured ? <p className={warehouse.error}>Agente non configurato: serve la chiave ANTHROPIC_API_KEY sul server.</p> : null}
       </div>
     </form>
   );
