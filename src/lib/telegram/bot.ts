@@ -16,6 +16,7 @@ import {
 } from "./messages";
 import { isProductMemory, scanMeta, scanProducts, type NewsEvent, type NewsPayload, type ProductMemory } from "./news";
 import { slugFromStart, type PaymentMode } from "./preorder-rules";
+import { advisorQuestion, advisorResult, parseAdvisorAction, type AdvisorMeta } from "./bey-advisor";
 import { searchInline } from "./inline-search";
 import type { OwnerMessage } from "./owner-alerts";
 import { notifyRestocks, restockTap, slugFromRestockStart, startRestock, type RestockContext, type RestockStore } from "./restock";
@@ -79,12 +80,23 @@ export type NewsDeps = {
   readonly restock?: RestockStore;
   /** The owner's evening summary on demand (owner-alerts.ts), as the 21:00 cron sends it. */
   readonly summary?: () => Promise<OwnerMessage>;
+  /** The month's tier list for «Che bey compro?» (bey-advisor.ts). Without it /bey is off. */
+  readonly loadRankings?: () => Promise<AdvisorMeta | null>;
 };
 
 function preorderContext(deps: NewsDeps): PreorderContext | null {
   return deps.preorders
     ? { telegram: deps.telegram, ownerChatId: deps.ownerChatId, loadProducts: deps.loadProducts, now: deps.now, preorders: deps.preorders }
     : null;
+}
+
+/** «Che bey compro?»: the next question, or the build once the three answers are in. */
+async function sendAdvice(deps: NewsDeps, chatId: string, answers: NonNullable<ReturnType<typeof parseAdvisorAction>>): Promise<void> {
+  const question = advisorQuestion(answers);
+  const message =
+    question ??
+    advisorResult({ style: answers.style ?? "x", budget: answers.budget ?? "3", needsLauncher: answers.needsLauncher ?? false }, await deps.loadProducts(), (await deps.loadRankings?.()) ?? null);
+  await deps.telegram.sendText(chatId, message.text, message.keyboard);
 }
 
 function restockContext(deps: NewsDeps): RestockContext | null {
@@ -357,6 +369,7 @@ const HELP = [
   "/bozze  mostra di nuovo le bozze in attesa",
   "/preordini  chi ha pre-ordinato su Telegram, pagato o in attesa",
   "/riepilogo  ordini di oggi, scorte basse, pagamenti senza ordine",
+  "/bey  «Che bey compro?», come lo vede un cliente",
   "",
   "Ti scrivo anche da solo: a ogni ordine pagato, se Stripe incassa senza che l'ordine entri nel gestionale, e alle 21 col riepilogo.",
 ].join("\n");
@@ -414,6 +427,13 @@ export async function handleUpdate(input: unknown, deps: NewsDeps): Promise<stri
         return "restock";
       }
     }
+    // «Che bey compro?»: the answers so far are in the button, so any chat may tap it.
+    const advice = parseAdvisorAction(typeof tap.data === "string" ? tap.data : undefined);
+    if (advice && tapper && deps.loadRankings) {
+      await deps.telegram.answerCallback(tap.id, "");
+      await sendAdvice(deps, tapper, advice);
+      return "advisor";
+    }
     // A pre-order's buttons belong to its buyer, or to the owner: preorderTap checks which.
     const from = account(tap.from?.id);
     if (preorders && from) {
@@ -449,6 +469,11 @@ export async function handleUpdate(input: unknown, deps: NewsDeps): Promise<stri
     const wanted = slugFromRestockStart(message.text);
     if (wanted) return startRestock(restock, chatId, wanted);
   }
+  // «Che bey compro?»: /bey, or "/start bey" from a link, from anyone.
+  if (deps.loadRankings && chatId && chatId === account(message.from?.id) && (command === "bey" || /^\/start\s+bey$/i.test(message.text.trim()))) {
+    await sendAdvice(deps, chatId, {});
+    return "advisor";
+  }
   if (preorders && chatId && chatId === account(message.from?.id)) {
     const slug = slugFromStart(message.text);
     if (slug) return startPreorder(preorders, { id: chatId, username: typeof message.from?.username === "string" ? message.from.username : null }, slug);
@@ -457,7 +482,8 @@ export async function handleUpdate(input: unknown, deps: NewsDeps): Promise<stri
   if (!isOwner(message.from?.id)) {
     // A stranger gets the one thing he can use: where the news comes out.
     if (command === "start" && deps.channelId?.startsWith("@") && (typeof message.chat.id === "number" || typeof message.chat.id === "string")) {
-      await deps.telegram.sendText(String(message.chat.id), `Le news di GEAR//DROP escono sul canale ${deps.channelId}.`);
+      const advisor = deps.loadRankings ? "\nNon sai cosa comprare? Scrivi /bey." : "";
+      await deps.telegram.sendText(String(message.chat.id), `Le news di GEAR//DROP escono sul canale ${deps.channelId}.${advisor}`);
     }
     return "stranger";
   }

@@ -111,6 +111,23 @@ export function preorderFromCartLink(search: string): { readonly slug: string; r
   return { slug, quantity: Number.isFinite(quantity) ? Math.min(MAX_PREORDER_PIECES, Math.max(1, quantity)) : 1 };
 }
 
+/** How many pieces one cart link may add: the advisor's build is three at most. */
+export const CART_LINK_PIECES = 6;
+
+/**
+ * Every piece a link to the cart asks for: one with its quantity (preordine / aggiungi + q), or
+ * several, one each, as "aggiungi=a,b,c" from «Che bey compro?» (2026-11-27).
+ */
+export function cartLinkPieces(search: string): readonly { readonly slug: string; readonly quantity: number }[] {
+  const listed = new URLSearchParams(search).get("aggiungi") ?? "";
+  if (!listed.includes(",")) {
+    const one = preorderFromCartLink(search);
+    return one ? [one] : [];
+  }
+  const slugs = [...new Set(listed.split(",").map((slug) => slug.trim()))].filter((slug) => /^[a-z0-9-]{1,60}$/.test(slug));
+  return slugs.slice(0, CART_LINK_PIECES).map((slug) => ({ slug, quantity: 1 }));
+}
+
 const clean = (text: string) => text.replace(/\s+/g, " ").trim();
 
 /** A first name and a surname, as the parcel's label needs them. */

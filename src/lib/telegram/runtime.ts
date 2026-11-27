@@ -62,6 +62,18 @@ export function createNewsDeps(config: TelegramConfig): NewsDeps {
     preorders: createPreorderDeps(config, client),
     restock: createSupabaseRestockStore(client, () => storefrontOrganizationId()),
     summary: () => loadEveningSummary(),
+    // The latest published tier list, through the public key like the /meta page.
+    loadRankings: async () => {
+      const client = createSupabasePublicClient();
+      const [latest] = await listArchive(client);
+      const snapshot = latest ? await getSnapshotRowByMonth(client, latest.month) : null;
+      if (!snapshot) return null;
+      const rows = await listRankingRows(client, snapshot.id);
+      return {
+        month: snapshot.month,
+        rankings: rows.map((row) => ({ tierType: row.tier_type, rank: row.rank, pieceName: row.piece_name, productSlug: row.product_slug, archetype: row.archetype })),
+      };
+    },
     telegram: createTelegramGateway(config),
     ownerChatId: config.ownerChatId,
     channelId: config.channelId,
