@@ -268,12 +268,14 @@ CONTIENE UN PRE-ORDINE: ${preordered.join(", ")}` : null,
   return { subject, html, text };
 }
 
-export function customerOrderEmail(checkout: PaidCheckout, order: RecordedOrder) {
+/** followUrl: «Segui su Telegram», the bot's signed link for this order (lib/telegram/order-follow.ts). */
+export function customerOrderEmail(checkout: PaidCheckout, order: RecordedOrder, followUrl: string | null = null) {
   const address = addressBlock(checkout);
   const subject = `Ordine ${order.orderNumber} confermato · GEAR//DROP`;
   const html = emailShell(
     "Grazie, il tuo ordine è confermato",
     `<p style="margin:0 0 16px;color:#555">Abbiamo ricevuto il pagamento dell'ordine <strong>${escapeHtml(order.orderNumber)}</strong>. Ti scriviamo appena parte il pacco.</p>
+    ${followUrl ? `<p style="margin:0 0 16px"><a href="${escapeHtml(followUrl)}" style="display:inline-block;background:#7b2cff;color:#ffffff;font-weight:bold;text-decoration:none;padding:12px 18px;border-radius:6px">Segui su Telegram</a><br><span style="font-size:13px;color:#555">Ti scriviamo lì quando parte e quando arriva.</span></p>` : ""}
     ${linesTable(checkout, order, "buyer")}
     <h2 style="font-size:16px;margin:24px 0 8px">Spedizione a</h2>
     <div style="line-height:1.5">${address.map((line) => `<div>${escapeHtml(line)}</div>`).join("")}</div>
@@ -292,6 +294,7 @@ export function customerOrderEmail(checkout: PaidCheckout, order: RecordedOrder)
     "Spedizione a:",
     ...address,
     "",
+    ...(followUrl ? [`Segui l'ordine su Telegram: ${followUrl}`, ""] : []),
     `Domande? Scrivi a ${SHOP_EMAIL} indicando il numero d'ordine.`,
   ].join("\n");
   return { subject, html, text };

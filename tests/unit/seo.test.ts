@@ -35,7 +35,7 @@ describe("sitemap", () => {
     for (const category of CATEGORIES) expect(urls).toContain(`https://geardropshop.it/negozio/${category.slug}`);
     // A pre-order kept out of the shop (the BX-09 on Telegram, 2026-11-26) is not in the sitemap either.
     const hidden = [...BUNDLES, ...PRODUCTS].filter(hiddenFromShop);
-    expect(hidden.map((product) => product.slug)).toEqual(["bx-09-beybattle-pass"]);
+    expect(hidden.map((product) => product.slug)).toEqual(["suppress-superion-0-70lp", "bx-09-beybattle-pass", "ux-00-scorpio-spear-0-70z-magenta"]);
     for (const product of hidden) expect(urls).not.toContain(`https://geardropshop.it/prodotto/${product.slug}`);
     for (const product of oneCardPerFamily([...BUNDLES, ...PRODUCTS].filter((item) => !hiddenFromShop(item)))) expect(urls).toContain(`https://geardropshop.it/prodotto/${product.slug}`);
     // The other colours of the deck case name the first as canonical, so only it is listed.

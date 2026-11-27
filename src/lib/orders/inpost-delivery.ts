@@ -7,6 +7,7 @@ import { eventLabel, parcelOutcome, type ParcelOutcome } from "@/lib/shipping/in
 import { storefrontOrganizationId } from "@/lib/org/storefront";
 import type { Database } from "@/lib/supabase/database.types";
 import { createPrivilegedSupabaseClient } from "@/lib/supabase/admin";
+import { tellOrderFollowers } from "@/lib/telegram/order-follow-runtime";
 import { deliveryConfirmationEmail } from "./delivery-email";
 import { emailShell, escapeHtml } from "./order-email";
 
@@ -62,6 +63,8 @@ export async function recordInpostDelivery(client: Client, organizationId: numbe
     .maybeSingle();
   if (updated.error) throw new Error(`[inpost-delivery] order ${orderId}: ${updated.error.message}`);
   if (!updated.data) return false;
+  // «Segui su Telegram»: the chats following the order hear it is delivered, then are forgotten.
+  await tellOrderFollowers(orderId, { kind: "delivered" });
 
   const note = `InPost: ${eventLabel(code)}`;
   await client.from("order_status_events").insert({ order_id: orderId, from_status: "shipped", to_status: "completed", note });
@@ -194,7 +197,9 @@ export async function syncInpostDeliveries(
 
   const delivered: string[] = [];
   const failed: string[] = [];
-  for (const { order, outcome } of outcomesFor(orders, parcels)) {
+  for (const { order, outcome, lastCode } of outcomesFor(orders, parcels)) {
+    // «Segui su Telegram»: where InPost has the parcel now, told once per step.
+    if (outcome.kind === "moving" && lastCode) await tellOrderFollowers(order.id, { kind: "inpost", code: lastCode });
     if (outcome.kind === "delivered") {
       if (await recordInpostDelivery(client, organizationId, order.id, outcome.at, outcome.code)) delivered.push(order.orderNumber);
     } else if (outcome.kind === "failed") {
@@ -229,5 +234,6 @@ export async function applyInpostEvent(
     await alertOwner(client, order, outcome.code);
     return "flagged";
   }
+  await tellOrderFollowers(order.id, { kind: "inpost", code: event.eventCode });
   return "ignored";
 }

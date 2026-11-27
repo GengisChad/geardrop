@@ -77,6 +77,8 @@ STAGED: dict[str, tuple[tuple[str, int, int, int], ...]] = {
     "cx-20-customize-set-c": (("CX20", 500, 500, 920),),
     # Owner, 2026-11-26: the BX-09 Beybattle Pass, the tool alone as Takara Tomy renders it.
     "bx-09-beybattle-pass": (("BX09", 500, 500, 900),),
+    # Owner, 2026-11-27: UX-00 Scorpio Spear 0-70Z Metal Coat: Magenta, app/event exclusive.
+    "ux-00-scorpio-spear-0-70z-magenta": (("BXG61", 500, 500, 920),),
 }
 
 #: Further photos of the gallery, one render each, written as <slug>-<render in lower case>.webp.

@@ -156,14 +156,15 @@ select results_eq(
 );
 select results_eq(
   $$select count(*)::bigint from public.products$$,
-  array[56::bigint],
+  array[57::bigint],
   'double seed keeps the catalogue products'
 );
 select results_eq(
   $$select count(*)::bigint from public.product_images$$,
   -- 76 since 2026-11-24: the grip listing became the BX-11, three photos instead of the Custom Grip's five.
   -- 84 since 2026-11-26: the CX-20 Customize Set C and its seven photos, the BX-09 Beybattle Pass and its one.
-  array[84::bigint],
+  -- 85 since 2026-11-27: the UX-00 Scorpio Spear 0-70Z Metal Coat Magenta and its one.
+  array[85::bigint],
   'double seed keeps every catalogue image'
 );
 select results_eq(

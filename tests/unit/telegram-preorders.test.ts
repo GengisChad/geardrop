@@ -180,12 +180,17 @@ describe("the rules of a pre-order", () => {
 
 type Sent = { chatId: string; text: string; keyboard?: InlineKeyboard | undefined };
 
-function world(options: { left?: number; paypal?: string | null; mode?: PaymentMode; draft?: boolean; fixed?: PaymentMode } = {}) {
+function world(
+  options: { left?: number; paypal?: string | null; mode?: PaymentMode; draft?: boolean; fixed?: PaymentMode; orders?: "work" | "fail" | "none" } = {},
+) {
   const state = { left: options.left ?? 30, now: new Date("2026-11-26T09:00:00.000Z"), lockersDown: false };
   const rows: Preorder[] = [];
   const sent: Sent[] = [];
   const answers: string[] = [];
   const cleared: number[] = [];
+  const keyboards: { messageId: number; keyboard: InlineKeyboard }[] = [];
+  const recorded: number[] = [];
+  const orderAttempts: number[] = [];
   // When each reservation was last written, as the table's updated_at.
   const touched = new Map<number, number>();
   const modes = new Map<string, PaymentMode>(options.mode ? [[SLUG, options.mode]] : []);
@@ -200,11 +205,15 @@ function world(options: { left?: number; paypal?: string | null; mode?: PaymentM
       sent.push({ chatId, text: html, keyboard });
       return (nextMessage += 1);
     },
-    setKeyboard: async (_chatId, messageId) => {
+    setKeyboard: async (_chatId, messageId, keyboard) => {
+      keyboards.push({ messageId, keyboard });
       cleared.push(messageId);
       return true;
     },
     deleteMessage: async () => true,
+    answerInline: async () => true,
+    sendPoll: async () => null,
+    stopPoll: async () => null,
     answerCallback: async (_id, text) => {
       answers.push(text);
     },
@@ -221,7 +230,7 @@ function world(options: { left?: number; paypal?: string | null; mode?: PaymentM
       const row: Preorder = {
         id: rows.length + 1, code: input.code, chatId: input.chatId, username: input.username, slug: input.slug, productName: input.productName,
         quantity: 1, unitCents: 0, shippingCents: 0, totalCents: 0, buyerName: null, email: null, phone: null, locker: null, lockerOptions: [],
-        status: "collecting", step: "quantity", expiresAt: null,
+        status: "collecting", step: "quantity", expiresAt: null, orderId: null,
       };
       rows.push(row);
       touched.set(row.id, state.now.getTime());
@@ -297,6 +306,20 @@ function world(options: { left?: number; paypal?: string | null; mode?: PaymentM
       store,
       botUsername: async () => "GearDropNewsBot",
       paypalHandle: options.paypal === undefined ? "geardrop" : options.paypal,
+      // What record_telegram_preorder_order does: one order per paid reservation, the same one when asked again.
+      ...(options.orders === "none"
+        ? {}
+        : {
+            recordOrder: async (paid: Preorder) => {
+              if (options.orders === "fail" && orderAttempts.push(paid.id) <= 1) throw new Error("database unreachable");
+              const row = rows.find((candidate) => candidate.id === paid.id)!;
+              if (row.status !== "paid") throw new Error("GD_TELEGRAM_ORDER_NOT_PAID");
+              const created = row.orderId === null;
+              if (created) patchRow(row.id, { orderId: 9000 + row.id });
+              recorded.push(paid.id);
+              return { orderNumber: `GD-T${row.code.slice(4)}`, created };
+            },
+          }),
       newCode: () => "GDT-7K3Q9A",
       searchLockers: async (postalCode) => {
         if (state.lockersDown) throw new Error("inpost down");
@@ -322,7 +345,7 @@ function world(options: { left?: number; paypal?: string | null; mode?: PaymentM
     await tap(`gd:o:${id}:ok`);
     return id;
   };
-  return { state, rows, sent, answers, cleared, modes, drafted, deps, store, write, tap, last, reserve };
+  return { state, rows, sent, answers, cleared, keyboards, recorded, modes, drafted, deps, store, write, tap, last, reserve };
 }
 
 describe("pre-ordering in the bot's chat", () => {
@@ -586,13 +609,60 @@ describe("the owner decides how each pre-order is paid", () => {
 });
 
 describe("the owner and a reservation", () => {
+  it("makes a paid reservation an order of the shop, once", async () => {
+    const { reserve, tap, rows, recorded } = world();
+    const id = await reserve(1);
+    expect(recorded).toEqual([]);
+    await tap(`gd:o:${id}:paid`, OWNER);
+    expect(recorded).toEqual([id]);
+    expect(rows[id - 1]!.orderId).toBe(9000 + id);
+    // A second «Pagato» changes nothing and makes no second order.
+    await tap(`gd:o:${id}:paid`, OWNER);
+    expect(recorded).toEqual([id]);
+  });
+
+  it("keeps it paid when the order cannot be recorded, and lets the owner retry", async () => {
+    const { reserve, tap, rows, answers, keyboards, last } = world({ orders: "fail" });
+    const id = await reserve(1);
+    await tap(`gd:o:${id}:paid`, OWNER);
+    expect(rows[id - 1]!.status).toBe("paid");
+    expect(answers.at(-1)).toBe("Segnato come pagato, ma l'ordine non è stato creato: tocca «Crea l'ordine».");
+    expect(keyboards.at(-1)).toEqual({ messageId: 77, keyboard: [[{ text: "Crea l'ordine nel gestionale", callback_data: `gd:o:${id}:order` }]] });
+    // The buyer is told it is paid; the order number comes with the shipping news.
+    expect(last(BUYER).text).not.toContain("Numero d'ordine");
+    await tap(`gd:o:${id}:order`);
+    expect(answers.at(-1)).toBe("Solo il proprietario può farlo.");
+    await tap(`gd:o:${id}:order`, OWNER);
+    expect(answers.at(-1)).toBe("Ordine GD-T7K3Q9A nel gestionale.");
+    expect(rows[id - 1]!.orderId).toBe(9000 + id);
+  });
+
+  it("sends an order cancelled from the back office there, so its pieces come back once", async () => {
+    const { reserve, tap, rows, answers, state } = world();
+    const id = await reserve(2);
+    await tap(`gd:o:${id}:paid`, OWNER);
+    await tap(`gd:o:${id}:void`, OWNER);
+    expect(answers.at(-1)).toBe("È già un ordine del gestionale: annullalo da lì, che rimette i pezzi.");
+    expect(rows[id - 1]!.status).toBe("paid");
+    expect(state.left).toBe(28);
+  });
+
+  it("says on /preordini which paid ones are in the back office", async () => {
+    const { reserve, tap, write, last } = world();
+    const id = await reserve(1);
+    await tap(`gd:o:${id}:paid`, OWNER);
+    await write("/preordini", OWNER);
+    expect(last(OWNER).text).toContain("Nel gestionale: spedisci dalla stazione di magazzino.");
+  });
+
   it("marks it paid and tells the buyer the piece is his", async () => {
     const { reserve, tap, rows, last, answers, cleared, state } = world();
     const id = await reserve(2);
     await tap(`gd:o:${id}:paid`, OWNER);
     expect(rows[id - 1]!.status).toBe("paid");
-    expect(answers.at(-1)).toBe("Segnato come pagato.");
+    expect(answers.at(-1)).toBe("Segnato come pagato: ordine GD-T7K3Q9A nel gestionale.");
     expect(last(BUYER).text).toContain("Pagamento ricevuto. 2 × <b>Soar Phoenix 9-60GF solo trottola</b> è tuo");
+    expect(last(BUYER).text).toContain("Numero d'ordine: GD-T7K3Q9A");
     expect(cleared).toEqual([77]);
     expect(state.left).toBe(28);
     await tap(`gd:o:${id}:paid`, OWNER);
@@ -689,7 +759,7 @@ describe("the owner and a reservation", () => {
     expect(last(OWNER).text).toBe(
       [
         "<b>Soar Phoenix 9-60GF solo trottola</b>\nPagati: 2 pezzi · In attesa: 0 pezzi",
-        "PAGATO · GDT-7K3Q9A · 2 × · €44,90\nMario Rossi · @blader_mario\nmario@example.it · +393331234567\nLocker: ROM01 · Via Marsala 29, 00185 Roma",
+        "PAGATO · GDT-7K3Q9A · 2 × · €44,90\nMario Rossi · @blader_mario\nmario@example.it · +393331234567\nLocker: ROM01 · Via Marsala 29, 00185 Roma\nNel gestionale: spedisci dalla stazione di magazzino.",
       ].join("\n\n"),
     );
   });

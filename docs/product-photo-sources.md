@@ -145,6 +145,26 @@ ufficiale Takara Tomy, senza watermark, preso da
 nessuno dei tre è incluso. I testi vengono dalla stessa pagina (uscita 15/7/2023): misura e registra
 la potenza del lancio, con l'app dedicata dà Bey Point, vuole 2 pile alcaline AAA non incluse;
 trottola, lanciatore, launcher grip e smartphone non sono nella confezione.
+
+## UX-00 Scorpio Spear 0-70Z Metal Coat: Magenta, 2026-11-27
+
+Il proprietario: due Scorpio Spear Magenta, in pre-ordine solo su Telegram, "metti pre-order due
+scorpion spear ma quello magenta, al vendita al prezzo di 100euro", "Telegram, PayPal.me". Render
+ufficiale Takara Tomy, senza watermark, preso da
+`beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BXG61@2.png` (1172×1418) e salvato intatto in
+`assets-source/takara-tomy/BXG61.png`. Lo scontorno è di
+`python scripts/cutout_takara.py ux-00-scorpio-spear-0-70z-magenta`.
+
+| Prodotto | File | Pagina ufficiale | Fedeltà |
+| --- | --- | --- | --- |
+| UX-00 Scorpio Spear 0-70Z Metal Coat: Magenta | `BXG61` (card) | `beyblade-x/lineup/ux00-ss.html` | La trottola da sola in Metal Coat Magenta. Edizione esclusiva app/eventi. |
+
+I testi vengono dalla scheda `ux00-ss.html` (pianificata 25/4/2026): booster solo trottola, edizione
+esclusiva app/eventi, blade a sei lame che si trasformano in tre durante l'X-Dash, lanciatore e
+stadio non sono inclusi, la vernice Metal Coat può consumarsi con l'uso. L'immagine del post
+Telegram (`BXG61@2.png`) è stata costruita con Pillow (niente Codex disponibile nell'ambiente),
+usando lo scontorno ufficiale su sfondo nero con testo, label viola e logo reale.
+
 ## Immagini dei post Telegram, dal 2026-11-26
 
 Il proprietario: "fai dei bei post anche usando codex per fare le immagini del post che verrà
@@ -161,6 +181,7 @@ post del prodotto (`telegramPostImages` in `src/data/assets.ts`).
 | --- | --- | --- |
 | CX-20 Customize Set C | `cx-20-customize-set-c.jpg` | Phoenix Force WHM-65MT, render `CX20_01` |
 | BX-09 Beybattle Pass | `bx-09-beybattle-pass.jpg` | Il Beybattle Pass, render `BX09` |
+| UX-00 Scorpio Spear 0-70Z Metal Coat: Magenta | `ux-00-scorpio-spear-0-70z-magenta.jpg` | La trottola, scontorno da `BXG61`; immagine Pillow (Codex non disponibile) |
 
 ## Ancora da migliorare
 
