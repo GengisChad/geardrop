@@ -3683,6 +3683,7 @@ export type Database = {
           id: number
           locker: Json | null
           locker_options: Json
+          order_id: number | null
           phone: string | null
           product_name: string
           product_slug: string
@@ -3705,6 +3706,7 @@ export type Database = {
           id?: never
           locker?: Json | null
           locker_options?: Json
+          order_id?: number | null
           phone?: string | null
           product_name: string
           product_slug: string
@@ -3727,6 +3729,7 @@ export type Database = {
           id?: never
           locker?: Json | null
           locker_options?: Json
+          order_id?: number | null
           phone?: string | null
           product_name?: string
           product_slug?: string
@@ -3739,7 +3742,22 @@ export type Database = {
           updated_at?: string
           username?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "telegram_preorders_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "order_profit"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "telegram_preorders_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -4170,6 +4188,14 @@ export type Database = {
           p_shipping_address: Json
           p_shipping_cents: number
         }
+        Returns: {
+          created: boolean
+          order_id: number
+          order_number: string
+        }[]
+      }
+      record_telegram_preorder_order: {
+        Args: { p_preorder_id: number }
         Returns: {
           created: boolean
           order_id: number
