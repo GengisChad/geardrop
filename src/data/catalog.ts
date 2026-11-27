@@ -476,9 +476,12 @@ export const PRODUCTS: readonly Product[] = [
     relatedSlugs: ["suppress-superion-0-70lp", "cobalt-drake-4-60f", "shatter-horus-9-65gb"],
   },
   {
+    // Owner, 2026-11-27: the one piece left is kept for a friend who buys it from the pre-order link
+    // ("nascondilo in pre order perché lo deve comprare un mio amico"): hidden from the shop while the
+    // database holds it as a pre-order, sold through the site's cart and Stripe.
     slug: "suppress-superion-0-70lp", name: "Suppress Superion 0-70LP", tagline: "Bilanciata BX. Tiene il centro.",
     description: "Suppress Superion 0-70LP è una trottola bilanciata della linea BX: la blade con il leone dorato unisce massa e superfici di contatto larghe per assorbire gli urti, mentre il Ratchet 0-70 e il Bit LP (Low Point) la tengono alta sul centro dello stadio, dove l'attacco avversario perde efficacia. Lo starter include il lanciatore. Richiede un Beystadium Beyblade X (venduto separatamente).",
-    price: eur(2500), category: "beyblade-x", bladeType: "bilanciato", stock: "pre-ordine", releasePreorder: true, availableQuantity: 5, tags: ["novita"], rating: 0, reviewCount: 0,
+    price: eur(2500), category: "beyblade-x", bladeType: "bilanciato", stock: "pre-ordine", releasePreorder: true, availableQuantity: 5, channelOnly: true, channelPayment: "stripe", tags: ["novita"], rating: 0, reviewCount: 0,
     images: productImages["suppress-superion-0-70lp"],
     specs: [{ label: "Tipo", value: "Bilanciata" }, { label: "Produttore", value: "Hasbro (prodotto originale)" }, { label: "Sistema", value: "Beyblade X" }, { label: "Linea", value: "BX (Basic Line)" }, { label: "Codice", value: "0-70LP" }, { label: "Componenti", value: "1 trottola, 1 lanciatore" }, { label: "Nota", value: "Richiede un Beystadium (venduto a parte)" }],
     features: [{ title: "Bit Low Point", description: "Punta bassa che difende il centro dello stadio" }, { title: "Ratchet 0-70", description: "Profilo alto per incassare gli urti" }, { title: "Starter completo", description: "Include il lanciatore" }, { title: "Compatibile Beyblade X", description: "Blade, Ratchet e Bit intercambiabili con la serie" }],
