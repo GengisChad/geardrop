@@ -208,7 +208,11 @@ export function metaPost(meta: MetaSummary): TelegramPost {
   return { text: lines.join("\n"), link: { label: "Apri la tier list", url: shopLink(`/meta/${meta.month}`) } };
 }
 
-export type InlineButton = { readonly text: string; readonly url: string } | { readonly text: string; readonly callback_data: string };
+export type InlineButton =
+  | { readonly text: string; readonly url: string }
+  | { readonly text: string; readonly callback_data: string }
+  /** Opens a page of the shop inside Telegram (a Mini App); private chats only. */
+  | { readonly text: string; readonly web_app: { readonly url: string } };
 export type InlineKeyboard = readonly (readonly InlineButton[])[];
 
 export const PUBLISH_ACTION = "gd:p:";

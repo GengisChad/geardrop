@@ -28,6 +28,7 @@ import { gaItem, sendGaEvent } from "@/lib/analytics/google";
 import { EMPTY_PICK_SHELF, type CartPickShelf } from "@/lib/commerce/cart-picks";
 import type { Product } from "@/lib/commerce/types";
 import { visitSourceForCheckout } from "@/lib/attribution";
+import { telegramCartForCheckout } from "@/lib/telegram-cart";
 import { LockerPicker, type PickedLocker } from "@/components/checkout/locker-picker";
 import { shippingMethodByCode } from "@/data/catalog";
 import { EXPRESS_LOCKER_MISSING_MESSAGE } from "@/lib/payments/express-checkout";
@@ -95,6 +96,7 @@ export function CartClient({ shelfProducts, nudgeCatalogue = [], pickShelf = EMP
       idempotencyKey: crypto.randomUUID(),
       ...(quote.couponCode ? { couponCode: quote.couponCode } : {}),
       ...visitSourceForCheckout(),
+      ...telegramCartForCheckout(),
       ...(expressNeedsLocker && expressLocker
         ? { pickupPoint: expressLocker.label, ...(expressLocker.id ? { pickupPointId: expressLocker.id } : {}) }
         : {}),

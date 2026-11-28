@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { basename } from "node:path";
 import { callTelegram, readTelegramConfig } from "../src/lib/telegram/api";
+import { MENU_BUTTON, MINI_APP_URL } from "../src/lib/telegram/mini-app";
 import { SOCIAL_LIMITS, socialMediaType } from "../src/lib/telegram/social-media";
 import { PRODUCTION_ORIGIN } from "../src/lib/site-url";
 
@@ -21,6 +22,8 @@ import { PRODUCTION_ORIGIN } from "../src/lib/site-url";
  *                                   once the same post is live on Instagram
  *                                   a picture or clip published on Instagram becomes a draft for the
  *                                   channel, in the owner's chat, with the button to pay on the site
+ *   pnpm telegram menu set|clear    the «Shop» button next to the chat's text field: the site as a
+ *                                   Mini App inside Telegram
  *
  * The token, the chat id and the webhook secret are read from and written to .env.local only.
  * Nothing here prints them: a terminal is shared, pasted and screenshotted more often than a file.
@@ -125,6 +128,21 @@ async function webhook(action: string | undefined, argv: readonly string[]): Pro
   }
   await ask("setWebhook", { url: `${origin}${WEBHOOK_PATH}`, secret_token: secret, allowed_updates: UPDATES, drop_pending_updates: true });
   console.log(`Webhook impostato: ${origin}${WEBHOOK_PATH}`);
+}
+
+/** The bot's menu button: «Shop» opens the site inside Telegram (src/lib/telegram/mini-app.ts). */
+async function menu(action: string | undefined): Promise<void> {
+  if (action === "set") {
+    await ask("setChatMenuButton", { menu_button: MENU_BUTTON });
+    console.log(`Tasto menu impostato: «${MENU_BUTTON.text}» apre ${MINI_APP_URL} dentro Telegram, in ogni chat privata col bot.`);
+    return;
+  }
+  if (action === "clear") {
+    await ask("setChatMenuButton", { menu_button: { type: "default" } });
+    console.log("Tasto menu tolto: torna quello dei comandi.");
+    return;
+  }
+  fail("Uso: pnpm telegram menu set|clear");
 }
 
 /** Long-polls Telegram and hands each update to a local dev server, which has no public address. */
@@ -249,8 +267,10 @@ async function main(argv: readonly string[]): Promise<void> {
       return poll(rest[0] ?? `http://localhost:3000${WEBHOOK_PATH}`);
     case "social":
       return social(rest);
+    case "menu":
+      return menu(rest[0]);
     default:
-      fail("Uso: pnpm telegram check | link [--user=<username>] | webhook set|info|delete | poll [url] | social <file> --prodotto=<slug>");
+      fail("Uso: pnpm telegram check | link [--user=<username>] | webhook set|info|delete | poll [url] | social <file> --prodotto=<slug> | menu set|clear");
   }
 }
 

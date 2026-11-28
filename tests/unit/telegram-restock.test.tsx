@@ -91,7 +91,8 @@ function world(initial: readonly Product[]) {
   };
   const write = (text: string, from = BUYER) => handleUpdate({ message: { chat: { id: Number(from), type: "private" }, from: { id: Number(from) }, text } }, deps);
   const tap = (data: string, from = BUYER) => handleUpdate({ callback_query: { id: "cb", from: { id: Number(from) }, data } }, deps);
-  const notify = () => notifyRestocks({ telegram, loadProducts: deps.loadProducts, now: deps.now, store: restock, channelId: deps.channelId }, state.products);
+  const notify = (ownerChatId?: string) =>
+    notifyRestocks({ telegram, loadProducts: deps.loadProducts, now: deps.now, store: restock, channelId: deps.channelId, ...(ownerChatId ? { ownerChatId } : {}) }, state.products);
   return { state, rows, sent, answers, write, tap, notify };
 }
 
@@ -117,10 +118,19 @@ describe("asking the bot to be told", () => {
     expect(sent.at(-1)!.keyboard).toEqual([[{ text: "Compra", url: expect.stringContaining(`/carrello?aggiungi=${glory.slug}`) }]]);
   });
 
-  it("points to the channel for a piece whose pre-order is taken there", async () => {
-    const { write, sent } = world([{ ...glory, stock: "pre-ordine", availableQuantity: 8, channelOnly: "avvisami" }]);
+  it("offers the bot's own pre-order while Telegram still has pieces, and keeps nothing", async () => {
+    const { write, rows, sent } = world([{ ...glory, stock: "pre-ordine", availableQuantity: 8, channelOnly: "avvisami" }]);
     await write(`/start av-${glory.slug}`);
-    expect(sent.at(-1)!.text).toContain("Intanto alcuni pezzi si pre-ordinano sul canale @geardropshop.");
+    expect(rows).toEqual([]);
+    expect(sent.at(-1)!.text).toBe("<b>Glory Valkerion LF</b> ha ancora pezzi in pre-ordine qui su Telegram.");
+    expect(sent.at(-1)!.keyboard).toEqual([[{ text: "Pre-ordina", url: `https://t.me/GearDropNewsBot?start=pre-${glory.slug}` }]]);
+  });
+
+  it("puts the chat in the waiting list of a Telegram pre-order that sold out (2026-11-28)", async () => {
+    const { write, rows, sent } = world([{ ...glory, stock: "esaurito", availableQuantity: 0, channelOnly: true }]);
+    await write(`/start av-${glory.slug}`);
+    expect(rows).toEqual([expect.objectContaining({ chatId: BUYER, slug: glory.slug })]);
+    expect(sent.at(-1)!.text).toBe("Fatto: sei in lista per <b>Glory Valkerion LF</b>. Ti scrivo qui appena si libera un pezzo in pre-ordine, o quando si può ordinare sul sito.");
   });
 
   it("lets only the chat that asked drop its request", async () => {
@@ -157,13 +167,36 @@ describe("telling the chats when the piece is back", () => {
     expect(await notify()).toBe(0);
   });
 
-  it("waits while the piece is a Telegram-only pre-order, which the site cannot sell", async () => {
+  it("tells the waiting list first when a Telegram-only pre-order has a piece again", async () => {
+    const { write, notify, state, rows, sent } = world([soldOut]);
+    await write(`/start av-${glory.slug}`);
+    state.products = [{ ...glory, stock: "pre-ordine", availableQuantity: 1, channelOnly: true }];
+    expect(buyableOnShop(state.products[0]!)).toBe(false);
+    expect(await notify()).toBe(1);
+    expect(rows).toEqual([]);
+    expect(sent.at(-1)!.text).toBe("SI È LIBERATO UN PEZZO //\n<b>Glory Valkerion LF</b> si può di nuovo pre-ordinare (1 pezzo). Sei in lista: lo sai prima del canale.");
+    expect(sent.at(-1)!.keyboard).toEqual([[{ text: "Pre-ordina", url: `https://t.me/GearDropNewsBot?start=pre-${glory.slug}` }]]);
+  });
+
+  it("keeps waiting while the Telegram-only pre-order has no piece left", async () => {
     const { write, notify, state, rows } = world([soldOut]);
     await write(`/start av-${glory.slug}`);
-    state.products = [{ ...glory, stock: "pre-ordine", availableQuantity: 8, channelOnly: true }];
+    state.products = [{ ...glory, stock: "esaurito", availableQuantity: 0, channelOnly: true }];
     expect(await notify()).toBe(0);
     expect(rows).toHaveLength(1);
-    expect(buyableOnShop(state.products[0]!)).toBe(false);
+  });
+
+  it("tells the owner how many in the list heard it, so he can publish later", async () => {
+    const { write, notify, state, sent } = world([soldOut]);
+    await write(`/start av-${glory.slug}`);
+    await write(`/start av-${glory.slug}`, "777888999");
+    state.products = [back];
+    expect(await notify(OWNER)).toBe(2);
+    expect(sent.at(-1)).toEqual({
+      chatId: OWNER,
+      text: "<b>LISTA D'ATTESA //</b>\nAvvisate adesso in privato: 2 persone per <b>Glory Valkerion LF</b> (sito).\nSe vuoi dar loro un vantaggio, pubblica il post sul canale più tardi.",
+      keyboard: undefined,
+    });
   });
 
   it("drops a request after six months, as the privacy notice says", async () => {

@@ -3621,6 +3621,21 @@ export type Database = {
           },
         ]
       }
+      telegram_owner_actions: {
+        Row: {
+          created_at: string
+          request_key: string
+        }
+        Insert: {
+          created_at?: string
+          request_key: string
+        }
+        Update: {
+          created_at?: string
+          request_key?: string
+        }
+        Relationships: []
+      }
       telegram_polls: {
         Row: {
           channel_message_id: number | null
@@ -3758,6 +3773,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      telegram_support_messages: {
+        Row: {
+          chat_id: number
+          created_at: string
+          id: number
+          order_id: number | null
+          owner_message_id: number
+        }
+        Insert: {
+          chat_id: number
+          created_at?: string
+          id?: never
+          order_id?: number | null
+          owner_message_id: number
+        }
+        Update: {
+          chat_id?: number
+          created_at?: string
+          id?: never
+          order_id?: number | null
+          owner_message_id?: number
+        }
+        Relationships: []
       }
     }
     Views: {
@@ -4398,6 +4437,23 @@ export type Database = {
       swap_media_asset_associations: {
         Args: { p_new_media_asset_id: number; p_old_media_asset_id: number }
         Returns: Json
+      }
+      telegram_adjust_inventory: {
+        Args: {
+          p_delta: number
+          p_organization_id: number
+          p_product_id: number
+          p_request_key: string
+        }
+        Returns: number
+      }
+      telegram_apply_pricing_proposal: {
+        Args: {
+          p_organization_id: number
+          p_proposal_id: number
+          p_request_key: string
+        }
+        Returns: number
       }
       telegram_preorder_hold: {
         Args: { p_quantity: number; p_slug: string }

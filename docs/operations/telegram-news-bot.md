@@ -91,9 +91,11 @@ La prima volta non annuncia niente: ricorda quello che c'è già in vendita.
 | `pnpm telegram link` | Salva la chat di chi ha scritto `/start` al bot |
 | `pnpm telegram webhook set` / `info` / `delete` | Collega, controlla o scollega il sito |
 | `pnpm telegram poll` | Prova in locale: passa a `pnpm dev` i tasti e i comandi (senza webhook attivo) |
+| `pnpm telegram menu set` / `clear` | Il tasto «Shop» accanto al campo di testo: il sito come Mini App |
 
 Al bot, in chat privata: `/controlla` (guarda lo shop adesso), `/bozze` (mostra di nuovo le bozze in
-attesa), `/preordini`, `/riepilogo` (il riepilogo della sera, adesso).
+attesa), `/preordini`, `/riepilogo` (il riepilogo della sera, adesso), `/stock`, `/carico`,
+`/fermi`, `/shop` (vedi «Attrezzi del 28/11» in fondo).
 
 ## Prova in locale
 
@@ -169,7 +171,16 @@ Dal 27/11/2026. Sulla scheda di un prodotto esaurito o in arrivo, sotto il modul
 - Appena il pezzo torna acquistabile sul sito, a ogni sguardo allo shop (salvataggio nel
   gestionale, le 9 del mattino, `/controlla`) il bot manda un messaggio privato con prezzo,
   disponibilità e **Compra**, che apre il carrello con il pezzo dentro. Poi cancella la richiesta.
-- Un pre-ordine solo Telegram non conta come acquistabile: si aspetta che arrivi sul sito.
+- Un pre-ordine solo Telegram non conta come acquistabile sul sito. Dal 28/11 è la **lista
+  d'attesa**: se il pre-ordine sul canale è esaurito, il bot (anche dal tasto «Avvisami se si libera
+  un pezzo» sotto «pre-ordine non aperto») tiene la chat; quando un pezzo si libera (una
+  prenotazione PayPal.me scade non pagata, o metti più pezzi in pre-ordine) manda «SI È LIBERATO UN
+  PEZZO» con **Pre-ordina**, prima del canale. Se ci sono ancora pezzi, risponde subito con
+  **Pre-ordina** e non tiene niente.
+- Ogni volta che qualcuno in lista viene avvisato, il proprietario riceve «LISTA D'ATTESA»: quante
+  persone per quale pezzo, così può pubblicare il post sul canale qualche ora dopo.
+- Le prenotazioni scadute si liberano a ogni sguardo allo shop (le 9, `/controlla`, un salvataggio):
+  la lista può saperlo fino a un giorno dopo la scadenza.
 - «Non avvisarmi più» toglie la richiesta; dopo sei mesi si cancella da sola, come quelle email.
 - Il tasto «Invia avvisi» del gestionale manda solo le email: quelle Telegram partono da sole.
 - Un salvataggio nel gestionale fa scadere subito la cache dei prodotti dello shop, così il carrello
@@ -219,6 +230,10 @@ dell'ordine con `TELEGRAM_WEBHOOK_SECRET`: chi indovina un numero d'ordine non p
   promemoria, non ritirato, ritardo; letti dal cron delle 17 o dal webhook InPost), e alla consegna.
 - Alla consegna la riga si cancella; anche con «Non seguire più», o dopo 90 giorni.
 - I messaggi li ha chiesti il cliente, come le email, quindi partono senza il tocco del proprietario.
+- Dal 28/11 il messaggio «Consegnato» chiede **«Com'è andata?»** con due tasti firmati per quell'ordine
+  e quella chat: «Tutto ok» lascia una nota sull'ordine; «C'è un problema» lascia una nota, manda al
+  proprietario «PROBLEMA SEGNALATO» con «Apri l'ordine», e i messaggi successivi del cliente (anche
+  foto) arrivano nell'assistenza sotto quell'ordine. Nessuna recensione chiesta.
 
 ## Sondaggi sul canale
 
@@ -268,6 +283,73 @@ visibile, anche in alto nel sito") il sito porta al canale `t.me/geardropshop` d
 - il tasto in fondo al menu del telefono (`src/components/layout/mobile-menu.tsx`);
 - la riga dei social nel footer (`SOCIAL_LINKS` in `src/lib/navigation.ts`, dove un link nuovo va
   in fondo: vedi il commento lì).
+
+## Attrezzi del 28/11
+
+Proprietario, 28/11/2026: "fai il resto" (tutto tranne spedire dal bot). Migrazione
+`20261128100000_telegram_bot_tools.sql`, pgTAP `061`.
+
+**Magazzino da chat (solo il proprietario).**
+
+- `/stock dran` mostra magazzino, pre-ordini e prezzo dei prodotti che corrispondono (nome, slug o
+  SKU).
+- `/carico dran sword +3` (o `-1`, o `5` = +5) chiede **Conferma**. È la stessa rettifica manuale
+  della pagina Inventario, con nota «Telegram: rettifica dal bot» e voce nel registro attività.
+- Il tasto agisce una volta sola anche se toccato due volte: la chiave è in
+  `telegram_owner_actions`, funzione `telegram_adjust_inventory`, solo chiave del server.
+- Dopo il movimento il bot riguarda lo shop: bozza «di nuovo disponibile» e Avvisami partono come
+  dopo un salvataggio nel gestionale.
+- I carichi da fornitore (con costo) restano nella pagina Carichi.
+
+**Pezzi fermi.** Il lunedì alle 9 (con lo sguardo del mattino), o con `/fermi`:
+
+- quali pezzi stanno in magazzino da più di 30 giorni senza vendite da 30, i più costosi da tenere
+  prima, con la proposta in attesa dell'agente prezzi;
+- **Applica** approva la proposta come la pagina Prezzi (`telegram_apply_pricing_proposal`, una
+  volta sola). Una proposta fuori dalle regole di prezzo si decide nel pannello;
+- se il prezzo scende, la bozza «prezzo ribassato» arriva come sempre e la pubblica lui.
+
+**Assistenza in chat.** Chi scrive al bot (testo, foto, vocale, file), fuori da un pre-ordine in
+corso:
+
+- il messaggio viene copiato nella chat del proprietario, sotto un'intestazione «ASSISTENZA» con
+  nome e @username. Se la chat viene da «C'è un problema», c'è anche l'ordine;
+- lui risponde con «Rispondi» sulla copia, e il bot copia la risposta al cliente;
+- il bot tiene solo quale copia appartiene a quale chat (`telegram_support_messages`, 90 giorni),
+  non il testo;
+- oltre 15 messaggi in un'ora da una chat smettono di arrivare, e il cliente lo sa una volta;
+- `/start` senza altro, o un comando che il bot non conosce, mostra a cosa serve il bot e il tasto
+  «Apri lo shop».
+
+**Promemoria del carrello.**
+
+- Ogni link al carrello che il bot manda in una chat privata porta la chat firmata (`tgc=`):
+  Avvisami, `/bey`, «Paga sul sito» di un pre-ordine.
+- Il sito la tiene per la visita (`src/lib/telegram-cart.ts`) e il checkout, se la firma torna, la
+  mette sulla sessione Stripe (`metadata[telegram_chat]`).
+- Ogni mattina il bot legge le sessioni delle ultime 26 ore. Una chat con un carrello scaduto non
+  pagato, e nessun pagamento dopo, riceve un messaggio con i pezzi ancora in vendita e «Riprendi il
+  carrello».
+- Al massimo uno a settimana per chat. «Non ricordarmelo più» li ferma per sempre (memoria
+  `cart-optout:<chat>`).
+- I post del canale e i link condivisi non portano mai la chat.
+
+**Lo shop dentro Telegram (Mini App).**
+
+- `pnpm telegram menu set` mette il tasto «Shop» accanto al campo di testo di ogni chat privata col
+  bot. `/shop` e il messaggio di benvenuto hanno «Apri lo shop».
+- Aprono `geardropshop.it` dentro Telegram, con `utm_source=telegram&utm_medium=miniapp`: carrello
+  e pagamento Stripe sono quelli del sito, niente prezzi o dati su Telegram.
+- Nella webview di Telegram Apple Pay e Google Pay possono mancare; carta, PayPal e Revolut Pay ci
+  sono.
+
+**Da fare al deploy, con l'ok del proprietario.**
+
+1. Applicare la migrazione `20261128100000` in produzione.
+2. `pnpm telegram menu set`.
+
+Non servono variabili nuove: firme e promemoria usano `TELEGRAM_WEBHOOK_SECRET` e
+`STRIPE_SECRET_KEY`.
 
 L'indirizzo del canale sta in un posto solo, `TELEGRAM_CHANNEL_URL`. Il tocco su fascia e menu è
 contato in Analytics come `join_group` (`group_id: telegram`, con `placement`), solo per chi ha

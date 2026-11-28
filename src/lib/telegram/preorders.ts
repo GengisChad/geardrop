@@ -3,6 +3,7 @@ import { formatPrice } from "@/lib/format";
 import { preorderDelivery } from "@/lib/labels";
 import type { TelegramGateway } from "./api";
 import { escapeTelegram, shopLink, type InlineKeyboard } from "./messages";
+import { restockStartPayload, TELEGRAM_BOT_URL } from "./restock-link";
 import {
   HOLD_HOURS,
   UNPAID_DATA_DAYS,
@@ -144,7 +145,10 @@ async function findOpen(context: PreorderContext, slug: string): Promise<Product
 export async function startPreorder(context: PreorderContext, chat: { readonly id: string; readonly username: string | null }, slug: string): Promise<string> {
   const product = await findOpen(context, slug);
   if (!product) {
-    await context.telegram.sendText(chat.id, CLOSED);
+    // Sold out on the channel: the waiting list (restock.ts) tells this chat if a piece comes free.
+    const listed = (await context.loadProducts()).find((candidate) => candidate.slug === slug);
+    const waitlist = listed?.channelOnly ? restockStartPayload(slug) : null;
+    await context.telegram.sendText(chat.id, CLOSED, waitlist ? [[{ text: "Avvisami se si libera un pezzo", url: `${TELEGRAM_BOT_URL}?start=${waitlist}` }]] : undefined);
     return "preorder-closed";
   }
   const { store, newCode } = context.preorders;
