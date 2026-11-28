@@ -23,6 +23,11 @@ import { draftPoll, pollReport, pollTap, pollUpdate, type PollContext } from "./
 import type { OwnerMessage } from "./owner-alerts";
 import { notifyRestocks, restockTap, slugFromRestockStart, startRestock, type RestockContext, type RestockStore } from "./restock";
 import { expirePreorders, preorderReport, preorderTap, preorderText, startPreorder, type PreorderContext, type PreorderDeps } from "./preorders";
+import { cartTap, type CartReminderContext } from "./cart-reminder";
+import { deliveryTap, type DeliveryCheckContext } from "./delivery-check";
+import { shopButton } from "./mini-app";
+import { ownerToolsTap, parseOwnerToolsAction, sendSlowStock, startLoad, stockReport, type OwnerToolsContext } from "./owner-tools";
+import { customerMessage, ownerReply, supportWelcome, type SupportContext } from "./support";
 
 /**
  * The news bot's two jobs (owner, 2026-11-26: "bozza + tuo OK").
@@ -88,6 +93,14 @@ export type NewsDeps = {
   readonly follows?: FollowContext;
   /** Channel polls (polls.ts): /sondaggio drafts one, his tap publishes it. */
   readonly polls?: PollContext;
+  /** /stock, /carico, /fermi in the owner's chat (owner-tools.ts). */
+  readonly ownerTools?: OwnerToolsContext;
+  /** Assistance: customers' messages copied to the owner, his «Rispondi» back (support.ts). */
+  readonly support?: SupportContext;
+  /** «Com'è andata?» at delivery (delivery-check.ts). */
+  readonly deliveryCheck?: DeliveryCheckContext;
+  /** «Non ricordarmelo più» under a cart reminder (cart-reminder.ts). */
+  readonly cartReminders?: Pick<CartReminderContext, "memory" | "now">;
 };
 
 function preorderContext(deps: NewsDeps): PreorderContext | null {
@@ -107,7 +120,7 @@ async function sendAdvice(deps: NewsDeps, chatId: string, answers: NonNullable<R
 
 function restockContext(deps: NewsDeps): RestockContext | null {
   return deps.restock
-    ? { telegram: deps.telegram, loadProducts: deps.loadProducts, now: deps.now, store: deps.restock, channelId: deps.channelId }
+    ? { telegram: deps.telegram, loadProducts: deps.loadProducts, now: deps.now, store: deps.restock, channelId: deps.channelId, ownerChatId: deps.ownerChatId }
     : null;
 }
 
@@ -377,8 +390,13 @@ const HELP = [
   "/riepilogo  ordini di oggi, scorte basse, pagamenti senza ordine",
   "/bey  «Che bey compro?», come lo vede un cliente",
   "/sondaggio cx-21  prepara un sondaggio per il canale; /sondaggi i voti",
+  "/stock dran  magazzino e pre-ordini dei prodotti che corrispondono",
+  "/carico dran +3  rettifica il magazzino, dopo la tua conferma",
+  "/fermi  i pezzi che non vendono da un mese, con la proposta di prezzo",
+  "/shop  lo shop dentro Telegram",
   "",
-  "Ti scrivo anche da solo: a ogni ordine pagato, se Stripe incassa senza che l'ordine entri nel gestionale, e alle 21 col riepilogo.",
+  "I messaggi dei clienti al bot arrivano qui: rispondi con «Rispondi» sul loro messaggio e glielo giro.",
+  "Ti scrivo anche da solo: a ogni ordine pagato, se Stripe incassa senza che l'ordine entri nel gestionale, alle 21 col riepilogo e il lunedì mattina coi pezzi fermi.",
 ].join("\n");
 
 export function scanSummary(report: ScanReport): string {
@@ -399,9 +417,12 @@ type Update = {
     readonly message?: { readonly message_id?: unknown };
   };
   readonly message?: {
+    readonly message_id?: unknown;
     readonly chat?: { readonly id?: unknown; readonly type?: unknown };
-    readonly from?: { readonly id?: unknown; readonly username?: unknown };
+    readonly from?: { readonly id?: unknown; readonly username?: unknown; readonly first_name?: unknown };
     readonly text?: unknown;
+    /** The message this one answers (Telegram's «Rispondi»): how the owner answers a customer. */
+    readonly reply_to_message?: { readonly message_id?: unknown };
   };
 };
 
@@ -431,6 +452,24 @@ export async function handleUpdate(input: unknown, deps: NewsDeps): Promise<stri
   if (tap && typeof tap.id === "string") {
     // «Non avvisarmi più» belongs to the chat that asked for the notice.
     const tapper = account(tap.from?.id);
+    const tapData = typeof tap.data === "string" ? tap.data : undefined;
+    const tapMessage = typeof tap.message?.message_id === "number" ? tap.message.message_id : null;
+    // «Com'è andata?» belongs to the chat that followed the order: its buttons are signed for it.
+    if (deps.deliveryCheck && tapper) {
+      const answer = await deliveryTap(deps.deliveryCheck, { from: tapper, data: tapData, messageId: tapMessage });
+      if (answer !== null) {
+        await deps.telegram.answerCallback(tap.id, answer);
+        return "delivery-check";
+      }
+    }
+    // «Non ricordarmelo più» under a cart reminder: the chat that tapped it.
+    if (deps.cartReminders && tapper) {
+      const answer = await cartTap(deps.cartReminders, { from: tapper, data: tapData });
+      if (answer !== null) {
+        await deps.telegram.answerCallback(tap.id, answer);
+        return "cart-reminder";
+      }
+    }
     if (restock && tapper) {
       const answer = await restockTap(restock, { from: tapper, data: typeof tap.data === "string" ? tap.data : undefined });
       if (answer !== null) {
@@ -475,7 +514,13 @@ export async function handleUpdate(input: unknown, deps: NewsDeps): Promise<stri
       await deps.telegram.answerCallback(tap.id, "Solo il proprietario può farlo.");
       return "refused";
     }
-    const action = parseDraftAction(typeof tap.data === "string" ? tap.data : undefined);
+    // /carico's confirmation and the Monday list's «Applica»: the owner's only (checked just above).
+    const tools = parseOwnerToolsAction(tapData);
+    if (tools && deps.ownerTools) {
+      await deps.telegram.answerCallback(tap.id, await ownerToolsTap(deps.ownerTools, tools, tapMessage));
+      return "owner-tools";
+    }
+    const action = parseDraftAction(tapData);
     if (!action) {
       await deps.telegram.answerCallback(tap.id, "");
       return "ignored";
@@ -486,7 +531,31 @@ export async function handleUpdate(input: unknown, deps: NewsDeps): Promise<stri
   }
 
   const message = update.message;
-  if (!message || message.chat?.type !== "private" || typeof message.text !== "string") return "ignored";
+  if (!message || message.chat?.type !== "private") return "ignored";
+  const messageId = typeof message.message_id === "number" ? message.message_id : null;
+  // The owner's «Rispondi» on a customer's message copied into his chat: his answer, words or a
+  // photo, goes back to that customer (support.ts).
+  const repliedTo = typeof message.reply_to_message?.message_id === "number" ? message.reply_to_message.message_id : null;
+  if (deps.support && isOwner(message.from?.id) && repliedTo !== null && messageId !== null) {
+    const answered = await ownerReply(deps.support, { repliedTo, messageId });
+    if (answered) return answered;
+  }
+  // In a private chat the chat is the person: a customer writing to the shop.
+  const sender = account(message.chat.id) !== null && account(message.chat.id) === account(message.from?.id) && !isOwner(message.from?.id) ? account(message.chat.id) : null;
+  const asCustomer = () =>
+    sender && messageId !== null
+      ? {
+          chatId: sender,
+          messageId,
+          firstName: typeof message.from?.first_name === "string" ? message.from.first_name : null,
+          username: typeof message.from?.username === "string" ? message.from.username : null,
+        }
+      : null;
+  if (typeof message.text !== "string") {
+    // A photo, a voice note, a file: only assistance reads those.
+    const customer = asCustomer();
+    return deps.support && customer ? customerMessage(deps.support, customer) : "ignored";
+  }
   const command = /^\/([a-z]+)(?:@\w+)?(?:\s|$)/i.exec(message.text.trim())?.[1]?.toLowerCase();
   // Anyone may pre-order, the owner included (it is how he tries the flow): the channel post's
   // button arrives here as "/start pre-<slug>", and what follows is the buyer answering the bot.
@@ -512,6 +581,19 @@ export async function handleUpdate(input: unknown, deps: NewsDeps): Promise<stri
     if (!command && (await preorderText(preorders, chatId, message.text))) return "preorder";
   }
   if (!isOwner(message.from?.id)) {
+    if (chatId && command === "shop") {
+      await deps.telegram.sendText(chatId, "Lo shop, qui dentro Telegram: guardi, metti nel carrello e paghi senza uscire dall'app.", shopButton());
+      return "shop";
+    }
+    if (deps.support && chatId) {
+      // Any command it does not know (/start, /aiuto…) shows what the bot is for; words go to the shop.
+      if (command) {
+        await deps.telegram.sendText(chatId, supportWelcome(deps.channelId, Boolean(deps.loadRankings)), shopButton());
+        return "welcome";
+      }
+      const customer = asCustomer();
+      if (customer) return customerMessage(deps.support, customer);
+    }
     // A stranger gets the one thing he can use: where the news comes out.
     if (command === "start" && deps.channelId?.startsWith("@") && (typeof message.chat.id === "number" || typeof message.chat.id === "string")) {
       const advisor = deps.loadRankings ? "\nNon sai cosa comprare? Scrivi /bey." : "";
@@ -550,6 +632,34 @@ export async function handleUpdate(input: unknown, deps: NewsDeps): Promise<stri
     case "sondaggi": {
       await deps.telegram.sendText(deps.ownerChatId, deps.polls ? await pollReport(deps.polls) : "I sondaggi non sono attivi.");
       return "polls";
+    }
+    case "stock": {
+      if (!deps.ownerTools) {
+        await deps.telegram.sendText(deps.ownerChatId, "Il magazzino da chat non è attivo.");
+        return "stock";
+      }
+      const query = message.text.trim().replace(/^\/stock(?:@\w+)?/i, "");
+      await deps.telegram.sendText(deps.ownerChatId, stockReport(await deps.ownerTools.store.products(), query));
+      return "stock";
+    }
+    case "carico": {
+      if (!deps.ownerTools) {
+        await deps.telegram.sendText(deps.ownerChatId, "Il magazzino da chat non è attivo.");
+        return "load";
+      }
+      return startLoad(deps.ownerTools, message.text);
+    }
+    case "fermi": {
+      if (!deps.ownerTools) {
+        await deps.telegram.sendText(deps.ownerChatId, "L'elenco dei pezzi fermi non è attivo.");
+        return "slow-stock";
+      }
+      await sendSlowStock(deps.ownerTools, true);
+      return "slow-stock";
+    }
+    case "shop": {
+      await deps.telegram.sendText(deps.ownerChatId, "Lo shop, come lo apre un cliente dentro Telegram:", shopButton());
+      return "shop";
     }
     case "riepilogo": {
       if (!deps.summary) {

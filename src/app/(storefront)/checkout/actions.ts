@@ -26,6 +26,7 @@ import { EXPRESS_CHECKOUT_LOCKED_MESSAGE, EXPRESS_CODE_NEEDS_EMAIL_MESSAGE, EXPR
 import { authRedirectUrl, PRODUCTION_ORIGIN } from "@/lib/site-url";
 import { createSupabasePublicClient } from "@/lib/supabase/public";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { chatFromCartToken } from "@/lib/telegram/cart-reminder";
 
 export type PlaceOrderResult =
   | { readonly ok: true; readonly orderNumber: string; readonly total: Money | null }
@@ -105,7 +106,12 @@ export async function submitOrder(input: PlaceOrderInput): Promise<PlaceOrderRes
         return { ok: false, message: PICKUP_POINT_MESSAGE };
       }
 
-      const checkout = await createStripeCheckout({ quote, order: parsed.data, origin: await checkoutOrigin() });
+      const checkout = await createStripeCheckout({
+        quote,
+        order: parsed.data,
+        origin: await checkoutOrigin(),
+        telegramChat: chatFromCartToken(parsed.data.telegramCart, process.env["TELEGRAM_WEBHOOK_SECRET"]),
+      });
       return checkout.ok ? { ok: true, redirectUrl: checkout.url } : { ok: false, message: checkout.message };
     } catch (error) {
       return { ok: false, message: checkoutErrorMessage(error) };
@@ -277,6 +283,7 @@ export async function startExpressCheckout(input: ExpressCheckoutInput): Promise
         },
         origin: await checkoutOrigin(),
         express: true,
+        telegramChat: chatFromCartToken(parsed.data.telegramCart, process.env["TELEGRAM_WEBHOOK_SECRET"]),
       },
       process.env,
     );

@@ -27,6 +27,7 @@ import type { Money } from "@/lib/commerce/types";
 import { cn } from "@/lib/cn";
 import { PROVINCES } from "@/data/provinces";
 import { visitSourceForCheckout } from "@/lib/attribution";
+import { telegramCartForCheckout } from "@/lib/telegram-cart";
 
 // Updated step labels to reflect the real flow.
 const STEPS = ["I tuoi dati", "Pagamento su Stripe"] as const;
@@ -164,6 +165,7 @@ export function CheckoutClient() {
             // The typed code, not the quote's: one that stopped holding must stop the payment, not vanish.
             ...(clubCode ? { couponCode: clubCode } : {}),
             ...visitSourceForCheckout(),
+            ...telegramCartForCheckout(),
           });
           if (!result.ok) {
             // The cart is deliberately left untouched: nothing was ordered.

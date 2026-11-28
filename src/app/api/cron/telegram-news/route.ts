@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { runNewsScan } from "@/lib/telegram/runtime";
+import { runMorningJobs, runNewsScan } from "@/lib/telegram/runtime";
 
 /**
  * GET /api/cron/telegram-news — run by Vercel Cron (vercel.json), once a day.
@@ -9,6 +9,9 @@ import { runNewsScan } from "@/lib/telegram/runtime";
  * from here: only his tap on "Pubblica" does. The back office also asks for a look after a save
  * that can be news; this daily one catches what never passes through it, such as a price list
  * applied by a migration.
+ *
+ * Then the morning's other jobs (runMorningJobs): on Mondays the owner's list of pieces that do
+ * not sell, every day one reminder to each chat that left a cart from the bot unpaid.
  *
  * Vercel sends `Authorization: Bearer $CRON_SECRET`; without the secret set the route refuses
  * everyone, like the InPost one.
@@ -25,8 +28,9 @@ export async function GET(request: NextRequest) {
   try {
     const report = await runNewsScan();
     if (!report) return NextResponse.json({ result: "not configured" });
-    console.info("[telegram-news]", JSON.stringify(report));
-    return NextResponse.json(report);
+    const morning = await runMorningJobs();
+    console.info("[telegram-news]", JSON.stringify({ ...report, morning }));
+    return NextResponse.json({ ...report, morning });
   } catch (error) {
     console.error("[telegram-news]", error instanceof Error ? error.message : error);
     return NextResponse.json({ error: "scan failed" }, { status: 500 });

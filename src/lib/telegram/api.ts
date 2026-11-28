@@ -76,6 +76,12 @@ export type TelegramGateway = {
   sendPoll(chatId: string, question: string, options: readonly string[], keyboard: InlineKeyboard): Promise<{ readonly messageId: number; readonly pollId: string } | null>;
   /** Closes a poll the bot sent and answers its final counts. */
   stopPoll(chatId: string, messageId: number): Promise<{ readonly counts: readonly number[]; readonly totalVoters: number } | null>;
+  /**
+   * Copies a message (text, photo, voice, file) from one chat to another, without the "forwarded
+   * from" header; answers the copy's id, or null when Telegram refused (the chat blocked the bot).
+   * Assistance (support.ts) carries messages between a customer and the owner this way.
+   */
+  copyMessage?(toChatId: string, fromChatId: string, messageId: number): Promise<number | null>;
 };
 
 type SentMessage = { readonly message_id: number };
@@ -157,6 +163,11 @@ export function createTelegramGateway(config: TelegramConfig, fetcher: typeof fe
       const result = await call<{ readonly options: readonly { readonly voter_count: number }[]; readonly total_voter_count: number }>("stopPoll", { chat_id: chatId, message_id: messageId });
       log("stopPoll", result);
       return result.ok ? { counts: result.result.options.map((option) => option.voter_count), totalVoters: result.result.total_voter_count } : null;
+    },
+    async copyMessage(toChatId, fromChatId, messageId) {
+      const result = await call<{ readonly message_id: number }>("copyMessage", { chat_id: toChatId, from_chat_id: fromChatId, message_id: messageId });
+      log("copyMessage", result);
+      return result.ok ? result.result.message_id : null;
     },
     async answerInline(queryId, results) {
       // A short cache: the price and the stock a result shows are the shop's of a minute ago at most.

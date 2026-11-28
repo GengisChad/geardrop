@@ -124,6 +124,8 @@ export type CheckoutSessionInput =
       readonly origin: string;
       /** Milliseconds since the epoch; the session's expiry counts from here. */
       readonly now?: number;
+      /** The bot chat the cart came from, once its signature is checked (lib/telegram/cart-reminder). */
+      readonly telegramChat?: string | null | undefined;
     }
   | {
       readonly quote: CartQuote;
@@ -132,6 +134,7 @@ export type CheckoutSessionInput =
       readonly origin: string;
       /** Milliseconds since the epoch; the session's expiry counts from here. */
       readonly now?: number;
+      readonly telegramChat?: string | null | undefined;
       /**
        * Express checkout: Stripe collects the shipping address and phone on its hosted
        * page. customer_email and payment_intent_data.shipping are omitted; instead
@@ -238,6 +241,8 @@ export function buildCheckoutSessionFields(
   }
 
   if (clubCode) fields["metadata[club]"] = clubCode;
+  // A cart opened from the bot's private chat: if it is not paid, the bot may remind that chat once.
+  if (input.telegramChat && /^\d{4,20}$/.test(input.telegramChat)) fields["metadata[telegram_chat]"] = input.telegramChat;
 
   quote.lines.forEach((line, index) => {
     const priceId = priceIds.get(line.slug);

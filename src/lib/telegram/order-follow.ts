@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { eventLabel } from "@/lib/shipping/inpost-tracking";
 import type { TelegramGateway } from "./api";
+import { deliveryCheckKeyboard } from "./delivery-check";
 import { escapeTelegram, type InlineKeyboard } from "./messages";
 import { TELEGRAM_BOT_URL } from "./restock-link";
 
@@ -136,12 +137,13 @@ export async function tellFollowers(context: FollowContext, orderId: number, upd
     update.kind === "shipped"
       ? orderStatusText({ ...order, status: "shipped" })
       : update.kind === "delivered"
-        ? orderStatusText({ ...order, status: "completed" })
+        ? // «Com'è andata?» (delivery-check.ts): one question, with two signed buttons.
+          `${orderStatusText({ ...order, status: "completed" })}${context.secret ? "\nCom'è andata?" : ""}`
         : `${head(order)}\n${escapeTelegram(eventLabel(update.code))}.`;
   let told = 0;
   for (const follower of followers) {
     if (follower.lastTold === what) continue;
-    const keyboard = update.kind === "delivered" ? [] : [...trackButton(order), ...unfollowButton(follower.id)];
+    const keyboard = update.kind === "delivered" ? deliveryCheckKeyboard(order.id, follower.chatId, context.secret) : [...trackButton(order), ...unfollowButton(follower.id)];
     if ((await context.telegram.sendText(follower.chatId, text, keyboard)) !== null) {
       told += 1;
       if (update.kind !== "delivered") await context.store.told(follower.id, what);

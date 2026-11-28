@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { visitSourceSchema } from "@/lib/attribution";
+import { telegramCartSchema } from "@/lib/telegram-cart";
 import { shippingMethodByCode } from "@/data/catalog";
 import { MAX_QUANTITY_PER_LINE } from "@/lib/commerce/limits";
 
@@ -117,6 +118,8 @@ export const placeOrderSchema = z.object({
   idempotencyKey: z.uuid(),
   /** Channel of the visit (see lib/attribution). Dropped, never rejected, when malformed. */
   attribution: visitSourceSchema,
+  /** The bot chat a cart link was sent to (see lib/telegram-cart). Dropped, never rejected, when malformed. */
+  telegramCart: telegramCartSchema,
 });
 
 export type PlaceOrderInput = z.infer<typeof placeOrderSchema>;
@@ -149,6 +152,7 @@ export const expressCheckoutSchema = z.object({
   idempotencyKey: placeOrderSchema.shape.idempotencyKey,
   couponCode: placeOrderSchema.shape.couponCode,
   attribution: visitSourceSchema,
+  telegramCart: telegramCartSchema,
   /** The Locker picked in the cart: Stripe cannot ask for one (owner, 2026-10-23). */
   pickupPoint: checkoutSchema.shape.pickupPoint,
   pickupPointId: checkoutSchema.shape.pickupPointId,
