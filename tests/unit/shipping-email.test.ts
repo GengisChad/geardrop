@@ -50,9 +50,10 @@ describe("shipping email", () => {
     const email = shippingNotificationEmail(order);
     expect(email.to).toBe("cliente@example.com");
     expect(email.subject).toBe("Il tuo ordine GD-FL3NHC8W è stato spedito · GEAR//DROP");
-    for (const part of ["Ciao Mario,", "Poste Italiane", "RR123456789IT", "Segui il pacco", "1 × Glory Valkerion LF", "Via Roma 1", "34148 Trieste (TS)", "infogeardrop@gmail.com"]) {
+    for (const part of ["Ciao Mario,", "Poste Italiane", "RR123456789IT", "Segui il pacco", "1&times;", "Glory Valkerion LF", "Via Roma 1", "34148 Trieste (TS)", "infogeardrop@gmail.com"]) {
       expect(email.html).toContain(part);
     }
+    expect(email.text).toContain("1 × Glory Valkerion LF");
     expect(email.text).toContain("Segui il pacco: https://");
     expect(email.html).not.toContain("3331234567");
     // The buyer learns the account page follows the parcel too, so they need not write to the shop.

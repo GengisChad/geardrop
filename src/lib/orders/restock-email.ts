@@ -1,4 +1,4 @@
-import { emailShell, escapeHtml } from "@/lib/orders/order-email";
+import { button, emailShell, escapeHtml, note, paragraph, signOff } from "@/lib/email/template";
 import { PRODUCTION_ORIGIN } from "@/lib/site-url";
 import type { EmailMessage } from "@/lib/email/resend";
 
@@ -10,7 +10,7 @@ type RestockEmailInput = {
 
 /**
  * Notification email sent to a buyer who signed up via the "Avvisami" form when
- * the product is back in stock. Uses the shared email shell from order-email.ts.
+ * the product is back in stock. Lime, the shop's "subito": the piece is on the shelf now.
  */
 export function restockNotificationEmail(input: RestockEmailInput): EmailMessage {
   const { productName, productSlug, to } = input;
@@ -19,17 +19,13 @@ export function restockNotificationEmail(input: RestockEmailInput): EmailMessage
 
   const html = emailShell(
     `${productName} è di nuovo disponibile`,
-    `<p style="margin:0 0 16px;color:#555">Buone notizie: ${escapeHtml(productName)} è tornato disponibile su GEAR//DROP.</p>
-    <p style="margin:0 0 24px">
-      <a href="${escapeHtml(pdpUrl)}"
-         style="display:inline-block;background:#c6ff00;color:#07060b;font-weight:bold;text-decoration:none;padding:12px 18px;border-radius:6px">
-        Acquista ora
-      </a>
-    </p>
-    <p style="margin:0;font-size:13px;color:#888">
-      Hai ricevuto questa email perché hai richiesto un avviso di disponibilità su geardropshop.it.
-      Se non desideri ricevere altri avvisi, ignora questa email.
-    </p>`,
+    `${paragraph(`Buone notizie: <strong>${escapeHtml(productName)}</strong> è tornato disponibile su GEAR//DROP. Ci hai chiesto di avvisarti, ed eccoci.`)}
+    ${button("Acquista ora", pdpUrl, "now")}
+    ${signOff()}
+    ${note(
+      "Hai ricevuto questa email perché hai richiesto un avviso di disponibilità su geardropshop.it. Se non desideri ricevere altri avvisi, ignora questa email.",
+    )}`,
+    { tone: "now", kicker: "Di nuovo disponibile", preheader: `${productName} è tornato sullo scaffale.` },
   );
 
   const text = [

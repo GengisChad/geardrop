@@ -1,6 +1,6 @@
 import type { EmailMessage } from "@/lib/email/resend";
 import { newsletterConfirmUrl } from "@/lib/newsletter/newsletter";
-import { emailShell, escapeHtml } from "@/lib/orders/order-email";
+import { button, emailShell, note, paragraph } from "@/lib/email/template";
 import { PRODUCTION_ORIGIN } from "@/lib/site-url";
 
 /**
@@ -13,16 +13,10 @@ export function newsletterConfirmEmail(input: { readonly to: string; readonly to
 
   const html = emailShell(
     "Conferma l'iscrizione",
-    `<p style="margin:0 0 16px;color:#555">Hai chiesto di ricevere le novità di GEAR//DROP: arrivi e riassortimenti dei Beyblade X. Questo è solo il primo drop.</p>
-    <p style="margin:0 0 24px">
-      <a href="${escapeHtml(url)}"
-         style="display:inline-block;background:#c6ff00;color:#07060b;font-weight:bold;text-decoration:none;padding:12px 18px;border-radius:6px">
-        Conferma l'iscrizione
-      </a>
-    </p>
-    <p style="margin:0;font-size:13px;color:#888">
-      Se non sei stato tu, ignora questa email: senza conferma non ti scriviamo. In ogni email trovi il link per cancellarti.
-    </p>`,
+    `${paragraph("Hai chiesto di ricevere le novità di GEAR//DROP: arrivi e riassortimenti dei Beyblade X. Questo è solo il primo drop.")}
+    ${button("Conferma l'iscrizione", url, "incoming")}
+    ${note("Se non sei stato tu, ignora questa email: senza conferma non ti scriviamo. In ogni email trovi il link per cancellarti.")}`,
+    { tone: "incoming", kicker: "Novità in arrivo", preheader: "Un tocco per confermare: poi ti scriviamo solo arrivi e riassortimenti." },
   );
 
   const text = [

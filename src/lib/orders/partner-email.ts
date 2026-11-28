@@ -1,6 +1,6 @@
 import { CONSIGNMENT_PARTNER, partnerLines, shippingMethodByCode } from "@/data/catalog";
 import { SHOP_EMAIL } from "@/lib/email/resend";
-import { escapeHtml, emailShell } from "./order-email";
+import { addressPanel, dataTable, emailShell, escapeHtml, itemList, label, paragraph, shopEmailLink } from "@/lib/email/template";
 import type { PaidCheckout } from "./stripe-order";
 
 const euro = (cents: number) => `€ ${(cents / 100).toFixed(2).replace(".", ",")}`;
@@ -36,27 +36,17 @@ export function partnerOrderEmail(checkout: PaidCheckout, orderRef: string) {
 
   const html = emailShell(
     `Ordine ${orderRef} da spedire`,
-    `<p style="margin:0 0 16px;color:#555">
-      Nuovo ordine GEAR//DROP. I prodotti qui sotto sono tuoi: spediscili all'indirizzo indicato
-      e rispondi a questa email con il codice di tracking una volta spediti.
-    </p>
-    <h2 style="font-size:16px;margin:0 0 8px">Articoli da spedire</h2>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:15px">
-      ${lines.map((line) => `<tr>
-        <td style="padding:8px 0;border-bottom:1px solid #eee">${escapeHtml(line.name)}</td>
-        <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:center">&times;&nbsp;${line.quantity}</td>
-      </tr>`).join("")}
-      <tr><td style="padding:8px 0;font-weight:bold">Totale da ricevere</td><td style="padding:8px 0;text-align:right;font-weight:bold">${escapeHtml(euro(totalOwed))}</td></tr>
-    </table>
-    <h2 style="font-size:16px;margin:24px 0 8px">Spedire a</h2>
-    <div style="background:#f6f2ff;border-radius:8px;padding:16px;font-size:16px;line-height:1.5">
-      ${deliveryLines.map((line) => `<div>${escapeHtml(line)}</div>`).join("")}
-    </div>
-    <p style="margin:24px 0 0;font-size:14px;color:#555">
-      Una volta spedito, rispondi a questa email con il codice di tracking.<br/>
-      Per qualsiasi dubbio scrivi a <a href="mailto:${SHOP_EMAIL}">${escapeHtml(SHOP_EMAIL)}</a>
-      indicando il numero d'ordine ${escapeHtml(orderRef)}.
-    </p>`,
+    `${paragraph("Nuovo ordine GEAR//DROP. I prodotti qui sotto sono tuoi: spediscili all'indirizzo indicato e rispondi a questa email con il codice di tracking una volta spediti.")}
+    ${label("Articoli da spedire")}
+    ${itemList(lines.map((line) => ({ name: line.name, quantity: line.quantity })))}
+    ${dataTable([["Totale da ricevere", euro(totalOwed)]], { strongLast: true })}
+    ${label("Spedire a")}
+    ${addressPanel(deliveryLines)}
+    ${paragraph(
+      `Una volta spedito, rispondi a questa email con il codice di tracking.<br>Per qualsiasi dubbio scrivi a ${shopEmailLink()} indicando il numero d'ordine ${escapeHtml(orderRef)}.`,
+      { size: 14, top: 24 },
+    )}`,
+    { tone: "now", kicker: `Da spedire · ${orderRef}`, preheader: `${lines.length} ${lines.length === 1 ? "articolo" : "articoli"} da spedire a ${shipping.name}.`, footer: "internal" },
   );
 
   const text = [
