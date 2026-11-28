@@ -1,5 +1,5 @@
 import { SHOP_EMAIL } from "@/lib/email/resend";
-import { emailShell, escapeHtml } from "./order-email";
+import { EMAIL_COLORS, emailShell, escapeHtml, itemList, label, link, paragraph, shopEmailLink, signOff } from "@/lib/email/template";
 
 /**
  * "La merce del tuo pre-ordine è arrivata": si manda quando il carico porta a magazzino i pezzi
@@ -21,13 +21,21 @@ export function preorderReadyEmail(order: PreorderReadyOrder) {
 
   const html = emailShell(
     "La merce del tuo pre-ordine è arrivata",
-    `<p style="margin:0 0 16px;font-size:16px;line-height:1.5">${greeting} la merce del tuo pre-ordine <strong>${escapeHtml(order.orderNumber)}</strong> è arrivata in magazzino.</p>
-    <p style="margin:0 0 16px;font-size:15px;line-height:1.6">Lo prepariamo e lo spediamo al più presto: riceverai una seconda email con corriere e codice di tracciamento quando il pacco parte.</p>
-    <h2 style="font-size:16px;margin:24px 0 8px">Cosa è arrivato</h2>
-    <ul style="margin:0;padding-left:18px;line-height:1.6">${order.items.map((item) => `<li>${item.quantity} × ${escapeHtml(item.name)}</li>`).join("")}</ul>
-    <p style="margin:24px 0 0;font-size:14px;line-height:1.5">Non devi fare nulla: il pagamento è già stato registrato. Puoi controllare l&rsquo;ordine su <a href="https://geardropshop.it/ordine" style="color:#c6ff00">geardropshop.it/ordine</a> con il numero ordine e questa email.</p>
-    <p style="margin:16px 0 0;font-size:14px;line-height:1.5">Devi cambiare l&rsquo;indirizzo o hai una domanda? Rispondi a questa email o scrivi a <a href="mailto:${SHOP_EMAIL}">${SHOP_EMAIL}</a> indicando il numero d&rsquo;ordine.</p>
-    <p style="margin:16px 0 0;font-size:14px">Grazie per l&rsquo;attesa e buone battaglie!<br>GEAR//DROP</p>`,
+    `${paragraph(`${greeting} la merce del tuo pre-ordine <strong style="color:${EMAIL_COLORS.text}">${escapeHtml(order.orderNumber)}</strong> è arrivata in magazzino.`)}
+    ${paragraph("Lo prepariamo e lo spediamo al più presto: riceverai una seconda email con corriere e codice di tracciamento quando il pacco parte.", { size: 15 })}
+    ${label("Cosa è arrivato")}
+    ${itemList(order.items)}
+    ${paragraph(
+      `Non devi fare nulla: il pagamento è già stato registrato. Puoi controllare l&rsquo;ordine su ${link("geardropshop.it/ordine", "https://geardropshop.it/ordine")} con il numero ordine e questa email.`,
+      { size: 14, top: 24 },
+    )}
+    ${paragraph(`Devi cambiare l&rsquo;indirizzo o hai una domanda? Rispondi a questa email o scrivi a ${shopEmailLink()} indicando il numero d&rsquo;ordine.`, { size: 14 })}
+    ${signOff("Grazie per l’attesa e buone battaglie!")}`,
+    {
+      tone: "now",
+      kicker: `Arrivato · ${order.orderNumber}`,
+      preheader: "La merce del tuo pre-ordine è arrivata: prepariamo il pacco.",
+    },
   );
 
   const text = [

@@ -9,7 +9,7 @@ import type { Database } from "@/lib/supabase/database.types";
 import { createPrivilegedSupabaseClient } from "@/lib/supabase/admin";
 import { tellOrderFollowers } from "@/lib/telegram/order-follow-runtime";
 import { deliveryConfirmationEmail } from "./delivery-email";
-import { emailShell, escapeHtml } from "./order-email";
+import { inpostAlertEmail } from "./inpost-alert-email";
 
 /**
  * Closes InPost orders on their own (owner, 2026-10-23: "fai tu tutto quello che serve per
@@ -148,16 +148,9 @@ async function alertOwner(client: Client, order: TrackedOrder, code: string): Pr
   if (seen.error || (seen.data ?? []).length > 0) return;
   await client.from("order_notes").insert({ order_id: order.id, note });
 
-  const subject = `Pacco ${order.orderNumber}: ${what.toLowerCase()} · InPost`;
   const sent = await sendEmail({
     to: SHOP_EMAIL,
-    subject,
-    html: emailShell(
-      subject,
-      `<p style="margin:0 0 12px">InPost segnala per l'ordine <strong>${escapeHtml(order.orderNumber)}</strong>: ${escapeHtml(what)} (${escapeHtml(code)}).</p>
-       <p style="margin:0">Tracking ${escapeHtml(order.trackingCode)}. Scrivi al cliente dal pannello ordini.</p>`,
-    ),
-    text: `InPost segnala per l'ordine ${order.orderNumber}: ${what} (${code}). Tracking ${order.trackingCode}.`,
+    ...inpostAlertEmail(order, what, code),
     idempotencyKey: `gd-inpost-alert-${order.id}-${code}`,
   });
   if (!sent.ok) console.error("[inpost-delivery] owner alert", order.orderNumber, sent.reason);

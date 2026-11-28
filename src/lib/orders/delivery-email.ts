@@ -1,5 +1,16 @@
 import { SHOP_EMAIL } from "@/lib/email/resend";
-import { emailShell, escapeHtml } from "./order-email";
+import {
+  callout,
+  EMAIL_COLORS,
+  emailShell,
+  escapeHtml,
+  itemList,
+  label,
+  link as emailLink,
+  paragraph,
+  shopEmailLink,
+  signOff,
+} from "@/lib/email/template";
 import { trackingLink } from "./carriers";
 import { buyerFirstName } from "./shipping-email";
 
@@ -30,21 +41,26 @@ export function deliveryConfirmationEmail(order: DeliveredOrder) {
 
   const html = emailShell(
     "Il tuo ordine è arrivato",
-    `<p style="margin:0 0 16px;font-size:16px;line-height:1.5">${name ? `Ciao ${escapeHtml(name)},` : "Ciao,"} il tuo ordine <strong>${escapeHtml(order.orderNumber)}</strong> risulta consegnato.${order.carrier ? ` Il pacco è stato affidato a ${escapeHtml(order.carrier)}.` : ""}</p>
-    <h2 style="font-size:16px;margin:24px 0 8px">Cosa c&rsquo;era nel pacco</h2>
-    <ul style="margin:0;padding-left:18px;line-height:1.6">${order.items.map((item) => `<li>${item.quantity} × ${escapeHtml(item.name)}</li>`).join("")}</ul>
-    <div style="background:#f6f2ff;border-radius:8px;padding:16px;margin:24px 0 0;font-size:15px;line-height:1.6">
-      <strong>Manca qualcosa, o è arrivato rotto?</strong><br>
-      Scrivici entro pochi giorni a <a href="mailto:${SHOP_EMAIL}" style="color:#7a3cff">${SHOP_EMAIL}</a> indicando il numero d&rsquo;ordine e, se puoi, una foto. Lo sistemiamo noi.
-    </div>
-    <p style="margin:20px 0 0;font-size:14px;line-height:1.5">Hai <strong>${RETURN_WINDOW_DAYS} giorni dalla consegna</strong> per cambiare idea: il reso è gratuito, la spedizione la paghiamo noi. Come funziona è scritto su <a href="https://geardropshop.it/assistenza/resi" style="color:#7a3cff">geardropshop.it/assistenza/resi</a>.</p>
-    ${
-      link
-        ? `<p style="margin:16px 0 0;font-size:14px;line-height:1.5">Non ti risulta consegnato? Ricontrolla il percorso del pacco: <a href="${escapeHtml(link)}" style="color:#7a3cff">segui la spedizione</a>.</p>`
-        : ""
-    }
-    <p style="margin:16px 0 0;font-size:14px;line-height:1.5">L&rsquo;ordine resta consultabile su <a href="https://geardropshop.it/ordine" style="color:#7a3cff">geardropshop.it/ordine</a> con il numero ordine e questa email.</p>
-    <p style="margin:24px 0 0;font-size:14px">Grazie e buone battaglie!<br>GEAR//DROP</p>`,
+    `${paragraph(`${name ? `Ciao ${escapeHtml(name)},` : "Ciao,"} il tuo ordine <strong style="color:${EMAIL_COLORS.text}">${escapeHtml(order.orderNumber)}</strong> risulta consegnato.${order.carrier ? ` Il pacco è stato affidato a ${escapeHtml(order.carrier)}.` : ""}`)}
+    ${label("Cosa c’era nel pacco")}
+    ${itemList(order.items)}
+    ${callout(
+      `Scrivici entro pochi giorni a ${shopEmailLink()} indicando il numero d&rsquo;ordine e, se puoi, una foto. Lo sistemiamo noi.`,
+      "info",
+      "Manca qualcosa, o è arrivato rotto?",
+    )}
+    ${paragraph(
+      `Hai <strong style="color:${EMAIL_COLORS.text}">${RETURN_WINDOW_DAYS} giorni dalla consegna</strong> per cambiare idea: il reso è gratuito, la spedizione la paghiamo noi. Come funziona è scritto su ${emailLink("geardropshop.it/assistenza/resi", "https://geardropshop.it/assistenza/resi")}.`,
+      { size: 14, top: 20 },
+    )}
+    ${link ? paragraph(`Non ti risulta consegnato? Ricontrolla il percorso del pacco: ${emailLink("segui la spedizione", link)}.`, { size: 14 }) : ""}
+    ${paragraph(`L&rsquo;ordine resta consultabile su ${emailLink("geardropshop.it/ordine", "https://geardropshop.it/ordine")} con il numero ordine e questa email.`, { size: 14 })}
+    ${signOff()}`,
+    {
+      tone: "now",
+      kicker: `Consegnato · ${order.orderNumber}`,
+      preheader: "Il pacco risulta consegnato. Se manca qualcosa, scrivici: lo sistemiamo noi.",
+    },
   );
 
   const text = [

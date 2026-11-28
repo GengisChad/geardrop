@@ -1,6 +1,20 @@
 import { CONSIGNMENT_PARTNER, partnerLines, PRODUCTS } from "@/data/catalog";
 import { formatPrice } from "@/lib/format";
 import { SHOP_EMAIL } from "@/lib/email/resend";
+import {
+  addressPanel,
+  button,
+  callout,
+  EMAIL_COLORS,
+  emailShell,
+  escapeHtml,
+  label,
+  link,
+  note,
+  paragraph,
+  shopEmailLink,
+  signOff,
+} from "@/lib/email/template";
 import { deliveryClause, preorderDelivery } from "@/lib/labels";
 import { PRODUCTION_ORIGIN } from "@/lib/site-url";
 import type { LowStockProduct } from "./process-paid-checkout";
@@ -9,8 +23,11 @@ import type { PaidCheckout } from "./stripe-order";
 /**
  * Emails for a paid order: the owner's notification carries everything needed to pack and
  * ship without opening another tool; the buyer's confirmation repeats what they bought.
- * Plain HTML tables with inline styles, which every mail client renders.
+ * The frame and blocks are the shop's email template (lib/email/template.ts).
  */
+
+/** Kept here too: the order emails were the first to need them, and callers still import them from here. */
+export { emailShell, escapeHtml };
 
 export type RecordedOrder = {
   readonly id: number;
@@ -27,10 +44,6 @@ const PRODUCT_NAME = new Map(PRODUCTS.map((product) => [product.slug as string, 
 function packingList(line: PaidCheckout["lines"][number]): string | null {
   if (!line.components?.length) return null;
   return line.components.map((part) => `${part.quantity * line.quantity} × ${PRODUCT_NAME.get(part.slug) ?? part.slug}`).join(" + ");
-}
-
-export function escapeHtml(value: string): string {
-  return value.replace(/[&<>"']/g, (character) => `&#${character.charCodeAt(0)};`);
 }
 
 const dateFormatter = new Intl.DateTimeFormat("it-IT", {
@@ -87,48 +100,38 @@ function subtotalCents(checkout: PaidCheckout): number {
   return checkout.lines.reduce((sum, line) => sum + line.quantity * line.unitPriceCents, 0);
 }
 
+const CELL = `font-family:Anybody,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.45;vertical-align:top`;
+const MONO_CELL = `font-family:'JetBrains Mono',Consolas,'Courier New',monospace;font-size:14px;font-weight:bold;line-height:1.45;vertical-align:top`;
+
 function linesTable(checkout: PaidCheckout, order: RecordedOrder, audience: Audience): string {
+  const rule = `border-top:1px solid ${EMAIL_COLORS.line}`;
   const rows = checkout.lines
-    .map(
-      (line, index) => `<tr>
-        <td style="padding:8px 0;border-bottom:1px solid #eee">${escapeHtml(line.name)}${
-          packingList(line) ? `<div style="font-size:13px;color:#555;margin-top:2px">Da spedire: ${escapeHtml(packingList(line)!)}</div>` : ""
+    .map((line, index) => {
+      const packing = packingList(line);
+      const preorder = preorderLine(checkout, order, index, audience);
+      return `<tr>
+        <td width="44" style="width:44px;padding:11px 0;${rule};${MONO_CELL};color:${preorder ? EMAIL_COLORS.violetSoft : EMAIL_COLORS.lime}">${line.quantity}&times;</td>
+        <td style="padding:11px 12px 11px 0;${rule};${CELL};color:${EMAIL_COLORS.text}">${escapeHtml(line.name)}${
+          packing ? `<div style="margin-top:3px;font-size:13px;color:${EMAIL_COLORS.muted}">Da spedire: ${escapeHtml(packing)}</div>` : ""
         }${
-          preorderLine(checkout, order, index, audience)
-            ? `<div style="font-size:13px;color:#b45309;font-weight:bold;margin-top:2px">${escapeHtml(preorderLine(checkout, order, index, audience)!)}</div>`
+          preorder
+            ? `<div style="margin-top:4px;font-family:'JetBrains Mono',Consolas,'Courier New',monospace;font-size:12px;font-weight:bold;letter-spacing:0.4px;color:${EMAIL_COLORS.violetSoft}">${escapeHtml(preorder)}</div>`
             : ""
         }</td>
-        <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:center">× ${line.quantity}</td>
-        <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right">${euro(line.quantity * line.unitPriceCents)}</td>
-      </tr>`,
-    )
+        <td style="padding:11px 0;${rule};${CELL};color:${EMAIL_COLORS.text};text-align:right;white-space:nowrap">${euro(line.quantity * line.unitPriceCents)}</td>
+      </tr>`;
+    })
     .join("");
-  const discountLabel = checkout.couponCode
-    ? `Sconto (${checkout.couponCode})`
-    : "Sconto";
-  const discountRow =
-    checkout.discountCents > 0
-      ? `<tr><td style="padding:4px 0;color:#555">${escapeHtml(discountLabel)}</td><td></td><td style="padding:4px 0;text-align:right;color:#059669">-${euro(checkout.discountCents)}</td></tr>`
-      : "";
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:15px">
+  const total = (name: string, value: string, options: { readonly strong?: boolean; readonly colour?: string; readonly rule?: boolean } = {}) =>
+    `<tr><td></td><td style="padding:${options.strong ? "12px" : "6px"} 12px ${options.strong ? "4px" : "6px"} 0;${options.rule ? rule + ";" : ""}${CELL};color:${options.strong ? EMAIL_COLORS.text : EMAIL_COLORS.muted};${options.strong ? "font-weight:800;" : ""}">${escapeHtml(name)}</td><td style="padding:${options.strong ? "12px" : "6px"} 0 ${options.strong ? "4px" : "6px"};${options.rule ? rule + ";" : ""}${CELL};text-align:right;white-space:nowrap;color:${options.colour ?? EMAIL_COLORS.text};${options.strong ? "font-size:18px;font-weight:800;" : ""}">${value}</td></tr>`;
+  const discountLabel = checkout.couponCode ? `Sconto (${checkout.couponCode})` : "Sconto";
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse">
     ${rows}
-    <tr><td style="padding:8px 0;color:#555">Subtotale</td><td></td><td style="padding:8px 0;text-align:right">${euro(subtotalCents(checkout))}</td></tr>
-    ${discountRow}
-    <tr><td style="padding:4px 0;color:#555">Spedizione</td><td></td><td style="padding:4px 0;text-align:right">${checkout.shippingCents === 0 ? "Gratuita" : euro(checkout.shippingCents)}</td></tr>
-    <tr><td style="padding:8px 0;font-weight:bold">Totale pagato</td><td></td><td style="padding:8px 0;text-align:right;font-weight:bold">${euro(checkout.totalCents)}</td></tr>
+    ${total("Subtotale", euro(subtotalCents(checkout)), { rule: true })}
+    ${checkout.discountCents > 0 ? total(discountLabel, `-${euro(checkout.discountCents)}`, { colour: EMAIL_COLORS.lime }) : ""}
+    ${total("Spedizione", checkout.shippingCents === 0 ? "Gratuita" : euro(checkout.shippingCents))}
+    ${total("Totale pagato", euro(checkout.totalCents), { strong: true, rule: true })}
   </table>`;
-}
-
-/** The branded frame every GEAR//DROP email shares. */
-export function emailShell(title: string, content: string): string {
-  return `<!doctype html><html lang="it"><body style="margin:0;background:#f4f4f6;font-family:Arial,Helvetica,sans-serif;color:#111">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:12px;padding:24px">
-      <tr><td style="font-size:13px;letter-spacing:2px;color:#7a3cff;font-weight:bold">GEAR//DROP</td></tr>
-      <tr><td style="padding-top:8px;font-size:22px;font-weight:bold">${escapeHtml(title)}</td></tr>
-      <tr><td style="padding-top:16px">${content}</td></tr>
-    </table>
-  </td></tr></table></body></html>`;
 }
 
 /** Returns true when the shipping address looks empty (e.g. a recovery-link session). */
@@ -167,20 +170,21 @@ export function ownerOrderEmail(
   const pLines = partnerLines(checkout.lines);
   const partnerOwedCents = pLines.reduce((sum, l) => sum + l.owed, 0);
   const partnerBoxHtml = pLines.length
-    ? `<div style="margin:16px 0 0;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:12px;font-size:15px">
-        <strong>Spedisce ${escapeHtml(CONSIGNMENT_PARTNER.name)}:</strong>
+    ? callout(
+        `<strong style="color:${EMAIL_COLORS.text}">Spedisce ${escapeHtml(CONSIGNMENT_PARTNER.name)}:</strong>
         <ul style="margin:4px 0 0;padding-left:20px">${pLines.map((l) => `<li>${escapeHtml(l.name)} &times; ${l.quantity}</li>`).join("")}</ul>
-        <p style="margin:8px 0 0">Da bonificare a ${escapeHtml(CONSIGNMENT_PARTNER.name)}: <strong>${euro(partnerOwedCents)}</strong></p>
-        <p style="margin:4px 0 0;font-size:13px;color:#555">${
+        <p style="margin:8px 0 0">Da bonificare a ${escapeHtml(CONSIGNMENT_PARTNER.name)}: <strong style="color:${EMAIL_COLORS.text}">${euro(partnerOwedCents)}</strong></p>
+        <p style="margin:4px 0 0;font-size:13px;color:${EMAIL_COLORS.muted}">${
           partnerEmailStatus === "sent"
             ? `Email inviata a ${escapeHtml(CONSIGNMENT_PARTNER.name)} con i dettagli di spedizione.`
             : partnerEmailStatus === "failed"
-              ? `<span style="color:#b91c1c">Email al partner NON inviata: inoltra tu l'ordine a ${escapeHtml(CONSIGNMENT_PARTNER.email)}.</span>`
+              ? `<span style="color:${EMAIL_COLORS.magenta};font-weight:bold">Email al partner NON inviata: inoltra tu l'ordine a ${escapeHtml(CONSIGNMENT_PARTNER.email)}.</span>`
               : partnerEmailStatus === "not_configured"
                 ? `Email non configurata: inoltra tu l'ordine a ${escapeHtml(CONSIGNMENT_PARTNER.email)}.`
                 : ""
-        }</p>
-      </div>`
+        }</p>`,
+        partnerEmailStatus === "failed" ? "alert" : "info",
+      )
     : "";
   const partnerBoxText = pLines.length
     ? [
@@ -195,40 +199,51 @@ export function ownerOrderEmail(
     : [];
 
   const missingAddress = isAddressMissing(checkout);
+  const contact = [
+    checkout.phone ? `Tel: <a href="tel:${escapeHtml(checkout.phone)}" style="color:${EMAIL_COLORS.text}">${escapeHtml(checkout.phone)}</a>` : "",
+    `Email: <a href="mailto:${escapeHtml(checkout.email)}" style="color:${EMAIL_COLORS.text}">${escapeHtml(checkout.email)}</a>`,
+  ]
+    .filter(Boolean)
+    .map((line) => `<div style="margin-top:4px;font-size:14px;color:${EMAIL_COLORS.muted}">${line}</div>`)
+    .join("");
   const html = emailShell(
     `Nuovo ordine ${order.orderNumber}`,
-    `<p style="margin:0 0 16px;color:#555">Pagato su Stripe il ${escapeHtml(when)}. Da spedire a:</p>
-    ${
-      missingAddress
-        ? `<div style="background:#fef2f2;border:1px solid #f87171;border-radius:8px;padding:12px;margin-bottom:12px;font-size:15px;font-weight:bold;color:#b91c1c">Indirizzo di spedizione mancante: contatta il cliente</div>`
-        : ""
-    }
-    <div style="background:#f6f2ff;border-radius:8px;padding:16px;font-size:16px;line-height:1.5">
-      ${address.length ? address.map((line) => `<div>${escapeHtml(line)}</div>`).join("") : `<div style="color:#888">(indirizzo non pervenuto)</div>`}
-      ${checkout.phone ? `<div style="margin-top:8px">Tel: <a href="tel:${escapeHtml(checkout.phone)}">${escapeHtml(checkout.phone)}</a></div>` : ""}
-      <div>Email: <a href="mailto:${escapeHtml(checkout.email)}">${escapeHtml(checkout.email)}</a></div>
-    </div>
-    ${checkout.notes ? `<p style="margin:16px 0 0"><strong>Note del cliente:</strong> ${escapeHtml(checkout.notes)}</p>` : ""}
+    `${paragraph(`Pagato su Stripe il ${escapeHtml(when)}. Totale <strong style="color:${EMAIL_COLORS.text}">${euro(checkout.totalCents)}</strong>.`)}
+    ${missingAddress ? callout(`<strong style="color:${EMAIL_COLORS.text}">Indirizzo di spedizione mancante: contatta il cliente</strong>`, "alert") : ""}
+    ${label("Spedire a")}
+    ${addressPanel(address.length ? address : ["(indirizzo non pervenuto)"])}
+    ${contact}
+    ${checkout.notes ? callout(`<strong style="color:${EMAIL_COLORS.text}">Note del cliente:</strong> ${escapeHtml(checkout.notes)}`, "info") : ""}
     ${
       preordered.length
-        ? `<div style="margin:16px 0 0;background:#fff7ed;border:1px solid #fdba74;border-radius:8px;padding:12px;font-size:15px"><strong>Contiene un pre-ordine:</strong> ${escapeHtml(preordered.join(", "))}. Al cliente è indicato che ${escapeHtml(waits.join(" · "))}.</div>`
+        ? callout(
+            `<strong style="color:${EMAIL_COLORS.text}">Contiene un pre-ordine:</strong> ${escapeHtml(preordered.join(", "))}. Al cliente è indicato che ${escapeHtml(waits.join(" · "))}.`,
+            "incoming",
+          )
         : ""
     }
     ${partnerBoxHtml}
-    <h2 style="font-size:16px;margin:24px 0 8px">Articoli</h2>
+    ${label("Articoli")}
     ${linesTable(checkout, order, "owner")}
     ${
       lowStockItems.length
-        ? `<div style="margin:16px 0 0;background:#fef9c3;border:1px solid #fbbf24;border-radius:8px;padding:12px;font-size:15px"><strong>Scorte basse:</strong><ul style="margin:4px 0 0;padding-left:20px">${lowStockItems.map((item) => `<li>${lowStockLine(item)}</li>`).join("")}</ul></div>`
+        ? callout(
+            `<strong style="color:${EMAIL_COLORS.text}">Scorte basse:</strong><ul style="margin:4px 0 0;padding-left:20px">${lowStockItems.map((item) => `<li>${lowStockLine(item)}</li>`).join("")}</ul>`,
+            "alert",
+          )
         : ""
     }
-    <p style="margin:24px 0 0">
-      <a href="${adminUrl}" style="display:inline-block;background:#c6ff00;color:#07060b;font-weight:bold;text-decoration:none;padding:12px 18px;border-radius:6px">Apri l'ordine nel pannello</a>
-    </p>
-    ${stripeUrl ? `<p style="margin:12px 0 0;font-size:13px"><a href="${stripeUrl}">Vedi il pagamento su Stripe</a></p>` : ""}
-    <p style="margin:24px 0 0;font-size:12px;color:#888">Lo stock dei pezzi venduti è già stato scalato sul sito${
+    ${button("Apri l'ordine nel pannello", adminUrl, "now")}
+    ${stripeUrl ? `<p style="margin:12px 0 0;font-size:13px">${link("Vedi il pagamento su Stripe", stripeUrl, "info")}</p>` : ""}
+    ${note(`Lo stock dei pezzi venduti è già stato scalato sul sito${
       preordered.length ? "; i pezzi in pre-ordine non lo toccano finché non ricarichi il magazzino" : ""
-    }.</p>`,
+    }.`)}`,
+    {
+      tone: preordered.length ? "incoming" : "now",
+      kicker: `${preordered.length ? "Con pre-ordine" : "Pagato"} · ${euro(checkout.totalCents)}`,
+      preheader: `${checkout.shipping.name || checkout.email} · ${checkout.lines.map((line) => `${line.quantity}× ${line.name}`).join(", ")}`,
+      footer: "internal",
+    },
   );
 
   const text = [
@@ -272,14 +287,25 @@ CONTIENE UN PRE-ORDINE: ${preordered.join(", ")}` : null,
 export function customerOrderEmail(checkout: PaidCheckout, order: RecordedOrder, followUrl: string | null = null) {
   const address = addressBlock(checkout);
   const subject = `Ordine ${order.orderNumber} confermato · GEAR//DROP`;
+  const waitsForStock = (order.preorderQuantities ?? []).some((units) => units > 0);
   const html = emailShell(
     "Grazie, il tuo ordine è confermato",
-    `<p style="margin:0 0 16px;color:#555">Abbiamo ricevuto il pagamento dell'ordine <strong>${escapeHtml(order.orderNumber)}</strong>. Ti scriviamo appena parte il pacco.</p>
-    ${followUrl ? `<p style="margin:0 0 16px"><a href="${escapeHtml(followUrl)}" style="display:inline-block;background:#7b2cff;color:#ffffff;font-weight:bold;text-decoration:none;padding:12px 18px;border-radius:6px">Segui su Telegram</a><br><span style="font-size:13px;color:#555">Ti scriviamo lì quando parte e quando arriva.</span></p>` : ""}
+    `${paragraph(`Abbiamo ricevuto il pagamento dell'ordine <strong style="color:${EMAIL_COLORS.text}">${escapeHtml(order.orderNumber)}</strong>. ${
+      waitsForStock ? "I pezzi in pre-ordine partono appena arrivano: ti scriviamo noi." : "Ti scriviamo appena parte il pacco."
+    }`)}
+    ${followUrl ? button("Segui su Telegram", followUrl, "incoming", { hint: "Ti scriviamo lì quando parte e quando arriva." }) : ""}
+    ${label("Il tuo ordine")}
     ${linesTable(checkout, order, "buyer")}
-    <h2 style="font-size:16px;margin:24px 0 8px">Spedizione a</h2>
-    <div style="line-height:1.5">${address.map((line) => `<div>${escapeHtml(line)}</div>`).join("")}</div>
-    <p style="margin:24px 0 0;font-size:14px">Domande? Rispondi a questa email o scrivi a <a href="mailto:${SHOP_EMAIL}">${SHOP_EMAIL}</a> indicando il numero d'ordine.</p>`,
+    ${address.length ? `${label("Spedizione a")}${addressPanel(address)}` : ""}
+    ${paragraph(`Domande? Rispondi a questa email o scrivi a ${shopEmailLink()} indicando il numero d'ordine.`, { size: 14, top: 24 })}
+    ${signOff()}`,
+    {
+      tone: waitsForStock ? "incoming" : "now",
+      kicker: `${waitsForStock ? "Pre-ordine" : "Ordine"} ${order.orderNumber}`,
+      preheader: waitsForStock
+        ? `Pagamento ricevuto per ${order.orderNumber}: i pezzi in pre-ordine partono appena arrivano.`
+        : `Pagamento ricevuto per ${order.orderNumber}: ti scriviamo appena parte il pacco.`,
+    },
   );
   const text = [
     `Grazie, il tuo ordine ${order.orderNumber} è confermato.`,

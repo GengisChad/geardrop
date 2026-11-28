@@ -1,6 +1,20 @@
 import { SHOP_EMAIL } from "@/lib/email/resend";
 import { addressLines } from "@/lib/admin/orders";
-import { emailShell, escapeHtml } from "./order-email";
+import {
+  addressPanel,
+  button,
+  callout,
+  dataTable,
+  EMAIL_COLORS,
+  emailShell,
+  escapeHtml,
+  itemList,
+  label,
+  link as emailLink,
+  paragraph,
+  shopEmailLink,
+  signOff,
+} from "@/lib/email/template";
 import { trackingLink } from "./carriers";
 
 /**
@@ -29,31 +43,34 @@ export function shippingNotificationEmail(order: ShippedOrder) {
   const addressHeading = pickupPointOf(order.shippingAddress) ? "Dove ritirarlo" : "Indirizzo di consegna";
   const subject = `Il tuo ordine ${order.orderNumber} è stato spedito · GEAR//DROP`;
 
-  const courier = [
-    order.carrier ? `<div>Corriere: <strong>${escapeHtml(order.carrier)}</strong></div>` : "",
-    order.trackingCode ? `<div>Codice di tracciamento: <strong>${escapeHtml(order.trackingCode)}</strong></div>` : "",
-  ].join("");
+  const courier: [string, string][] = [];
+  if (order.carrier) courier.push(["Corriere", order.carrier]);
+  if (order.trackingCode) courier.push(["Codice di tracciamento", order.trackingCode]);
 
   const html = emailShell(
     "Il tuo ordine è in viaggio",
-    `<p style="margin:0 0 16px;font-size:16px;line-height:1.5">${name ? `Ciao ${escapeHtml(name)},` : "Ciao,"} abbiamo spedito il tuo ordine <strong>${escapeHtml(order.orderNumber)}</strong>.</p>
-    <div style="background:#f6f2ff;border-radius:8px;padding:16px;font-size:15px;line-height:1.6">${courier || "<div>Il pacco è stato affidato al corriere.</div>"}</div>
-    ${
-      link
-        ? `<p style="margin:20px 0 0"><a href="${escapeHtml(link)}" style="display:inline-block;background:#c6ff00;color:#07060b;font-weight:bold;text-decoration:none;padding:14px 20px;border-radius:6px">Segui il pacco</a></p>`
-        : ""
-    }
+    `${paragraph(`${name ? `Ciao ${escapeHtml(name)},` : "Ciao,"} abbiamo spedito il tuo ordine <strong style="color:${EMAIL_COLORS.text}">${escapeHtml(order.orderNumber)}</strong>.`)}
+    ${courier.length ? dataTable(courier) : callout("Il pacco è stato affidato al corriere.", "incoming")}
+    ${link ? button("Segui il pacco", link, "now") : ""}
     ${
       order.followUrl
-        ? `<p style="margin:16px 0 0;font-size:14px;line-height:1.5">Vuoi sapere dove si trova il pacco? <a href="${escapeHtml(order.followUrl)}" style="color:#7b2cff;font-weight:bold">Segui su Telegram</a>: ti scriviamo lì a ogni passaggio.</p>`
+        ? paragraph(`Vuoi sapere dove si trova il pacco? ${emailLink("Segui su Telegram", order.followUrl, "incoming")}: ti scriviamo lì a ogni passaggio.`, { size: 14, top: 16 })
         : ""
     }
-    <h2 style="font-size:16px;margin:24px 0 8px">Nel pacco</h2>
-    <ul style="margin:0;padding-left:18px;line-height:1.6">${order.items.map((item) => `<li>${item.quantity} × ${escapeHtml(item.name)}</li>`).join("")}</ul>
-    ${address.length ? `<h2 style="font-size:16px;margin:24px 0 8px">${addressHeading}</h2><div style="line-height:1.5">${address.map((line) => `<div>${escapeHtml(line)}</div>`).join("")}</div>` : ""}
-    <p style="margin:24px 0 0;font-size:14px;line-height:1.5">Puoi ricontrollare lo stato dell&rsquo;ordine in qualsiasi momento su <a href="https://geardropshop.it/ordine" style="color:#c6ff00">geardropshop.it/ordine</a> usando il numero ordine e questa email. Con un account registrato con questa email trovi tutti i tuoi ordini, e dove si trova il pacco, su <a href="https://geardropshop.it/account" style="color:#c6ff00">geardropshop.it/account</a>.</p>
-    <p style="margin:16px 0 0;font-size:14px;line-height:1.5">Qualcosa non torna? Rispondi a questa email o scrivi a <a href="mailto:${SHOP_EMAIL}">${SHOP_EMAIL}</a> indicando il numero d'ordine.</p>
-    <p style="margin:16px 0 0;font-size:14px">Grazie e buone battaglie!<br>GEAR//DROP</p>`,
+    ${label("Nel pacco")}
+    ${itemList(order.items)}
+    ${address.length ? `${label(addressHeading)}${addressPanel(address)}` : ""}
+    ${paragraph(
+      `Puoi ricontrollare lo stato dell&rsquo;ordine in qualsiasi momento su ${emailLink("geardropshop.it/ordine", "https://geardropshop.it/ordine")} usando il numero ordine e questa email. Con un account registrato con questa email trovi tutti i tuoi ordini, e dove si trova il pacco, su ${emailLink("geardropshop.it/account", "https://geardropshop.it/account")}.`,
+      { size: 14, top: 24 },
+    )}
+    ${paragraph(`Qualcosa non torna? Rispondi a questa email o scrivi a ${shopEmailLink()} indicando il numero d'ordine.`, { size: 14 })}
+    ${signOff()}`,
+    {
+      tone: "incoming",
+      kicker: `In viaggio · ${order.orderNumber}`,
+      preheader: order.carrier ? `Il pacco è partito con ${order.carrier}: qui trovi il tracciamento.` : "Il pacco è partito: qui trovi cosa contiene e dove va.",
+    },
   );
 
   const text = [

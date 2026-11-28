@@ -26,8 +26,9 @@ describe("delivery confirmation email", () => {
       "Ciao Mario,",
       "risulta consegnato",
       "Poste Italiane",
-      "1 × Glory Valkerion LF",
-      "2 × Duo Shatter Horus + Hurricane Enlil",
+      "Glory Valkerion LF",
+      "2&times;",
+      "Duo Shatter Horus + Hurricane Enlil",
       `${RETURN_WINDOW_DAYS} giorni dalla consegna`,
       "geardropshop.it/assistenza/resi",
       "geardropshop.it/ordine",
@@ -35,6 +36,7 @@ describe("delivery confirmation email", () => {
     ]) {
       expect(email.html).toContain(part);
     }
+    expect(email.text).toContain("2 × Duo Shatter Horus + Hurricane Enlil");
     expect(email.text).toContain("Ciao Mario, il tuo ordine GD-FL3NHC8W risulta consegnato.");
   });
 

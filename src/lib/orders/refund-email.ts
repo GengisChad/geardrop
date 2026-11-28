@@ -1,5 +1,5 @@
 import { SHOP_EMAIL } from "@/lib/email/resend";
-import { emailShell, escapeHtml } from "./order-email";
+import { callout, dataTable, emailShell, escapeHtml, paragraph, shopEmailLink, signOff } from "@/lib/email/template";
 import { buyerFirstName } from "./shipping-email";
 
 /**
@@ -35,12 +35,22 @@ export function refundNotificationEmail(order: RefundedOrder) {
 
   const html = emailShell(
     "Ti abbiamo rimborsato",
-    `<p style="margin:0 0 16px;font-size:16px;line-height:1.5">${name ? `Ciao ${escapeHtml(name)},` : "Ciao,"} abbiamo rimborsato <strong>${amount}</strong> sul tuo ordine <strong>${escapeHtml(order.orderNumber)}</strong>.</p>
-    <div style="background:#f6f2ff;border-radius:8px;padding:16px;font-size:15px;line-height:1.6;white-space:pre-line">${escapeHtml(order.reason)}</div>
-    <p style="margin:20px 0 0;font-size:15px;line-height:1.5">${standing}</p>
-    <p style="margin:12px 0 0;font-size:15px;line-height:1.5">${timing}</p>
-    <p style="margin:24px 0 0;font-size:14px;line-height:1.5">Qualcosa non torna? Rispondi a questa email o scrivi a <a href="mailto:${SHOP_EMAIL}">${SHOP_EMAIL}</a> indicando il numero d'ordine.</p>
-    <p style="margin:16px 0 0;font-size:14px">Grazie per la pazienza.<br>GEAR//DROP</p>`,
+    `${paragraph(`${name ? `Ciao ${escapeHtml(name)},` : "Ciao,"} abbiamo rimborsato <strong>${amount}</strong> sul tuo ordine <strong>${escapeHtml(order.orderNumber)}</strong>.`)}
+    ${callout(`<div style="white-space:pre-line">${escapeHtml(order.reason)}</div>`, "info")}
+    ${dataTable([
+      ["Rimborsato ora", amount],
+      ...(order.refundedCents > order.amountCents ? ([["Rimborsato in totale", euro(order.refundedCents)]] as [string, string][]) : []),
+      ["Totale dell'ordine", euro(order.totalCents)],
+    ])}
+    ${paragraph(escapeHtml(standing), { size: 15, top: 20 })}
+    ${paragraph(escapeHtml(timing), { size: 15 })}
+    ${paragraph(`Qualcosa non torna? Rispondi a questa email o scrivi a ${shopEmailLink("info")} indicando il numero d'ordine.`, { size: 14, top: 8 })}
+    ${signOff("Grazie per la pazienza.")}`,
+    {
+      tone: "info",
+      kicker: `Rimborso · ${order.orderNumber}`,
+      preheader: `Rimborso di ${amount} sul metodo di pagamento che hai usato.`,
+    },
   );
 
   const text = [
